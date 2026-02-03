@@ -12,6 +12,9 @@
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.0" />
     <PackageReference Include="FluentAssertions" Version="8.8.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.0" />
+    <PackageReference Include="Moq" Version="4.20.71" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
     <PackageReference Include="xunit" Version="2.5.3" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
@@ -23,7 +26,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\STIGForge.Core\STIGForge.Core.csproj" />
+    <ProjectReference Include="..\..\src\STIGForge.Content\STIGForge.Content.csproj" />
     <ProjectReference Include="..\..\src\STIGForge.Infrastructure\STIGForge.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\STIGForge.Apply\STIGForge.Apply.csproj" />
   </ItemGroup>
+
 
 </Project>
