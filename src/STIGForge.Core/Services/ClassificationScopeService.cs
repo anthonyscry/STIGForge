@@ -56,4 +56,33 @@ public sealed class ClassificationScopeService : IClassificationScopeService
     int t = threshold == Confidence.High ? 3 : threshold == Confidence.Medium ? 2 : 1;
     return a >= t;
   }
+
+  /// <summary>
+  /// Filters controls based on classification scope.
+  /// Returns only controls that match the target classification mode.
+  /// </summary>
+  /// <param name="controls">Controls to filter</param>
+  /// <param name="mode">Target classification mode</param>
+  /// <returns>Filtered list of controls</returns>
+  public static IEnumerable<ControlRecord> FilterControls(
+    IEnumerable<ControlRecord> controls,
+    ClassificationMode mode)
+  {
+    return mode switch
+    {
+      ClassificationMode.Classified =>
+        // Include only controls that are NOT UnclassifiedOnly
+        controls.Where(c => c.Applicability.ClassificationScope != ScopeTag.UnclassifiedOnly),
+
+      ClassificationMode.Unclassified =>
+        // Include only controls that ARE UnclassifiedOnly
+        controls.Where(c => c.Applicability.ClassificationScope == ScopeTag.UnclassifiedOnly),
+
+      ClassificationMode.Mixed =>
+        // Include all controls in mixed mode
+        controls,
+
+      _ => controls
+    };
+  }
 }
