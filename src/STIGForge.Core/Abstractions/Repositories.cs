@@ -1,0 +1,30 @@
+using STIGForge.Core.Models;
+
+namespace STIGForge.Core.Abstractions;
+
+public interface IContentPackRepository
+{
+  Task SaveAsync(ContentPack pack, CancellationToken ct);
+  Task<ContentPack?> GetAsync(string packId, CancellationToken ct);
+  Task<IReadOnlyList<ContentPack>> ListAsync(CancellationToken ct);
+}
+
+public interface IControlRepository
+{
+  Task SaveControlsAsync(string packId, IReadOnlyList<ControlRecord> controls, CancellationToken ct);
+  Task<IReadOnlyList<ControlRecord>> ListControlsAsync(string packId, CancellationToken ct);
+}
+
+public interface IProfileRepository
+{
+  Task SaveAsync(Profile profile, CancellationToken ct);
+  Task<Profile?> GetAsync(string profileId, CancellationToken ct);
+  Task<IReadOnlyList<Profile>> ListAsync(CancellationToken ct);
+}
+
+public interface IOverlayRepository
+{
+  Task SaveAsync(Overlay overlay, CancellationToken ct);
+  Task<Overlay?> GetAsync(string overlayId, CancellationToken ct);
+  Task<IReadOnlyList<Overlay>> ListAsync(CancellationToken ct);
+}
