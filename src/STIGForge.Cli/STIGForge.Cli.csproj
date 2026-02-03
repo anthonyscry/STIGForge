@@ -1,0 +1,28 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\STIGForge.Core\STIGForge.Core.csproj" />
+    <ProjectReference Include="..\STIGForge.Infrastructure\STIGForge.Infrastructure.csproj" />
+    <ProjectReference Include="..\STIGForge.Content\STIGForge.Content.csproj" />
+    <ProjectReference Include="..\STIGForge.Apply\STIGForge.Apply.csproj" />
+    <ProjectReference Include="..\STIGForge.Verify\STIGForge.Verify.csproj" />
+    <ProjectReference Include="..\STIGForge.Evidence\STIGForge.Evidence.csproj" />
+    <ProjectReference Include="..\STIGForge.Reporting\STIGForge.Reporting.csproj" />
+    <ProjectReference Include="..\STIGForge.Export\STIGForge.Export.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.2" />
+    <PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+    <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+</Project>
