@@ -13,6 +13,13 @@ public interface IControlRepository
 {
   Task SaveControlsAsync(string packId, IReadOnlyList<ControlRecord> controls, CancellationToken ct);
   Task<IReadOnlyList<ControlRecord>> ListControlsAsync(string packId, CancellationToken ct);
+  
+  /// <summary>
+  /// Verifies the SQLite schema has all required tables and columns.
+  /// Returns true if schema is valid, false otherwise.
+  /// Should be called during application startup or before import operations.
+  /// </summary>
+  Task<bool> VerifySchemaAsync(CancellationToken ct);
 }
 
 public interface IProfileRepository
