@@ -1,30 +1,34 @@
- using System.Diagnostics;
- using System.Text.Json;
- using STIGForge.Core.Models;
- using STIGForge.Apply.Snapshot;
- using STIGForge.Apply.Dsc;
- using Microsoft.Extensions.Logging;
+using System.Diagnostics;
+using System.Text.Json;
+using STIGForge.Core.Models;
+using STIGForge.Apply.Snapshot;
+using STIGForge.Apply.Dsc;
+using STIGForge.Apply.Reboot;
+using Microsoft.Extensions.Logging;
  
  namespace STIGForge.Apply;
  
 public sealed class ApplyRunner
 {
-   private readonly ILogger<ApplyRunner> _logger;
-   private readonly SnapshotService _snapshotService;
-   private readonly RollbackScriptGenerator _rollbackScriptGenerator;
-   private readonly LcmService _lcmService;
+    private readonly ILogger<ApplyRunner> _logger;
+    private readonly SnapshotService _snapshotService;
+    private readonly RollbackScriptGenerator _rollbackScriptGenerator;
+    private readonly LcmService _lcmService;
+    private readonly RebootCoordinator _rebootCoordinator;
 
-   public ApplyRunner(
-     ILogger<ApplyRunner> logger,
-     SnapshotService snapshotService,
-     RollbackScriptGenerator rollbackScriptGenerator,
-     LcmService lcmService)
-   {
-      _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-      _snapshotService = snapshotService ?? throw new ArgumentNullException(nameof(snapshotService));
-      _rollbackScriptGenerator = rollbackScriptGenerator ?? throw new ArgumentNullException(nameof(rollbackScriptGenerator));
-      _lcmService = lcmService ?? throw new ArgumentNullException(nameof(lcmService));
-   }
+    public ApplyRunner(
+      ILogger<ApplyRunner> logger,
+      SnapshotService snapshotService,
+      RollbackScriptGenerator rollbackScriptGenerator,
+      LcmService lcmService,
+      RebootCoordinator rebootCoordinator)
+    {
+       _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+       _snapshotService = snapshotService ?? throw new ArgumentNullException(nameof(snapshotService));
+       _rollbackScriptGenerator = rollbackScriptGenerator ?? throw new ArgumentNullException(nameof(rollbackScriptGenerator));
+       _lcmService = lcmService ?? throw new ArgumentNullException(nameof(lcmService));
+       _rebootCoordinator = rebootCoordinator ?? throw new ArgumentNullException(nameof(rebootCoordinator));
+    }
 
    public async Task<ApplyResult> RunAsync(ApplyRequest request, CancellationToken ct)
   {
@@ -42,7 +46,16 @@ public sealed class ApplyRunner
     Directory.CreateDirectory(logsDir);
     Directory.CreateDirectory(snapshotsDir);
 
-   var mode = request.ModeOverride ?? TryReadModeFromManifest(root) ?? HardeningMode.Safe;
+    var mode = request.ModeOverride ?? TryReadModeFromManifest(root) ?? HardeningMode.Safe;
+
+      // Check for resume after reboot (must be FIRST operation)
+      var resumeContext = await _rebootCoordinator.ResumeAfterReboot(root, ct);
+      if (resumeContext != null)
+      {
+         _logger.LogInformation("Resuming apply after reboot from step {CurrentStepIndex}", resumeContext.CurrentStepIndex);
+         // TODO: Skip completed steps based on resumeContext.CompletedSteps
+         // TODO: Continue from resumeContext.CurrentStepIndex
+      }
 
       var steps = new List<ApplyStepOutcome>();
       SnapshotResult? snapshot = null;
@@ -95,24 +108,70 @@ public sealed class ApplyRunner
     if (!string.IsNullOrWhiteSpace(request.PowerStigModulePath))
     {
       var outcome = await RunPowerStigCompileAsync(
-        request.PowerStigModulePath!,
-        request.PowerStigDataFile,
-        string.IsNullOrWhiteSpace(request.PowerStigOutputPath)
-          ? Path.Combine(applyRoot, "Dsc")
-          : request.PowerStigOutputPath!,
-        root,
-        logsDir,
-        snapshotsDir,
-        mode,
-        request.PowerStigVerbose,
-        ct);
+         request.PowerStigModulePath!,
+         request.PowerStigDataFile,
+         string.IsNullOrWhiteSpace(request.PowerStigOutputPath)
+           ? Path.Combine(applyRoot, "Dsc")
+           : request.PowerStigOutputPath!,
+         root,
+         logsDir,
+         snapshotsDir,
+         mode,
+         request.PowerStigVerbose,
+         ct);
       steps.Add(outcome);
+
+      // Check for reboot after PowerSTIG compile
+      if (await _rebootCoordinator.DetectRebootRequired(ct))
+      {
+         _logger.LogInformation("Reboot required after PowerSTIG compile");
+         var context = new RebootContext
+         {
+            BundleRoot = root,
+            CurrentStepIndex = steps.Count,
+            CompletedSteps = steps.Select(s => s.StepName).ToList(),
+            RebootScheduledAt = DateTimeOffset.UtcNow
+         };
+         await _rebootCoordinator.ScheduleReboot(context, ct);
+         return new ApplyResult
+         {
+            BundleRoot = root,
+            Mode = mode,
+            LogPath = string.Empty,
+            Steps = steps,
+            SnapshotId = snapshot?.SnapshotId ?? string.Empty,
+            RollbackScriptPath = snapshot?.RollbackScriptPath ?? string.Empty
+         };
+      }
     }
 
     if (!string.IsNullOrWhiteSpace(request.ScriptPath))
     {
       var outcome = await RunScriptAsync(request.ScriptPath!, request.ScriptArgs, root, logsDir, snapshotsDir, mode, ct);
       steps.Add(outcome);
+
+      // Check for reboot after script execution
+      if (await _rebootCoordinator.DetectRebootRequired(ct))
+      {
+         _logger.LogInformation("Reboot required after script execution");
+         var context = new RebootContext
+         {
+            BundleRoot = root,
+            CurrentStepIndex = steps.Count,
+            CompletedSteps = steps.Select(s => s.StepName).ToList(),
+            RebootScheduledAt = DateTimeOffset.UtcNow
+         };
+         await _rebootCoordinator.ScheduleReboot(context, ct);
+         return new ApplyResult
+         {
+            BundleRoot = root,
+            Mode = mode,
+            LogPath = string.Empty,
+            Steps = steps,
+            SnapshotId = snapshot?.SnapshotId ?? string.Empty,
+            RollbackScriptPath = snapshot?.RollbackScriptPath ?? string.Empty
+         };
+      }
     }
 
    if (!string.IsNullOrWhiteSpace(request.DscMofPath))
