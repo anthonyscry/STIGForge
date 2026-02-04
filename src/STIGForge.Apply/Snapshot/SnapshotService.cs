@@ -1,16 +1,19 @@
 using System.Diagnostics;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using STIGForge.Core.Abstractions;
 
 namespace STIGForge.Apply.Snapshot;
 
 public sealed class SnapshotService
 {
     private readonly ILogger<SnapshotService> _logger;
+    private readonly IProcessRunner _processRunner;
 
-    public SnapshotService(ILogger<SnapshotService> logger)
+    public SnapshotService(ILogger<SnapshotService> logger, IProcessRunner processRunner)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _processRunner = processRunner ?? throw new ArgumentNullException(nameof(processRunner));
     }
 
     public async Task<SnapshotResult> CreateSnapshot(string snapshotsDir, CancellationToken ct)
@@ -51,7 +54,7 @@ public sealed class SnapshotService
             _logger.LogInformation("Audit policy exported to {Path}", auditPolicyPath);
 
             // Export LGPO state (optional)
-            if (FileExistsInPath("LGPO.exe"))
+            if (_processRunner.ExistsInPath("LGPO.exe"))
             {
                 _logger.LogInformation("Exporting LGPO state...");
                 lgpoStatePath = Path.Combine(snapshotPath, "lgpo_state");
@@ -153,77 +156,25 @@ public sealed class SnapshotService
         {
             FileName = fileName,
             Arguments = arguments,
-            WorkingDirectory = workingDirectory,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true
+            WorkingDirectory = workingDirectory
         };
 
-        var stdout = new StringBuilder();
-        var stderr = new StringBuilder();
-
-        using var process = new Process { StartInfo = psi, EnableRaisingEvents = true };
-        
-        process.OutputDataReceived += (_, e) => { if (e.Data != null) stdout.AppendLine(e.Data); };
-        process.ErrorDataReceived += (_, e) => { if (e.Data != null) stderr.AppendLine(e.Data); };
-
-        process.Start();
-        process.BeginOutputReadLine();
-        process.BeginErrorReadLine();
-
-        // WaitForExitAsync is not available in .NET 4.8
-        if (ct.CanBeCanceled)
-        {
-            var cts = CancellationTokenSource.CreateLinkedTokenSource(ct);
-            process.EnableRaisingEvents = true;
-            var tcs = new TaskCompletionSource<bool>();
-            process.Exited += (_, _) => tcs.TrySetResult(true);
-            cts.Token.Register(() => {
-                try { process.Kill(); } catch { }
-                tcs.TrySetCanceled(cts.Token);
-            });
-            await tcs.Task;
-        }
-        else
-        {
-            process.WaitForExit();
-        }
-
-        var output = stdout.ToString();
-        var error = stderr.ToString();
+        var result = await _processRunner.RunAsync(psi, ct);
 
         // Log process output
-        if (!string.IsNullOrWhiteSpace(output))
-            _logger.LogDebug("{FileName} stdout: {Output}", fileName, output);
+        if (!string.IsNullOrWhiteSpace(result.StandardOutput))
+            _logger.LogDebug("{FileName} stdout: {Output}", fileName, result.StandardOutput);
         
-        if (!string.IsNullOrWhiteSpace(error))
-            _logger.LogDebug("{FileName} stderr: {Error}", fileName, error);
+        if (!string.IsNullOrWhiteSpace(result.StandardError))
+            _logger.LogDebug("{FileName} stderr: {Error}", fileName, result.StandardError);
 
-        if (process.ExitCode != 0)
+        if (result.ExitCode != 0)
         {
-            var errorMessage = $"Process '{fileName}' failed with exit code {process.ExitCode}";
-            if (!string.IsNullOrWhiteSpace(error))
-                errorMessage += $": {error}";
+            var errorMessage = $"Process '{fileName}' failed with exit code {result.ExitCode}";
+            if (!string.IsNullOrWhiteSpace(result.StandardError))
+                errorMessage += $": {result.StandardError}";
             
             throw new SnapshotException(errorMessage);
         }
-    }
-
-    private static bool FileExistsInPath(string fileName)
-    {
-        var pathVar = Environment.GetEnvironmentVariable("PATH");
-        if (string.IsNullOrWhiteSpace(pathVar))
-            return false;
-
-        var paths = pathVar.Split(new[] { Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries);
-        foreach (var path in paths)
-        {
-            var fullPath = Path.Combine(path, fileName);
-            if (File.Exists(fullPath))
-                return true;
-        }
-
-        return false;
     }
 }
