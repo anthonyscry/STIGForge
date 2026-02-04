@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Benchmark xmlns="http://checklists.nist.gov/xccdf/1.2" id="test-benchmark-manual">
+  <Rule id="SV-123456r1_rule" severity="medium">
+    <title>Test Manual Check V-12345</title>
+    <description>This is a test description for manual check</description>
+    <check system="manual">
+      <check-content>Manually review the system configuration to ensure compliance.</check-content>
+    </check>
+    <fixtext>Apply the security fix manually</fixtext>
+  </Rule>
+</Benchmark>

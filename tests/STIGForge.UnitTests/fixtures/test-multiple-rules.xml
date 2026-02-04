@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Benchmark xmlns="http://checklists.nist.gov/xccdf/1.2" id="test-benchmark-multiple">
+  <Rule id="SV-111111r1_rule" severity="low">
+    <title>First Rule V-11111</title>
+    <description>First rule description</description>
+    <check system="manual">
+      <check-content>Examine the configuration</check-content>
+    </check>
+    <fixtext>Fix one</fixtext>
+  </Rule>
+  <Rule id="SV-222222r1_rule" severity="medium">
+    <title>Second Rule V-22222</title>
+    <description>Second rule description</description>
+    <check system="http://scap.nist.gov/schema/scap/1.2">
+      <check-content>Automated check</check-content>
+    </check>
+    <fixtext>Fix two</fixtext>
+  </Rule>
+  <Rule id="SV-333333r1_rule" severity="high">
+    <title>Third Rule V-33333</title>
+    <description>Third rule description</description>
+    <check system="manual">
+      <check-content>Inspect the system settings</check-content>
+    </check>
+    <fixtext>Fix three</fixtext>
+  </Rule>
+</Benchmark>
