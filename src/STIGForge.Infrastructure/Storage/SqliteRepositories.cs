@@ -13,11 +13,12 @@ public sealed class SqliteContentPackRepository : IContentPackRepository
 
   public async Task SaveAsync(ContentPack pack, CancellationToken ct)
   {
-    const string sql = @"INSERT INTO content_packs(pack_id,name,imported_at,source_label,hash_algorithm,manifest_sha256)
-VALUES(@PackId,@Name,@ImportedAt,@SourceLabel,@HashAlgorithm,@ManifestSha256)
+    const string sql = @"INSERT INTO content_packs(pack_id,name,imported_at,release_date,source_label,hash_algorithm,manifest_sha256)
+VALUES(@PackId,@Name,@ImportedAt,@ReleaseDate,@SourceLabel,@HashAlgorithm,@ManifestSha256)
 ON CONFLICT(pack_id) DO UPDATE SET
 name=excluded.name,
 imported_at=excluded.imported_at,
+release_date=excluded.release_date,
 source_label=excluded.source_label,
 hash_algorithm=excluded.hash_algorithm,
 manifest_sha256=excluded.manifest_sha256;";
@@ -29,7 +30,7 @@ manifest_sha256=excluded.manifest_sha256;";
   {
     using var conn = new SqliteConnection(_cs);
     return await conn.QuerySingleOrDefaultAsync<ContentPack>(new CommandDefinition(
-      "SELECT pack_id PackId, name Name, imported_at ImportedAt, source_label SourceLabel, hash_algorithm HashAlgorithm, manifest_sha256 ManifestSha256 FROM content_packs WHERE pack_id=@packId",
+      "SELECT pack_id PackId, name Name, imported_at ImportedAt, release_date ReleaseDate, source_label SourceLabel, hash_algorithm HashAlgorithm, manifest_sha256 ManifestSha256 FROM content_packs WHERE pack_id=@packId",
       new { packId }, cancellationToken: ct));
   }
 
@@ -37,7 +38,7 @@ manifest_sha256=excluded.manifest_sha256;";
   {
     using var conn = new SqliteConnection(_cs);
     var rows = await conn.QueryAsync<ContentPack>(new CommandDefinition(
-      "SELECT pack_id PackId, name Name, imported_at ImportedAt, source_label SourceLabel, hash_algorithm HashAlgorithm, manifest_sha256 ManifestSha256 FROM content_packs ORDER BY imported_at DESC",
+      "SELECT pack_id PackId, name Name, imported_at ImportedAt, release_date ReleaseDate, source_label SourceLabel, hash_algorithm HashAlgorithm, manifest_sha256 ManifestSha256 FROM content_packs ORDER BY imported_at DESC",
       cancellationToken: ct));
     return rows.ToList();
   }
@@ -121,6 +122,7 @@ public sealed class SqliteJsonControlRepository : IControlRepository
     const string sql = @"INSERT INTO controls(pack_id,control_id,json) VALUES(@packId,@controlId,@json)
 ON CONFLICT(pack_id,control_id) DO UPDATE SET json=excluded.json;";
     using var conn = new SqliteConnection(_cs);
+    conn.Open();
     using var tx = conn.BeginTransaction();
     foreach (var c in controls)
     {
@@ -138,5 +140,21 @@ ON CONFLICT(pack_id,control_id) DO UPDATE SET json=excluded.json;";
     var jsons = await conn.QueryAsync<string>(new CommandDefinition(
       "SELECT json FROM controls WHERE pack_id=@packId", new { packId }, cancellationToken: ct));
     return jsons.Select(j => JsonSerializer.Deserialize<ControlRecord>(j, J)!).ToList();
+  }
+
+  public async Task<bool> VerifySchemaAsync(CancellationToken ct)
+  {
+    using var conn = new SqliteConnection(_cs);
+    await conn.OpenAsync(ct);
+    
+    // Verify controls table exists with required columns
+    var tableInfo = await conn.QueryAsync<(string name, string type)>(new CommandDefinition(
+      "PRAGMA table_info(controls)", cancellationToken: ct));
+    
+    var columns = tableInfo.Select(c => c.name).ToHashSet(StringComparer.OrdinalIgnoreCase);
+    
+    // Required columns: pack_id, control_id, json
+    var required = new[] { "pack_id", "control_id", "json" };
+    return required.All(col => columns.Contains(col));
   }
 }

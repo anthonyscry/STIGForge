@@ -15,6 +15,7 @@ CREATE TABLE IF NOT EXISTS content_packs (
   pack_id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
   imported_at TEXT NOT NULL,
+  release_date TEXT NULL,
   source_label TEXT NOT NULL,
   hash_algorithm TEXT NOT NULL,
   manifest_sha256 TEXT NOT NULL
