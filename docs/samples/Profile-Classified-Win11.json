@@ -1,0 +1,14 @@
+{
+  "profileId": "classified-win11-workstation",
+  "name": "Win11 Classified Workstation",
+  "osTarget": "Win11",
+  "roleTemplate": "Workstation",
+  "hardeningMode": "Safe",
+  "classificationMode": "Classified",
+  "naPolicy": {
+    "autoNaOutOfScope": true,
+    "confidenceThreshold": "High",
+    "defaultNaCommentTemplate": "Not applicable: unclassified-only control; system is classified."
+  },
+  "overlayIds": []
+}
