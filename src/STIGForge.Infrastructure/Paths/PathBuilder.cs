@@ -8,7 +8,21 @@ public sealed class PathBuilder : IPathBuilder
 
   public PathBuilder()
   {
-    _root = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData), "STIGForge");
+    _root = ResolveRoot();
+  }
+
+  private static string ResolveRoot()
+  {
+    var dir = new DirectoryInfo(Environment.CurrentDirectory);
+    while (dir != null)
+    {
+      var git = Path.Combine(dir.FullName, ".git");
+      if (Directory.Exists(git))
+        return Path.Combine(dir.FullName, ".stigforge");
+      dir = dir.Parent;
+    }
+
+    return Path.Combine(Environment.CurrentDirectory, ".stigforge");
   }
 
   public string GetAppDataRoot() => _root;
