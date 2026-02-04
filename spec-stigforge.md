@@ -113,6 +113,13 @@ Overlays persist enterprise decisions across quarters:
 - evidence recipe overrides
 - global rules: "always NA these patterns," "never apply these in safe mode," etc.
 
+Automation policy (profile-level):
+
+- automation_mode: conservative | standard | aggressive
+- new_rule_grace_days: integer (default 30)
+- auto_apply_requires_mapping: true (default) -> only auto-apply rules with known automation mapping (PowerSTIG/DSC/GPO/script)
+- release_date_source: content_pack (default) | rule_revision | manual_override
+
 ## 4) Classification Scope Auto-NA (must match THIS requirement)
 
 We are operating in a CLASSIFIED environment.
@@ -133,6 +140,17 @@ Every auto-NA must produce:
 Ambiguous items go to a "Review required" queue (never silently NA).
 
 Also support inverse (unclassified environments) as optional, but primary is classified.
+
+## 4.1) Release-Age Automation Gate (must be included)
+
+Goal: avoid unsafe auto-remediation immediately after new releases.
+
+Rules:
+
+- New or changed controls (from content pack diff) are placed in Review Required by default.
+- Auto-apply is only allowed after new_rule_grace_days has elapsed since the content pack release date.
+- Auto-apply only when automation mapping exists and confidence is high.
+- If release date is missing or ambiguous, default to Review Required (never auto-apply).
 
 ## 5) Pipeline & Workflows (ELI5-friendly UX must be achievable)
 
@@ -162,6 +180,24 @@ Must have:
 - safe/full mode behavior
 - conflict detection (GPO vs DSC vs scripts)
 - rollback snapshot (at least policy exports / key state backups)
+
+Apply stages (fresh image/VM requirements):
+
+- Preflight gate (MUST): admin rights, OS/role match, disk space, pending reboot check, PowerShell host availability (WinPS 5.1 for DSC), execution policy handled at process scope, module import test, constrained language mode detection.
+- Stage DSC modules (MUST): bundle includes Apply/Modules/ with PowerSTIG + DSC resources; Apply must register module path or install to system module directory (profile-controlled).
+- Configure LCM (MUST): set ApplyOnly for imaging baseline; record previous LCM and optionally restore post-run.
+- Compile + Apply (MUST): generate MOF (PowerSTIG/custom DSC), run Start-DscConfiguration -Wait -Force, capture verbose logs and DSC status output.
+- Reboot coordinator (MUST): if reboot required, reboot and resume apply; re-run DSC until convergence (max N passes).
+
+Apply bundle payload (MUST):
+
+- Apply/Modules/ (PowerSTIG + DSC resources + custom resources)
+- Apply/Preflight/ (preflight scripts)
+- Apply/RunApply.ps1 (single entrypoint to stage modules, set LCM, apply, reboot/resume)
+
+Automation gap handling (MUST):
+
+- If PowerSTIG lacks a mapping for new controls, fall back to custom DSC resources or scripts and mark automation_source accordingly (PowerSTIG vs CustomDSC vs Script).
 
 ### 5.3 Verify
 
