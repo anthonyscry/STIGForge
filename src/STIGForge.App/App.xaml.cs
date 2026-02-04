@@ -3,18 +3,22 @@ using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
+using STIGForge.Build;
 using STIGForge.Content.Import;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Services;
+using STIGForge.Apply.Snapshot;
 using STIGForge.Infrastructure.Hashing;
 using STIGForge.Infrastructure.Paths;
 using STIGForge.Infrastructure.Storage;
+using STIGForge.Infrastructure.System;
 
 namespace STIGForge.App;
 
 public partial class App : Application
 {
   private IHost? _host;
+  public IServiceProvider Services => _host!.Services;
 
   protected override void OnStartup(StartupEventArgs e)
   {
@@ -30,7 +34,9 @@ public partial class App : Application
       .ConfigureServices(services =>
       {
         services.AddSingleton<IClock, SystemClock>();
+        services.AddSingleton<IProcessRunner, ProcessRunner>();
         services.AddSingleton<IClassificationScopeService, ClassificationScopeService>();
+        services.AddSingleton<STIGForge.Core.Services.ReleaseAgeGate>();
 
         services.AddSingleton<IPathBuilder, PathBuilder>();
         services.AddSingleton<IHashingService, Sha256HashingService>();
@@ -53,6 +59,14 @@ public partial class App : Application
         services.AddSingleton<IOverlayRepository>(sp => new SqliteJsonOverlayRepository(sp.GetRequiredService<string>()));
 
         services.AddSingleton<ContentPackImporter>();
+        services.AddSingleton<BundleBuilder>();
+        services.AddSingleton<SnapshotService>();
+        services.AddSingleton<RollbackScriptGenerator>();
+        services.AddSingleton<STIGForge.Apply.ApplyRunner>();
+        services.AddSingleton<BundleOrchestrator>();
+        services.AddSingleton<STIGForge.Export.EmassExporter>();
+        services.AddSingleton<STIGForge.Evidence.EvidenceCollector>();
+        services.AddSingleton<OverlayEditorViewModel>();
 
         services.AddSingleton<MainViewModel>();
         services.AddSingleton<MainWindow>();
