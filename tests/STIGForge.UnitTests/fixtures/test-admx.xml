@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<policyDefinitions xmlns="http://schemas.microsoft.com/GroupPolicy/2006/07/PolicyDefinitions">
+  <policyNamespaces>
+    <target prefix="test" namespace="Microsoft.Policies.Test" />
+  </policyNamespaces>
+  <policies>
+    <policy name="TestPolicy1" class="Machine" displayName="$(string.TestPolicy1)" key="SOFTWARE\Policies\Test">
+      <parentCategory ref="TestCategory" />
+      <supportedOn ref="windows:SUPPORTED_Windows10" />
+      <elements>
+        <boolean id="TestPolicy1_Enabled" valueName="Enabled" />
+      </elements>
+    </policy>
+    <policy name="TestPolicy2" class="User" displayName="$(string.TestPolicy2)" key="SOFTWARE\Policies\Test\User">
+      <parentCategory ref="TestCategory" />
+      <supportedOn ref="windows:SUPPORTED_Windows10" />
+      <elements>
+        <decimal id="TestPolicy2_Value" valueName="MaxValue" />
+      </elements>
+    </policy>
+  </policies>
+</policyDefinitions>

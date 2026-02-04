@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<oval_definitions xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5">
+  <definitions>
+    <definition id="oval:gov.disa.stig:def:1001" class="compliance">
+      <metadata>
+        <title>Test OVAL Definition 1</title>
+        <description>This is a test OVAL definition for unit testing</description>
+      </metadata>
+    </definition>
+    <definition id="oval:gov.disa.stig:def:1002" class="inventory">
+      <metadata>
+        <title>Test OVAL Definition 2</title>
+        <description>Second test definition</description>
+      </metadata>
+    </definition>
+  </definitions>
+</oval_definitions>

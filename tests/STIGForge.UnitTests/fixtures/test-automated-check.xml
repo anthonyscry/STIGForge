@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Benchmark xmlns="http://checklists.nist.gov/xccdf/1.2" id="test-benchmark-automated">
+  <Rule id="SV-789012r1_rule" severity="high">
+    <title>Test Automated Check V-78901</title>
+    <description>This is a test description for automated check</description>
+    <check system="http://scap.nist.gov/schema/scap/1.2">
+      <check-content>Automated SCAP check content</check-content>
+    </check>
+    <fixtext>Apply the security fix via automation</fixtext>
+  </Rule>
+</Benchmark>

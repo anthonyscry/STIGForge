@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Benchmark xmlns="http://checklists.nist.gov/xccdf/1.2" id="test-scap-benchmark">
+  <Rule id="SV-999999r1_rule" severity="medium">
+    <title>Test SCAP Bundle Rule</title>
+    <description>Test rule from SCAP bundle</description>
+    <check system="http://scap.nist.gov/schema/ocil/2">
+      <check-content>Automated check via SCC</check-content>
+    </check>
+    <fixtext>Apply the fix</fixtext>
+  </Rule>
+</Benchmark>
