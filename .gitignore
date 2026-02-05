@@ -22,3 +22,6 @@ import/
 
 # Planning docs
 .planning/
+
+# Worktrees
+.worktrees/
