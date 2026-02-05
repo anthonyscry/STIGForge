@@ -7,6 +7,7 @@ using System.IO;
 using System.Text.Json;
 using System.Text;
 using System.Windows.Data;
+using STIGForge.App.Models;
 using STIGForge.Build;
 using STIGForge.Content.Import;
 using STIGForge.Core.Abstractions;
@@ -28,6 +29,7 @@ public partial class MainViewModel : ObservableObject
   private readonly IPathBuilder _paths;
   private readonly EvidenceCollector _evidence;
   private ICollectionView? _manualView;
+  private ICollectionView? _diffView;
 
   [ObservableProperty] private string statusText = "Ready.";
   [ObservableProperty] private string importHint = "Import the quarterly DISA zip(s). v1: parses XCCDF lightly.";
@@ -56,6 +58,8 @@ public partial class MainViewModel : ObservableObject
   public ObservableCollection<OverlapItem> OverlapItems { get; } = new();
   public ObservableCollection<ManualControlItem> ManualControls { get; } = new();
   public ICollectionView ManualControlsView => _manualView ??= CollectionViewSource.GetDefaultView(ManualControls);
+  public ObservableCollection<DiffItem> DiffItems { get; } = new();
+  public ICollectionView DiffItemsView => _diffView ??= CollectionViewSource.GetDefaultView(DiffItems);
 
   [ObservableProperty] private ContentPack? selectedPack;
   [ObservableProperty] private Profile? selectedProfile;
@@ -86,6 +90,7 @@ public partial class MainViewModel : ObservableObject
   [ObservableProperty] private string manualFilterText = "";
   [ObservableProperty] private string manualStatusFilter = "All";
   [ObservableProperty] private string manualSummary = "";
+  [ObservableProperty] private bool showManualOnly;
 
   public IReadOnlyList<string> EvidenceTypes { get; } = new[]
   {
@@ -165,6 +170,7 @@ public partial class MainViewModel : ObservableObject
       LoadCoverageOverlap();
       LoadManualControls();
       ConfigureManualView();
+      ConfigureDiffView();
     }
     catch (Exception ex)
     {
@@ -595,6 +601,11 @@ public partial class MainViewModel : ObservableObject
     RefreshManualView();
   }
 
+  partial void OnShowManualOnlyChanged(bool value)
+  {
+    RefreshDiffView();
+  }
+
   partial void OnIsBusyChanged(bool value)
   {
     OnPropertyChanged(nameof(ActionsEnabled));
@@ -784,6 +795,54 @@ public partial class MainViewModel : ObservableObject
     LoadCoverageOverlap();
   }
 
+  [RelayCommand]
+  private void LoadDiff()
+  {
+    DiffItems.Clear();
+    var pack = SelectedPack;
+    if (pack == null)
+    {
+      StatusText = "Select a pack first.";
+      return;
+    }
+
+    var path = FindLatestDiffJson(pack);
+    if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+    {
+      StatusText = "No diff report found for selected pack.";
+      return;
+    }
+
+    var json = File.ReadAllText(path);
+    var diff = JsonSerializer.Deserialize<ReleaseDiff>(json, new JsonSerializerOptions
+    {
+      PropertyNameCaseInsensitive = true
+    });
+
+    if (diff == null)
+    {
+      StatusText = "Diff report could not be parsed.";
+      return;
+    }
+
+    foreach (var item in diff.Items)
+    {
+      DiffItems.Add(new DiffItem
+      {
+        RuleId = item.RuleId ?? string.Empty,
+        VulnId = item.VulnId ?? string.Empty,
+        Title = item.Title ?? string.Empty,
+        Kind = item.Kind.ToString(),
+        IsManual = item.IsManual,
+        ManualChanged = item.ManualChanged,
+        ChangedFields = item.ChangedFields == null ? string.Empty : string.Join(";", item.ChangedFields)
+      });
+    }
+
+    RefreshDiffView();
+    StatusText = "Loaded diff: " + Path.GetFileName(path);
+  }
+
   private void LoadCoverageOverlap()
   {
     OverlapItems.Clear();
@@ -807,6 +866,21 @@ public partial class MainViewModel : ObservableObject
         OpenCount = SafeInt(parts[4])
       });
     }
+  }
+
+  private string? FindLatestDiffJson(ContentPack pack)
+  {
+    var root = _paths.GetPackRoot(pack.PackId);
+    var diffRoot = Path.Combine(root, "Reports", "Diff");
+    if (!Directory.Exists(diffRoot)) return null;
+
+    var known = Path.Combine(diffRoot, "release_diff.json");
+    if (File.Exists(known)) return known;
+
+    var files = Directory.GetFiles(diffRoot, "*.json");
+    if (files.Length == 0) return null;
+
+    return files.OrderByDescending(File.GetLastWriteTimeUtc).FirstOrDefault();
   }
 
   private void LoadManualControls()
@@ -835,6 +909,24 @@ public partial class MainViewModel : ObservableObject
       }
       ManualControls.Add(item);
     }
+  }
+
+  private void ConfigureDiffView()
+  {
+    var view = DiffItemsView;
+    view.SortDescriptions.Clear();
+    view.SortDescriptions.Add(new SortDescription(nameof(DiffItem.ManualChanged), ListSortDirection.Descending));
+    view.SortDescriptions.Add(new SortDescription(nameof(DiffItem.RuleId), ListSortDirection.Ascending));
+    view.Filter = item =>
+    {
+      if (!ShowManualOnly) return true;
+      return item is DiffItem diff && diff.ManualChanged;
+    };
+  }
+
+  private void RefreshDiffView()
+  {
+    DiffItemsView.Refresh();
   }
 
   private AnswerFile LoadAnswerFile()
@@ -1034,6 +1126,8 @@ public partial class MainViewModel : ObservableObject
 
   partial void OnSelectedPackChanged(ContentPack? value)
   {
+    DiffItems.Clear();
+    RefreshDiffView();
     if (value == null)
     {
       ClearPackDetails();
