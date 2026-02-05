@@ -920,7 +920,7 @@ public partial class MainViewModel : ObservableObject
     view.Filter = item =>
     {
       if (!ShowManualOnly) return true;
-      return item is DiffItem diff && diff.ManualChanged;
+      return item is DiffItem diff && diff.IsManual;
     };
   }
 
