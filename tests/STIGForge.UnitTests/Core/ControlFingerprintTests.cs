@@ -44,4 +44,13 @@ public sealed class ControlFingerprintTests
 
     Assert.NotEqual(ControlFingerprint.Compute(a), ControlFingerprint.Compute(b));
   }
+
+  [Fact]
+  public void Compute_DelimiterContent_DifferentHash()
+  {
+    var a = new ControlRecord { Title = "A|B", Severity = "C" };
+    var b = new ControlRecord { Title = "A", Severity = "B|C" };
+
+    Assert.NotEqual(ControlFingerprint.Compute(a), ControlFingerprint.Compute(b));
+  }
 }

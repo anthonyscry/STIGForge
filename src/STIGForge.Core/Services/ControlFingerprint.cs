@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using STIGForge.Core.Models;
@@ -8,7 +9,7 @@ public static class ControlFingerprint
 {
   public static string Compute(ControlRecord control)
   {
-    var text = string.Join("|", new[]
+    var fields = new[]
     {
       control.ExternalIds.RuleId ?? string.Empty,
       control.ExternalIds.VulnId ?? string.Empty,
@@ -18,7 +19,15 @@ public static class ControlFingerprint
       control.CheckText ?? string.Empty,
       control.FixText ?? string.Empty,
       control.IsManual ? "manual" : "auto"
-    });
+    };
+    var builder = new StringBuilder();
+    foreach (var field in fields)
+    {
+      builder.Append(field.Length.ToString(CultureInfo.InvariantCulture));
+      builder.Append(':');
+      builder.Append(field);
+    }
+    var text = builder.ToString();
 
     using var sha = SHA256.Create();
     var bytes = Encoding.UTF8.GetBytes(text);
