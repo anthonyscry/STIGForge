@@ -14,8 +14,9 @@ dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- import-pack C:\
 ```
 4) Build a bundle (CLI):
 ```powershell
-dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- build-bundle --pack-id <PACK_ID> --profile-json .\docs\samples\Profile-Classified-Win11.json --save-profile --force-auto-apply
+dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- build-bundle --pack-id <PACK_ID> --profile-json .\docs\samples\Profile-Classified-Win11.json --save-profile
 ```
+Auto-apply is enabled by default for new profiles. To disable it, uncheck "Auto-apply unattended" in the app or pass `--auto-apply false` to the CLI build command.
 5) Apply (CLI):
 ```powershell
 dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- apply-run --bundle C:\path\to\bundle --mode Safe --script C:\path\to\apply.ps1 --script-args "-Example 1"

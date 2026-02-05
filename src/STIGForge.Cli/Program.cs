@@ -94,7 +94,8 @@ var profileJsonOpt = new Option<string>("--profile-json", "Path to profile JSON 
 var bundleIdOpt = new Option<string>("--bundle-id", "Bundle id (optional)");
 var outputOpt = new Option<string>("--output", "Output path override (optional)");
 var saveProfileOpt = new Option<bool>("--save-profile", "Save profile to repo when using --profile-json");
-var forceAutoApplyOpt = new Option<bool>("--force-auto-apply", "Override release-age gate (use with caution)");
+var autoApplyOpt = new Option<bool>("--auto-apply", () => true, "Enable unattended auto-apply (override release-age gate)");
+autoApplyOpt.AddAlias("--force-auto-apply");
 
 buildCmd.AddOption(packIdOpt);
 buildCmd.AddOption(profileIdOpt);
@@ -102,9 +103,9 @@ buildCmd.AddOption(profileJsonOpt);
 buildCmd.AddOption(bundleIdOpt);
 buildCmd.AddOption(outputOpt);
 buildCmd.AddOption(saveProfileOpt);
-buildCmd.AddOption(forceAutoApplyOpt);
+buildCmd.AddOption(autoApplyOpt);
 
-buildCmd.SetHandler(async (packId, profileId, profileJson, bundleId, output, saveProfile, forceAutoApply) =>
+buildCmd.SetHandler(async (packId, profileId, profileJson, bundleId, output, saveProfile, autoApply) =>
 {
   using var host = BuildHost();
   await host.StartAsync();
@@ -163,7 +164,7 @@ buildCmd.SetHandler(async (packId, profileId, profileJson, bundleId, output, sav
     Controls = list,
     Overlays = overlays,
     ToolVersion = "0.1.0-dev",
-    ForceAutoApply = forceAutoApply
+    ForceAutoApply = autoApply
   }, CancellationToken.None);
 
   Console.WriteLine("Bundle created: " + result.BundleRoot);
@@ -173,7 +174,7 @@ buildCmd.SetHandler(async (packId, profileId, profileJson, bundleId, output, sav
     Console.WriteLine("Automation gate: " + gatePath);
 
   await host.StopAsync();
-}, packIdOpt, profileIdOpt, profileJsonOpt, bundleIdOpt, outputOpt, saveProfileOpt, forceAutoApplyOpt);
+}, packIdOpt, profileIdOpt, profileJsonOpt, bundleIdOpt, outputOpt, saveProfileOpt, autoApplyOpt);
 
 rootCmd.AddCommand(buildCmd);
 

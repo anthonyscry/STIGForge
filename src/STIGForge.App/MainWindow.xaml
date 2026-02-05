@@ -116,6 +116,7 @@
             </StackPanel>
 
             <CheckBox Content="Auto-NA out-of-scope controls" Margin="0,8,0,0" IsChecked="{Binding ProfileAutoNa}" />
+            <CheckBox Content="Auto-apply unattended (override release-age gate)" Margin="0,6,0,0" IsChecked="{Binding ProfileAutoApply}" />
 
             <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
               <TextBlock Text="Grace days:" Width="80" VerticalAlignment="Center" />

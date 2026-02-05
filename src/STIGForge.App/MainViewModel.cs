@@ -68,6 +68,7 @@ public partial class MainViewModel : ObservableObject
   [ObservableProperty] private string profileClassification = "Classified";
   [ObservableProperty] private int profileGraceDays = 30;
   [ObservableProperty] private bool profileAutoNa = true;
+  [ObservableProperty] private bool profileAutoApply = true;
   [ObservableProperty] private string profileNaComment = "Not applicable: unclassified-only control; system is classified.";
   [ObservableProperty] private string packDetailName = "";
   [ObservableProperty] private string packDetailId = "";
@@ -254,7 +255,8 @@ public partial class MainViewModel : ObservableObject
         Profile = profile,
         Controls = controlList,
         Overlays = overlays,
-        ToolVersion = "0.1.0-dev"
+        ToolVersion = "0.1.0-dev",
+        ForceAutoApply = ProfileAutoApply
       }, CancellationToken.None);
 
       var gatePath = Path.Combine(result.BundleRoot, "Reports", "automation_gate.json");
