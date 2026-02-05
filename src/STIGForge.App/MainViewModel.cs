@@ -289,6 +289,7 @@ public partial class MainViewModel : ObservableObject
       profile.RoleTemplate = RoleTemplate.Workstation;
       profile.HardeningMode = ParseMode(ProfileMode);
       profile.ClassificationMode = ParseClassification(ProfileClassification);
+      profile.AutoApply = ProfileAutoApply;
       profile.NaPolicy = new NaPolicy
       {
         AutoNaOutOfScope = ProfileAutoNa,
@@ -1215,6 +1216,7 @@ public partial class MainViewModel : ObservableObject
     ProfileMode = profile.HardeningMode.ToString();
     ProfileClassification = profile.ClassificationMode.ToString();
     ProfileGraceDays = profile.AutomationPolicy.NewRuleGraceDays;
+    ProfileAutoApply = profile.AutoApply;
     ProfileAutoNa = profile.NaPolicy.AutoNaOutOfScope;
     ProfileNaComment = profile.NaPolicy.DefaultNaCommentTemplate;
   }

@@ -37,6 +37,7 @@ public sealed class Profile
   public RoleTemplate RoleTemplate { get; set; }
   public HardeningMode HardeningMode { get; set; }
   public ClassificationMode ClassificationMode { get; set; }
+  public bool AutoApply { get; set; } = true;
   public NaPolicy NaPolicy { get; set; } = new();
   public AutomationPolicy AutomationPolicy { get; set; } = new();
   public IReadOnlyList<string> OverlayIds { get; set; } = Array.Empty<string>();
