@@ -40,10 +40,27 @@ public sealed class ReleaseDiffService
   private static Dictionary<string, ControlRecord> IndexByKey(IEnumerable<ControlRecord> controls)
   {
     var map = new Dictionary<string, ControlRecord>(StringComparer.OrdinalIgnoreCase);
+    var counts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
     foreach (var c in controls)
     {
-      var key = GetKey(c);
-      if (!map.ContainsKey(key)) map[key] = c;
+      var baseKey = GetKey(c);
+      if (!counts.TryGetValue(baseKey, out var count))
+      {
+        counts[baseKey] = 1;
+        map[baseKey] = c;
+        continue;
+      }
+
+      count++;
+      counts[baseKey] = count;
+      var key = $"{baseKey}#{count}";
+      while (map.ContainsKey(key))
+      {
+        count++;
+        counts[baseKey] = count;
+        key = $"{baseKey}#{count}";
+      }
+      map[key] = c;
     }
     return map;
   }
@@ -52,7 +69,10 @@ public sealed class ReleaseDiffService
   {
     if (!string.IsNullOrWhiteSpace(c.ExternalIds.RuleId)) return "RULE:" + c.ExternalIds.RuleId!.Trim();
     if (!string.IsNullOrWhiteSpace(c.ExternalIds.VulnId)) return "VULN:" + c.ExternalIds.VulnId!.Trim();
-    return "TITLE:" + (c.Title ?? string.Empty).Trim();
+    var title = (c.Title ?? string.Empty).Trim();
+    var controlId = c.ControlId?.Trim();
+    if (!string.IsNullOrWhiteSpace(controlId)) return $"TITLE:{title}|CTRL:{controlId}";
+    return "TITLE:" + title;
   }
 
   private static ControlDiff ToDiff(string key, ControlRecord? from, ControlRecord? to, DiffKind kind, string? fromHash = null, string? toHash = null)

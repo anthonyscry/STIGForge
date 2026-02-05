@@ -26,4 +26,28 @@ public sealed class ReleaseDiffServiceTests
     Assert.Contains(diff.Items, i => i.RuleId == "SV-2" && i.Kind == DiffKind.Removed);
     Assert.Contains(diff.Items, i => i.RuleId == "SV-1" && i.Kind == DiffKind.Changed && i.ManualChanged);
   }
+
+  [Fact]
+  public void Diff_DoesNotDropDuplicateTitleFallbackKeys()
+  {
+    var from = new List<ControlRecord>
+    {
+      new() { ControlId = "C-1", Title = "Duplicate", ExternalIds = new ExternalIds() },
+      new() { ControlId = string.Empty, Title = "Duplicate", ExternalIds = new ExternalIds() },
+      new() { ControlId = string.Empty, Title = "Duplicate", ExternalIds = new ExternalIds() }
+    };
+
+    var diff = new ReleaseDiffService().Diff("packA", "packB", from, Array.Empty<ControlRecord>());
+
+    Assert.Equal(3, diff.Items.Count);
+    Assert.Contains(diff.Items, i => i.Key.Contains("C-1", StringComparison.OrdinalIgnoreCase));
+
+    var titleOnlyKeys = diff.Items
+      .Where(i => !i.Key.Contains("C-1", StringComparison.OrdinalIgnoreCase))
+      .Select(i => i.Key)
+      .ToList();
+
+    Assert.Equal(2, titleOnlyKeys.Count);
+    Assert.Equal(2, new HashSet<string>(titleOnlyKeys, StringComparer.OrdinalIgnoreCase).Count);
+  }
 }
