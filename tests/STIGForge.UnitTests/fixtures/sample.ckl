@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<CHECKLIST>
+  <STIGS>
+    <iSTIG>
+      <VULN>
+        <STIG_DATA>
+          <VULN_ATTRIBUTE>Vuln_Num</VULN_ATTRIBUTE>
+          <ATTRIBUTE_DATA>V-12345</ATTRIBUTE_DATA>
+        </STIG_DATA>
+        <STIG_DATA>
+          <VULN_ATTRIBUTE>Rule_ID</VULN_ATTRIBUTE>
+          <ATTRIBUTE_DATA>SV-12345r1_rule</ATTRIBUTE_DATA>
+        </STIG_DATA>
+        <STATUS>Open</STATUS>
+      </VULN>
+    </iSTIG>
+  </STIGS>
+</CHECKLIST>

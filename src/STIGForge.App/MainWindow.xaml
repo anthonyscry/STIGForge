@@ -224,7 +224,10 @@
               <TextBlock Text="SCAP Label:" Width="120" VerticalAlignment="Center" />
               <TextBox Width="200" Text="{Binding ScapLabel}" />
             </StackPanel>
-            <Button Content="Run Verify" Width="140" Command="{Binding VerifyRunCommand}" IsEnabled="{Binding ActionsEnabled}" />
+            <StackPanel Orientation="Horizontal">
+              <Button Content="Run Verify" Width="140" Command="{Binding VerifyRunCommand}" IsEnabled="{Binding ActionsEnabled}" />
+              <Button Content="Ingest CKL Folder" Width="160" Margin="6,0,0,0" Command="{Binding IngestCklFolderCommand}" IsEnabled="{Binding ActionsEnabled}" />
+            </StackPanel>
             <TextBlock Text="Runs Evaluate-STIG / SCAP if configured" Margin="0,8,0,0" />
             <TextBlock Text="{Binding VerifyStatus}" Margin="0,6,0,0" Foreground="Gray" />
             <TextBlock Text="{Binding VerifySummary}" Margin="0,6,0,0" Foreground="Gray" />

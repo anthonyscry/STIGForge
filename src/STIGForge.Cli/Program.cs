@@ -415,6 +415,33 @@ evalCmd.SetHandler((toolRoot, args, workDir, logPath, outputRoot) =>
 
 rootCmd.AddCommand(evalCmd);
 
+var ingestCmd = new Command("verify-ingest", "Consolidate CKL results into JSON/CSV");
+var ingestOutputOpt = new Option<string>("--output-root", "Folder to scan for generated CKL files") { IsRequired = true };
+var ingestToolOpt = new Option<string>("--tool", () => "CKL", "Tool label used in reports");
+
+ingestCmd.AddOption(ingestOutputOpt);
+ingestCmd.AddOption(ingestToolOpt);
+
+ingestCmd.SetHandler((outputRoot, toolName) =>
+{
+  if (string.IsNullOrWhiteSpace(outputRoot))
+    throw new ArgumentException("Provide --output-root.");
+  if (!Directory.Exists(outputRoot))
+    throw new DirectoryNotFoundException("Output root not found: " + outputRoot);
+
+  var report = VerifyReportWriter.BuildFromCkls(outputRoot, toolName);
+  var jsonPath = Path.Combine(outputRoot, "consolidated-results.json");
+  var csvPath = Path.Combine(outputRoot, "consolidated-results.csv");
+  VerifyReportWriter.WriteJson(jsonPath, report);
+  VerifyReportWriter.WriteCsv(csvPath, report.Results);
+
+  Console.WriteLine("Wrote consolidated results:");
+  Console.WriteLine("  " + jsonPath);
+  Console.WriteLine("  " + csvPath);
+}, ingestOutputOpt, ingestToolOpt);
+
+rootCmd.AddCommand(ingestCmd);
+
 var applyCmd = new Command("apply-run", "Run apply phase using a bundle and optional script");
 var bundleOpt = new Option<string>("--bundle", "Path to bundle root") { IsRequired = true };
 var modeOpt = new Option<string>("--mode", () => string.Empty, "Override mode: AuditOnly|Safe|Full");

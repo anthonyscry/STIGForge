@@ -446,6 +446,60 @@ public partial class MainViewModel : ObservableObject
   }
 
   [RelayCommand]
+  private void IngestCklFolder()
+  {
+    if (IsBusy) return;
+
+    var dialog = new System.Windows.Forms.FolderBrowserDialog
+    {
+      Description = "Select CKL output folder",
+      ShowNewFolderButton = false
+    };
+
+    if (dialog.ShowDialog() != System.Windows.Forms.DialogResult.OK) return;
+    var folder = dialog.SelectedPath;
+    if (string.IsNullOrWhiteSpace(folder)) return;
+
+    try
+    {
+      IsBusy = true;
+      var report = STIGForge.Verify.VerifyReportWriter.BuildFromCkls(folder, "CKL");
+      var jsonPath = Path.Combine(folder, "consolidated-results.json");
+      var csvPath = Path.Combine(folder, "consolidated-results.csv");
+      STIGForge.Verify.VerifyReportWriter.WriteJson(jsonPath, report);
+      STIGForge.Verify.VerifyReportWriter.WriteCsv(csvPath, report.Results);
+
+      var overlaps = STIGForge.Verify.VerifyReportWriter.BuildOverlapSummary(report.Results);
+      UpdateOverlapItems(overlaps);
+
+      if (!string.IsNullOrWhiteSpace(BundleRoot))
+      {
+        var reportsRoot = Path.Combine(BundleRoot, "Reports");
+        Directory.CreateDirectory(reportsRoot);
+        STIGForge.Verify.VerifyReportWriter.WriteOverlapSummary(
+          Path.Combine(reportsRoot, "coverage_overlap.csv"),
+          Path.Combine(reportsRoot, "coverage_overlap.json"),
+          overlaps);
+      }
+
+      var total = report.Results.Count;
+      var open = report.Results.Count(r => r.Status != null && r.Status.IndexOf("open", StringComparison.OrdinalIgnoreCase) >= 0);
+      var closed = total - open;
+      VerifySummary = "Ingested: total=" + total + " closed=" + closed + " open=" + open;
+      VerifyStatus = "Ingested CKL folder: " + folder;
+      LastOutputPath = folder;
+    }
+    catch (Exception ex)
+    {
+      VerifyStatus = "CKL ingest failed: " + ex.Message;
+    }
+    finally
+    {
+      IsBusy = false;
+    }
+  }
+
+  [RelayCommand]
   private async Task ExportEmassAsync()
   {
     if (IsBusy) return;
@@ -864,6 +918,22 @@ public partial class MainViewModel : ObservableObject
         ControlsCount = SafeInt(parts[2]),
         ClosedCount = SafeInt(parts[3]),
         OpenCount = SafeInt(parts[4])
+      });
+    }
+  }
+
+  private void UpdateOverlapItems(IReadOnlyList<STIGForge.Verify.CoverageOverlap> overlaps)
+  {
+    OverlapItems.Clear();
+    foreach (var item in overlaps)
+    {
+      OverlapItems.Add(new OverlapItem
+      {
+        SourcesKey = item.SourcesKey,
+        SourceCount = item.SourceCount,
+        ControlsCount = item.ControlsCount,
+        ClosedCount = item.ClosedCount,
+        OpenCount = item.OpenCount
       });
     }
   }
