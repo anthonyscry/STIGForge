@@ -50,4 +50,28 @@ public sealed class ReleaseDiffServiceTests
     Assert.Equal(2, titleOnlyKeys.Count);
     Assert.Equal(2, new HashSet<string>(titleOnlyKeys, StringComparer.OrdinalIgnoreCase).Count);
   }
+
+  [Fact]
+  public void Diff_UsesDeterministicKeysForDuplicateBaseKey()
+  {
+    var controlA = new ControlRecord
+    {
+      Title = "Duplicate",
+      CheckText = "Check A",
+      ExternalIds = new ExternalIds()
+    };
+    var controlB = new ControlRecord
+    {
+      Title = "Duplicate",
+      CheckText = "Check B",
+      ExternalIds = new ExternalIds()
+    };
+
+    var from = new List<ControlRecord> { controlA, controlB };
+    var to = new List<ControlRecord> { controlB, controlA };
+
+    var diff = new ReleaseDiffService().Diff("packA", "packB", from, to);
+
+    Assert.All(diff.Items, item => Assert.Equal(DiffKind.Unchanged, item.Kind));
+  }
 }

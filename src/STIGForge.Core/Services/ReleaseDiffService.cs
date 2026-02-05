@@ -40,27 +40,36 @@ public sealed class ReleaseDiffService
   private static Dictionary<string, ControlRecord> IndexByKey(IEnumerable<ControlRecord> controls)
   {
     var map = new Dictionary<string, ControlRecord>(StringComparer.OrdinalIgnoreCase);
-    var counts = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
-    foreach (var c in controls)
+    foreach (var group in controls.GroupBy(GetKey, StringComparer.OrdinalIgnoreCase))
     {
-      var baseKey = GetKey(c);
-      if (!counts.TryGetValue(baseKey, out var count))
+      var items = group.ToList();
+      if (items.Count == 1)
       {
-        counts[baseKey] = 1;
-        map[baseKey] = c;
+        map[group.Key] = items[0];
         continue;
       }
 
-      count++;
-      counts[baseKey] = count;
-      var key = $"{baseKey}#{count}";
-      while (map.ContainsKey(key))
+      var fingerprintGroups = items
+        .Select(c => (Control: c, Fingerprint: ControlFingerprint.Compute(c)))
+        .GroupBy(item => item.Fingerprint, StringComparer.OrdinalIgnoreCase)
+        .OrderBy(item => item.Key, StringComparer.OrdinalIgnoreCase);
+
+      foreach (var fingerprintGroup in fingerprintGroups)
       {
-        count++;
-        counts[baseKey] = count;
-        key = $"{baseKey}#{count}";
+        var fingerprintItems = fingerprintGroup.ToList();
+        if (fingerprintItems.Count == 1)
+        {
+          var key = $"{group.Key}#FP:{fingerprintGroup.Key}";
+          map[key] = fingerprintItems[0].Control;
+          continue;
+        }
+
+        for (var index = 0; index < fingerprintItems.Count; index++)
+        {
+          var key = $"{group.Key}#FP:{fingerprintGroup.Key}#{index + 1}";
+          map[key] = fingerprintItems[index].Control;
+        }
       }
-      map[key] = c;
     }
     return map;
   }
