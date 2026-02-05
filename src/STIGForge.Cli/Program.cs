@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
 using STIGForge.Build;
+using STIGForge.Content.Diff;
 using STIGForge.Content.Import;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
@@ -33,6 +34,7 @@ static IHost BuildHost()
       services.AddSingleton<IProcessRunner, ProcessRunner>();
       services.AddSingleton<IClassificationScopeService, ClassificationScopeService>();
       services.AddSingleton<STIGForge.Core.Services.ReleaseAgeGate>();
+      services.AddSingleton<ReleaseDiffService>();
       services.AddSingleton<IPathBuilder, PathBuilder>();
       services.AddSingleton<IHashingService, Sha256HashingService>();
 
@@ -174,6 +176,54 @@ buildCmd.SetHandler(async (packId, profileId, profileJson, bundleId, output, sav
 }, packIdOpt, profileIdOpt, profileJsonOpt, bundleIdOpt, outputOpt, saveProfileOpt, forceAutoApplyOpt);
 
 rootCmd.AddCommand(buildCmd);
+
+var diffCmd = new Command("diff-packs", "Generate diff report between two content packs");
+var fromPackIdOpt = new Option<string>("--from-pack-id", "Older pack id") { IsRequired = true };
+var toPackIdOpt = new Option<string>("--to-pack-id", "Newer pack id") { IsRequired = true };
+
+diffCmd.AddOption(fromPackIdOpt);
+diffCmd.AddOption(toPackIdOpt);
+
+diffCmd.SetHandler(async (fromPackId, toPackId) =>
+{
+  using var host = BuildHost();
+  await host.StartAsync();
+
+  var packs = host.Services.GetRequiredService<IContentPackRepository>();
+  var controls = host.Services.GetRequiredService<IControlRepository>();
+  var paths = host.Services.GetRequiredService<IPathBuilder>();
+  var diffService = host.Services.GetRequiredService<ReleaseDiffService>();
+
+  var fromPack = await packs.GetAsync(fromPackId, CancellationToken.None);
+  if (fromPack is null) throw new ArgumentException("Pack not found: " + fromPackId);
+
+  var toPack = await packs.GetAsync(toPackId, CancellationToken.None);
+  if (toPack is null) throw new ArgumentException("Pack not found: " + toPackId);
+
+  var fromControls = await controls.ListControlsAsync(fromPackId, CancellationToken.None);
+  var toControls = await controls.ListControlsAsync(toPackId, CancellationToken.None);
+
+  var diff = diffService.Diff(fromPackId, toPackId, fromControls, toControls);
+
+  var fromStamp = fromPack.ReleaseDate ?? fromPack.ImportedAt;
+  var toStamp = toPack.ReleaseDate ?? toPack.ImportedAt;
+  var newerPack = toStamp >= fromStamp ? toPack : fromPack;
+  var outputRoot = Path.Combine(paths.GetPackRoot(newerPack.PackId), "Reports", "Diff");
+  Directory.CreateDirectory(outputRoot);
+
+  var jsonPath = Path.Combine(outputRoot, "release_diff.json");
+  var csvPath = Path.Combine(outputRoot, "release_diff.csv");
+  ReleaseDiffWriter.WriteJson(jsonPath, diff);
+  ReleaseDiffWriter.WriteCsv(csvPath, diff);
+
+  Console.WriteLine("Wrote diff reports:");
+  Console.WriteLine("  " + jsonPath);
+  Console.WriteLine("  " + csvPath);
+
+  await host.StopAsync();
+}, fromPackIdOpt, toPackIdOpt);
+
+rootCmd.AddCommand(diffCmd);
 
 var overlayImportCmd = new Command("overlay-import-powerstig", "Import PowerSTIG overrides from CSV");
 var overlayCsvOpt = new Option<string>("--csv", "CSV path with RuleId,SettingName,Value") { IsRequired = true };
