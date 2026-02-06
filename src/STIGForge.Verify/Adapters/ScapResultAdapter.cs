@@ -119,15 +119,15 @@ public sealed class ScapResultAdapter : IVerifyResultAdapter
 
     var metadata = new Dictionary<string, string>();
     if (!string.IsNullOrWhiteSpace(ruleIdAttr))
-      metadata["rule_id"] = ruleIdAttr;
+      metadata["rule_id"] = ruleIdAttr!;
     if (!string.IsNullOrWhiteSpace(cceId))
-      metadata["cce_id"] = cceId;
+      metadata["cce_id"] = cceId!;
     if (!string.IsNullOrWhiteSpace(checkHref))
-      metadata["check_href"] = checkHref;
+      metadata["check_href"] = checkHref!;
     if (!string.IsNullOrWhiteSpace(checkName))
-      metadata["check_name"] = checkName;
+      metadata["check_name"] = checkName!;
     if (!string.IsNullOrWhiteSpace(timeAttr))
-      metadata["check_time"] = timeAttr;
+      metadata["check_time"] = timeAttr!;
 
     // Extract severity from weight attribute if present
     var weight = ruleResult.Attribute("weight")?.Value;
@@ -166,7 +166,7 @@ public sealed class ScapResultAdapter : IVerifyResultAdapter
     if (string.IsNullOrWhiteSpace(scapStatus))
       return VerifyStatus.Unknown;
 
-    return scapStatus.ToLowerInvariant() switch
+    return scapStatus!.ToLowerInvariant() switch
     {
       "pass" => VerifyStatus.Pass,
       "fail" => VerifyStatus.Fail,

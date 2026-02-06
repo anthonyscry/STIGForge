@@ -389,7 +389,6 @@ public class SnapshotIntegrationTests
         // Arrange
         var snapshotService = _serviceProvider.GetRequiredService<SnapshotService>();
         var tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N")[..8]);
-        SnapshotResult? result = null;
         
         try
         {

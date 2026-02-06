@@ -101,9 +101,9 @@ public sealed class CklAdapter : IVerifyResultAdapter
 
     var metadata = new Dictionary<string, string>();
     if (!string.IsNullOrWhiteSpace(severityOverride))
-      metadata["severity_override"] = severityOverride;
+      metadata["severity_override"] = severityOverride!;
     if (!string.IsNullOrWhiteSpace(severityJustification))
-      metadata["severity_justification"] = severityJustification;
+      metadata["severity_justification"] = severityJustification!;
 
     // Add all STIG_DATA to metadata for forensics
     foreach (var kvp in data)

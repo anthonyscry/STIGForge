@@ -922,7 +922,7 @@ listManualCmd.AddOption(lmBundleOpt);
 listManualCmd.AddOption(lmStatusOpt);
 listManualCmd.AddOption(lmSearchOpt);
 
-listManualCmd.SetHandler(async (InvocationContext ctx) =>
+listManualCmd.SetHandler((InvocationContext ctx) =>
 {
   var bundle = ctx.ParseResult.GetValueForOption(lmBundleOpt) ?? string.Empty;
   var statusFilter = ctx.ParseResult.GetValueForOption(lmStatusOpt) ?? string.Empty;
@@ -1174,7 +1174,7 @@ bundleSummaryCmd.SetHandler(async (InvocationContext ctx) =>
       packName = run.GetProperty("packName").GetString() ?? "unknown";
       profileName = run.GetProperty("profileName").GetString() ?? "unknown";
     }
-    catch { }
+    catch (Exception ex) { Console.Error.WriteLine("Warning: could not parse manifest: " + ex.Message); }
   }
 
   // Load controls
@@ -1192,7 +1192,7 @@ bundleSummaryCmd.SetHandler(async (InvocationContext ctx) =>
       manualControls = manualControlsList.Count;
       autoControls = totalControls - manualControls;
     }
-    catch { }
+    catch (Exception ex) { Console.Error.WriteLine("Warning: could not parse controls: " + ex.Message); }
   }
 
   // Load verify results
@@ -1217,7 +1217,7 @@ bundleSummaryCmd.SetHandler(async (InvocationContext ctx) =>
             verifyOpen++;
         }
       }
-      catch { }
+      catch (Exception ex) { Console.Error.WriteLine("Warning: could not parse verify results: " + ex.Message); }
     }
   }
 

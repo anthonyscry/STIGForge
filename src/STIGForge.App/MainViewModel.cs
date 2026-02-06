@@ -1193,7 +1193,7 @@ public partial class MainViewModel : ObservableObject
         DashPackLabel = root.TryGetProperty("packName", out var pn) ? pn.GetString() ?? "" : "";
         DashProfileLabel = root.TryGetProperty("profileName", out var pr) ? pr.GetString() ?? "" : "";
       }
-      catch { }
+      catch (Exception ex) { System.Diagnostics.Debug.WriteLine("Dashboard manifest load failed: " + ex.Message); }
     }
 
     // Load controls count
@@ -1209,7 +1209,7 @@ public partial class MainViewModel : ObservableObject
         DashManualControls = controls.Count(c => c.IsManual);
         DashAutoControls = DashTotalControls - DashManualControls;
       }
-      catch { }
+      catch (Exception ex) { System.Diagnostics.Debug.WriteLine("Dashboard controls load failed: " + ex.Message); }
     }
 
     // Load verify results
@@ -1233,7 +1233,7 @@ public partial class MainViewModel : ObservableObject
             DashLastVerify = report.FinishedAt.ToString("yyyy-MM-dd HH:mm");
         }
       }
-      catch { }
+      catch (Exception ex) { System.Diagnostics.Debug.WriteLine("Dashboard verify load failed: " + ex.Message); }
     }
 
     DashVerifyPercent = DashVerifyTotal > 0 
@@ -1261,7 +1261,7 @@ public partial class MainViewModel : ObservableObject
         var latest = Directory.GetDirectories(emassDir).OrderByDescending(d => d).FirstOrDefault();
         DashLastExport = latest != null ? Path.GetFileName(latest) : "";
       }
-      catch { DashLastExport = ""; }
+      catch (Exception ex) { System.Diagnostics.Debug.WriteLine("Dashboard export load failed: " + ex.Message); DashLastExport = ""; }
     }
     else
     {

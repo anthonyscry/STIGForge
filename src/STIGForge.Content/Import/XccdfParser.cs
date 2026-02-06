@@ -62,7 +62,7 @@ public static class XccdfParser
         // Build external IDs
         var external = new ExternalIds
         {
-            VulnId = ExtractVulnId(ruleId, title),
+            VulnId = ExtractVulnId(ruleId, title ?? string.Empty),
             RuleId = ruleId,
             SrgId = null,
             BenchmarkId = benchmarkId
@@ -90,13 +90,13 @@ public static class XccdfParser
         {
             ControlId = Guid.NewGuid().ToString("n"),
             ExternalIds = external,
-            Title = title,
+            Title = title ?? string.Empty,
             Severity = severity,
             Discussion = description,
             CheckText = checkContent,
             FixText = fixText,
             IsManual = isManual,
-            WizardPrompt = isManual ? BuildPrompt(title, checkContent) : null,
+            WizardPrompt = isManual ? BuildPrompt(title ?? string.Empty, checkContent) : null,
             Applicability = app,
             Revision = rev
         };
@@ -118,13 +118,13 @@ public static class XccdfParser
     {
         // Heuristic 1: Explicit manual marker in system attribute
         if (!string.IsNullOrEmpty(checkSystem) && 
-            checkSystem.IndexOf("manual", StringComparison.OrdinalIgnoreCase) >= 0)
+            checkSystem!.IndexOf("manual", StringComparison.OrdinalIgnoreCase) >= 0)
             return true;
         
         // Heuristic 2: SCC automated check system (NOT manual)
         // SCAP Compliance Checker uses scap.nist.gov namespace
         if (!string.IsNullOrEmpty(checkSystem) && 
-            checkSystem.IndexOf("scap.nist.gov", StringComparison.OrdinalIgnoreCase) >= 0)
+            checkSystem!.IndexOf("scap.nist.gov", StringComparison.OrdinalIgnoreCase) >= 0)
             return false;  // SCC = automated, even if content has manual keywords
         
         // Heuristic 3: Keywords in check content

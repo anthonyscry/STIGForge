@@ -159,7 +159,7 @@ public sealed class PowerStigValidatorTests
         { "OrganizationName", "TestOrg" },
         { "ApplyProfile", "TestProfile" }
       },
-      RuleSettings = null // Null instead of empty list
+      RuleSettings = null! // Intentionally null to test validation
     };
 
     // Act

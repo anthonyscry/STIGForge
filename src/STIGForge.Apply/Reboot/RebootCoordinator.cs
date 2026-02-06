@@ -7,6 +7,7 @@ namespace STIGForge.Apply.Reboot;
 
 /// <summary>
 /// Coordinates reboot detection, scheduling, and resume-after-reboot workflow.
+/// Windows-only: uses Registry and DSC APIs.
 /// </summary>
 public sealed class RebootCoordinator
 {
@@ -98,8 +99,10 @@ public sealed class RebootCoordinator
     /// <param name="cancellationToken">Cancellation token for async operations.</param>
     /// <returns>Reboot context if marker exists, null otherwise.</returns>
     /// <exception cref="RebootException">Thrown when marker exists but is invalid.</exception>
+#pragma warning disable CS1998 // Async method lacks await — intentional: kept async for future I/O additions
     public async Task<RebootContext?> ResumeAfterReboot(string bundleRoot, CancellationToken cancellationToken)
     {
+#pragma warning restore CS1998
         if (string.IsNullOrWhiteSpace(bundleRoot))
             throw new ArgumentException("BundleRoot is required", nameof(bundleRoot));
 
@@ -259,8 +262,10 @@ public sealed class RebootCoordinator
         }
     }
 
+#pragma warning disable CS1998 // Async method lacks await — intentional: kept async for future I/O additions
     private async Task WriteResumeMarker(RebootContext context, CancellationToken cancellationToken)
     {
+#pragma warning restore CS1998
         var markerPath = GetMarkerPath(context.BundleRoot);
         var applyDir = Path.GetDirectoryName(markerPath) 
             ?? throw new InvalidOperationException($"Cannot determine directory from marker path: {markerPath}");
