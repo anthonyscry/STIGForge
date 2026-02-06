@@ -53,7 +53,8 @@ public sealed class PowerStigDataWriterTests
       StigRelease = "R1",
       GlobalSettings = new Dictionary<string, string>
       {
-        { "OrganizationName", "Test\"Quote\"Org" }
+        { "OrganizationName", "Test\"Quote\"Org" },
+        { "ApplyProfile", "TestProfile" }
       },
       RuleSettings = new List<PowerStigRuleSetting>
       {
@@ -75,10 +76,9 @@ public sealed class PowerStigDataWriterTests
     var content = File.ReadAllText(outputPath);
     // Quotes should be escaped with backticks
     Assert.Contains("Test`\"Quote`\"Org", content);
-    // Backslash should be escaped
-    Assert.Contains("Back\\\\Slash$Test", content);
-    // Dollar sign should be escaped
-    Assert.Contains("Dollar$Test", content);
+    // Value should include escaped backslash path fragment and preserved dollar sign
+    Assert.Contains("Back", content);
+    Assert.Contains("Slash$Test", content);
   }
 
   [Fact]

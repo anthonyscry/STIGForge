@@ -79,7 +79,7 @@ public sealed class BundleBuilder
       ProfileName = request.Profile.Name,
       PackId = request.Pack.PackId,
       PackName = request.Pack.Name,
-      Timestamp = DateTimeOffset.Now,
+      Timestamp = BuildTime.Now,
       ToolVersion = request.ToolVersion
     };
 
@@ -108,7 +108,7 @@ public sealed class BundleBuilder
     File.WriteAllText(overlaysPath, overlaysJson, Encoding.UTF8);
 
     var runLogPath = Path.Combine(manifestDir, "run_log.txt");
-    File.WriteAllText(runLogPath, "Bundle created: " + DateTimeOffset.Now.ToString("o"), Encoding.UTF8);
+    File.WriteAllText(runLogPath, "Bundle created: " + BuildTime.Now.ToString("o"), Encoding.UTF8);
 
     await WriteHashManifestAsync(root, Path.Combine(manifestDir, "file_hashes.sha256"), ct);
 
@@ -170,7 +170,7 @@ public sealed class BundleBuilder
       profileName = request.Profile.Name,
       packId = request.Pack.PackId,
       packName = request.Pack.Name,
-      createdAt = DateTimeOffset.Now,
+      createdAt = BuildTime.Now,
       answers = Array.Empty<object>()
     };
 

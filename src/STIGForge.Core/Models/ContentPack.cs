@@ -9,4 +9,5 @@ public sealed class ContentPack
   public string SourceLabel { get; set; } = string.Empty;
   public string HashAlgorithm { get; set; } = "sha256";
   public string ManifestSha256 { get; set; } = string.Empty;
+  public string SchemaVersion { get; set; } = CanonicalContract.Version;
 }

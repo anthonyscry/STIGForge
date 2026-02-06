@@ -408,7 +408,10 @@ applyCmd.SetHandler(async (InvocationContext ctx) =>
   if (!string.IsNullOrWhiteSpace(mode) && Enum.TryParse<HardeningMode>(mode, true, out var m))
     parsedMode = m;
 
-  var runner = new STIGForge.Apply.ApplyRunner();
+  using var host = BuildHost();
+  await host.StartAsync();
+
+  var runner = host.Services.GetRequiredService<STIGForge.Apply.ApplyRunner>();
   var result = await runner.RunAsync(new STIGForge.Apply.ApplyRequest
   {
     BundleRoot = bundle,
@@ -425,6 +428,7 @@ applyCmd.SetHandler(async (InvocationContext ctx) =>
   }, CancellationToken.None);
 
   Console.WriteLine("Apply completed. Log: " + result.LogPath);
+  await host.StopAsync();
 });
 
 rootCmd.AddCommand(applyCmd);
@@ -579,7 +583,35 @@ exportCmd.SetHandler(async (bundle, output) =>
 
 rootCmd.AddCommand(exportCmd);
 
-return await rootCmd.InvokeAsync(args);
+return await InvokeWithErrorHandlingAsync(rootCmd, args);
+
+static async Task<int> InvokeWithErrorHandlingAsync(RootCommand command, string[] argv)
+{
+  try
+  {
+    return await command.InvokeAsync(argv);
+  }
+  catch (ArgumentException ex)
+  {
+    Console.Error.WriteLine($"[CLI-ARG-001] {ex.Message}");
+    return 2;
+  }
+  catch (FileNotFoundException ex)
+  {
+    Console.Error.WriteLine($"[CLI-IO-404] {ex.Message}");
+    return 3;
+  }
+  catch (DirectoryNotFoundException ex)
+  {
+    Console.Error.WriteLine($"[CLI-IO-404] {ex.Message}");
+    return 3;
+  }
+  catch (Exception ex)
+  {
+    Console.Error.WriteLine($"[CLI-UNEXPECTED-500] {ex.Message}");
+    return 1;
+  }
+}
 
 static string ResolveReportPath(string path)
 {

@@ -835,6 +835,57 @@ public partial class MainViewModel : ObservableObject
       }
       ManualControls.Add(item);
     }
+
+    UpdateManualSummary();
+    ManualControlsView.Refresh();
+  }
+
+  private void ConfigureManualView()
+  {
+    var view = ManualControlsView;
+    view.Filter = o =>
+    {
+      if (o is not ManualControlItem item) return false;
+
+      var statusFilter = ManualStatusFilter ?? "All";
+      if (!string.Equals(statusFilter, "All", StringComparison.OrdinalIgnoreCase) &&
+          !string.Equals(item.Status, statusFilter, StringComparison.OrdinalIgnoreCase))
+        return false;
+
+      var text = ManualFilterText?.Trim();
+      if (string.IsNullOrWhiteSpace(text)) return true;
+
+      return Contains(item.Control.ExternalIds.RuleId, text)
+        || Contains(item.Control.ExternalIds.VulnId, text)
+        || Contains(item.Control.Title, text)
+        || Contains(item.Reason, text)
+        || Contains(item.Comment, text);
+    };
+
+    RefreshManualView();
+  }
+
+  private void RefreshManualView()
+  {
+    ManualControlsView.Refresh();
+    UpdateManualSummary();
+  }
+
+  private void UpdateManualSummary()
+  {
+    var total = ManualControls.Count;
+    var pass = ManualControls.Count(x => string.Equals(x.Status, "Pass", StringComparison.OrdinalIgnoreCase));
+    var fail = ManualControls.Count(x => string.Equals(x.Status, "Fail", StringComparison.OrdinalIgnoreCase));
+    var na = ManualControls.Count(x => string.Equals(x.Status, "NotApplicable", StringComparison.OrdinalIgnoreCase));
+    var open = ManualControls.Count(x => string.Equals(x.Status, "Open", StringComparison.OrdinalIgnoreCase));
+
+    ManualSummary = $"Total: {total} | Pass: {pass} | Fail: {fail} | NA: {na} | Open: {open}";
+  }
+
+  private static bool Contains(string? source, string value)
+  {
+    return !string.IsNullOrWhiteSpace(source)
+      && source.Contains(value, StringComparison.OrdinalIgnoreCase);
   }
 
   private AnswerFile LoadAnswerFile()

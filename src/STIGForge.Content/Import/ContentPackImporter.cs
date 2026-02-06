@@ -14,6 +14,27 @@ public enum PackFormat
     Gpo
 }
 
+public enum DetectionConfidence
+{
+    Low,
+    Medium,
+    High
+}
+
+public sealed class FormatDetectionResult
+{
+    public PackFormat Format { get; set; }
+    public DetectionConfidence Confidence { get; set; }
+    public List<string> Reasons { get; set; } = new();
+}
+
+public sealed class ParsingError
+{
+    public string FilePath { get; set; } = string.Empty;
+    public string ErrorMessage { get; set; } = string.Empty;
+    public string ErrorType { get; set; } = string.Empty;
+}
+
 public sealed class ContentPackImporter
 {
     private readonly IPathBuilder _paths;
@@ -49,18 +70,32 @@ public sealed class ContentPackImporter
             ReleaseDate = GuessReleaseDate(zipPath, packName),
             SourceLabel = sourceLabel,
             HashAlgorithm = "sha256",
-            ManifestSha256 = zipHash
+            ManifestSha256 = zipHash,
+            SchemaVersion = CanonicalContract.Version
         };
 
         // Detect format and import accordingly
-        var format = DetectPackFormat(rawRoot);
+        var sourceStats = CountSourceArtifacts(rawRoot);
+        var formatResult = DetectPackFormatWithConfidence(rawRoot, sourceStats);
+        var format = formatResult.Format;
+        var usedFallbackParser = format == PackFormat.Unknown;
+        
+        var parsingErrors = new List<ParsingError>();
         var parsed = format switch
         {
-            PackFormat.Stig => ImportStigZip(rawRoot, packName),
-            PackFormat.Scap => ImportScapZip(rawRoot, packName),
-            PackFormat.Gpo => ImportGpoZip(rawRoot, packName),
-            _ => ImportStigZip(rawRoot, packName) // Default to STIG for backward compatibility
+            PackFormat.Stig => ImportStigZip(rawRoot, packName, parsingErrors),
+            PackFormat.Scap => ImportScapZip(rawRoot, packName, parsingErrors),
+            PackFormat.Gpo => ImportGpoZip(rawRoot, packName, parsingErrors),
+            _ => ImportStigZip(rawRoot, packName, parsingErrors) // Default to STIG for backward compatibility
         };
+
+        var validationErrors = ControlRecordContractValidator.Validate(parsed);
+        if (validationErrors.Count > 0)
+        {
+            throw new ParsingException(
+                $"[IMPORT-CONTRACT-001] Parsed controls failed canonical validation ({validationErrors.Count} errors): " +
+                string.Join(" | ", validationErrors.Take(10)));
+        }
 
         await _packs.SaveAsync(pack, ct);
         if (parsed.Count > 0)
@@ -70,6 +105,7 @@ public sealed class ContentPackImporter
         {
             importedZip = Path.GetFileName(zipPath),
             zipHash,
+            schemaVersion = CanonicalContract.Version,
             detectedFormat = format.ToString(),
             parsedControls = parsed.Count,
             timestamp = DateTimeOffset.Now
@@ -79,36 +115,170 @@ public sealed class ContentPackImporter
         Directory.CreateDirectory(packRoot);
         File.WriteAllText(notePath, JsonSerializer.Serialize(note, new JsonSerializerOptions { WriteIndented = true }));
 
+        var compatibility = BuildCompatibilityMatrix(formatResult, parsed.Count, sourceStats, usedFallbackParser, parsingErrors);
+        var compatibilityPath = Path.Combine(packRoot, "compatibility_matrix.json");
+        File.WriteAllText(compatibilityPath, JsonSerializer.Serialize(compatibility, new JsonSerializerOptions { WriteIndented = true }));
+
         return pack;
     }
 
-    private PackFormat DetectPackFormat(string extractedRoot)
+    private static object BuildCompatibilityMatrix(FormatDetectionResult formatResult, int parsedControls, SourceArtifactStats sourceStats, bool usedFallbackParser, List<ParsingError> parsingErrors)
     {
-        var allFiles = Directory.GetFiles(extractedRoot, "*.xml", SearchOption.AllDirectories)
-            .Concat(Directory.GetFiles(extractedRoot, "*.admx", SearchOption.AllDirectories))
-            .Select(Path.GetFileName)
-            .ToList();
+        var format = formatResult.Format;
+        var supportsXccdf = format is PackFormat.Stig or PackFormat.Scap;
+        var supportsOvalMetadata = format is PackFormat.Scap;
+        var supportsAdmx = format is PackFormat.Gpo;
 
-        var hasXccdf = allFiles.Any(f => f.IndexOf("xccdf", StringComparison.OrdinalIgnoreCase) >= 0);
-        var hasOval = allFiles.Any(f => f.IndexOf("oval", StringComparison.OrdinalIgnoreCase) >= 0);
-        var hasAdmx = allFiles.Any(f => f.IndexOf("admx", StringComparison.OrdinalIgnoreCase) >= 0);
+        var lossy = new List<string>();
+        var unsupported = new List<string>();
+        
+        // Format-specific lossy mappings with detailed explanations
+        if (format == PackFormat.Scap)
+        {
+            lossy.Add("OVAL definitions are ingested as metadata only and not converted into canonical controls.");
+            lossy.Add("OVAL test definitions (state/object/variable elements) are logged but not executed during apply phase.");
+            lossy.Add("SCAP datastream components beyond XCCDF benchmarks are reference-only.");
+        }
+        if (format == PackFormat.Gpo)
+        {
+            lossy.Add("GPO/ADMX controls map to canonical controls with partial applicability context.");
+            lossy.Add("ADMX policy categories outside security baseline scope are skipped.");
+            lossy.Add("Registry-based GPO policies map to canonical control applicability but may lose presentation metadata.");
+        }
+        if (usedFallbackParser)
+        {
+            lossy.Add("Unknown format defaults to STIG parser behavior - non-XCCDF content may be ignored.");
+            lossy.Add("Fallback parser does not attempt OVAL or ADMX processing.");
+        }
+        
+        // Unsupported artifact mismatches
+        if (sourceStats.OvalXmlCount > 0 && format != PackFormat.Scap)
+            unsupported.Add($"OVAL XML files present ({sourceStats.OvalXmlCount}) but selected format does not support OVAL processing.");
+        if (sourceStats.AdmxCount > 0 && format != PackFormat.Gpo)
+            unsupported.Add($"ADMX files present ({sourceStats.AdmxCount}) but selected format does not support ADMX processing.");
+        
+        // Detect silent data loss (source files > parsed controls)
+        var expectedFileCount = format switch
+        {
+            PackFormat.Scap => sourceStats.XccdfXmlCount,
+            PackFormat.Gpo => sourceStats.AdmxCount,
+            _ => sourceStats.XccdfXmlCount
+        };
+        
+        if (expectedFileCount > 0 && parsedControls == 0)
+            unsupported.Add($"Format detected as {format} with {expectedFileCount} source files, but zero controls parsed - possible format mismatch.");
 
-        // SCAP bundles have both XCCDF and OVAL
-        if (hasXccdf && hasOval)
-            return PackFormat.Scap;
-
-        // GPO packages have ADMX files
-        if (hasAdmx)
-            return PackFormat.Gpo;
-
-        // STIG packages have XCCDF only
-        if (hasXccdf)
-            return PackFormat.Stig;
-
-        return PackFormat.Unknown;
+        return new
+        {
+            schemaVersion = CanonicalContract.Version,
+            detectedFormat = format.ToString(),
+            detectionConfidence = formatResult.Confidence.ToString(),
+            detectionReasons = formatResult.Reasons,
+            parsedControls,
+            usedFallbackParser,
+            sourceArtifacts = new
+            {
+                sourceStats.XccdfXmlCount,
+                sourceStats.OvalXmlCount,
+                sourceStats.AdmxCount,
+                sourceStats.TotalXmlCount,
+                expectedFormatFiles = expectedFileCount
+            },
+            support = new
+            {
+                xccdf = supportsXccdf,
+                ovalMetadata = supportsOvalMetadata,
+                admx = supportsAdmx
+            },
+            lossyMappings = lossy,
+            unsupportedMappings = unsupported,
+            parsingErrors = parsingErrors.Select(e => new
+            {
+                file = e.FilePath,
+                error = e.ErrorMessage,
+                errorType = e.ErrorType
+            }).ToList()
+        };
     }
 
-    private List<ControlRecord> ImportStigZip(string rawRoot, string packName)
+    private static SourceArtifactStats CountSourceArtifacts(string extractedRoot)
+    {
+        var xmlFiles = Directory.GetFiles(extractedRoot, "*.xml", SearchOption.AllDirectories)
+            .Select(Path.GetFileName)
+            .Where(n => !string.IsNullOrWhiteSpace(n))
+            .ToList();
+
+        var xccdf = xmlFiles.Count(f => f!.IndexOf("xccdf", StringComparison.OrdinalIgnoreCase) >= 0);
+        var oval = xmlFiles.Count(f => f!.IndexOf("oval", StringComparison.OrdinalIgnoreCase) >= 0);
+        var admx = Directory.GetFiles(extractedRoot, "*.admx", SearchOption.AllDirectories).Length;
+
+        return new SourceArtifactStats
+        {
+            XccdfXmlCount = xccdf,
+            OvalXmlCount = oval,
+            AdmxCount = admx,
+            TotalXmlCount = xmlFiles.Count
+        };
+    }
+
+    private sealed class SourceArtifactStats
+    {
+        public int XccdfXmlCount { get; set; }
+        public int OvalXmlCount { get; set; }
+        public int AdmxCount { get; set; }
+        public int TotalXmlCount { get; set; }
+    }
+
+    private FormatDetectionResult DetectPackFormatWithConfidence(string extractedRoot, SourceArtifactStats stats)
+    {
+        var result = new FormatDetectionResult
+        {
+            Format = PackFormat.Unknown,
+            Confidence = DetectionConfidence.Low
+        };
+
+        var hasXccdf = stats.XccdfXmlCount > 0;
+        var hasOval = stats.OvalXmlCount > 0;
+        var hasAdmx = stats.AdmxCount > 0;
+
+        // SCAP bundles: XCCDF + OVAL
+        if (hasXccdf && hasOval)
+        {
+            result.Format = PackFormat.Scap;
+            result.Confidence = DetectionConfidence.High;
+            result.Reasons.Add($"Found {stats.XccdfXmlCount} XCCDF and {stats.OvalXmlCount} OVAL files - characteristic SCAP bundle signature.");
+            return result;
+        }
+
+        // GPO packages: ADMX files
+        if (hasAdmx)
+        {
+            result.Format = PackFormat.Gpo;
+            result.Confidence = hasXccdf || hasOval ? DetectionConfidence.Medium : DetectionConfidence.High;
+            result.Reasons.Add($"Found {stats.AdmxCount} ADMX files - GPO policy format.");
+            if (hasXccdf || hasOval)
+                result.Reasons.Add("Warning: XCCDF/OVAL files also present - possible mixed-format bundle.");
+            return result;
+        }
+
+        // STIG packages: XCCDF only (no OVAL, no ADMX)
+        if (hasXccdf)
+        {
+            result.Format = PackFormat.Stig;
+            result.Confidence = DetectionConfidence.High;
+            result.Reasons.Add($"Found {stats.XccdfXmlCount} XCCDF files with no OVAL - standalone STIG benchmark.");
+            return result;
+        }
+
+        // Unknown: No recognizable artifacts
+        result.Format = PackFormat.Unknown;
+        result.Confidence = DetectionConfidence.Low;
+        result.Reasons.Add($"No XCCDF, OVAL, or ADMX files detected in {stats.TotalXmlCount} total XML files.");
+        result.Reasons.Add("Will attempt STIG parser as fallback with low confidence.");
+        return result;
+    }
+
+    private List<ControlRecord> ImportStigZip(string rawRoot, string packName, List<ParsingError> errors)
     {
         var xccdfFiles = Directory.GetFiles(rawRoot, "*.xml", SearchOption.AllDirectories)
             .Where(p => Path.GetFileName(p).IndexOf("xccdf", StringComparison.OrdinalIgnoreCase) >= 0)
@@ -125,19 +295,29 @@ public sealed class ContentPackImporter
             catch (ParsingException ex)
             {
                 Console.WriteLine($"Parsing error in {f}: {ex.Message}");
-                // Continue to next file
+                errors.Add(new ParsingError
+                {
+                    FilePath = Path.GetFileName(f),
+                    ErrorMessage = ex.Message,
+                    ErrorType = "ParsingException"
+                });
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error parsing {f}: {ex.Message}");
-                // Continue to next file
+                errors.Add(new ParsingError
+                {
+                    FilePath = Path.GetFileName(f),
+                    ErrorMessage = ex.Message,
+                    ErrorType = ex.GetType().Name
+                });
             }
         }
 
         return parsed;
     }
 
-    private List<ControlRecord> ImportScapZip(string rawRoot, string packName)
+    private List<ControlRecord> ImportScapZip(string rawRoot, string packName, List<ParsingError> errors)
     {
         // For SCAP bundles, we need to find the bundle ZIP or use the extracted directory
         // ScapBundleParser expects a ZIP path, so we need to handle this differently
@@ -157,10 +337,22 @@ public sealed class ContentPackImporter
             catch (ParsingException ex)
             {
                 Console.WriteLine($"Parsing error in {f}: {ex.Message}");
+                errors.Add(new ParsingError
+                {
+                    FilePath = Path.GetFileName(f),
+                    ErrorMessage = ex.Message,
+                    ErrorType = "ParsingException"
+                });
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error parsing {f}: {ex.Message}");
+                errors.Add(new ParsingError
+                {
+                    FilePath = Path.GetFileName(f),
+                    ErrorMessage = ex.Message,
+                    ErrorType = ex.GetType().Name
+                });
             }
         }
 
@@ -180,17 +372,29 @@ public sealed class ContentPackImporter
             catch (ParsingException ex)
             {
                 Console.WriteLine($"Parsing error in {f}: {ex.Message}");
+                errors.Add(new ParsingError
+                {
+                    FilePath = Path.GetFileName(f),
+                    ErrorMessage = ex.Message,
+                    ErrorType = "ParsingException (OVAL metadata)"
+                });
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error parsing {f}: {ex.Message}");
+                errors.Add(new ParsingError
+                {
+                    FilePath = Path.GetFileName(f),
+                    ErrorMessage = ex.Message,
+                    ErrorType = $"{ex.GetType().Name} (OVAL metadata)"
+                });
             }
         }
 
         return parsed;
     }
 
-    private List<ControlRecord> ImportGpoZip(string rawRoot, string packName)
+    private List<ControlRecord> ImportGpoZip(string rawRoot, string packName, List<ParsingError> errors)
     {
         var admxFiles = Directory.GetFiles(rawRoot, "*.admx", SearchOption.AllDirectories)
             .Take(10)
@@ -206,12 +410,22 @@ public sealed class ContentPackImporter
             catch (ParsingException ex)
             {
                 Console.WriteLine($"Parsing error in {f}: {ex.Message}");
-                // Continue to next file
+                errors.Add(new ParsingError
+                {
+                    FilePath = Path.GetFileName(f),
+                    ErrorMessage = ex.Message,
+                    ErrorType = "ParsingException"
+                });
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error parsing {f}: {ex.Message}");
-                // Continue to next file
+                errors.Add(new ParsingError
+                {
+                    FilePath = Path.GetFileName(f),
+                    ErrorMessage = ex.Message,
+                    ErrorType = ex.GetType().Name
+                });
             }
         }
 
