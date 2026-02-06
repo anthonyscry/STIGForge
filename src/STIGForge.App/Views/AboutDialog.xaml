@@ -1,0 +1,48 @@
+<Window x:Class="STIGForge.App.Views.AboutDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="About STIGForge" Height="300" Width="440"
+        WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
+  <Grid Margin="24">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
+
+    <StackPanel Grid.Row="0">
+      <TextBlock Text="STIGForge" FontSize="28" FontWeight="Bold" Margin="0,0,0,4"/>
+      <TextBlock Text="Offline-first Windows hardening platform" FontSize="14" Foreground="Gray" Margin="0,0,0,16"/>
+    </StackPanel>
+
+    <StackPanel Grid.Row="1">
+      <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+        <TextBlock Text="Version:" FontWeight="SemiBold" Width="100"/>
+        <TextBlock Text="0.1.0-dev"/>
+      </StackPanel>
+      <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+        <TextBlock Text="Runtime:" FontWeight="SemiBold" Width="100"/>
+        <TextBlock Text="{Binding RuntimeVersion}"/>
+      </StackPanel>
+      <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+        <TextBlock Text="Data Root:" FontWeight="SemiBold" Width="100"/>
+        <TextBlock Text="{Binding DataRoot}" TextWrapping="Wrap" Foreground="Gray"/>
+      </StackPanel>
+      <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+        <TextBlock Text="Packs:" FontWeight="SemiBold" Width="100"/>
+        <TextBlock Text="{Binding PackCount}"/>
+      </StackPanel>
+      <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+        <TextBlock Text="Profiles:" FontWeight="SemiBold" Width="100"/>
+        <TextBlock Text="{Binding ProfileCount}"/>
+      </StackPanel>
+      <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+        <TextBlock Text="Overlays:" FontWeight="SemiBold" Width="100"/>
+        <TextBlock Text="{Binding OverlayCount}"/>
+      </StackPanel>
+    </StackPanel>
+
+    <Button Grid.Row="2" Content="Close" Width="100" Height="28" HorizontalAlignment="Right"
+            Click="Close_Click" IsDefault="True" IsCancel="True"/>
+  </Grid>
+</Window>

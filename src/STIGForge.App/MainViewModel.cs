@@ -67,6 +67,13 @@ public partial class MainViewModel : ObservableObject
   [ObservableProperty] private string dashLastVerify = "";
   [ObservableProperty] private string dashLastExport = "";
 
+  // Orchestrate
+  [ObservableProperty] private bool orchRunApply = true;
+  [ObservableProperty] private bool orchRunVerify = true;
+  [ObservableProperty] private bool orchRunExport = true;
+  [ObservableProperty] private string orchStatus = "";
+  [ObservableProperty] private string orchLog = "";
+
   public bool ActionsEnabled => !IsBusy;
 
   public IList<ContentPack> ContentPacks { get; } = new List<ContentPack>();
@@ -721,6 +728,168 @@ public partial class MainViewModel : ObservableObject
     }
   }
 
+  [RelayCommand]
+  private async Task Orchestrate()
+  {
+    if (IsBusy) return;
+    if (string.IsNullOrWhiteSpace(BundleRoot))
+    {
+      OrchStatus = "Select a bundle first.";
+      return;
+    }
+
+    try
+    {
+      IsBusy = true;
+      OrchLog = "";
+      OrchStatus = "Starting orchestration...";
+      var log = new StringBuilder();
+
+      // Step 1: Apply
+      if (OrchRunApply)
+      {
+        log.AppendLine("[" + DateTime.Now.ToString("HH:mm:ss") + "] === APPLY ===");
+        OrchStatus = "Running Apply...";
+        OrchLog = log.ToString();
+
+        var script = Path.Combine(BundleRoot, "Apply", "RunApply.ps1");
+        if (!File.Exists(script))
+        {
+          log.AppendLine("  SKIP: RunApply.ps1 not found in bundle.");
+        }
+        else
+        {
+          try
+          {
+            var result = await _applyRunner.RunAsync(new STIGForge.Apply.ApplyRequest
+            {
+              BundleRoot = BundleRoot,
+              ScriptPath = script,
+              ScriptArgs = "-BundleRoot \"" + BundleRoot + "\""
+            }, CancellationToken.None);
+
+            log.AppendLine("  OK: Apply complete. Log: " + result.LogPath);
+            LastOutputPath = result.LogPath;
+          }
+          catch (Exception ex)
+          {
+            log.AppendLine("  WARN: Apply failed: " + ex.Message);
+          }
+        }
+        OrchLog = log.ToString();
+      }
+
+      // Step 2: Verify
+      if (OrchRunVerify)
+      {
+        log.AppendLine("[" + DateTime.Now.ToString("HH:mm:ss") + "] === VERIFY ===");
+        OrchStatus = "Running Verify...";
+        OrchLog = log.ToString();
+
+        var verifyRoot = Path.Combine(BundleRoot, "Verify");
+        Directory.CreateDirectory(verifyRoot);
+
+        if (!string.IsNullOrWhiteSpace(EvaluateStigRoot))
+        {
+          try
+          {
+            log.AppendLine("  Running Evaluate-STIG...");
+            OrchLog = log.ToString();
+            var evalRunner = new STIGForge.Verify.EvaluateStigRunner();
+            var evalResult = evalRunner.Run(EvaluateStigRoot, EvaluateStigArgs ?? string.Empty, EvaluateStigRoot);
+            var evalOutput = Path.Combine(verifyRoot, "Evaluate-STIG");
+            Directory.CreateDirectory(evalOutput);
+            var report = STIGForge.Verify.VerifyReportWriter.BuildFromCkls(evalOutput, "Evaluate-STIG");
+            report.StartedAt = evalResult.StartedAt;
+            report.FinishedAt = evalResult.FinishedAt;
+            STIGForge.Verify.VerifyReportWriter.WriteJson(Path.Combine(evalOutput, "consolidated-results.json"), report);
+            STIGForge.Verify.VerifyReportWriter.WriteCsv(Path.Combine(evalOutput, "consolidated-results.csv"), report.Results);
+            log.AppendLine("  OK: Evaluate-STIG complete. " + report.Results.Count + " results.");
+          }
+          catch (Exception ex)
+          {
+            log.AppendLine("  WARN: Evaluate-STIG failed: " + ex.Message);
+          }
+        }
+
+        if (!string.IsNullOrWhiteSpace(ScapCommandPath))
+        {
+          try
+          {
+            log.AppendLine("  Running SCAP...");
+            OrchLog = log.ToString();
+            var scapRunner = new STIGForge.Verify.ScapRunner();
+            var scapResult = scapRunner.Run(ScapCommandPath, ScapArgs ?? string.Empty, null);
+            var scapOutput = Path.Combine(verifyRoot, "SCAP");
+            Directory.CreateDirectory(scapOutput);
+            var toolName = string.IsNullOrWhiteSpace(ScapLabel) ? "SCAP" : ScapLabel;
+            var report = STIGForge.Verify.VerifyReportWriter.BuildFromCkls(scapOutput, toolName);
+            report.StartedAt = scapResult.StartedAt;
+            report.FinishedAt = scapResult.FinishedAt;
+            STIGForge.Verify.VerifyReportWriter.WriteJson(Path.Combine(scapOutput, "consolidated-results.json"), report);
+            STIGForge.Verify.VerifyReportWriter.WriteCsv(Path.Combine(scapOutput, "consolidated-results.csv"), report.Results);
+            log.AppendLine("  OK: SCAP complete. " + report.Results.Count + " results.");
+          }
+          catch (Exception ex)
+          {
+            log.AppendLine("  WARN: SCAP failed: " + ex.Message);
+          }
+        }
+
+        if (string.IsNullOrWhiteSpace(EvaluateStigRoot) && string.IsNullOrWhiteSpace(ScapCommandPath))
+        {
+          log.AppendLine("  SKIP: No verify tools configured.");
+        }
+
+        OrchLog = log.ToString();
+      }
+
+      // Step 3: Export eMASS
+      if (OrchRunExport)
+      {
+        log.AppendLine("[" + DateTime.Now.ToString("HH:mm:ss") + "] === EXPORT eMASS ===");
+        OrchStatus = "Exporting eMASS...";
+        OrchLog = log.ToString();
+
+        try
+        {
+          var result = await _emassExporter.ExportAsync(new STIGForge.Export.ExportRequest
+          {
+            BundleRoot = BundleRoot
+          }, CancellationToken.None);
+
+          log.AppendLine("  OK: eMASS exported to " + result.OutputRoot);
+          LastOutputPath = result.OutputRoot;
+        }
+        catch (Exception ex)
+        {
+          log.AppendLine("  WARN: Export failed: " + ex.Message);
+        }
+
+        OrchLog = log.ToString();
+      }
+
+      // Done
+      log.AppendLine();
+      log.AppendLine("[" + DateTime.Now.ToString("HH:mm:ss") + "] === COMPLETE ===");
+      OrchLog = log.ToString();
+      OrchStatus = "Orchestration complete.";
+
+      // Refresh dashboard
+      ReportSummary = BuildReportSummary(BundleRoot);
+      LoadCoverageOverlap();
+      RefreshDashboard();
+    }
+    catch (Exception ex)
+    {
+      OrchStatus = "Orchestration failed: " + ex.Message;
+    }
+    finally
+    {
+      IsBusy = false;
+    }
+  }
+
   partial void OnSelectedManualControlChanged(ManualControlItem? value)
   {
     if (value == null) return;
@@ -1225,6 +1394,89 @@ public partial class MainViewModel : ObservableObject
   {
     var win = new OverlayEditorWindow();
     win.ShowDialog();
+  }
+
+  [RelayCommand]
+  private void ShowAbout()
+  {
+    var dialog = new Views.AboutDialog(
+      _paths.GetAppDataRoot(),
+      ContentPacks.Count,
+      Profiles.Count,
+      OverlayItems.Count);
+    dialog.ShowDialog();
+  }
+
+  [RelayCommand]
+  private async Task DeleteSelectedPack()
+  {
+    if (SelectedPack == null)
+    {
+      StatusText = "No pack selected.";
+      return;
+    }
+
+    var result = System.Windows.MessageBox.Show(
+      $"Delete pack \"{SelectedPack.Name}\"?\n\nThis will remove the pack and all its controls from the database.",
+      "Confirm Delete",
+      System.Windows.MessageBoxButton.YesNo,
+      System.Windows.MessageBoxImage.Warning);
+
+    if (result != System.Windows.MessageBoxResult.Yes) return;
+
+    try
+    {
+      IsBusy = true;
+      await _packs.DeleteAsync(SelectedPack.PackId, CancellationToken.None);
+      ContentPacks.Remove(SelectedPack);
+      SelectedPack = ContentPacks.Count > 0 ? ContentPacks[0] : null;
+      OnPropertyChanged(nameof(ContentPacks));
+      StatusText = "Pack deleted.";
+    }
+    catch (Exception ex)
+    {
+      StatusText = "Delete failed: " + ex.Message;
+    }
+    finally
+    {
+      IsBusy = false;
+    }
+  }
+
+  [RelayCommand]
+  private async Task DeleteSelectedProfile()
+  {
+    if (SelectedProfile == null)
+    {
+      StatusText = "No profile selected.";
+      return;
+    }
+
+    var result = System.Windows.MessageBox.Show(
+      $"Delete profile \"{SelectedProfile.Name}\"?",
+      "Confirm Delete",
+      System.Windows.MessageBoxButton.YesNo,
+      System.Windows.MessageBoxImage.Warning);
+
+    if (result != System.Windows.MessageBoxResult.Yes) return;
+
+    try
+    {
+      IsBusy = true;
+      await _profiles.DeleteAsync(SelectedProfile.ProfileId, CancellationToken.None);
+      Profiles.Remove(SelectedProfile);
+      SelectedProfile = Profiles.Count > 0 ? Profiles[0] : null;
+      OnPropertyChanged(nameof(Profiles));
+      StatusText = "Profile deleted.";
+    }
+    catch (Exception ex)
+    {
+      StatusText = "Delete failed: " + ex.Message;
+    }
+    finally
+    {
+      IsBusy = false;
+    }
   }
 
   private void SaveUiState()

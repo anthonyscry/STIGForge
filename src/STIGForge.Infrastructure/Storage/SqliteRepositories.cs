@@ -42,6 +42,16 @@ manifest_sha256=excluded.manifest_sha256;";
       cancellationToken: ct));
     return rows.ToList();
   }
+
+  public async Task DeleteAsync(string packId, CancellationToken ct)
+  {
+    using var conn = new SqliteConnection(_cs);
+    await conn.OpenAsync(ct);
+    using var tx = conn.BeginTransaction();
+    await conn.ExecuteAsync(new CommandDefinition("DELETE FROM controls WHERE pack_id=@packId", new { packId }, transaction: tx, cancellationToken: ct));
+    await conn.ExecuteAsync(new CommandDefinition("DELETE FROM content_packs WHERE pack_id=@packId", new { packId }, transaction: tx, cancellationToken: ct));
+    tx.Commit();
+  }
 }
 
 public sealed class SqliteJsonProfileRepository : IProfileRepository
@@ -74,6 +84,12 @@ ON CONFLICT(profile_id) DO UPDATE SET json=excluded.json;";
     var jsons = await conn.QueryAsync<string>(new CommandDefinition(
       "SELECT json FROM profiles", cancellationToken: ct));
     return jsons.Select(j => JsonSerializer.Deserialize<Profile>(j, J)!).ToList();
+  }
+
+  public async Task DeleteAsync(string profileId, CancellationToken ct)
+  {
+    using var conn = new SqliteConnection(_cs);
+    await conn.ExecuteAsync(new CommandDefinition("DELETE FROM profiles WHERE profile_id=@profileId", new { profileId }, cancellationToken: ct));
   }
 }
 
