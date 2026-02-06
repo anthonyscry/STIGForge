@@ -59,12 +59,30 @@ public sealed class EmassExporter
     CopyScans(bundleRoot, scansDir);
     CopyChecklists(bundleRoot, checklistsDir);
     CopyEvidence(bundleRoot, evidenceDir);
-    WriteAttestationsPlaceholder(attestDir);
 
     var consolidated = LoadConsolidatedResults(bundleRoot);
     var answers = LoadManualAnswers(bundleRoot);
     MergeManualAnswers(consolidated, answers);
-    WritePoam(poamDir, consolidated);
+    
+    // Generate POA&M using PoamGenerator
+    var normalizedResults = ConvertToNormalizedResults(consolidated);
+    var poamPackage = PoamGenerator.GeneratePoam(
+      normalizedResults,
+      bundleManifest.Run.SystemName,
+      bundleManifest.BundleId);
+    PoamGenerator.WritePoamFiles(poamPackage, poamDir);
+    
+    // Generate attestations using AttestationGenerator
+    var manualControlIds = normalizedResults
+      .Where(r => r.Status == VerifyStatus.NotReviewed)
+      .Select(r => r.ControlId)
+      .Distinct()
+      .ToList();
+    var attestationPackage = AttestationGenerator.GenerateAttestations(
+      manualControlIds,
+      bundleManifest.Run.SystemName,
+      bundleManifest.BundleId);
+    AttestationGenerator.WriteAttestationFiles(attestationPackage, attestDir);
 
     var naMap = LoadNaScopeReport(bundleRoot);
     var indexPath = Path.Combine(indexDir, "control_evidence_index.csv");
@@ -88,11 +106,16 @@ public sealed class EmassExporter
     var readmePath = Path.Combine(exportRoot, "README_Submission.txt");
     WriteReadme(readmePath);
 
+    // Validate package integrity
+    var validator = new EmassPackageValidator();
+    var validationResult = validator.ValidatePackage(exportRoot);
+
     return new ExportResult
     {
       OutputRoot = exportRoot,
       ManifestPath = manifestPath,
-      IndexPath = indexPath
+      IndexPath = indexPath,
+      ValidationResult = validationResult
     };
   }
 
@@ -135,12 +158,7 @@ public sealed class EmassExporter
     CopyDirectory(src, evidenceDir);
   }
 
-  private static void WriteAttestationsPlaceholder(string attestDir)
-  {
-    var path = Path.Combine(attestDir, "attestations.json");
-    if (!File.Exists(path))
-      File.WriteAllText(path, "[]", Encoding.UTF8);
-  }
+
 
   private static List<ControlResult> LoadConsolidatedResults(string bundleRoot)
   {
@@ -171,6 +189,45 @@ public sealed class EmassExporter
 
     if (file == null) return Array.Empty<ManualAnswer>();
     return file.Answers;
+  }
+
+  private static List<NormalizedVerifyResult> ConvertToNormalizedResults(List<ControlResult> results)
+  {
+    return results.Select(r => new NormalizedVerifyResult
+    {
+      ControlId = r.VulnId ?? r.RuleId ?? string.Empty,
+      VulnId = r.VulnId,
+      RuleId = r.RuleId,
+      Title = r.Title,
+      Severity = r.Severity,
+      Status = MapStatusToVerifyStatus(r.Status),
+      Comments = r.Comments,
+      FindingDetails = r.Comments,
+      Tool = r.Tool,
+      SourceFile = r.SourceFile,
+      VerifiedAt = r.VerifiedAt,
+      Metadata = new Dictionary<string, string>()
+    }).ToList();
+  }
+
+  private static VerifyStatus MapStatusToVerifyStatus(string? status)
+  {
+    if (string.IsNullOrWhiteSpace(status))
+      return VerifyStatus.NotReviewed;
+
+    var s = status.Trim().ToLowerInvariant();
+    if (s.Contains("pass") || s.Contains("notafinding"))
+      return VerifyStatus.Pass;
+    if (s.Contains("fail") || s.Contains("open"))
+      return VerifyStatus.Fail;
+    if (s.Contains("not_applicable") || s.Contains("not applicable") || s == "na")
+      return VerifyStatus.NotApplicable;
+    if (s.Contains("not_reviewed") || s.Contains("not reviewed"))
+      return VerifyStatus.NotReviewed;
+    if (s.Contains("error"))
+      return VerifyStatus.Error;
+
+    return VerifyStatus.NotReviewed;
   }
 
   private static void MergeManualAnswers(List<ControlResult> results, IReadOnlyList<ManualAnswer> answers)
@@ -208,30 +265,7 @@ public sealed class EmassExporter
     }
   }
 
-  private static void WritePoam(string poamDir, IReadOnlyList<ControlResult> results)
-  {
-    var open = results.Where(r => IsOpen(r.Status)).ToList();
-    var jsonPath = Path.Combine(poamDir, "poam.json");
-    var csvPath = Path.Combine(poamDir, "poam.csv");
 
-    var json = JsonSerializer.Serialize(open, new JsonSerializerOptions { WriteIndented = true });
-    File.WriteAllText(jsonPath, json, Encoding.UTF8);
-
-    var sb = new StringBuilder(open.Count * 80 + 256);
-    sb.AppendLine("VulnId,RuleId,Title,Severity,Status,SourceFile");
-    foreach (var r in open)
-    {
-      sb.AppendLine(string.Join(",",
-        Csv(r.VulnId),
-        Csv(r.RuleId),
-        Csv(r.Title),
-        Csv(r.Severity),
-        Csv(r.Status),
-        Csv(r.SourceFile)));
-    }
-
-    File.WriteAllText(csvPath, sb.ToString(), Encoding.UTF8);
-  }
 
   private static void WriteControlEvidenceIndex(
     string outputPath,

@@ -11,4 +11,5 @@ public sealed class ExportResult
   public string OutputRoot { get; set; } = string.Empty;
   public string ManifestPath { get; set; } = string.Empty;
   public string IndexPath { get; set; } = string.Empty;
+  public ValidationResult? ValidationResult { get; set; }
 }
