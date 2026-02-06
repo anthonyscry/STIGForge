@@ -19,6 +19,138 @@
     </DockPanel>
 
     <TabControl Grid.Row="1">
+      <TabItem Header="Dashboard">
+        <Grid Margin="12">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+          </Grid.RowDefinitions>
+
+          <!-- Bundle Info -->
+          <Border Grid.Row="0" BorderBrush="LightGray" BorderThickness="1" Padding="16" Margin="0,0,0,16" Background="#FAFAFA">
+            <Grid>
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+              </Grid.ColumnDefinitions>
+
+              <StackPanel Grid.Column="0">
+                <TextBlock Text="Active Bundle" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                  <TextBlock Text="Bundle:" FontWeight="SemiBold" Width="80"/>
+                  <TextBlock Text="{Binding DashBundleLabel}" Foreground="Gray"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                  <TextBlock Text="Pack:" FontWeight="SemiBold" Width="80"/>
+                  <TextBlock Text="{Binding DashPackLabel}" Foreground="Gray"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                  <TextBlock Text="Profile:" FontWeight="SemiBold" Width="80"/>
+                  <TextBlock Text="{Binding DashProfileLabel}" Foreground="Gray"/>
+                </StackPanel>
+              </StackPanel>
+              <Button Grid.Column="1" Content="Refresh" Width="80" Height="28" VerticalAlignment="Top"
+                      Command="{Binding DashRefreshCommand}"/>
+            </Grid>
+          </Border>
+
+          <!-- Stats Cards -->
+          <Grid Grid.Row="1" Margin="0,0,0,16"
+                Visibility="{Binding DashHasBundle, Converter={StaticResource BoolToVisibility}}">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*"/>
+              <ColumnDefinition Width="16"/>
+              <ColumnDefinition Width="*"/>
+              <ColumnDefinition Width="16"/>
+              <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+
+            <!-- Controls Card -->
+            <Border Grid.Column="0" BorderBrush="LightGray" BorderThickness="1" Padding="16" Background="White">
+              <StackPanel>
+                <TextBlock Text="Controls" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,12"/>
+                <TextBlock Text="{Binding DashTotalControls}" FontSize="36" FontWeight="Bold" Foreground="#2196F3"/>
+                <TextBlock Text="Total Controls" Foreground="Gray" Margin="0,4,0,12"/>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                  <TextBlock Text="Automated:" FontWeight="SemiBold" Width="90"/>
+                  <TextBlock Text="{Binding DashAutoControls}"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                  <TextBlock Text="Manual:" FontWeight="SemiBold" Width="90"/>
+                  <TextBlock Text="{Binding DashManualControls}"/>
+                </StackPanel>
+              </StackPanel>
+            </Border>
+
+            <!-- Verify Card -->
+            <Border Grid.Column="2" BorderBrush="LightGray" BorderThickness="1" Padding="16" Background="White">
+              <StackPanel>
+                <TextBlock Text="Automated Verification" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,12"/>
+                <TextBlock Text="{Binding DashVerifyPercent}" FontSize="36" FontWeight="Bold" Foreground="#4CAF50"/>
+                <TextBlock Text="Compliance Rate" Foreground="Gray" Margin="0,4,0,12"/>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                  <TextBlock Text="Closed:" FontWeight="SemiBold" Width="90"/>
+                  <TextBlock Text="{Binding DashVerifyClosed}" Foreground="Green"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                  <TextBlock Text="Open:" FontWeight="SemiBold" Width="90"/>
+                  <TextBlock Text="{Binding DashVerifyOpen}" Foreground="Red"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                  <TextBlock Text="Last run:" FontWeight="SemiBold" Width="90"/>
+                  <TextBlock Text="{Binding DashLastVerify}" Foreground="Gray"/>
+                </StackPanel>
+              </StackPanel>
+            </Border>
+
+            <!-- Manual Card -->
+            <Border Grid.Column="4" BorderBrush="LightGray" BorderThickness="1" Padding="16" Background="White">
+              <StackPanel>
+                <TextBlock Text="Manual Review" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,12"/>
+                <TextBlock Text="{Binding DashManualPercent}" FontSize="36" FontWeight="Bold" Foreground="#FF9800"/>
+                <TextBlock Text="Answered Rate" Foreground="Gray" Margin="0,4,0,12"/>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                  <TextBlock Text="Pass:" FontWeight="SemiBold" Width="90"/>
+                  <TextBlock Text="{Binding DashManualPass}" Foreground="Green"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                  <TextBlock Text="Fail:" FontWeight="SemiBold" Width="90"/>
+                  <TextBlock Text="{Binding DashManualFail}" Foreground="Red"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                  <TextBlock Text="N/A:" FontWeight="SemiBold" Width="90"/>
+                  <TextBlock Text="{Binding DashManualNa}" Foreground="Gray"/>
+                </StackPanel>
+                <StackPanel Orientation="Horizontal">
+                  <TextBlock Text="Open:" FontWeight="SemiBold" Width="90"/>
+                  <TextBlock Text="{Binding DashManualOpen}" Foreground="Orange"/>
+                </StackPanel>
+              </StackPanel>
+            </Border>
+          </Grid>
+
+          <!-- Quick Actions -->
+          <Border Grid.Row="2" BorderBrush="LightGray" BorderThickness="1" Padding="16" Background="White"
+                  Visibility="{Binding DashHasBundle, Converter={StaticResource BoolToVisibility}}">
+            <StackPanel>
+              <TextBlock Text="Quick Actions" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,12"/>
+              <StackPanel Orientation="Horizontal">
+                <Button Content="Run Apply" Width="120" Height="32" Command="{Binding ApplyRunCommand}" IsEnabled="{Binding ActionsEnabled}" Margin="0,0,8,0"/>
+                <Button Content="Run Verify" Width="120" Height="32" Command="{Binding VerifyRunCommand}" IsEnabled="{Binding ActionsEnabled}" Margin="0,0,8,0"/>
+                <Button Content="Export eMASS" Width="120" Height="32" Command="{Binding ExportEmassCommand}" IsEnabled="{Binding ActionsEnabled}" Margin="0,0,8,0"/>
+                <Button Content="Launch Wizard" Width="120" Height="32" Command="{Binding LaunchManualWizardCommand}" IsEnabled="{Binding ActionsEnabled}" Margin="0,0,8,0"/>
+                <Button Content="Compare Packs" Width="120" Height="32" Command="{Binding ComparePacksCommand}" Margin="0,0,8,0"/>
+              </StackPanel>
+              <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
+                <TextBlock Text="Last eMASS export:" Foreground="Gray" Margin="0,0,8,0"/>
+                <TextBlock Text="{Binding DashLastExport}" Foreground="Gray"/>
+              </StackPanel>
+            </StackPanel>
+          </Border>
+        </Grid>
+      </TabItem>
+
       <TabItem Header="Content Packs">
         <Grid Margin="12">
           <Grid.RowDefinitions>
@@ -287,23 +419,36 @@
         <Grid Margin="12">
           <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
           </Grid.RowDefinitions>
 
-          <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,12">
+          <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
             <Button Content="Launch Review Wizard" Width="160" Command="{Binding LaunchManualWizardCommand}" 
                     IsEnabled="{Binding ActionsEnabled}"/>
             <TextBlock Text="Step-by-step wizard for reviewing manual controls with guided workflow" 
                        Margin="12,8,0,0" Foreground="Gray"/>
           </StackPanel>
 
-          <Grid Grid.Row="1">
+          <!-- Filter Controls -->
+          <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,8">
+            <TextBlock Text="Search:" VerticalAlignment="Center" Margin="0,0,6,0"/>
+            <TextBox Width="240" Text="{Binding ManualFilterText, UpdateSourceTrigger=PropertyChanged}" />
+            <TextBlock Text="Status:" VerticalAlignment="Center" Margin="16,0,6,0"/>
+            <ComboBox Width="140" ItemsSource="{Binding ManualStatusFilters}" SelectedItem="{Binding ManualStatusFilter}" />
+          </StackPanel>
+
+          <!-- Summary Bar -->
+          <TextBlock Grid.Row="2" Text="{Binding ManualSummary}" Foreground="Gray" Margin="0,0,0,8"/>
+
+          <Grid Grid.Row="3">
             <Grid.ColumnDefinitions>
               <ColumnDefinition Width="2*" />
               <ColumnDefinition Width="3*" />
             </Grid.ColumnDefinitions>
 
-            <ListView Grid.Column="0" ItemsSource="{Binding ManualControls}" SelectedItem="{Binding SelectedManualControl}" Height="400">
+            <ListView Grid.Column="0" ItemsSource="{Binding ManualControlsView}" SelectedItem="{Binding SelectedManualControl}">
             <ListView.View>
               <GridView>
                 <GridViewColumn Header="RuleId" DisplayMemberBinding="{Binding Control.ExternalIds.RuleId}" Width="140" />
