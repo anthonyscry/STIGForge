@@ -578,6 +578,31 @@ exportCmd.SetHandler(async (bundle, output) =>
   Console.WriteLine("  " + result.OutputRoot);
   Console.WriteLine("  " + result.ManifestPath);
 
+  // Display validation results
+  if (result.ValidationResult != null)
+  {
+    Console.WriteLine();
+    Console.WriteLine("Package validation:");
+    Console.WriteLine($"  Status: {(result.ValidationResult.IsValid ? "VALID" : "INVALID")}");
+    
+    if (result.ValidationResult.Errors.Count > 0)
+    {
+      Console.WriteLine($"  Errors: {result.ValidationResult.Errors.Count}");
+      foreach (var error in result.ValidationResult.Errors)
+        Console.WriteLine($"    - {error}");
+    }
+    
+    if (result.ValidationResult.Warnings.Count > 0)
+    {
+      Console.WriteLine($"  Warnings: {result.ValidationResult.Warnings.Count}");
+      foreach (var warning in result.ValidationResult.Warnings)
+        Console.WriteLine($"    - {warning}");
+    }
+    
+    if (result.ValidationResult.IsValid)
+      Console.WriteLine("  Package is ready for eMASS submission!");
+  }
+
   await host.StopAsync();
 }, exportBundleOpt, exportOutOpt);
 
