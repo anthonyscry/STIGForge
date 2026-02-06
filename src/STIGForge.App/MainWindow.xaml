@@ -28,6 +28,7 @@
 
           <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
             <Button Content="Import ZIP..." Width="140" Command="{Binding ImportContentPackCommand}" />
+            <Button Content="Compare Packs..." Width="140" Margin="8,0,0,0" Command="{Binding ComparePacksCommand}" />
             <TextBlock Text="{Binding ImportHint}" Margin="12,8,0,0" Foreground="Gray"/>
           </StackPanel>
 
