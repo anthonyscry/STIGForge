@@ -118,15 +118,15 @@ public sealed class EvaluateStigAdapter : IVerifyResultAdapter
     var metadata = new Dictionary<string, string>();
     var testId = check.Attribute("TestID")?.Value ?? check.Element("TestID")?.Value;
     if (!string.IsNullOrWhiteSpace(testId))
-      metadata["test_id"] = testId;
+      metadata["test_id"] = testId!;
 
     var checkContent = check.Element("CheckContent")?.Value?.Trim();
     if (!string.IsNullOrWhiteSpace(checkContent))
-      metadata["check_content"] = checkContent;
+      metadata["check_content"] = checkContent!;
 
     var fixText = check.Element("FixText")?.Value?.Trim();
     if (!string.IsNullOrWhiteSpace(fixText))
-      metadata["fix_text"] = fixText;
+      metadata["fix_text"] = fixText!;
 
     return new NormalizedVerifyResult
     {
@@ -151,7 +151,7 @@ public sealed class EvaluateStigAdapter : IVerifyResultAdapter
     if (string.IsNullOrWhiteSpace(stigStatus))
       return VerifyStatus.NotReviewed;
 
-    var normalized = stigStatus.Replace("_", "").Replace("-", "").ToLowerInvariant();
+    var normalized = stigStatus!.Replace("_", "").Replace("-", "").ToLowerInvariant();
 
     return normalized switch
     {
@@ -174,7 +174,7 @@ public sealed class EvaluateStigAdapter : IVerifyResultAdapter
     if (string.IsNullOrWhiteSpace(severity))
       return null;
 
-    var normalized = severity.ToLowerInvariant();
+    var normalized = severity!.ToLowerInvariant();
     return normalized switch
     {
       "cat i" => "high",

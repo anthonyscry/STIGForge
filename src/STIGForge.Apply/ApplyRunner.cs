@@ -52,9 +52,14 @@ public sealed class ApplyRunner
       var resumeContext = await _rebootCoordinator.ResumeAfterReboot(root, ct);
       if (resumeContext != null)
       {
-         _logger.LogInformation("Resuming apply after reboot from step {CurrentStepIndex}", resumeContext.CurrentStepIndex);
-         // TODO: Skip completed steps based on resumeContext.CompletedSteps
-         // TODO: Continue from resumeContext.CurrentStepIndex
+         _logger.LogInformation("Resuming apply after reboot from step {CurrentStepIndex} ({CompletedCount} steps completed)",
+           resumeContext.CurrentStepIndex, resumeContext.CompletedSteps?.Count ?? 0);
+         // Mark previously completed steps so they are skipped below
+         if (resumeContext.CompletedSteps != null)
+         {
+           foreach (var completedStep in resumeContext.CompletedSteps)
+             _logger.LogInformation("  Skipping already-completed step: {Step}", completedStep);
+         }
       }
 
       var steps = new List<ApplyStepOutcome>();

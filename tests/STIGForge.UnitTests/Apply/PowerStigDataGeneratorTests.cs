@@ -204,7 +204,7 @@ public sealed class PowerStigDataGeneratorTests
       new ControlRecord
       {
         ControlId = "V-no-externalids",
-        ExternalIds = null // No ExternalIds
+        ExternalIds = null! // Intentionally null to test null-safety
       }
     };
 

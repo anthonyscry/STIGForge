@@ -1,11 +1,45 @@
+using Dapper;
 using Microsoft.Data.Sqlite;
 
 namespace STIGForge.Infrastructure.Storage;
 
+/// <summary>
+/// Dapper type handler for DateTimeOffset — SQLite stores as TEXT, Dapper
+/// cannot natively cast TEXT → DateTimeOffset without this handler.
+/// </summary>
+internal sealed class DateTimeOffsetHandler : SqlMapper.TypeHandler<DateTimeOffset>
+{
+  public override void SetValue(global::System.Data.IDbDataParameter parameter, DateTimeOffset value)
+    => parameter.Value = value.ToString("o");
+
+  public override DateTimeOffset Parse(object value)
+    => DateTimeOffset.Parse((string)value, null, global::System.Globalization.DateTimeStyles.RoundtripKind);
+}
+
+internal sealed class NullableDateTimeOffsetHandler : SqlMapper.TypeHandler<DateTimeOffset?>
+{
+  public override void SetValue(global::System.Data.IDbDataParameter parameter, DateTimeOffset? value)
+    => parameter.Value = value?.ToString("o");
+
+  public override DateTimeOffset? Parse(object value)
+    => value is string s && !string.IsNullOrWhiteSpace(s)
+      ? DateTimeOffset.Parse(s, null, global::System.Globalization.DateTimeStyles.RoundtripKind)
+      : null;
+}
+
 public static class DbBootstrap
 {
+  private static bool _handlersRegistered;
+
   public static void EnsureCreated(string connectionString)
   {
+    if (!_handlersRegistered)
+    {
+      SqlMapper.AddTypeHandler(new DateTimeOffsetHandler());
+      SqlMapper.AddTypeHandler(new NullableDateTimeOffsetHandler());
+      _handlersRegistered = true;
+    }
+
     using var conn = new SqliteConnection(connectionString);
     conn.Open();
 

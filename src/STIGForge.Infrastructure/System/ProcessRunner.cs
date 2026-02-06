@@ -39,7 +39,7 @@ public sealed class ProcessRunner : IProcessRunner
         {
             using (ct.Register(() => 
             {
-                try { process.Kill(); } catch { }
+                try { process.Kill(); } catch { /* Best-effort kill on cancellation */ }
                 tcs.TrySetCanceled(ct);
             }))
             {

@@ -7,7 +7,7 @@ using System.Diagnostics;
 
 namespace STIGForge.UnitTests.Apply;
 
-public sealed class RebootCoordinatorTests
+public sealed class RebootCoordinatorTests : IDisposable
 {
     private readonly Mock<ILogger<RebootCoordinator>> _loggerMock;
     private readonly RebootCoordinator _coordinator;

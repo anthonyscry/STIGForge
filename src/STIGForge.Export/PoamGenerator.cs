@@ -163,7 +163,7 @@ public static class PoamGenerator
     if (string.IsNullOrWhiteSpace(severity))
       return "Medium";
 
-    var normalized = severity.ToLowerInvariant();
+    var normalized = severity!.ToLowerInvariant();
     return normalized switch
     {
       "high" => "High",
@@ -184,7 +184,7 @@ public static class PoamGenerator
     var desc = finding.Title ?? "Security control deficiency";
     if (!string.IsNullOrWhiteSpace(finding.FindingDetails))
     {
-      var details = finding.FindingDetails.Length > 200
+      var details = finding.FindingDetails!.Length > 200
         ? finding.FindingDetails.Substring(0, 200) + "..."
         : finding.FindingDetails;
       desc += $" | Details: {details}";

@@ -157,7 +157,7 @@ public static class PowerStigDataWriter
       return string.Empty;
 
     // Escape backticks first so escape markers are not double-escaped later
-    value = value.Replace("`", "``");
+    value = value!.Replace("`", "``");
 
     // Escape backslashes
     value = value.Replace("\\", "\\\\");

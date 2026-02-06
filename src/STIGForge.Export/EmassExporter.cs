@@ -215,7 +215,7 @@ public sealed class EmassExporter
     if (string.IsNullOrWhiteSpace(status))
       return VerifyStatus.NotReviewed;
 
-    var s = status.Trim().ToLowerInvariant();
+    var s = status!.Trim().ToLowerInvariant();
     if (s.Contains("pass") || s.Contains("notafinding"))
       return VerifyStatus.Pass;
     if (s.Contains("fail") || s.Contains("open"))
