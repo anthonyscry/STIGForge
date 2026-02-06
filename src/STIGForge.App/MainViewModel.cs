@@ -577,6 +577,35 @@ public partial class MainViewModel : ObservableObject
     }
   }
 
+  [RelayCommand]
+  private void LaunchManualWizard()
+  {
+    try
+    {
+      if (string.IsNullOrWhiteSpace(BundleRoot))
+      {
+        StatusText = "Select a bundle first.";
+        return;
+      }
+
+      var manualControls = ManualControls.Select(m => m.Control).ToList();
+      var viewModel = new ViewModels.ManualCheckWizardViewModel(BundleRoot, manualControls);
+      var wizard = new Views.ManualCheckWizard(viewModel);
+      
+      wizard.Closed += (s, e) =>
+      {
+        // Refresh manual controls after wizard closes
+        LoadManualControls();
+      };
+      
+      wizard.ShowDialog();
+    }
+    catch (Exception ex)
+    {
+      StatusText = "Failed to launch wizard: " + ex.Message;
+    }
+  }
+
   partial void OnSelectedManualControlChanged(ManualControlItem? value)
   {
     if (value == null) return;

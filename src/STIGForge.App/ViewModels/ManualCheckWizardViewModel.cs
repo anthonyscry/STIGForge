@@ -1,0 +1,249 @@
+using System.IO;
+using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
+using System.Windows.Media;
+using STIGForge.Core.Models;
+using STIGForge.Core.Services;
+
+namespace STIGForge.App.ViewModels;
+
+public partial class ManualCheckWizardViewModel : ObservableObject
+{
+  private readonly string _bundleRoot;
+  private readonly List<ControlRecord> _controls;
+  private readonly ManualAnswerService _answerService;
+  private int _currentIndex = -1;
+
+  [ObservableProperty] private WizardScreen _currentScreen = WizardScreen.Welcome;
+  [ObservableProperty] private string _bundleInfo = string.Empty;
+  [ObservableProperty] private int _totalControls;
+  [ObservableProperty] private int _answeredControls;
+  [ObservableProperty] private int _passCount;
+  [ObservableProperty] private int _failCount;
+  [ObservableProperty] private int _notApplicableCount;
+  [ObservableProperty] private string _progressText = string.Empty;
+  [ObservableProperty] private string _completionText = string.Empty;
+
+  // Current control display
+  [ObservableProperty] private string _currentControlId = string.Empty;
+  [ObservableProperty] private string _currentTitle = string.Empty;
+  [ObservableProperty] private string _currentSeverity = string.Empty;
+  [ObservableProperty] private Brush _severityColor = Brushes.Gray;
+  [ObservableProperty] private string _currentCheckText = string.Empty;
+  [ObservableProperty] private string _currentFixText = string.Empty;
+
+  // Answer inputs
+  [ObservableProperty] private bool _isPass;
+  [ObservableProperty] private bool _isFail;
+  [ObservableProperty] private bool _isNotApplicable;
+  [ObservableProperty] private bool _isNotReviewed = true;
+  [ObservableProperty] private string _answerReason = string.Empty;
+  [ObservableProperty] private string _answerComment = string.Empty;
+
+  // Screen visibility
+  public bool ShowWelcome => CurrentScreen == WizardScreen.Welcome;
+  public bool ShowReview => CurrentScreen == WizardScreen.Review;
+  public bool ShowCompletion => CurrentScreen == WizardScreen.Completion;
+  public bool HasUnansweredControls => _controls.Count > 0;
+  public bool AllControlsAnswered => _controls.Count == 0;
+
+  public ManualCheckWizardViewModel(string bundleRoot, List<ControlRecord> manualControls)
+  {
+    _bundleRoot = bundleRoot;
+    _answerService = new ManualAnswerService();
+    
+    // Get unanswered controls
+    _controls = _answerService.GetUnansweredControls(bundleRoot, manualControls);
+    
+    LoadStats();
+    UpdateBundleInfo();
+  }
+
+  [RelayCommand]
+  private void StartWizard()
+  {
+    if (_controls.Count == 0) return;
+    
+    _currentIndex = 0;
+    CurrentScreen = WizardScreen.Review;
+    LoadCurrentControl();
+    OnPropertyChanged(nameof(ShowWelcome));
+    OnPropertyChanged(nameof(ShowReview));
+    OnPropertyChanged(nameof(ShowCompletion));
+  }
+
+  [RelayCommand]
+  private void PreviousControl()
+  {
+    if (_currentIndex > 0)
+    {
+      _currentIndex--;
+      LoadCurrentControl();
+    }
+  }
+
+  [RelayCommand]
+  private void SkipControl()
+  {
+    if (_currentIndex < _controls.Count - 1)
+    {
+      _currentIndex++;
+      LoadCurrentControl();
+    }
+    else
+    {
+      ShowCompletionScreen();
+    }
+  }
+
+  [RelayCommand]
+  private void SaveAndNext()
+  {
+    // Save current answer
+    var control = _controls[_currentIndex];
+    var answer = new ManualAnswer
+    {
+      RuleId = control.ExternalIds.RuleId,
+      VulnId = control.ExternalIds.VulnId,
+      Status = GetSelectedStatus(),
+      Reason = string.IsNullOrWhiteSpace(AnswerReason) ? null : AnswerReason,
+      Comment = string.IsNullOrWhiteSpace(AnswerComment) ? null : AnswerComment
+    };
+
+    _answerService.SaveAnswer(_bundleRoot, answer);
+
+    // Remove from unanswered list
+    _controls.RemoveAt(_currentIndex);
+
+    // Update stats
+    LoadStats();
+
+    // Move to next or show completion
+    if (_controls.Count == 0 || _currentIndex >= _controls.Count)
+    {
+      ShowCompletionScreen();
+    }
+    else
+    {
+      LoadCurrentControl();
+    }
+  }
+
+  [RelayCommand]
+  private void CloseWizard()
+  {
+    // Will be handled by window close
+  }
+
+  private void LoadCurrentControl()
+  {
+    if (_currentIndex < 0 || _currentIndex >= _controls.Count) return;
+
+    var control = _controls[_currentIndex];
+    CurrentControlId = control.ExternalIds.VulnId ?? control.ExternalIds.RuleId ?? "Unknown";
+    CurrentTitle = control.Title;
+    CurrentSeverity = control.Severity;
+    SeverityColor = GetSeverityBrush(control.Severity);
+    CurrentCheckText = control.CheckText ?? "No check text available.";
+    CurrentFixText = control.FixText ?? "No fix text available.";
+
+    // Reset answer inputs
+    IsPass = false;
+    IsFail = false;
+    IsNotApplicable = false;
+    IsNotReviewed = true;
+    AnswerReason = string.Empty;
+    AnswerComment = string.Empty;
+
+    UpdateProgress();
+  }
+
+  private void LoadStats()
+  {
+    var allManualControls = LoadAllManualControls();
+    var stats = _answerService.GetProgressStats(_bundleRoot, allManualControls);
+
+    TotalControls = stats.TotalControls;
+    AnsweredControls = stats.AnsweredControls;
+    PassCount = stats.PassCount;
+    FailCount = stats.FailCount;
+    NotApplicableCount = stats.NotApplicableCount;
+
+    CompletionText = $"{stats.PercentComplete:F1}% Complete";
+  }
+
+  private List<ControlRecord> LoadAllManualControls()
+  {
+    var controlsPath = Path.Combine(_bundleRoot, "Manifest", "pack_controls.json");
+    if (!File.Exists(controlsPath)) return new List<ControlRecord>();
+
+    var json = File.ReadAllText(controlsPath);
+    var allControls = System.Text.Json.JsonSerializer.Deserialize<List<ControlRecord>>(json,
+      new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true }) 
+      ?? new List<ControlRecord>();
+
+    return allControls.Where(c => c.IsManual).ToList();
+  }
+
+  private void UpdateBundleInfo()
+  {
+    var manifestPath = Path.Combine(_bundleRoot, "Manifest", "manifest.json");
+    if (File.Exists(manifestPath))
+    {
+      try
+      {
+        var json = File.ReadAllText(manifestPath);
+        using var doc = System.Text.Json.JsonDocument.Parse(json);
+        var systemName = doc.RootElement.GetProperty("run").GetProperty("systemName").GetString();
+        var profileName = doc.RootElement.GetProperty("run").GetProperty("profileName").GetString();
+        BundleInfo = $"System: {systemName}\nProfile: {profileName}";
+      }
+      catch
+      {
+        BundleInfo = "Bundle information not available.";
+      }
+    }
+  }
+
+  private void UpdateProgress()
+  {
+    var remaining = _controls.Count;
+    var completed = TotalControls - remaining;
+    ProgressText = $"Control {completed + 1} of {TotalControls}";
+  }
+
+  private void ShowCompletionScreen()
+  {
+    CurrentScreen = WizardScreen.Completion;
+    LoadStats();
+    OnPropertyChanged(nameof(ShowWelcome));
+    OnPropertyChanged(nameof(ShowReview));
+    OnPropertyChanged(nameof(ShowCompletion));
+  }
+
+  private string GetSelectedStatus()
+  {
+    if (IsPass) return "NotAFinding";
+    if (IsFail) return "Open";
+    if (IsNotApplicable) return "NotApplicable";
+    return "NotReviewed";
+  }
+
+  private static Brush GetSeverityBrush(string severity)
+  {
+    return severity?.ToLowerInvariant() switch
+    {
+      "high" => Brushes.Red,
+      "medium" => Brushes.Orange,
+      "low" => Brushes.Gold,
+      _ => Brushes.Gray
+    };
+  }
+}
+
+public enum WizardScreen
+{
+  Welcome,
+  Review,
+  Completion
+}
