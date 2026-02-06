@@ -50,6 +50,35 @@ public sealed class ContentPackImporter
         _controls = controls;
     }
 
+    /// <summary>
+    /// Finds incomplete imports (crashed during import) and returns their checkpoint info.
+    /// These can be cleaned up or retried.
+    /// </summary>
+    public List<ImportCheckpoint> FindIncompleteImports()
+    {
+        var incomplete = new List<ImportCheckpoint>();
+        
+        // Get all pack directories
+        var packsRoot = Path.GetDirectoryName(_paths.GetPackRoot("dummy"))!;
+        if (!Directory.Exists(packsRoot))
+            return incomplete;
+
+        var packDirs = Directory.GetDirectories(packsRoot);
+        
+        foreach (var packDir in packDirs)
+        {
+            var checkpoint = ImportCheckpoint.Load(packDir);
+            if (checkpoint != null && 
+                checkpoint.Stage != ImportStage.Complete && 
+                checkpoint.Stage != ImportStage.Failed)
+            {
+                incomplete.Add(checkpoint);
+            }
+        }
+
+        return incomplete;
+    }
+
     public async Task<ContentPack> ImportZipAsync(string zipPath, string packName, string sourceLabel, CancellationToken ct)
     {
         var packId = Guid.NewGuid().ToString("n");
@@ -57,10 +86,26 @@ public sealed class ContentPackImporter
         var rawRoot = Path.Combine(packRoot, "raw");
         Directory.CreateDirectory(rawRoot);
 
-        // Extract ZIP
-        ZipFile.ExtractToDirectory(zipPath, rawRoot);
+        // Initialize checkpoint for crash recovery
+        var checkpoint = new ImportCheckpoint
+        {
+            PackId = packId,
+            ZipPath = zipPath,
+            PackName = packName,
+            Stage = ImportStage.Extracting,
+            StartedAt = DateTimeOffset.Now
+        };
+        checkpoint.Save(packRoot);
 
-        var zipHash = await _hash.Sha256FileAsync(zipPath, ct);
+        try
+        {
+            // Extract ZIP
+            ZipFile.ExtractToDirectory(zipPath, rawRoot);
+            
+            checkpoint.Stage = ImportStage.Parsing;
+            checkpoint.Save(packRoot);
+
+            var zipHash = await _hash.Sha256FileAsync(zipPath, ct);
 
         var pack = new ContentPack
         {
@@ -89,40 +134,85 @@ public sealed class ContentPackImporter
             _ => ImportStigZip(rawRoot, packName, parsingErrors) // Default to STIG for backward compatibility
         };
 
-        var validationErrors = ControlRecordContractValidator.Validate(parsed);
-        if (validationErrors.Count > 0)
-        {
-            throw new ParsingException(
-                $"[IMPORT-CONTRACT-001] Parsed controls failed canonical validation ({validationErrors.Count} errors): " +
-                string.Join(" | ", validationErrors.Take(10)));
+            checkpoint.Stage = ImportStage.Validating;
+            checkpoint.ParsedControlCount = parsed.Count;
+            checkpoint.Save(packRoot);
+
+            var validationErrors = ControlRecordContractValidator.Validate(parsed);
+            if (validationErrors.Count > 0)
+            {
+                checkpoint.Stage = ImportStage.Failed;
+                checkpoint.ErrorMessage = $"Validation failed: {validationErrors.Count} errors";
+                checkpoint.Save(packRoot);
+                
+                throw new ParsingException(
+                    $"[IMPORT-CONTRACT-001] Parsed controls failed canonical validation ({validationErrors.Count} errors): " +
+                    string.Join(" | ", validationErrors.Take(10)));
+            }
+
+            // Detect conflicts before saving
+            var conflictDetector = new ConflictDetector(_controls);
+            var conflicts = await conflictDetector.DetectConflictsAsync(pack.PackId, parsed, ct);
+            
+            // Block import if any ERROR-level conflicts exist
+            var errorConflicts = conflicts.Where(c => c.Severity == ConflictSeverity.Error).ToList();
+            if (errorConflicts.Count > 0)
+            {
+                checkpoint.Stage = ImportStage.Failed;
+                checkpoint.ErrorMessage = $"Conflicts detected: {errorConflicts.Count} ERROR-level conflicts";
+                checkpoint.Save(packRoot);
+                
+                throw new ParsingException(
+                    $"[IMPORT-CONFLICT-001] Import blocked due to {errorConflicts.Count} control conflicts with existing data. " +
+                    $"Conflicting controls: {string.Join(", ", errorConflicts.Select(c => c.ControlId).Take(10))}. " +
+                    "Review compatibility_matrix.json for details.");
+            }
+
+            checkpoint.Stage = ImportStage.Persisting;
+            checkpoint.Save(packRoot);
+
+            // Atomic save: both pack and controls in a logical transaction
+            await _packs.SaveAsync(pack, ct);
+            if (parsed.Count > 0)
+                await _controls.SaveControlsAsync(pack.PackId, parsed, ct);
+
+            var note = new
+            {
+                importedZip = Path.GetFileName(zipPath),
+                zipHash,
+                schemaVersion = CanonicalContract.Version,
+                detectedFormat = format.ToString(),
+                parsedControls = parsed.Count,
+                timestamp = DateTimeOffset.Now
+            };
+
+            var notePath = Path.Combine(packRoot, "import_note.json");
+            Directory.CreateDirectory(packRoot);
+            File.WriteAllText(notePath, JsonSerializer.Serialize(note, new JsonSerializerOptions { WriteIndented = true }));
+
+            var compatibility = BuildCompatibilityMatrix(formatResult, parsed.Count, sourceStats, usedFallbackParser, parsingErrors, conflicts);
+            var compatibilityPath = Path.Combine(packRoot, "compatibility_matrix.json");
+            File.WriteAllText(compatibilityPath, JsonSerializer.Serialize(compatibility, new JsonSerializerOptions { WriteIndented = true }));
+
+            checkpoint.Stage = ImportStage.Complete;
+            checkpoint.CompletedAt = DateTimeOffset.Now;
+            checkpoint.Save(packRoot);
+
+            return pack;
         }
-
-        await _packs.SaveAsync(pack, ct);
-        if (parsed.Count > 0)
-            await _controls.SaveControlsAsync(pack.PackId, parsed, ct);
-
-        var note = new
+        catch (Exception ex)
         {
-            importedZip = Path.GetFileName(zipPath),
-            zipHash,
-            schemaVersion = CanonicalContract.Version,
-            detectedFormat = format.ToString(),
-            parsedControls = parsed.Count,
-            timestamp = DateTimeOffset.Now
-        };
-
-        var notePath = Path.Combine(packRoot, "import_note.json");
-        Directory.CreateDirectory(packRoot);
-        File.WriteAllText(notePath, JsonSerializer.Serialize(note, new JsonSerializerOptions { WriteIndented = true }));
-
-        var compatibility = BuildCompatibilityMatrix(formatResult, parsed.Count, sourceStats, usedFallbackParser, parsingErrors);
-        var compatibilityPath = Path.Combine(packRoot, "compatibility_matrix.json");
-        File.WriteAllText(compatibilityPath, JsonSerializer.Serialize(compatibility, new JsonSerializerOptions { WriteIndented = true }));
-
-        return pack;
+            // Mark checkpoint as failed for forensics
+            checkpoint.Stage = ImportStage.Failed;
+            checkpoint.ErrorMessage = ex.Message;
+            checkpoint.CompletedAt = DateTimeOffset.Now;
+            checkpoint.Save(packRoot);
+            
+            throw; // Re-throw to preserve original exception
+        }
     }
 
-    private static object BuildCompatibilityMatrix(FormatDetectionResult formatResult, int parsedControls, SourceArtifactStats sourceStats, bool usedFallbackParser, List<ParsingError> parsingErrors)
+    private static object BuildCompatibilityMatrix(FormatDetectionResult formatResult, int parsedControls, SourceArtifactStats sourceStats, bool usedFallbackParser, List<ParsingError> parsingErrors, List<ControlConflict> conflicts)
     {
         var format = formatResult.Format;
         var supportsXccdf = format is PackFormat.Stig or PackFormat.Scap;
@@ -197,7 +287,26 @@ public sealed class ContentPackImporter
                 file = e.FilePath,
                 error = e.ErrorMessage,
                 errorType = e.ErrorType
-            }).ToList()
+            }).ToList(),
+            conflicts = new
+            {
+                total = conflicts.Count,
+                bySeverity = new
+                {
+                    info = conflicts.Count(c => c.Severity == ConflictSeverity.Info),
+                    warning = conflicts.Count(c => c.Severity == ConflictSeverity.Warning),
+                    error = conflicts.Count(c => c.Severity == ConflictSeverity.Error)
+                },
+                details = conflicts.Select(c => new
+                {
+                    controlId = c.ControlId,
+                    severity = c.Severity.ToString(),
+                    reason = c.Reason,
+                    existingPackId = c.ExistingPackId,
+                    newPackId = c.NewPackId,
+                    differences = c.Differences
+                }).ToList()
+            }
         };
     }
 
