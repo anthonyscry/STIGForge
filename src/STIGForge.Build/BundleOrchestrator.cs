@@ -47,7 +47,7 @@ public sealed class BundleOrchestrator
       var overrides = LoadBundlePowerStigOverrides(root);
       if (controls.Count > 0 || overrides.Count > 0)
         data = PowerStigDataGenerator.CreateFromControls(controls, overrides);
-      PowerStigDataWriter.WritePsd1(generated, data);
+      PowerStigDataWriter.Write(generated, data);
       psd1Path = generated;
     }
 
@@ -251,6 +251,6 @@ public sealed class BundleOrchestrator
 
   private static void WritePhaseMarker(string path, string logPath)
   {
-    File.WriteAllText(path, "Completed: " + DateTimeOffset.Now.ToString("o") + Environment.NewLine + logPath);
+    File.WriteAllText(path, "Completed: " + BuildTime.Now.ToString("o") + Environment.NewLine + logPath);
   }
 }

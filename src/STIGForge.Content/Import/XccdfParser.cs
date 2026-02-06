@@ -1,6 +1,6 @@
 using System.Xml;
+using System.Xml.Linq;
 using STIGForge.Core.Models;
-using STIGForge.Content.Extensions;
 
 namespace STIGForge.Content.Import;
 
@@ -17,94 +17,43 @@ public static class XccdfParser
             Async = false
         };
 
-        var results = new List<ControlRecord>();
-        string? benchmarkId = null;
-
         using var reader = XmlReader.Create(xmlPath, settings);
-        
-        while (reader.Read())
+        var doc = XDocument.Load(reader, LoadOptions.None);
+        var ns = (XNamespace)XccdfNamespace;
+
+        var benchmarkId = doc.Root?.Attribute("id")?.Value ?? Path.GetFileNameWithoutExtension(xmlPath);
+        var results = new List<ControlRecord>();
+
+        foreach (var rule in doc.Descendants(ns + "Rule"))
         {
-            // Skip non-element nodes
-            if (reader.NodeType != XmlNodeType.Element)
-                continue;
-
-            // Extract Benchmark ID
-            if (reader.LocalName == "Benchmark" && reader.NamespaceURI == XccdfNamespace)
-            {
-                benchmarkId = reader.GetAttribute("id") ?? Path.GetFileNameWithoutExtension(xmlPath);
-                continue;
-            }
-
-            // Parse Rule elements
-            if (reader.LocalName == "Rule" && reader.NamespaceURI == XccdfNamespace)
-            {
-                var control = ParseRule(reader, benchmarkId ?? Path.GetFileNameWithoutExtension(xmlPath), packName);
-                if (control != null)
-                {
-                    results.Add(control);
-                }
-            }
+            var control = ParseRule(rule, benchmarkId, packName, ns);
+            if (control != null) results.Add(control);
         }
 
         return results;
     }
 
-    private static ControlRecord? ParseRule(XmlReader reader, string benchmarkId, string packName)
+    private static ControlRecord? ParseRule(XElement rule, string benchmarkId, string packName, XNamespace ns)
     {
-        if (reader.NodeType != XmlNodeType.Element || reader.LocalName != "Rule")
-            return null;
+        var ruleId = rule.Attribute("id")?.Value;
+        var severity = rule.Attribute("severity")?.Value ?? "unknown";
+        var title = rule.Element(ns + "title")?.Value?.Trim();
+        if (string.IsNullOrWhiteSpace(title)) title = ruleId ?? "Untitled";
 
-        // Extract Rule attributes
-        var ruleId = reader.GetAttribute("id");
-        var severity = reader.GetAttribute("severity") ?? "unknown";
+        var description = rule.Element(ns + "description")?.Value?.Trim();
+        var fixText = rule.Element(ns + "fixtext")?.Value?.Trim();
 
-        // Initialize fields
-        string? title = ruleId ?? "Untitled";
-        string? description = null;
+        var check = rule.Element(ns + "check");
+        var checkSystem = check?.Attribute("system")?.Value;
         string? checkContent = null;
-        string? checkSystem = null;
-        string? fixText = null;
-
-        var ruleDepth = reader.Depth;
-
-        // Parse Rule children
-        while (reader.Read())
+        if (check != null)
         {
-            // Stop when we exit the Rule element
-            if (reader.NodeType == XmlNodeType.EndElement && 
-                reader.LocalName == "Rule" && 
-                reader.Depth == ruleDepth)
-            {
-                break;
-            }
-
-            if (reader.NodeType != XmlNodeType.Element)
-                continue;
-
-            // Only process elements in XCCDF namespace
-            if (reader.NamespaceURI != XccdfNamespace)
-                continue;
-
-            switch (reader.LocalName)
-            {
-                case "title":
-                    var titleText = reader.ReadElementContent();
-                    if (!string.IsNullOrWhiteSpace(titleText))
-                        title = titleText;
-                    break;
-
-                case "description":
-                    description = reader.ReadElementContent();
-                    break;
-
-                case "fixtext":
-                    fixText = reader.ReadElementContent();
-                    break;
-
-                case "check":
-                    checkContent = reader.ReadCheckContent(out checkSystem);
-                    break;
-            }
+            var parts = check.Elements(ns + "check-content")
+                .Select(e => (e.Value ?? string.Empty).Trim())
+                .Where(s => !string.IsNullOrWhiteSpace(s))
+                .ToList();
+            if (parts.Count > 0)
+                checkContent = string.Join(Environment.NewLine, parts);
         }
 
         // Determine if manual check

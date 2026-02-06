@@ -70,7 +70,7 @@ public static class XmlReaderExtensions
     {
         checkSystem = null;
 
-        if (reader.NodeType != XmlNodeType.Element || reader.Name != "check")
+        if (reader.NodeType != XmlNodeType.Element || reader.LocalName != "check")
             return null;
 
         // Capture check/@system attribute before moving into children
@@ -84,14 +84,14 @@ public static class XmlReaderExtensions
         {
             // Stop when we exit the check element
             if (reader.NodeType == XmlNodeType.EndElement && 
-                reader.Name == "check" && 
+                reader.LocalName == "check" && 
                 reader.Depth == checkDepth)
             {
                 break;
             }
 
             // Capture check-content elements
-            if (reader.NodeType == XmlNodeType.Element && reader.Name == "check-content")
+            if (reader.NodeType == XmlNodeType.Element && reader.LocalName == "check-content")
             {
                 var text = reader.ReadElementContent();
                 if (!string.IsNullOrWhiteSpace(text))

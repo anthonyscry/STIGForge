@@ -156,17 +156,14 @@ public static class PowerStigDataWriter
     if (string.IsNullOrEmpty(value))
       return string.Empty;
 
-    // Escape backslashes first (must be before other escapes)
+    // Escape backticks first so escape markers are not double-escaped later
+    value = value.Replace("`", "``");
+
+    // Escape backslashes
     value = value.Replace("\\", "\\\\");
 
     // Escape quotes
     value = value.Replace("\"", "`\"");
-
-    // Escape dollar signs (prevent variable expansion in PowerShell)
-    value = value.Replace("$", "`$");
-
-    // Escape backticks
-    value = value.Replace("`", "``");
 
     return value;
   }
