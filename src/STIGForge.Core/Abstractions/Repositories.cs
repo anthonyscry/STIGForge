@@ -7,6 +7,7 @@ public interface IContentPackRepository
   Task SaveAsync(ContentPack pack, CancellationToken ct);
   Task<ContentPack?> GetAsync(string packId, CancellationToken ct);
   Task<IReadOnlyList<ContentPack>> ListAsync(CancellationToken ct);
+  Task DeleteAsync(string packId, CancellationToken ct);
 }
 
 public interface IControlRepository
@@ -27,6 +28,7 @@ public interface IProfileRepository
   Task SaveAsync(Profile profile, CancellationToken ct);
   Task<Profile?> GetAsync(string profileId, CancellationToken ct);
   Task<IReadOnlyList<Profile>> ListAsync(CancellationToken ct);
+  Task DeleteAsync(string profileId, CancellationToken ct);
 }
 
 public interface IOverlayRepository

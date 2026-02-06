@@ -13,6 +13,7 @@
 
     <DockPanel Grid.Row="0" LastChildFill="True" Margin="0,0,0,8">
       <TextBlock Text="STIGForge" FontSize="22" FontWeight="SemiBold" />
+      <Button Content="About" Width="60" Height="24" Margin="12,4,0,0" Command="{Binding ShowAboutCommand}" DockPanel.Dock="Right"/>
       <TextBlock Text="{Binding StatusText}" Margin="12,8,0,0" Foreground="Gray"/>
       <ProgressBar Width="120" Height="12" Margin="12,10,0,0" IsIndeterminate="True"
                    Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}" />
@@ -210,6 +211,7 @@
               <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
                 <Button Content="Open Pack" Width="120" Command="{Binding OpenPackFolderCommand}" />
                 <Button Content="Export Map" Width="120" Margin="6,0,0,0" Command="{Binding ExportPowerStigMapCommand}" />
+                <Button Content="Delete Pack" Width="100" Margin="6,0,0,0" Command="{Binding DeleteSelectedPackCommand}" Foreground="Red"/>
               </StackPanel>
             </StackPanel>
           </Grid>
@@ -272,7 +274,10 @@
               <Button Content="Refresh" Width="90" Margin="6,0,0,0" Command="{Binding RefreshOverlaysCommand}" />
             </StackPanel>
 
-            <Button Content="Save Profile" Width="120" Margin="0,10,0,0" Command="{Binding SaveProfileCommand}" />
+            <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+              <Button Content="Save Profile" Width="120" Command="{Binding SaveProfileCommand}" />
+              <Button Content="Delete Profile" Width="110" Margin="6,0,0,0" Command="{Binding DeleteSelectedProfileCommand}" Foreground="Red"/>
+            </StackPanel>
           </StackPanel>
         </Grid>
       </TabItem>
@@ -476,6 +481,71 @@
 
             <Button Content="Save Answer" Width="120" Margin="0,8,0,0" Command="{Binding SaveManualAnswerCommand}" />
             </StackPanel>
+          </Grid>
+        </Grid>
+      </TabItem>
+
+      <TabItem Header="Orchestrate">
+        <Grid Margin="12">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+          </Grid.RowDefinitions>
+
+          <TextBlock Grid.Row="0" Text="One-Click Workflow: Apply → Verify → Export"
+                     FontSize="16" FontWeight="SemiBold" Margin="0,0,0,16"/>
+
+          <!-- Configuration -->
+          <Border Grid.Row="1" BorderBrush="LightGray" BorderThickness="1" Padding="16" Margin="0,0,0,16" Background="#FAFAFA">
+            <StackPanel>
+              <TextBlock Text="Configuration" FontWeight="SemiBold" Margin="0,0,0,12"/>
+
+              <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                <TextBlock Text="Bundle:" Width="120" VerticalAlignment="Center" />
+                <TextBox Width="520" Text="{Binding BundleRoot}" />
+                <Button Content="Browse" Width="80" Margin="6,0,0,0" Command="{Binding BrowseBundleCommand}" />
+              </StackPanel>
+
+              <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                <TextBlock Text="Eval-STIG Root:" Width="120" VerticalAlignment="Center" />
+                <TextBox Width="520" Text="{Binding EvaluateStigRoot}" />
+                <Button Content="Browse" Width="80" Margin="6,0,0,0" Command="{Binding BrowseEvaluateStigCommand}" />
+              </StackPanel>
+
+              <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                <TextBlock Text="SCAP Cmd:" Width="120" VerticalAlignment="Center" />
+                <TextBox Width="520" Text="{Binding ScapCommandPath}" />
+                <Button Content="Browse" Width="80" Margin="6,0,0,0" Command="{Binding BrowseScapCommandCommand}" />
+              </StackPanel>
+
+              <StackPanel Orientation="Horizontal">
+                <CheckBox Content="Run Apply" IsChecked="{Binding OrchRunApply}" Margin="0,0,16,0"/>
+                <CheckBox Content="Run Verify" IsChecked="{Binding OrchRunVerify}" Margin="0,0,16,0"/>
+                <CheckBox Content="Export eMASS" IsChecked="{Binding OrchRunExport}" />
+              </StackPanel>
+            </StackPanel>
+          </Border>
+
+          <!-- Run + Log -->
+          <Grid Grid.Row="2">
+            <Grid.RowDefinitions>
+              <RowDefinition Height="Auto"/>
+              <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+
+            <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+              <Button Content="Run Orchestration" Width="160" Height="36" FontWeight="SemiBold"
+                      Command="{Binding OrchestrateCommand}" IsEnabled="{Binding ActionsEnabled}" />
+              <TextBlock Text="{Binding OrchStatus}" Margin="12,8,0,0" Foreground="Gray"/>
+            </StackPanel>
+
+            <Border Grid.Row="1" BorderBrush="LightGray" BorderThickness="1" Background="White">
+              <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <TextBlock Text="{Binding OrchLog}" FontFamily="Consolas" FontSize="11" Padding="8"
+                           TextWrapping="Wrap"/>
+              </ScrollViewer>
+            </Border>
           </Grid>
         </Grid>
       </TabItem>
