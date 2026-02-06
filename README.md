@@ -44,6 +44,22 @@ dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- overlay-import-
 ```powershell
 dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- powerstig-map-export --pack-id <PACK_ID> --output C:\path\to\powerstig_map.csv
 ```
+12) List imported packs:
+```powershell
+dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- list-packs
+```
+13) List overlays:
+```powershell
+dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- list-overlays
+```
+14) Diff two packs (quarterly update review):
+```powershell
+dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- diff-packs --baseline <OLD_PACK_ID> --target <NEW_PACK_ID> --output diff-report.md
+```
+15) Rebase an overlay to a new pack:
+```powershell
+dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- rebase-overlay --overlay <OVERLAY_ID> --baseline <OLD_PACK_ID> --target <NEW_PACK_ID> --apply
+```
 
 ## Repo layout
 - src/ STIGForge.* projects (WPF App + modules)

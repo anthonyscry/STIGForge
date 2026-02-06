@@ -57,6 +57,8 @@ static IHost BuildHost()
       services.AddSingleton<SnapshotService>();
       services.AddSingleton<RollbackScriptGenerator>();
       services.AddSingleton<STIGForge.Apply.ApplyRunner>();
+      services.AddSingleton<BaselineDiffService>();
+      services.AddSingleton<OverlayRebaseService>();
       services.AddSingleton<BundleOrchestrator>();
       services.AddSingleton<STIGForge.Export.EmassExporter>();
     })
@@ -608,6 +610,305 @@ exportCmd.SetHandler(async (bundle, output) =>
 
 rootCmd.AddCommand(exportCmd);
 
+// ── list-packs ──────────────────────────────────────────────────────────────
+var listPacksCmd = new Command("list-packs", "List all imported content packs");
+
+listPacksCmd.SetHandler(async () =>
+{
+  using var host = BuildHost();
+  await host.StartAsync();
+
+  var packs = host.Services.GetRequiredService<IContentPackRepository>();
+  var list = await packs.ListAsync(CancellationToken.None);
+
+  if (list.Count == 0)
+  {
+    Console.WriteLine("No packs found.");
+  }
+  else
+  {
+    Console.WriteLine($"{"PackId",-40} {"Name",-30} {"Imported"}");
+    Console.WriteLine(new string('-', 90));
+    foreach (var p in list)
+      Console.WriteLine($"{p.PackId,-40} {p.Name,-30} {p.ImportedAt:yyyy-MM-dd HH:mm}");
+  }
+
+  await host.StopAsync();
+});
+
+rootCmd.AddCommand(listPacksCmd);
+
+// ── list-overlays ───────────────────────────────────────────────────────────
+var listOverlaysCmd = new Command("list-overlays", "List all overlays in the repository");
+
+listOverlaysCmd.SetHandler(async () =>
+{
+  using var host = BuildHost();
+  await host.StartAsync();
+
+  var overlaysRepo = host.Services.GetRequiredService<IOverlayRepository>();
+  var list = await overlaysRepo.ListAsync(CancellationToken.None);
+
+  if (list.Count == 0)
+  {
+    Console.WriteLine("No overlays found.");
+  }
+  else
+  {
+    Console.WriteLine($"{"OverlayId",-40} {"Name",-30} {"Overrides",-10} {"Updated"}");
+    Console.WriteLine(new string('-', 100));
+    foreach (var o in list)
+      Console.WriteLine($"{o.OverlayId,-40} {o.Name,-30} {o.Overrides.Count,-10} {o.UpdatedAt:yyyy-MM-dd HH:mm}");
+  }
+
+  await host.StopAsync();
+});
+
+rootCmd.AddCommand(listOverlaysCmd);
+
+// ── diff-packs ──────────────────────────────────────────────────────────────
+var diffCmd = new Command("diff-packs", "Compare two content packs and show what changed");
+var diffBaselineOpt = new Option<string>("--baseline", "Baseline (old) pack id") { IsRequired = true };
+var diffTargetOpt = new Option<string>("--target", "Target (new) pack id") { IsRequired = true };
+var diffOutputOpt = new Option<string>("--output", () => string.Empty, "Write Markdown report to file");
+var diffJsonOpt = new Option<bool>("--json", "Output full diff as JSON instead of summary");
+
+diffCmd.AddOption(diffBaselineOpt);
+diffCmd.AddOption(diffTargetOpt);
+diffCmd.AddOption(diffOutputOpt);
+diffCmd.AddOption(diffJsonOpt);
+
+diffCmd.SetHandler(async (baseline, target, output, json) =>
+{
+  using var host = BuildHost();
+  await host.StartAsync();
+
+  var diffService = host.Services.GetRequiredService<BaselineDiffService>();
+  var diff = await diffService.ComparePacksAsync(baseline, target, CancellationToken.None);
+
+  if (json)
+  {
+    var jsonText = JsonSerializer.Serialize(diff, new JsonSerializerOptions { WriteIndented = true });
+    if (!string.IsNullOrWhiteSpace(output))
+    {
+      File.WriteAllText(output, jsonText);
+      Console.WriteLine("JSON diff written to: " + output);
+    }
+    else
+    {
+      Console.WriteLine(jsonText);
+    }
+  }
+  else
+  {
+    // Console summary
+    Console.WriteLine($"Diff: {baseline} -> {target}");
+    Console.WriteLine($"  Added:     {diff.TotalAdded}");
+    Console.WriteLine($"  Removed:   {diff.TotalRemoved}");
+    Console.WriteLine($"  Modified:  {diff.TotalModified}");
+    Console.WriteLine($"  Unchanged: {diff.TotalUnchanged}");
+    Console.WriteLine();
+
+    if (diff.AddedControls.Count > 0)
+    {
+      Console.WriteLine("Added controls:");
+      foreach (var c in diff.AddedControls)
+        Console.WriteLine($"  + {c.ControlKey}  {c.NewControl?.Title}");
+      Console.WriteLine();
+    }
+
+    if (diff.RemovedControls.Count > 0)
+    {
+      Console.WriteLine("Removed controls:");
+      foreach (var c in diff.RemovedControls)
+        Console.WriteLine($"  - {c.ControlKey}  {c.BaselineControl?.Title}");
+      Console.WriteLine();
+    }
+
+    if (diff.ModifiedControls.Count > 0)
+    {
+      Console.WriteLine("Modified controls:");
+      foreach (var c in diff.ModifiedControls)
+      {
+        var highImpact = c.Changes.Any(ch => ch.Impact == FieldChangeImpact.High);
+        var marker = highImpact ? "!!" : "~";
+        var fields = string.Join(", ", c.Changes.Select(ch => ch.FieldName));
+        Console.WriteLine($"  {marker} {c.ControlKey}  [{fields}]");
+      }
+      Console.WriteLine();
+    }
+
+    // Markdown output
+    if (!string.IsNullOrWhiteSpace(output))
+    {
+      var md = new System.Text.StringBuilder();
+      md.AppendLine($"# Pack Diff: {baseline} → {target}");
+      md.AppendLine();
+      md.AppendLine($"| Metric | Count |");
+      md.AppendLine($"|--------|-------|");
+      md.AppendLine($"| Added | {diff.TotalAdded} |");
+      md.AppendLine($"| Removed | {diff.TotalRemoved} |");
+      md.AppendLine($"| Modified | {diff.TotalModified} |");
+      md.AppendLine($"| Unchanged | {diff.TotalUnchanged} |");
+      md.AppendLine();
+
+      if (diff.AddedControls.Count > 0)
+      {
+        md.AppendLine("## Added Controls");
+        md.AppendLine();
+        foreach (var c in diff.AddedControls)
+          md.AppendLine($"- **{c.ControlKey}** — {c.NewControl?.Title}");
+        md.AppendLine();
+      }
+
+      if (diff.RemovedControls.Count > 0)
+      {
+        md.AppendLine("## Removed Controls");
+        md.AppendLine();
+        foreach (var c in diff.RemovedControls)
+          md.AppendLine($"- **{c.ControlKey}** — {c.BaselineControl?.Title}");
+        md.AppendLine();
+      }
+
+      if (diff.ModifiedControls.Count > 0)
+      {
+        md.AppendLine("## Modified Controls");
+        md.AppendLine();
+        foreach (var c in diff.ModifiedControls)
+        {
+          md.AppendLine($"### {c.ControlKey}");
+          md.AppendLine();
+          md.AppendLine("| Field | Impact | Old | New |");
+          md.AppendLine("|-------|--------|-----|-----|");
+          foreach (var ch in c.Changes)
+          {
+            var oldSnip = Truncate(ch.OldValue, 60);
+            var newSnip = Truncate(ch.NewValue, 60);
+            md.AppendLine($"| {ch.FieldName} | {ch.Impact} | {oldSnip} | {newSnip} |");
+          }
+          md.AppendLine();
+        }
+      }
+
+      File.WriteAllText(output, md.ToString());
+      Console.WriteLine("Markdown report written to: " + output);
+    }
+  }
+
+  await host.StopAsync();
+}, diffBaselineOpt, diffTargetOpt, diffOutputOpt, diffJsonOpt);
+
+rootCmd.AddCommand(diffCmd);
+
+// ── rebase-overlay ──────────────────────────────────────────────────────────
+var rebaseCmd = new Command("rebase-overlay", "Rebase an overlay from baseline pack to target pack");
+var rebaseOverlayOpt = new Option<string>("--overlay", "Overlay id to rebase") { IsRequired = true };
+var rebaseBaselineOpt = new Option<string>("--baseline", "Current baseline pack id") { IsRequired = true };
+var rebaseTargetOpt = new Option<string>("--target", "New target pack id") { IsRequired = true };
+var rebaseApplyOpt = new Option<bool>("--apply", "Apply the rebase (create new rebased overlay)");
+var rebaseOutputOpt = new Option<string>("--output", () => string.Empty, "Write rebase report to file (Markdown or JSON)");
+var rebaseJsonOpt = new Option<bool>("--json", "Output report as JSON");
+
+rebaseCmd.AddOption(rebaseOverlayOpt);
+rebaseCmd.AddOption(rebaseBaselineOpt);
+rebaseCmd.AddOption(rebaseTargetOpt);
+rebaseCmd.AddOption(rebaseApplyOpt);
+rebaseCmd.AddOption(rebaseOutputOpt);
+rebaseCmd.AddOption(rebaseJsonOpt);
+
+rebaseCmd.SetHandler(async (InvocationContext ctx) =>
+{
+  var overlayId = ctx.ParseResult.GetValueForOption(rebaseOverlayOpt) ?? string.Empty;
+  var baseline = ctx.ParseResult.GetValueForOption(rebaseBaselineOpt) ?? string.Empty;
+  var target = ctx.ParseResult.GetValueForOption(rebaseTargetOpt) ?? string.Empty;
+  var apply = ctx.ParseResult.GetValueForOption(rebaseApplyOpt);
+  var output = ctx.ParseResult.GetValueForOption(rebaseOutputOpt) ?? string.Empty;
+  var json = ctx.ParseResult.GetValueForOption(rebaseJsonOpt);
+
+  using var host = BuildHost();
+  await host.StartAsync();
+
+  var rebaseService = host.Services.GetRequiredService<OverlayRebaseService>();
+  var report = await rebaseService.RebaseOverlayAsync(overlayId, baseline, target, CancellationToken.None);
+
+  if (!report.Success)
+  {
+    Console.Error.WriteLine("Rebase failed: " + report.ErrorMessage);
+    Environment.ExitCode = 1;
+    await host.StopAsync();
+    return;
+  }
+
+  if (json)
+  {
+    var jsonText = JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true });
+    if (!string.IsNullOrWhiteSpace(output))
+    {
+      File.WriteAllText(output, jsonText);
+      Console.WriteLine("JSON report written to: " + output);
+    }
+    else
+    {
+      Console.WriteLine(jsonText);
+    }
+  }
+  else
+  {
+    // Console summary
+    Console.WriteLine($"Rebase: overlay {overlayId}  ({baseline} -> {target})");
+    Console.WriteLine($"  Overall confidence: {report.OverallConfidence:P0}");
+    Console.WriteLine($"  Safe actions:       {report.SafeActions}");
+    Console.WriteLine($"  Review needed:      {report.ReviewNeeded}");
+    Console.WriteLine($"  High risk:          {report.HighRisk}");
+    Console.WriteLine();
+
+    foreach (var action in report.Actions)
+    {
+      var icon = action.ActionType switch
+      {
+        RebaseActionType.Keep => "  OK",
+        RebaseActionType.KeepWithWarning => "  ~~",
+        RebaseActionType.ReviewRequired => "  !!",
+        RebaseActionType.Remove => "  --",
+        RebaseActionType.Remap => "  =>",
+        _ => "  ??"
+      };
+      Console.WriteLine($"{icon} {action.OriginalControlKey,-40} {action.ActionType,-20} ({action.Confidence:P0})  {action.Reason}");
+    }
+    Console.WriteLine();
+
+    // Markdown output
+    if (!string.IsNullOrWhiteSpace(output))
+    {
+      var md = new System.Text.StringBuilder();
+      md.AppendLine($"# Rebase Report: {overlayId}");
+      md.AppendLine();
+      md.AppendLine($"- **Baseline:** {baseline}");
+      md.AppendLine($"- **Target:** {target}");
+      md.AppendLine($"- **Overall Confidence:** {report.OverallConfidence:P0}");
+      md.AppendLine();
+      md.AppendLine("| Control | Action | Confidence | Reason |");
+      md.AppendLine("|---------|--------|------------|--------|");
+      foreach (var action in report.Actions)
+        md.AppendLine($"| {action.OriginalControlKey} | {action.ActionType} | {action.Confidence:P0} | {action.Reason} |");
+      md.AppendLine();
+
+      File.WriteAllText(output, md.ToString());
+      Console.WriteLine("Markdown report written to: " + output);
+    }
+  }
+
+  if (apply)
+  {
+    var rebased = await rebaseService.ApplyRebaseAsync(overlayId, report, CancellationToken.None);
+    Console.WriteLine($"Rebased overlay created: {rebased.OverlayId} ({rebased.Name})");
+  }
+
+  await host.StopAsync();
+});
+
+rootCmd.AddCommand(rebaseCmd);
+
 return await InvokeWithErrorHandlingAsync(rootCmd, args);
 
 static async Task<int> InvokeWithErrorHandlingAsync(RootCommand command, string[] argv)
@@ -766,6 +1067,13 @@ static string ExtractAfterLabel(string text, string[] labels)
   }
 
   return string.Empty;
+}
+
+static string Truncate(string? value, int maxLength)
+{
+  if (string.IsNullOrEmpty(value)) return string.Empty;
+  var singleLine = value.Replace("\r", "").Replace("\n", " ");
+  return singleLine.Length <= maxLength ? singleLine : singleLine.Substring(0, maxLength) + "...";
 }
 
 static string Csv(string? value)
