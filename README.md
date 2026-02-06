@@ -60,6 +60,30 @@ dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- diff-packs --ba
 ```powershell
 dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- rebase-overlay --overlay <OVERLAY_ID> --baseline <OLD_PACK_ID> --target <NEW_PACK_ID> --apply
 ```
+16) List manual controls and answer status:
+```powershell
+dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- list-manual-controls --bundle C:\path\to\bundle --status Open
+```
+17) Save manual answer (single):
+```powershell
+dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- manual-answer --bundle C:\path\to\bundle --rule-id SV-12345 --status NotApplicable --reason "Not in scope"
+```
+18) Save manual answers (batch CSV):
+```powershell
+dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- manual-answer --bundle C:\path\to\bundle --csv C:\path\to\answers.csv
+```
+19) Save evidence artifact:
+```powershell
+dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- evidence-save --bundle C:\path\to\bundle --rule-id SV-12345 --type File --source-file C:\path\to\evidence.txt
+```
+20) Bundle summary (dashboard):
+```powershell
+dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- bundle-summary --bundle C:\path\to\bundle --json
+```
+21) Edit overlay (add/remove overrides):
+```powershell
+dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- overlay-edit --overlay <OVERLAY_ID> --add-rule SV-12345 --status NotApplicable --reason "Org policy"
+```
 
 ## Repo layout
 - src/ STIGForge.* projects (WPF App + modules)

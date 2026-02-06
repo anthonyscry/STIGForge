@@ -15,6 +15,7 @@ using STIGForge.Infrastructure.Hashing;
 using STIGForge.Infrastructure.Paths;
 using STIGForge.Infrastructure.Storage;
 using STIGForge.Infrastructure.System;
+using STIGForge.Evidence;
 using STIGForge.Verify;
 
 static IHost BuildHost()
@@ -59,6 +60,8 @@ static IHost BuildHost()
       services.AddSingleton<STIGForge.Apply.ApplyRunner>();
       services.AddSingleton<BaselineDiffService>();
       services.AddSingleton<OverlayRebaseService>();
+      services.AddSingleton<ManualAnswerService>();
+      services.AddSingleton<EvidenceCollector>();
       services.AddSingleton<BundleOrchestrator>();
       services.AddSingleton<STIGForge.Export.EmassExporter>();
     })
@@ -908,6 +911,461 @@ rebaseCmd.SetHandler(async (InvocationContext ctx) =>
 });
 
 rootCmd.AddCommand(rebaseCmd);
+
+// ── list-manual-controls ────────────────────────────────────────────────
+var listManualCmd = new Command("list-manual-controls", "List manual controls and their answer status from a bundle");
+var lmBundleOpt = new Option<string>("--bundle", "Bundle root path") { IsRequired = true };
+var lmStatusOpt = new Option<string>("--status", () => string.Empty, "Filter by status: Pass|Fail|NA|Open");
+var lmSearchOpt = new Option<string>("--search", () => string.Empty, "Text search filter on title/id");
+
+listManualCmd.AddOption(lmBundleOpt);
+listManualCmd.AddOption(lmStatusOpt);
+listManualCmd.AddOption(lmSearchOpt);
+
+listManualCmd.SetHandler(async (InvocationContext ctx) =>
+{
+  var bundle = ctx.ParseResult.GetValueForOption(lmBundleOpt) ?? string.Empty;
+  var statusFilter = ctx.ParseResult.GetValueForOption(lmStatusOpt) ?? string.Empty;
+  var searchFilter = ctx.ParseResult.GetValueForOption(lmSearchOpt) ?? string.Empty;
+
+  if (!Directory.Exists(bundle))
+  {
+    Console.Error.WriteLine("Bundle not found: " + bundle);
+    Environment.ExitCode = 2;
+    return;
+  }
+
+  // Load controls from bundle manifest
+  var controlsPath = Path.Combine(bundle, "Manifest", "pack_controls.json");
+  if (!File.Exists(controlsPath))
+  {
+    Console.Error.WriteLine("No pack_controls.json found in bundle.");
+    Environment.ExitCode = 2;
+    return;
+  }
+
+  var controlsJson = File.ReadAllText(controlsPath);
+  var allControls = JsonSerializer.Deserialize<List<ControlRecord>>(controlsJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+    ?? new List<ControlRecord>();
+
+  var manualControls = allControls.Where(c => c.IsManual).ToList();
+
+  // Load answers
+  var manualSvc = new ManualAnswerService();
+  var answerFile = manualSvc.LoadAnswerFile(bundle);
+
+  // Build display list
+  var rows = new List<(string Id, string Title, string Status)>();
+  foreach (var c in manualControls)
+  {
+    var key = c.ExternalIds.RuleId ?? c.ExternalIds.VulnId ?? c.ControlId;
+    var answer = answerFile.Answers.FirstOrDefault(a =>
+      (!string.IsNullOrWhiteSpace(a.RuleId) && string.Equals(a.RuleId, c.ExternalIds.RuleId, StringComparison.OrdinalIgnoreCase)) ||
+      (!string.IsNullOrWhiteSpace(a.VulnId) && string.Equals(a.VulnId, c.ExternalIds.VulnId, StringComparison.OrdinalIgnoreCase)));
+    var status = answer?.Status ?? "Open";
+    rows.Add((key, c.Title, status));
+  }
+
+  // Apply filters
+  if (!string.IsNullOrWhiteSpace(statusFilter))
+    rows = rows.Where(r => r.Status.IndexOf(statusFilter, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
+  if (!string.IsNullOrWhiteSpace(searchFilter))
+    rows = rows.Where(r => r.Id.IndexOf(searchFilter, StringComparison.OrdinalIgnoreCase) >= 0 ||
+                            r.Title.IndexOf(searchFilter, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
+
+  // Print
+  var stats = manualSvc.GetProgressStats(bundle, manualControls);
+  Console.WriteLine($"Manual controls: {stats.TotalControls} total, {stats.AnsweredControls} answered ({stats.PercentComplete:F0}%)");
+  Console.WriteLine($"  Pass: {stats.PassCount}  Fail: {stats.FailCount}  NA: {stats.NotApplicableCount}  Open: {stats.UnansweredControls}");
+  Console.WriteLine();
+
+  if (rows.Count == 0)
+  {
+    Console.WriteLine("No matching controls.");
+  }
+  else
+  {
+    Console.WriteLine($"{"Id",-30} {"Status",-15} {"Title"}");
+    Console.WriteLine(new string('-', 90));
+    foreach (var r in rows)
+      Console.WriteLine($"{r.Id,-30} {r.Status,-15} {Truncate(r.Title, 44)}");
+  }
+});
+
+rootCmd.AddCommand(listManualCmd);
+
+// ── manual-answer ───────────────────────────────────────────────────────
+var manualAnswerCmd = new Command("manual-answer", "Save manual control answers (single or batch CSV)");
+var maBundleOpt = new Option<string>("--bundle", "Bundle root path") { IsRequired = true };
+var maCsvOpt = new Option<string>("--csv", () => string.Empty, "CSV file path (RuleId,Status,Reason,Comment)");
+var maRuleOpt = new Option<string>("--rule-id", () => string.Empty, "Single answer: Rule ID");
+var maStatusOpt = new Option<string>("--status", () => string.Empty, "Single answer: Pass|Fail|NotApplicable|Open");
+var maReasonOpt = new Option<string>("--reason", () => string.Empty, "Single answer: Reason");
+var maCommentOpt = new Option<string>("--comment", () => string.Empty, "Single answer: Comment");
+
+manualAnswerCmd.AddOption(maBundleOpt);
+manualAnswerCmd.AddOption(maCsvOpt);
+manualAnswerCmd.AddOption(maRuleOpt);
+manualAnswerCmd.AddOption(maStatusOpt);
+manualAnswerCmd.AddOption(maReasonOpt);
+manualAnswerCmd.AddOption(maCommentOpt);
+
+manualAnswerCmd.SetHandler(async (InvocationContext ctx) =>
+{
+  var bundle = ctx.ParseResult.GetValueForOption(maBundleOpt) ?? string.Empty;
+  var csvPath = ctx.ParseResult.GetValueForOption(maCsvOpt) ?? string.Empty;
+  var ruleId = ctx.ParseResult.GetValueForOption(maRuleOpt) ?? string.Empty;
+  var status = ctx.ParseResult.GetValueForOption(maStatusOpt) ?? string.Empty;
+  var reason = ctx.ParseResult.GetValueForOption(maReasonOpt) ?? string.Empty;
+  var comment = ctx.ParseResult.GetValueForOption(maCommentOpt) ?? string.Empty;
+
+  if (!Directory.Exists(bundle))
+  {
+    Console.Error.WriteLine("Bundle not found: " + bundle);
+    Environment.ExitCode = 2;
+    return;
+  }
+
+  var svc = new ManualAnswerService();
+
+  if (!string.IsNullOrWhiteSpace(csvPath))
+  {
+    // Batch CSV mode
+    if (!File.Exists(csvPath))
+    {
+      Console.Error.WriteLine("CSV file not found: " + csvPath);
+      Environment.ExitCode = 3;
+      return;
+    }
+
+    var lines = File.ReadAllLines(csvPath);
+    int saved = 0;
+    foreach (var line in lines)
+    {
+      if (string.IsNullOrWhiteSpace(line)) continue;
+      if (line.StartsWith("RuleId", StringComparison.OrdinalIgnoreCase)) continue;
+
+      var parts = ParseCsvLine(line);
+      if (parts.Length < 2) continue;
+
+      var csvRuleId = parts[0].Trim();
+      var csvStatus = parts[1].Trim();
+      if (string.IsNullOrWhiteSpace(csvRuleId) || string.IsNullOrWhiteSpace(csvStatus)) continue;
+
+      var answer = new ManualAnswer
+      {
+        RuleId = csvRuleId,
+        Status = csvStatus,
+        Reason = parts.Length > 2 ? parts[2].Trim() : null,
+        Comment = parts.Length > 3 ? parts[3].Trim() : null
+      };
+
+      svc.SaveAnswer(bundle, answer);
+      saved++;
+    }
+
+    Console.WriteLine($"Saved {saved} manual answers from CSV.");
+  }
+  else if (!string.IsNullOrWhiteSpace(ruleId) && !string.IsNullOrWhiteSpace(status))
+  {
+    // Single answer mode
+    var answer = new ManualAnswer
+    {
+      RuleId = ruleId,
+      Status = status,
+      Reason = string.IsNullOrWhiteSpace(reason) ? null : reason,
+      Comment = string.IsNullOrWhiteSpace(comment) ? null : comment
+    };
+
+    svc.SaveAnswer(bundle, answer);
+    Console.WriteLine($"Saved answer for {ruleId}: {status}");
+  }
+  else
+  {
+    Console.Error.WriteLine("Provide --csv for batch mode, or --rule-id + --status for single answer.");
+    Environment.ExitCode = 2;
+  }
+
+  await Task.CompletedTask;
+});
+
+rootCmd.AddCommand(manualAnswerCmd);
+
+// ── evidence-save ───────────────────────────────────────────────────────
+var evidenceSaveCmd = new Command("evidence-save", "Save evidence artifact to a bundle");
+var evBundleOpt = new Option<string>("--bundle", "Bundle root path") { IsRequired = true };
+var evRuleOpt = new Option<string>("--rule-id", "Rule ID for the control") { IsRequired = true };
+var evTypeOpt = new Option<string>("--type", () => "Other", "Evidence type: Command|File|Registry|PolicyExport|Screenshot|Other");
+var evSourceOpt = new Option<string>("--source-file", () => string.Empty, "Source file path (for File type)");
+var evCommandOpt = new Option<string>("--command", () => string.Empty, "Command that produced the evidence");
+var evTextOpt = new Option<string>("--text", () => string.Empty, "Inline text content");
+
+evidenceSaveCmd.AddOption(evBundleOpt);
+evidenceSaveCmd.AddOption(evRuleOpt);
+evidenceSaveCmd.AddOption(evTypeOpt);
+evidenceSaveCmd.AddOption(evSourceOpt);
+evidenceSaveCmd.AddOption(evCommandOpt);
+evidenceSaveCmd.AddOption(evTextOpt);
+
+evidenceSaveCmd.SetHandler(async (InvocationContext ctx) =>
+{
+  var bundle = ctx.ParseResult.GetValueForOption(evBundleOpt) ?? string.Empty;
+  var ruleId = ctx.ParseResult.GetValueForOption(evRuleOpt) ?? string.Empty;
+  var typeName = ctx.ParseResult.GetValueForOption(evTypeOpt) ?? "Other";
+  var sourceFile = ctx.ParseResult.GetValueForOption(evSourceOpt) ?? string.Empty;
+  var command = ctx.ParseResult.GetValueForOption(evCommandOpt) ?? string.Empty;
+  var text = ctx.ParseResult.GetValueForOption(evTextOpt) ?? string.Empty;
+
+  if (!Enum.TryParse<EvidenceArtifactType>(typeName, true, out var artifactType))
+    artifactType = EvidenceArtifactType.Other;
+
+  var collector = new EvidenceCollector();
+  var request = new EvidenceWriteRequest
+  {
+    BundleRoot = bundle,
+    RuleId = ruleId,
+    Type = artifactType,
+    Source = "CLI",
+    Command = string.IsNullOrWhiteSpace(command) ? null : command,
+    ContentText = string.IsNullOrWhiteSpace(text) ? null : text,
+    SourceFilePath = string.IsNullOrWhiteSpace(sourceFile) ? null : sourceFile
+  };
+
+  var result = collector.WriteEvidence(request);
+  Console.WriteLine("Evidence saved:");
+  Console.WriteLine("  Path: " + result.EvidencePath);
+  Console.WriteLine("  Metadata: " + result.MetadataPath);
+  Console.WriteLine("  SHA256: " + result.Sha256);
+
+  await Task.CompletedTask;
+});
+
+rootCmd.AddCommand(evidenceSaveCmd);
+
+// ── bundle-summary ──────────────────────────────────────────────────────
+var bundleSummaryCmd = new Command("bundle-summary", "Show dashboard summary of a bundle");
+var bsBundleOpt = new Option<string>("--bundle", "Bundle root path") { IsRequired = true };
+var bsJsonOpt = new Option<bool>("--json", "Output as JSON");
+
+bundleSummaryCmd.AddOption(bsBundleOpt);
+bundleSummaryCmd.AddOption(bsJsonOpt);
+
+bundleSummaryCmd.SetHandler(async (InvocationContext ctx) =>
+{
+  var bundle = ctx.ParseResult.GetValueForOption(bsBundleOpt) ?? string.Empty;
+  var json = ctx.ParseResult.GetValueForOption(bsJsonOpt);
+
+  if (!Directory.Exists(bundle))
+  {
+    Console.Error.WriteLine("Bundle not found: " + bundle);
+    Environment.ExitCode = 2;
+    return;
+  }
+
+  // Load manifest
+  string packName = "unknown", profileName = "unknown";
+  var manifestPath = Path.Combine(bundle, "Manifest", "manifest.json");
+  if (File.Exists(manifestPath))
+  {
+    try
+    {
+      using var doc = JsonDocument.Parse(File.ReadAllText(manifestPath));
+      var run = doc.RootElement.GetProperty("run");
+      packName = run.GetProperty("packName").GetString() ?? "unknown";
+      profileName = run.GetProperty("profileName").GetString() ?? "unknown";
+    }
+    catch { }
+  }
+
+  // Load controls
+  int totalControls = 0, autoControls = 0, manualControls = 0;
+  var controlsPath = Path.Combine(bundle, "Manifest", "pack_controls.json");
+  var manualControlsList = new List<ControlRecord>();
+  if (File.Exists(controlsPath))
+  {
+    try
+    {
+      var allControls = JsonSerializer.Deserialize<List<ControlRecord>>(File.ReadAllText(controlsPath),
+        new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<ControlRecord>();
+      totalControls = allControls.Count;
+      manualControlsList = allControls.Where(c => c.IsManual).ToList();
+      manualControls = manualControlsList.Count;
+      autoControls = totalControls - manualControls;
+    }
+    catch { }
+  }
+
+  // Load verify results
+  int verifyClosed = 0, verifyOpen = 0, verifyTotal = 0;
+  var verifyDir = Path.Combine(bundle, "Verify");
+  if (Directory.Exists(verifyDir))
+  {
+    foreach (var dir in Directory.GetDirectories(verifyDir))
+    {
+      var resultsPath = Path.Combine(dir, "consolidated-results.json");
+      if (!File.Exists(resultsPath)) continue;
+      try
+      {
+        var report = VerifyReportReader.LoadFromJson(resultsPath);
+        foreach (var r in report.Results)
+        {
+          verifyTotal++;
+          var s = (r.Status ?? "").ToLowerInvariant();
+          if (s == "notafinding" || s == "pass" || s == "not_applicable")
+            verifyClosed++;
+          else
+            verifyOpen++;
+        }
+      }
+      catch { }
+    }
+  }
+
+  // Load manual progress
+  var manualSvc = new ManualAnswerService();
+  var stats = manualSvc.GetProgressStats(bundle, manualControlsList);
+
+  if (json)
+  {
+    var summary = new
+    {
+      pack = packName,
+      profile = profileName,
+      totalControls,
+      autoControls,
+      manualControls,
+      verify = new { closed = verifyClosed, open = verifyOpen, total = verifyTotal },
+      manual = new { pass = stats.PassCount, fail = stats.FailCount, na = stats.NotApplicableCount, open = stats.UnansweredControls, percentComplete = stats.PercentComplete }
+    };
+    Console.WriteLine(JsonSerializer.Serialize(summary, new JsonSerializerOptions { WriteIndented = true }));
+  }
+  else
+  {
+    Console.WriteLine("Bundle: " + bundle);
+    Console.WriteLine($"  Pack: {packName}");
+    Console.WriteLine($"  Profile: {profileName}");
+    Console.WriteLine();
+    Console.WriteLine($"Controls: {totalControls} total ({autoControls} auto, {manualControls} manual)");
+    Console.WriteLine();
+    if (verifyTotal > 0)
+    {
+      var pct = verifyTotal > 0 ? (verifyClosed * 100.0 / verifyTotal) : 0;
+      Console.WriteLine($"Verify: {verifyClosed} closed / {verifyTotal} total ({pct:F0}%)");
+    }
+    else
+    {
+      Console.WriteLine("Verify: no results");
+    }
+    Console.WriteLine();
+    Console.WriteLine($"Manual: {stats.AnsweredControls}/{stats.TotalControls} answered ({stats.PercentComplete:F0}%)");
+    Console.WriteLine($"  Pass: {stats.PassCount}  Fail: {stats.FailCount}  NA: {stats.NotApplicableCount}  Open: {stats.UnansweredControls}");
+  }
+
+  await Task.CompletedTask;
+});
+
+rootCmd.AddCommand(bundleSummaryCmd);
+
+// ── overlay-edit ────────────────────────────────────────────────────────
+var overlayEditCmd = new Command("overlay-edit", "Add or remove rule overrides from an overlay");
+var oeOverlayOpt = new Option<string>("--overlay", "Overlay ID") { IsRequired = true };
+var oeAddRuleOpt = new Option<string>("--add-rule", () => string.Empty, "Add override for rule ID");
+var oeRemoveRuleOpt = new Option<string>("--remove-rule", () => string.Empty, "Remove override for rule ID");
+var oeStatusOpt = new Option<string>("--status", () => "NotApplicable", "Override status: Pass|Fail|NotApplicable|Open");
+var oeReasonOpt = new Option<string>("--reason", () => string.Empty, "NA reason or notes");
+
+overlayEditCmd.AddOption(oeOverlayOpt);
+overlayEditCmd.AddOption(oeAddRuleOpt);
+overlayEditCmd.AddOption(oeRemoveRuleOpt);
+overlayEditCmd.AddOption(oeStatusOpt);
+overlayEditCmd.AddOption(oeReasonOpt);
+
+overlayEditCmd.SetHandler(async (InvocationContext ctx) =>
+{
+  var overlayId = ctx.ParseResult.GetValueForOption(oeOverlayOpt) ?? string.Empty;
+  var addRule = ctx.ParseResult.GetValueForOption(oeAddRuleOpt) ?? string.Empty;
+  var removeRule = ctx.ParseResult.GetValueForOption(oeRemoveRuleOpt) ?? string.Empty;
+  var statusStr = ctx.ParseResult.GetValueForOption(oeStatusOpt) ?? "NotApplicable";
+  var reason = ctx.ParseResult.GetValueForOption(oeReasonOpt) ?? string.Empty;
+
+  using var host = BuildHost();
+  await host.StartAsync();
+
+  var overlaysRepo = host.Services.GetRequiredService<IOverlayRepository>();
+  var overlay = await overlaysRepo.GetAsync(overlayId, CancellationToken.None);
+  if (overlay == null)
+  {
+    Console.Error.WriteLine("Overlay not found: " + overlayId);
+    Environment.ExitCode = 2;
+    await host.StopAsync();
+    return;
+  }
+
+  // Make overrides mutable
+  var overrides = overlay.Overrides.ToList();
+
+  if (!string.IsNullOrWhiteSpace(addRule))
+  {
+    // Parse status
+    if (!Enum.TryParse<ControlStatus>(statusStr, true, out var parsedStatus))
+      parsedStatus = ControlStatus.NotApplicable;
+
+    // Check if already exists
+    var existing = overrides.FirstOrDefault(o =>
+      string.Equals(o.RuleId, addRule, StringComparison.OrdinalIgnoreCase));
+
+    if (existing != null)
+    {
+      existing.StatusOverride = parsedStatus;
+      existing.NaReason = string.IsNullOrWhiteSpace(reason) ? existing.NaReason : reason;
+      Console.WriteLine($"Updated override for {addRule}: {parsedStatus}");
+    }
+    else
+    {
+      overrides.Add(new ControlOverride
+      {
+        RuleId = addRule,
+        StatusOverride = parsedStatus,
+        NaReason = string.IsNullOrWhiteSpace(reason) ? null : reason
+      });
+      Console.WriteLine($"Added override for {addRule}: {parsedStatus}");
+    }
+  }
+  else if (!string.IsNullOrWhiteSpace(removeRule))
+  {
+    var removed = overrides.RemoveAll(o =>
+      string.Equals(o.RuleId, removeRule, StringComparison.OrdinalIgnoreCase));
+
+    if (removed > 0)
+      Console.WriteLine($"Removed override for {removeRule}");
+    else
+      Console.WriteLine($"No override found for {removeRule}");
+  }
+  else
+  {
+    Console.Error.WriteLine("Provide --add-rule or --remove-rule.");
+    Environment.ExitCode = 2;
+    await host.StopAsync();
+    return;
+  }
+
+  // Save
+  var updated = new STIGForge.Core.Models.Overlay
+  {
+    OverlayId = overlay.OverlayId,
+    Name = overlay.Name,
+    UpdatedAt = DateTimeOffset.Now,
+    Overrides = overrides,
+    PowerStigOverrides = overlay.PowerStigOverrides.ToList()
+  };
+
+  await overlaysRepo.SaveAsync(updated, CancellationToken.None);
+  Console.WriteLine($"Overlay {overlayId} saved ({overrides.Count} overrides).");
+
+  await host.StopAsync();
+});
+
+rootCmd.AddCommand(overlayEditCmd);
 
 return await InvokeWithErrorHandlingAsync(rootCmd, args);
 
