@@ -47,6 +47,26 @@ public partial class MainViewModel : ObservableObject
   [ObservableProperty] private string automationGatePath = "";
   [ObservableProperty] private bool isBusy;
 
+  // Dashboard
+  [ObservableProperty] private string dashBundleLabel = "(no bundle selected)";
+  [ObservableProperty] private string dashPackLabel = "";
+  [ObservableProperty] private string dashProfileLabel = "";
+  [ObservableProperty] private int dashTotalControls;
+  [ObservableProperty] private int dashAutoControls;
+  [ObservableProperty] private int dashManualControls;
+  [ObservableProperty] private int dashVerifyClosed;
+  [ObservableProperty] private int dashVerifyOpen;
+  [ObservableProperty] private int dashVerifyTotal;
+  [ObservableProperty] private string dashVerifyPercent = "—";
+  [ObservableProperty] private int dashManualPass;
+  [ObservableProperty] private int dashManualFail;
+  [ObservableProperty] private int dashManualNa;
+  [ObservableProperty] private int dashManualOpen;
+  [ObservableProperty] private string dashManualPercent = "—";
+  [ObservableProperty] private bool dashHasBundle;
+  [ObservableProperty] private string dashLastVerify = "";
+  [ObservableProperty] private string dashLastExport = "";
+
   public bool ActionsEnabled => !IsBusy;
 
   public IList<ContentPack> ContentPacks { get; } = new List<ContentPack>();
@@ -729,6 +749,7 @@ public partial class MainViewModel : ObservableObject
     SaveUiState();
     LoadCoverageOverlap();
     LoadManualControls();
+    RefreshDashboard();
   }
 
   partial void OnEvaluateStigRootChanged(string value)
@@ -962,6 +983,127 @@ public partial class MainViewModel : ObservableObject
 
     UpdateManualSummary();
     ManualControlsView.Refresh();
+  }
+
+  private void RefreshDashboard()
+  {
+    DashHasBundle = !string.IsNullOrWhiteSpace(BundleRoot) && Directory.Exists(BundleRoot);
+    if (!DashHasBundle)
+    {
+      DashBundleLabel = "(no bundle selected)";
+      DashPackLabel = "";
+      DashProfileLabel = "";
+      DashTotalControls = 0;
+      DashAutoControls = 0;
+      DashManualControls = 0;
+      DashVerifyClosed = 0;
+      DashVerifyOpen = 0;
+      DashVerifyTotal = 0;
+      DashVerifyPercent = "—";
+      DashManualPass = 0;
+      DashManualFail = 0;
+      DashManualNa = 0;
+      DashManualOpen = 0;
+      DashManualPercent = "—";
+      DashLastVerify = "";
+      DashLastExport = "";
+      return;
+    }
+
+    DashBundleLabel = Path.GetFileName(BundleRoot);
+
+    // Load manifest for pack/profile info
+    var manifestPath = Path.Combine(BundleRoot, "Manifest", "manifest.json");
+    if (File.Exists(manifestPath))
+    {
+      try
+      {
+        var json = File.ReadAllText(manifestPath);
+        using var doc = JsonDocument.Parse(json);
+        var root = doc.RootElement;
+        DashPackLabel = root.TryGetProperty("packName", out var pn) ? pn.GetString() ?? "" : "";
+        DashProfileLabel = root.TryGetProperty("profileName", out var pr) ? pr.GetString() ?? "" : "";
+      }
+      catch { }
+    }
+
+    // Load controls count
+    var controlsPath = Path.Combine(BundleRoot, "Manifest", "pack_controls.json");
+    if (File.Exists(controlsPath))
+    {
+      try
+      {
+        var json = File.ReadAllText(controlsPath);
+        var controls = JsonSerializer.Deserialize<List<ControlRecord>>(json,
+          new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<ControlRecord>();
+        DashTotalControls = controls.Count;
+        DashManualControls = controls.Count(c => c.IsManual);
+        DashAutoControls = DashTotalControls - DashManualControls;
+      }
+      catch { }
+    }
+
+    // Load verify results
+    DashVerifyClosed = 0;
+    DashVerifyOpen = 0;
+    DashVerifyTotal = 0;
+    DashLastVerify = "";
+
+    var verifyDir = Path.Combine(BundleRoot, "Verify");
+    if (Directory.Exists(verifyDir))
+    {
+      try
+      {
+        foreach (var reportFile in Directory.GetFiles(verifyDir, "consolidated-results.json", SearchOption.AllDirectories))
+        {
+          var report = STIGForge.Verify.VerifyReportReader.LoadFromJson(reportFile);
+          DashVerifyTotal += report.Results.Count;
+          DashVerifyClosed += report.Results.Count(r => r.Status != null && r.Status.IndexOf("open", StringComparison.OrdinalIgnoreCase) < 0);
+          DashVerifyOpen += report.Results.Count(r => r.Status != null && r.Status.IndexOf("open", StringComparison.OrdinalIgnoreCase) >= 0);
+          if (report.FinishedAt > DateTimeOffset.MinValue)
+            DashLastVerify = report.FinishedAt.ToString("yyyy-MM-dd HH:mm");
+        }
+      }
+      catch { }
+    }
+
+    DashVerifyPercent = DashVerifyTotal > 0 
+      ? $"{(double)DashVerifyClosed / DashVerifyTotal:P0}" 
+      : "—";
+
+    // Load manual answer stats
+    DashManualPass = ManualControls.Count(x => string.Equals(x.Status, "Pass", StringComparison.OrdinalIgnoreCase));
+    DashManualFail = ManualControls.Count(x => string.Equals(x.Status, "Fail", StringComparison.OrdinalIgnoreCase));
+    DashManualNa = ManualControls.Count(x => string.Equals(x.Status, "NotApplicable", StringComparison.OrdinalIgnoreCase));
+    DashManualOpen = ManualControls.Count(x => string.Equals(x.Status, "Open", StringComparison.OrdinalIgnoreCase));
+
+    var manualAnswered = DashManualPass + DashManualFail + DashManualNa;
+    var manualTotal = DashManualControls;
+    DashManualPercent = manualTotal > 0 
+      ? $"{(double)manualAnswered / manualTotal:P0}" 
+      : "—";
+
+    // Check for eMASS export
+    var emassDir = Path.Combine(BundleRoot, "Export");
+    if (Directory.Exists(emassDir))
+    {
+      try
+      {
+        var latest = Directory.GetDirectories(emassDir).OrderByDescending(d => d).FirstOrDefault();
+        DashLastExport = latest != null ? Path.GetFileName(latest) : "";
+      }
+      catch { DashLastExport = ""; }
+    }
+    else
+    {
+      DashLastExport = "";
+    }
+  }
+
+  [RelayCommand]
+  private void DashRefresh()
+  {
+    RefreshDashboard();
   }
 
   private void ConfigureManualView()
