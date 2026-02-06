@@ -606,6 +606,62 @@ public partial class MainViewModel : ObservableObject
     }
   }
 
+  [RelayCommand]
+  private async Task ComparePacks()
+  {
+    try
+    {
+      // Prompt user to select two packs
+      if (ContentPacks.Count < 2)
+      {
+        StatusText = "Need at least 2 packs to compare.";
+        return;
+      }
+
+      var dialog = new Views.PackComparisonDialog(ContentPacks.ToList());
+      if (dialog.ShowDialog() != true)
+        return;
+
+      var baselinePackId = dialog.BaselinePackId;
+      var targetPackId = dialog.TargetPackId;
+
+      if (string.IsNullOrWhiteSpace(baselinePackId) || string.IsNullOrWhiteSpace(targetPackId))
+      {
+        StatusText = "Please select both baseline and target packs.";
+        return;
+      }
+
+      if (baselinePackId == targetPackId)
+      {
+        StatusText = "Please select different packs to compare.";
+        return;
+      }
+
+      IsBusy = true;
+      StatusText = "Comparing packs...";
+
+      var diffService = new Core.Services.BaselineDiffService(_controls);
+      var diff = await diffService.ComparePacksAsync(baselinePackId, targetPackId, CancellationToken.None);
+
+      var baselinePack = ContentPacks.First(p => p.PackId == baselinePackId);
+      var targetPack = ContentPacks.First(p => p.PackId == targetPackId);
+
+      var viewModel = new ViewModels.DiffViewerViewModel(diff, baselinePack.Name, targetPack.Name);
+      var diffViewer = new Views.DiffViewer(viewModel);
+      diffViewer.ShowDialog();
+
+      StatusText = "Comparison complete.";
+    }
+    catch (Exception ex)
+    {
+      StatusText = "Comparison failed: " + ex.Message;
+    }
+    finally
+    {
+      IsBusy = false;
+    }
+  }
+
   partial void OnSelectedManualControlChanged(ManualControlItem? value)
   {
     if (value == null) return;
