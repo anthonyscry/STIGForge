@@ -662,6 +662,45 @@ public partial class MainViewModel : ObservableObject
     }
   }
 
+  [RelayCommand]
+  private async Task RebaseOverlay()
+  {
+    try
+    {
+      if (OverlayItems.Count == 0)
+      {
+        StatusText = "No overlays available. Create an overlay first.";
+        return;
+      }
+
+      if (ContentPacks.Count < 2)
+      {
+        StatusText = "Need at least 2 packs for rebase.";
+        return;
+      }
+
+      // Load all overlays
+      var overlayList = await _overlays.ListAsync(CancellationToken.None);
+
+      var viewModel = new ViewModels.RebaseWizardViewModel(
+        _controls, 
+        _overlays,
+        overlayList.ToList(),
+        ContentPacks.ToList());
+
+      var wizard = new Views.RebaseWizard(viewModel);
+      wizard.ShowDialog();
+
+      // Refresh overlays after wizard closes
+      await RefreshOverlaysAsync();
+      StatusText = "Rebase wizard closed.";
+    }
+    catch (Exception ex)
+    {
+      StatusText = "Rebase failed: " + ex.Message;
+    }
+  }
+
   partial void OnSelectedManualControlChanged(ManualControlItem? value)
   {
     if (value == null) return;
