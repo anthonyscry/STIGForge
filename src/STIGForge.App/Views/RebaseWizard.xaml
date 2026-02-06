@@ -1,0 +1,196 @@
+<Window x:Class="STIGForge.App.Views.RebaseWizard"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Overlay Rebase Wizard" Height="700" Width="1100" WindowStartupLocation="CenterScreen"
+        ResizeMode="CanResize">
+  <Window.Resources>
+    <BooleanToVisibilityConverter x:Key="BoolToVis"/>
+  </Window.Resources>
+  
+  <Grid Margin="16">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
+
+    <!-- Header -->
+    <DockPanel Grid.Row="0" Margin="0,0,0,16">
+      <TextBlock Text="Overlay Rebase Wizard" FontSize="20" FontWeight="SemiBold" DockPanel.Dock="Left"/>
+      <TextBlock Text="{Binding StepText}" FontSize="14" Foreground="Gray" HorizontalAlignment="Right" DockPanel.Dock="Right"/>
+    </DockPanel>
+
+    <!-- Main Content -->
+    <Grid Grid.Row="1">
+      <!-- Welcome Screen -->
+      <StackPanel Visibility="{Binding ShowWelcome, Converter={StaticResource BoolToVis}}">
+        <TextBlock Text="Welcome to the Overlay Rebase Wizard" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,16"/>
+        
+        <TextBlock Text="This wizard helps you rebase overlays when STIG baselines change between DISA releases." 
+                   TextWrapping="Wrap" Margin="0,0,0,16" Foreground="Gray"/>
+        
+        <TextBlock Text="Select Overlay:" FontWeight="SemiBold" Margin="0,0,0,8"/>
+        <ComboBox ItemsSource="{Binding AvailableOverlays}" DisplayMemberPath="Name" 
+                  SelectedItem="{Binding SelectedOverlay}" Margin="0,0,0,16"/>
+        
+        <TextBlock Text="Select Baseline Pack (current):" FontWeight="SemiBold" Margin="0,0,0,8"/>
+        <ComboBox ItemsSource="{Binding AvailablePacks}" DisplayMemberPath="Name" 
+                  SelectedItem="{Binding SelectedBaselinePack}" Margin="0,0,0,16"/>
+        
+        <TextBlock Text="Select Target Pack (new DISA release):" FontWeight="SemiBold" Margin="0,0,0,8"/>
+        <ComboBox ItemsSource="{Binding AvailablePacks}" DisplayMemberPath="Name" 
+                  SelectedItem="{Binding SelectedTargetPack}" Margin="0,0,0,16"/>
+
+        <Button Content="Analyze Rebase" Width="140" Height="32" Command="{Binding AnalyzeRebaseCommand}" Margin="0,16,0,0"/>
+      </StackPanel>
+
+      <!-- Analysis Screen -->
+      <Grid Visibility="{Binding ShowAnalysis, Converter={StaticResource BoolToVis}}">
+        <Grid.RowDefinitions>
+          <RowDefinition Height="Auto"/>
+          <RowDefinition Height="Auto"/>
+          <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+
+        <!-- Summary -->
+        <Border Grid.Row="0" BorderBrush="LightGray" BorderThickness="1" Padding="12" Background="#F9F9F9" Margin="0,0,0,16">
+          <Grid>
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*"/>
+              <ColumnDefinition Width="*"/>
+              <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            
+            <StackPanel Grid.Column="0">
+              <TextBlock Text="Total Overrides:" FontWeight="SemiBold" Margin="0,0,0,4"/>
+              <TextBlock Text="{Binding TotalOverrides}" FontSize="20" Foreground="Gray"/>
+            </StackPanel>
+            
+            <StackPanel Grid.Column="1">
+              <TextBlock Text="Auto-Rebased:" FontWeight="SemiBold" Margin="0,0,0,4"/>
+              <TextBlock Text="{Binding AutoRebasedCount}" FontSize="20" Foreground="Green"/>
+            </StackPanel>
+            
+            <StackPanel Grid.Column="2">
+              <TextBlock Text="Needs Review:" FontWeight="SemiBold" Margin="0,0,0,4"/>
+              <TextBlock Text="{Binding NeedsReviewCount}" FontSize="20" Foreground="Orange"/>
+            </StackPanel>
+          </Grid>
+        </Border>
+
+        <!-- Action Tabs -->
+        <TabControl Grid.Row="2">
+          <TabItem>
+            <TabItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Auto-Rebased (" Foreground="Green"/>
+                <TextBlock Text="{Binding AutoRebasedCount}" Foreground="Green"/>
+                <TextBlock Text=")" Foreground="Green"/>
+              </StackPanel>
+            </TabItem.Header>
+            
+            <DataGrid ItemsSource="{Binding AutoRebasedActions}" AutoGenerateColumns="False" IsReadOnly="True" Margin="8">
+              <DataGrid.Columns>
+                <DataGridTextColumn Header="Control ID" Binding="{Binding ControlId}" Width="120"/>
+                <DataGridTextColumn Header="Action" Binding="{Binding Action}" Width="120"/>
+                <DataGridTextColumn Header="Confidence" Binding="{Binding ConfidenceDisplay}" Width="100"/>
+                <DataGridTextColumn Header="Reason" Binding="{Binding Reason}" Width="*"/>
+              </DataGrid.Columns>
+            </DataGrid>
+          </TabItem>
+
+          <TabItem>
+            <TabItem.Header>
+              <StackPanel Orientation="Horizontal">
+                <TextBlock Text="Needs Review (" Foreground="Orange"/>
+                <TextBlock Text="{Binding NeedsReviewCount}" Foreground="Orange"/>
+                <TextBlock Text=")" Foreground="Orange"/>
+              </StackPanel>
+            </TabItem.Header>
+            
+            <Grid Margin="8">
+              <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="200"/>
+              </Grid.RowDefinitions>
+              
+              <DataGrid Grid.Row="0" ItemsSource="{Binding NeedsReviewActions}" SelectedItem="{Binding SelectedReviewAction}" 
+                        AutoGenerateColumns="False" IsReadOnly="True">
+                <DataGrid.Columns>
+                  <DataGridTextColumn Header="Control ID" Binding="{Binding ControlId}" Width="120"/>
+                  <DataGridTextColumn Header="Suggested Action" Binding="{Binding Action}" Width="140"/>
+                  <DataGridTextColumn Header="Confidence" Binding="{Binding ConfidenceDisplay}" Width="100"/>
+                  <DataGridTextColumn Header="Reason" Binding="{Binding Reason}" Width="*"/>
+                </DataGrid.Columns>
+              </DataGrid>
+              
+              <GridSplitter Grid.Row="1" Height="4" HorizontalAlignment="Stretch" Background="LightGray"/>
+              
+              <Border Grid.Row="2" BorderBrush="LightGray" BorderThickness="1" Padding="8" Margin="0,4,0,0" Background="White"
+                      Visibility="{Binding HasSelectedReviewAction, Converter={StaticResource BoolToVis}}">
+                <StackPanel>
+                  <TextBlock Text="Review Details:" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                  
+                  <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                    <TextBlock Text="Control ID: " FontWeight="SemiBold" Width="120"/>
+                    <TextBlock Text="{Binding SelectedReviewAction.ControlId}"/>
+                  </StackPanel>
+                  
+                  <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                    <TextBlock Text="Suggested Action: " FontWeight="SemiBold" Width="120"/>
+                    <TextBlock Text="{Binding SelectedReviewAction.Action}"/>
+                  </StackPanel>
+                  
+                  <TextBlock Text="Reason:" FontWeight="SemiBold" Margin="0,8,0,4"/>
+                  <TextBlock Text="{Binding SelectedReviewAction.Reason}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                  
+                  <TextBlock Text="What control changed:" FontWeight="SemiBold" Margin="0,8,0,4"/>
+                  <TextBlock Text="{Binding SelectedReviewAction.ChangesSummary}" TextWrapping="Wrap" Foreground="Gray"/>
+                </StackPanel>
+              </Border>
+            </Grid>
+          </TabItem>
+        </TabControl>
+      </Grid>
+
+      <!-- Completion Screen -->
+      <StackPanel Visibility="{Binding ShowCompletion, Converter={StaticResource BoolToVis}}" VerticalAlignment="Center">
+        <TextBlock Text="✓ Rebase Complete" FontSize="24" FontWeight="SemiBold" Foreground="Green" 
+                   HorizontalAlignment="Center" Margin="0,0,0,24"/>
+        
+        <Border BorderBrush="LightGray" BorderThickness="1" Padding="16" Background="#F9F9F9">
+          <StackPanel>
+            <TextBlock Text="New Overlay Created:" FontWeight="SemiBold" Margin="0,0,0,8"/>
+            <TextBlock Text="{Binding NewOverlayId}" FontFamily="Consolas" Margin="0,0,0,16"/>
+            
+            <TextBlock Text="Summary:" FontWeight="SemiBold" Margin="0,0,0,8"/>
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+              <TextBlock Text="Total overrides processed: " Foreground="Gray"/>
+              <TextBlock Text="{Binding TotalOverrides}"/>
+            </StackPanel>
+            
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+              <TextBlock Text="Successfully rebased: " Foreground="Gray"/>
+              <TextBlock Text="{Binding AutoRebasedCount}" Foreground="Green"/>
+            </StackPanel>
+            
+            <StackPanel Orientation="Horizontal">
+              <TextBlock Text="Required review: " Foreground="Gray"/>
+              <TextBlock Text="{Binding NeedsReviewCount}" Foreground="Orange"/>
+            </StackPanel>
+          </StackPanel>
+        </Border>
+
+        <Button Content="Close" Width="120" Height="32" Command="{Binding CloseCommand}" Margin="0,24,0,0"/>
+      </StackPanel>
+    </Grid>
+
+    <!-- Action Buttons -->
+    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0"
+                Visibility="{Binding ShowAnalysis, Converter={StaticResource BoolToVis}}">
+      <Button Content="Cancel" Width="100" Height="32" Command="{Binding CancelCommand}" Margin="0,0,8,0"/>
+      <Button Content="Apply Rebase" Width="120" Height="32" Command="{Binding ApplyRebaseCommand}"/>
+    </StackPanel>
+  </Grid>
+</Window>

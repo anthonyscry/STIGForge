@@ -136,6 +136,7 @@
             </ItemsControl>
             <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
               <Button Content="Edit Overlays" Width="120" Command="{Binding OpenOverlayEditorCommand}" />
+              <Button Content="Rebase Overlay" Width="120" Margin="6,0,0,0" Command="{Binding RebaseOverlayCommand}" />
               <Button Content="Refresh" Width="90" Margin="6,0,0,0" Command="{Binding RefreshOverlaysCommand}" />
             </StackPanel>
 
