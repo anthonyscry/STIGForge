@@ -1,0 +1,61 @@
+name: vm-smoke-matrix
+
+on:
+  workflow_dispatch:
+    inputs:
+      configuration:
+        description: Build configuration
+        required: true
+        default: Release
+        type: choice
+        options:
+          - Release
+          - Debug
+
+jobs:
+  smoke:
+    name: smoke-${{ matrix.name }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: win11
+            labels: '["self-hosted","windows","x64","win11"]'
+          - name: server2019
+            labels: '["self-hosted","windows","x64","server2019"]'
+          - name: server2022
+            labels: '["self-hosted","windows","x64","server2022"]'
+    runs-on: ${{ fromJson(matrix.labels) }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Run release gate
+        shell: pwsh
+        run: ./tools/release/Invoke-ReleaseGate.ps1 -Configuration ${{ inputs.configuration }} -OutputRoot ./.artifacts/release-gate/${{ matrix.name }}
+
+      - name: Run E2E integration suite
+        shell: pwsh
+        run: dotnet test tests/STIGForge.IntegrationTests/STIGForge.IntegrationTests.csproj --configuration ${{ inputs.configuration }} --framework net8.0 --nologo --filter "FullyQualifiedName~E2E"
+
+      - name: Upload VM smoke artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vm-smoke-${{ matrix.name }}-${{ github.run_id }}
+          path: ./.artifacts/release-gate/${{ matrix.name }}
+          if-no-files-found: warn
+
+  go-no-go:
+    name: go-no-go
+    needs: smoke
+    runs-on: ubuntu-latest
+    steps:
+      - name: Promotion decision
+        run: |
+          echo "All VM smoke jobs passed. Candidate is eligible for promotion."

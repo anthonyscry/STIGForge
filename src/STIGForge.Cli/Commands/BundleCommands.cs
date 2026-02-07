@@ -3,6 +3,7 @@ using System.CommandLine.Invocation;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
 using STIGForge.Core.Services;
@@ -19,6 +20,7 @@ internal static class BundleCommands
     RegisterManualAnswer(rootCmd);
     RegisterEvidenceSave(rootCmd);
     RegisterBundleSummary(rootCmd);
+    RegisterSupportBundle(rootCmd, buildHost);
     RegisterOverlayEdit(rootCmd, buildHost);
   }
 
@@ -262,6 +264,51 @@ internal static class BundleCommands
       Console.WriteLine($"Overlay {overlayId} saved ({overrides.Count} overrides).");
       await host.StopAsync();
     });
+
+    rootCmd.AddCommand(cmd);
+  }
+
+  private static void RegisterSupportBundle(RootCommand rootCmd, Func<IHost> buildHost)
+  {
+    var cmd = new Command("support-bundle", "Collect logs and diagnostics into a support zip package");
+    var outputOpt = new Option<string>("--output", () => Environment.CurrentDirectory, "Output directory for support bundle artifacts");
+    var bundleOpt = new Option<string>("--bundle", () => string.Empty, "Optional bundle root to include diagnostics from");
+    var includeDbOpt = new Option<bool>("--include-db", "Include .stigforge/data/stigforge.db in support bundle");
+    var maxLogsOpt = new Option<int>("--max-log-files", () => 20, "Maximum number of recent log files to include");
+    cmd.AddOption(outputOpt);
+    cmd.AddOption(bundleOpt);
+    cmd.AddOption(includeDbOpt);
+    cmd.AddOption(maxLogsOpt);
+
+    cmd.SetHandler(async (output, bundle, includeDb, maxLogFiles) =>
+    {
+      using var host = buildHost();
+      await host.StartAsync();
+
+      var paths = host.Services.GetRequiredService<IPathBuilder>();
+      var builder = new SupportBundleBuilder();
+      var result = builder.Create(new SupportBundleRequest
+      {
+        OutputDirectory = output,
+        AppDataRoot = paths.GetAppDataRoot(),
+        BundleRoot = string.IsNullOrWhiteSpace(bundle) ? null : bundle,
+        IncludeDatabase = includeDb,
+        MaxLogFiles = maxLogFiles
+      });
+
+      Console.WriteLine("Support bundle created:");
+      Console.WriteLine("  Zip: " + result.BundleZipPath);
+      Console.WriteLine("  Manifest: " + result.ManifestPath);
+      Console.WriteLine("  Files: " + result.FileCount);
+
+      if (result.Warnings.Count > 0)
+      {
+        Console.WriteLine("Warnings:");
+        foreach (var warning in result.Warnings) Console.WriteLine("  - " + warning);
+      }
+
+      await host.StopAsync();
+    }, outputOpt, bundleOpt, includeDbOpt, maxLogsOpt);
 
     rootCmd.AddCommand(cmd);
   }

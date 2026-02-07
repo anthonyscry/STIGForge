@@ -4,6 +4,7 @@ on:
   push:
     branches: [ main ]
   pull_request:
+  workflow_dispatch:
 
 jobs:
   build-test:
@@ -17,20 +18,14 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
-      - name: Restore
-        run: dotnet restore STIGForge.sln
+      - name: Run release gate
+        shell: pwsh
+        run: ./tools/release/Invoke-ReleaseGate.ps1 -Configuration Release -OutputRoot ./.artifacts/release-gate/latest
 
-      - name: Build
-        run: dotnet build STIGForge.sln --configuration Release --no-restore
-
-      - name: Unit tests
-        run: dotnet test tests/STIGForge.UnitTests/STIGForge.UnitTests.csproj --configuration Release --no-build --framework net8.0 --verbosity normal
-
-      - name: Integration tests
-        run: dotnet test tests/STIGForge.IntegrationTests/STIGForge.IntegrationTests.csproj --configuration Release --no-build --framework net8.0 --verbosity normal
-
-      - name: E2E tests (full pipeline)
-        run: dotnet test tests/STIGForge.IntegrationTests/STIGForge.IntegrationTests.csproj --configuration Release --no-build --framework net8.0 --filter "FullyQualifiedName~E2E" --verbosity normal
-
-      - name: Fixture smoke
-        run: dotnet test tests/STIGForge.UnitTests/STIGForge.UnitTests.csproj --configuration Release --no-build --framework net8.0 --filter "FullyQualifiedName~STIGForge.UnitTests.Content" --verbosity normal
+      - name: Upload release-gate artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-gate-${{ github.run_id }}
+          path: ./.artifacts/release-gate/latest
+          if-no-files-found: warn
