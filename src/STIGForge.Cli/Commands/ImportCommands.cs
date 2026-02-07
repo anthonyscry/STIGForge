@@ -1,6 +1,7 @@
 using System.CommandLine;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using STIGForge.Content.Import;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
@@ -28,8 +29,11 @@ internal static class ImportCommands
     {
       using var host = buildHost();
       await host.StartAsync();
+      var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("ImportCommands");
+      logger.LogInformation("import-pack started: zip={Zip}, name={Name}", zip, name);
       var importer = host.Services.GetRequiredService<ContentPackImporter>();
       var pack = await importer.ImportZipAsync(zip, name, "cli_import", CancellationToken.None);
+      logger.LogInformation("import-pack completed: packId={PackId}, name={PackName}", pack.PackId, pack.Name);
       Console.WriteLine("Imported: " + pack.Name + " (" + pack.PackId + ")");
       await host.StopAsync();
     }, zipArg, nameOpt);
@@ -51,6 +55,8 @@ internal static class ImportCommands
     {
       using var host = buildHost();
       await host.StartAsync();
+      var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("ImportCommands");
+      logger.LogInformation("overlay-import-powerstig started: csv={Csv}, name={Name}", csvPath, overlayName);
       var overlaysRepo = host.Services.GetRequiredService<IOverlayRepository>();
       var overlays = Helpers.ReadPowerStigOverrides(csvPath);
 
@@ -64,6 +70,7 @@ internal static class ImportCommands
       overlay.UpdatedAt = DateTimeOffset.Now;
       overlay.PowerStigOverrides = overlays;
       await overlaysRepo.SaveAsync(overlay, CancellationToken.None);
+      logger.LogInformation("overlay-import-powerstig completed: overlayId={OverlayId}", overlay.OverlayId);
       Console.WriteLine("Overlay saved: " + overlay.OverlayId + " (" + overlay.Name + ")");
       await host.StopAsync();
     }, csvOpt, nameOpt, idOpt);
@@ -83,9 +90,12 @@ internal static class ImportCommands
     {
       using var host = buildHost();
       await host.StartAsync();
+      var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("ImportCommands");
+      logger.LogInformation("powerstig-map-export started: packId={PackId}, output={Output}", packId, output);
       var controlsRepo = host.Services.GetRequiredService<IControlRepository>();
       var list = await controlsRepo.ListControlsAsync(packId, CancellationToken.None);
       Helpers.WritePowerStigMapCsv(output, list);
+      logger.LogInformation("powerstig-map-export completed: {Count} controls exported", list.Count);
       Console.WriteLine("Wrote mapping template: " + output);
       await host.StopAsync();
     }, packOpt, outOpt);

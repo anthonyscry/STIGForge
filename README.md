@@ -85,6 +85,88 @@ dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- bundle-summary 
 dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- overlay-edit --overlay <OVERLAY_ID> --add-rule SV-12345 --status NotApplicable --reason "Org policy"
 ```
 
+22) Export standalone POA&M (Plan of Action & Milestones):
+```powershell
+dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- export-poam --bundle C:\path\to\bundle --system-name "MySystem"
+```
+23) Export CKL (STIG Viewer Checklist):
+```powershell
+dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- export-ckl --bundle C:\path\to\bundle --host-name MYHOST --stig-id "Win11_STIG"
+```
+24) Query audit trail:
+```powershell
+dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- audit-log --action apply --limit 50 --json
+```
+25) Verify audit trail integrity:
+```powershell
+dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- audit-verify
+```
+26) Schedule re-verification (Windows Task Scheduler):
+```powershell
+dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- schedule-verify --name "DailyVerify" --bundle C:\path\to\bundle --frequency DAILY --time 06:00
+```
+27) Remove scheduled task:
+```powershell
+dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- schedule-remove --name "DailyVerify"
+```
+28) List scheduled tasks:
+```powershell
+dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- schedule-list
+```
+29) Fleet apply (multi-machine via WinRM):
+```powershell
+dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- fleet-apply --targets "SRV01,SRV02:10.0.0.2,SRV03" --remote-bundle-path "C:\STIGForge\bundle" --mode Safe --concurrency 5
+```
+30) Fleet verify (multi-machine via WinRM):
+```powershell
+dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- fleet-verify --targets "SRV01,SRV02,SRV03" --scap-cmd "C:\SCC\scc.exe" --json
+```
+31) Fleet status (check WinRM connectivity):
+```powershell
+dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- fleet-status --targets "SRV01,SRV02,SRV03"
+```
+32) Collect diagnostics for support:
+```powershell
+dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- support-bundle --output .\artifacts\support --bundle C:\path\to\bundle --max-log-files 30
+```
+
+33) Run security gate only (dependency vuln/license/secrets policy checks):
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\release\Invoke-SecurityGate.ps1 -OutputRoot .\.artifacts\security-gate\local
+```
+
+34) Build release packages (CLI + WPF publish zips, optional signing):
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\release\Invoke-PackageBuild.ps1 -Configuration Release -Runtime win-x64 -OutputRoot .\.artifacts\release-package\local
+```
+
+## Ship readiness gate
+Run the automated release gate (build + tests + artifact manifest/checksums):
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\release\Invoke-ReleaseGate.ps1 -Configuration Release -OutputRoot .\.artifacts\release-gate\local
+```
+
+Outputs:
+- `report/release-gate-report.md` - human-readable gate summary
+- `report/release-gate-summary.json` - machine-readable step results
+- `report/sha256-checksums.txt` - checksums for generated artifacts
+- `logs/*.log` - per-step command logs
+- `security/reports/security-gate-report.md` - security gate summary (vuln/license/secrets)
+- `security/reports/security-gate-summary.json` - machine-readable security summary
+- `sbom/dotnet-packages.json` - dependency inventory (unless `-SkipSbom`)
+
+See `docs/release/ShipReadinessChecklist.md` for go/no-go criteria.
+See `docs/release/SecurityGatePolicies.md` for policy file and exception management.
+
+## Release workflows
+- `ci.yml` runs release gate and uploads gate artifacts for every push/PR.
+- `release-package.yml` (manual dispatch) runs optional release gate + package build and uploads release bundles.
+- `vm-smoke-matrix.yml` (manual dispatch) runs release gate + E2E tests on self-hosted VM runners labeled:
+  - `win11`
+  - `server2019`
+  - `server2022`
+
 ## Repo layout
 - src/ STIGForge.* projects (WPF App + modules)
 - tests/ unit + integration tests

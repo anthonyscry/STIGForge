@@ -21,6 +21,10 @@ BuildCommands.Register(rootCmd, BuildHost);
 VerifyCommands.Register(rootCmd, BuildHost);
 DiffRebaseCommands.Register(rootCmd, BuildHost);
 BundleCommands.Register(rootCmd, BuildHost);
+AuditCommands.Register(rootCmd, BuildHost);
+ExportCommands.Register(rootCmd, BuildHost);
+ScheduleCommands.Register(rootCmd, BuildHost);
+FleetCommands.Register(rootCmd, BuildHost);
 
 return await InvokeWithErrorHandlingAsync(rootCmd, args);
 
@@ -70,6 +74,8 @@ static IHost BuildHost()
       services.AddSingleton<EvidenceCollector>();
       services.AddSingleton<BundleOrchestrator>();
       services.AddSingleton<STIGForge.Export.EmassExporter>();
+      services.AddSingleton<IAuditTrailService>(sp =>
+        new AuditTrailService(sp.GetRequiredService<string>(), sp.GetRequiredService<IClock>()));
     })
     .Build();
 }

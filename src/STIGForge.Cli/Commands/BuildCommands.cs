@@ -3,6 +3,7 @@ using System.CommandLine.Invocation;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using STIGForge.Build;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
@@ -36,6 +37,8 @@ internal static class BuildCommands
     {
       using var host = buildHost();
       await host.StartAsync();
+      var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("BuildCommands");
+      logger.LogInformation("build-bundle started: packId={PackId}, forceAutoApply={ForceAutoApply}", packId, forceAutoApply);
 
       if (string.IsNullOrWhiteSpace(profileId) && string.IsNullOrWhiteSpace(profileJson))
         throw new ArgumentException("Provide --profile-id or --profile-json.");
@@ -81,6 +84,7 @@ internal static class BuildCommands
         ToolVersion = "0.1.0-dev", ForceAutoApply = forceAutoApply
       }, CancellationToken.None);
 
+      logger.LogInformation("build-bundle completed: bundleRoot={BundleRoot}", result.BundleRoot);
       Console.WriteLine("Bundle created: " + result.BundleRoot);
       Console.WriteLine("Manifest: " + result.ManifestPath);
       var gatePath = Path.Combine(result.BundleRoot, "Reports", "automation_gate.json");
@@ -115,6 +119,8 @@ internal static class BuildCommands
       var bundle = ctx.ParseResult.GetValueForOption(bOpt) ?? string.Empty;
       using var host = buildHost();
       await host.StartAsync();
+      var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("BuildCommands");
+      logger.LogInformation("orchestrate started: bundle={Bundle}", bundle);
       var orchestrator = host.Services.GetRequiredService<BundleOrchestrator>();
       await orchestrator.OrchestrateAsync(new OrchestrateRequest
       {
@@ -126,6 +132,7 @@ internal static class BuildCommands
         ScapCommandPath = NullIfEmpty(ctx, scapOpt), ScapArgs = NullIfEmpty(ctx, scapArgsOpt),
         ScapToolLabel = NullIfEmpty(ctx, scapLabelOpt)
       }, CancellationToken.None);
+      logger.LogInformation("orchestrate completed: bundle={Bundle}", bundle);
       await host.StopAsync();
     });
 
@@ -159,6 +166,8 @@ internal static class BuildCommands
 
       using var host = buildHost();
       await host.StartAsync();
+      var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("BuildCommands");
+      logger.LogInformation("apply-run started: bundle={Bundle}, mode={Mode}", bundle, mode);
       var runner = host.Services.GetRequiredService<STIGForge.Apply.ApplyRunner>();
       var result = await runner.RunAsync(new STIGForge.Apply.ApplyRequest
       {
@@ -169,6 +178,7 @@ internal static class BuildCommands
         PowerStigModulePath = NullIfEmpty(ctx, psModOpt), PowerStigDataFile = NullIfEmpty(ctx, psDataOpt),
         PowerStigOutputPath = NullIfEmpty(ctx, psOutOpt), PowerStigVerbose = ctx.ParseResult.GetValueForOption(psVOpt)
       }, CancellationToken.None);
+      logger.LogInformation("apply-run completed: log={LogPath}", result.LogPath);
       Console.WriteLine("Apply completed. Log: " + result.LogPath);
       await host.StopAsync();
     });

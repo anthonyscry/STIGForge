@@ -71,6 +71,19 @@ CREATE TABLE IF NOT EXISTS controls (
   json TEXT NOT NULL,
   PRIMARY KEY (pack_id, control_id)
 );
+
+CREATE TABLE IF NOT EXISTS audit_trail (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  timestamp TEXT NOT NULL,
+  user TEXT NOT NULL,
+  machine TEXT NOT NULL,
+  action TEXT NOT NULL,
+  target TEXT NOT NULL,
+  result TEXT NOT NULL,
+  detail TEXT NOT NULL,
+  previous_hash TEXT NOT NULL,
+  entry_hash TEXT NOT NULL
+);
 ";
     cmd.ExecuteNonQuery();
   }

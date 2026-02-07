@@ -7,6 +7,40 @@ public interface IClock
   DateTimeOffset Now { get; }
 }
 
+/// <summary>
+/// Tamper-evident audit trail for compliance-relevant actions.
+/// Each entry is chained to the previous via SHA-256 hash for integrity verification.
+/// </summary>
+public interface IAuditTrailService
+{
+  Task RecordAsync(AuditEntry entry, CancellationToken ct);
+  Task<IReadOnlyList<AuditEntry>> QueryAsync(AuditQuery query, CancellationToken ct);
+  Task<bool> VerifyIntegrityAsync(CancellationToken ct);
+}
+
+public sealed class AuditEntry
+{
+  public long Id { get; set; }
+  public DateTimeOffset Timestamp { get; set; }
+  public string User { get; set; } = string.Empty;
+  public string Machine { get; set; } = string.Empty;
+  public string Action { get; set; } = string.Empty;
+  public string Target { get; set; } = string.Empty;
+  public string Result { get; set; } = string.Empty;
+  public string Detail { get; set; } = string.Empty;
+  public string PreviousHash { get; set; } = string.Empty;
+  public string EntryHash { get; set; } = string.Empty;
+}
+
+public sealed class AuditQuery
+{
+  public string? Action { get; set; }
+  public string? Target { get; set; }
+  public DateTimeOffset? From { get; set; }
+  public DateTimeOffset? To { get; set; }
+  public int Limit { get; set; } = 100;
+}
+
 public interface IHashingService
 {
   Task<string> Sha256FileAsync(string path, CancellationToken ct);

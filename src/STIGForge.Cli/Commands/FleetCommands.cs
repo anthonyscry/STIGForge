@@ -1,0 +1,204 @@
+using System.CommandLine;
+using System.CommandLine.Invocation;
+using System.Text.Json;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using STIGForge.Infrastructure.System;
+
+namespace STIGForge.Cli.Commands;
+
+internal static class FleetCommands
+{
+  public static void Register(RootCommand rootCmd, Func<IHost> buildHost)
+  {
+    RegisterFleetApply(rootCmd, buildHost);
+    RegisterFleetVerify(rootCmd, buildHost);
+    RegisterFleetStatus(rootCmd, buildHost);
+  }
+
+  private static void RegisterFleetApply(RootCommand rootCmd, Func<IHost> buildHost)
+  {
+    var cmd = new Command("fleet-apply", "Apply STIG hardening across multiple machines via WinRM/PSRemoting");
+    AddCommonFleetOptions(cmd, out var targetsOpt, out var cliPathOpt, out var bundlePathOpt, out var concurrencyOpt, out var timeoutOpt, out var jsonOpt);
+    var modeOpt = new Option<string>("--mode", () => string.Empty, "Apply mode: AuditOnly|Safe|Full");
+    cmd.AddOption(modeOpt);
+
+    cmd.SetHandler(async (InvocationContext ctx) =>
+    {
+      using var host = buildHost();
+      await host.StartAsync();
+      var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("FleetCommands");
+
+      var targets = ParseTargets(ctx.ParseResult.GetValueForOption(targetsOpt) ?? string.Empty);
+      var request = new FleetRequest
+      {
+        Targets = targets,
+        Operation = "apply",
+        RemoteCliPath = NullIfEmpty(ctx, cliPathOpt),
+        RemoteBundleRoot = NullIfEmpty(ctx, bundlePathOpt),
+        ApplyMode = NullIfEmpty(ctx, modeOpt),
+        MaxConcurrency = ctx.ParseResult.GetValueForOption(concurrencyOpt),
+        TimeoutSeconds = ctx.ParseResult.GetValueForOption(timeoutOpt)
+      };
+
+      logger.LogInformation("fleet-apply started: {Count} targets, mode={Mode}", targets.Count, request.ApplyMode);
+      var svc = new FleetService();
+      var result = await svc.ExecuteAsync(request, CancellationToken.None);
+      WriteFleetResult(result, ctx.ParseResult.GetValueForOption(jsonOpt), logger);
+      await host.StopAsync();
+    });
+
+    rootCmd.AddCommand(cmd);
+  }
+
+  private static void RegisterFleetVerify(RootCommand rootCmd, Func<IHost> buildHost)
+  {
+    var cmd = new Command("fleet-verify", "Run verification across multiple machines via WinRM/PSRemoting");
+    AddCommonFleetOptions(cmd, out var targetsOpt, out var cliPathOpt, out var bundlePathOpt, out var concurrencyOpt, out var timeoutOpt, out var jsonOpt);
+    var scapCmdOpt = new Option<string>("--scap-cmd", () => string.Empty, "SCAP/SCC executable path on remote");
+    var scapArgsOpt = new Option<string>("--scap-args", () => string.Empty, "SCAP arguments");
+    var evalRootOpt = new Option<string>("--evaluate-stig-root", () => string.Empty, "Evaluate-STIG root on remote");
+    cmd.AddOption(scapCmdOpt); cmd.AddOption(scapArgsOpt); cmd.AddOption(evalRootOpt);
+
+    cmd.SetHandler(async (InvocationContext ctx) =>
+    {
+      using var host = buildHost();
+      await host.StartAsync();
+      var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("FleetCommands");
+
+      var targets = ParseTargets(ctx.ParseResult.GetValueForOption(targetsOpt) ?? string.Empty);
+      var request = new FleetRequest
+      {
+        Targets = targets,
+        Operation = "verify",
+        RemoteCliPath = NullIfEmpty(ctx, cliPathOpt),
+        RemoteBundleRoot = NullIfEmpty(ctx, bundlePathOpt),
+        ScapCmd = NullIfEmpty(ctx, scapCmdOpt),
+        ScapArgs = NullIfEmpty(ctx, scapArgsOpt),
+        EvaluateStigRoot = NullIfEmpty(ctx, evalRootOpt),
+        MaxConcurrency = ctx.ParseResult.GetValueForOption(concurrencyOpt),
+        TimeoutSeconds = ctx.ParseResult.GetValueForOption(timeoutOpt)
+      };
+
+      logger.LogInformation("fleet-verify started: {Count} targets", targets.Count);
+      var svc = new FleetService();
+      var result = await svc.ExecuteAsync(request, CancellationToken.None);
+      WriteFleetResult(result, ctx.ParseResult.GetValueForOption(jsonOpt), logger);
+      await host.StopAsync();
+    });
+
+    rootCmd.AddCommand(cmd);
+  }
+
+  private static void RegisterFleetStatus(RootCommand rootCmd, Func<IHost> buildHost)
+  {
+    var cmd = new Command("fleet-status", "Check WinRM connectivity for fleet targets");
+    var targetsOpt = new Option<string>("--targets", "Comma-separated list of hostnames or host:ip pairs") { IsRequired = true };
+    var jsonOpt = new Option<bool>("--json", "Output as JSON");
+    cmd.AddOption(targetsOpt); cmd.AddOption(jsonOpt);
+
+    cmd.SetHandler(async (targets, json) =>
+    {
+      using var host = buildHost();
+      await host.StartAsync();
+      var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("FleetCommands");
+      var targetList = ParseTargets(targets);
+
+      logger.LogInformation("fleet-status: checking {Count} targets", targetList.Count);
+      var svc = new FleetService();
+      var result = await svc.CheckStatusAsync(targetList, CancellationToken.None);
+
+      if (json)
+      {
+        Console.WriteLine(JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true }));
+      }
+      else
+      {
+        Console.WriteLine($"Fleet status: {result.ReachableCount}/{result.TotalMachines} reachable");
+        Console.WriteLine();
+        Console.WriteLine($"{"Machine",-30} {"IP",-18} {"Status",-12} {"Message"}");
+        Console.WriteLine(new string('-', 90));
+        foreach (var s in result.MachineStatuses)
+          Console.WriteLine($"{s.MachineName,-30} {(s.IpAddress ?? ""),-18} {(s.IsReachable ? "OK" : "FAIL"),-12} {s.Message}");
+      }
+
+      logger.LogInformation("fleet-status completed: {Reachable}/{Total} reachable", result.ReachableCount, result.TotalMachines);
+      await host.StopAsync();
+    }, targetsOpt, jsonOpt);
+
+    rootCmd.AddCommand(cmd);
+  }
+
+  private static void AddCommonFleetOptions(Command cmd,
+    out Option<string> targetsOpt, out Option<string> cliPathOpt,
+    out Option<string> bundlePathOpt, out Option<int> concurrencyOpt,
+    out Option<int> timeoutOpt, out Option<bool> jsonOpt)
+  {
+    targetsOpt = new Option<string>("--targets", "Comma-separated list of hostnames or host:ip pairs") { IsRequired = true };
+    cliPathOpt = new Option<string>("--remote-cli-path", () => string.Empty, "STIGForge CLI path on remote machines");
+    bundlePathOpt = new Option<string>("--remote-bundle-path", () => string.Empty, "Bundle path on remote machines");
+    concurrencyOpt = new Option<int>("--concurrency", () => 5, "Max concurrent machines");
+    timeoutOpt = new Option<int>("--timeout", () => 600, "Timeout per machine in seconds");
+    jsonOpt = new Option<bool>("--json", "Output as JSON");
+    cmd.AddOption(targetsOpt); cmd.AddOption(cliPathOpt); cmd.AddOption(bundlePathOpt);
+    cmd.AddOption(concurrencyOpt); cmd.AddOption(timeoutOpt); cmd.AddOption(jsonOpt);
+  }
+
+  private static List<FleetTarget> ParseTargets(string targets)
+  {
+    var list = new List<FleetTarget>();
+    foreach (var raw in targets.Split(',', StringSplitOptions.RemoveEmptyEntries))
+    {
+      var item = raw.Trim();
+      if (item.Length == 0) continue;
+
+      var colonIdx = item.IndexOf(':');
+      if (colonIdx > 0)
+      {
+        list.Add(new FleetTarget
+        {
+          HostName = item.Substring(0, colonIdx).Trim(),
+          IpAddress = item.Substring(colonIdx + 1).Trim()
+        });
+      }
+      else
+      {
+        list.Add(new FleetTarget { HostName = item });
+      }
+    }
+    return list;
+  }
+
+  private static void WriteFleetResult(FleetResult result, bool json, ILogger logger)
+  {
+    if (json)
+    {
+      Console.WriteLine(JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true }));
+    }
+    else
+    {
+      Console.WriteLine($"Fleet {result.Operation}: {result.SuccessCount}/{result.TotalMachines} succeeded");
+      Console.WriteLine($"Duration: {(result.FinishedAt - result.StartedAt).TotalSeconds:F1}s");
+      Console.WriteLine();
+      Console.WriteLine($"{"Machine",-30} {"Status",-10} {"Exit",-6} {"Duration",-12} {"Error"}");
+      Console.WriteLine(new string('-', 100));
+      foreach (var m in result.MachineResults)
+      {
+        var duration = (m.FinishedAt - m.StartedAt).TotalSeconds;
+        Console.WriteLine($"{m.MachineName,-30} {(m.Success ? "OK" : "FAIL"),-10} {m.ExitCode,-6} {duration:F1}s{"",-8} {Helpers.Truncate(m.Error, 30)}");
+      }
+    }
+
+    logger.LogInformation("fleet-{Operation} completed: {Success}/{Total} succeeded in {Duration:F1}s",
+      result.Operation, result.SuccessCount, result.TotalMachines, (result.FinishedAt - result.StartedAt).TotalSeconds);
+
+    if (result.FailureCount > 0) Environment.ExitCode = 1;
+  }
+
+  private static string? NullIfEmpty(InvocationContext ctx, Option<string> opt)
+  {
+    var val = ctx.ParseResult.GetValueForOption(opt);
+    return string.IsNullOrWhiteSpace(val) ? null : val;
+  }
+}
