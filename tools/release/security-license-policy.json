@@ -1,0 +1,33 @@
+{
+  "allowedLicenseExpressions": [
+    "MIT",
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "ISC",
+    "MPL-2.0",
+    "MS-PL",
+    "Zlib",
+    "Unicode-3.0",
+    "CC-BY-4.0",
+    "0BSD"
+  ],
+  "allowedLicenseUrls": [
+    "https://licenses.nuget.org/MIT",
+    "https://licenses.nuget.org/Apache-2.0",
+    "https://licenses.nuget.org/BSD-2-Clause",
+    "https://licenses.nuget.org/BSD-3-Clause",
+    "https://licenses.nuget.org/ISC",
+    "https://licenses.nuget.org/MPL-2.0",
+    "https://licenses.nuget.org/MS-PL",
+    "https://licenses.nuget.org/Zlib",
+    "https://licenses.nuget.org/Unicode-3.0",
+    "https://licenses.nuget.org/CC-BY-4.0",
+    "https://licenses.nuget.org/0BSD"
+  ],
+  "allowUnknownForPackages": [
+    "FluentAssertions",
+    "Microsoft.NET.Test.Sdk",
+    "Microsoft.NETFramework.ReferenceAssemblies"
+  ]
+}

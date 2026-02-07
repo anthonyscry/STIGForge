@@ -1,0 +1,89 @@
+name: release-package
+
+on:
+  workflow_dispatch:
+    inputs:
+      configuration:
+        description: Build configuration
+        required: true
+        default: Release
+        type: choice
+        options:
+          - Release
+          - Debug
+      runtime:
+        description: Runtime identifier
+        required: true
+        default: win-x64
+        type: string
+      version_tag:
+        description: Optional version tag for manifest metadata
+        required: false
+        default: ""
+        type: string
+      run_release_gate:
+        description: Run release gate before packaging
+        required: true
+        default: true
+        type: boolean
+      require_signing:
+        description: Require signing with STIGFORGE_SIGN_CERT_* secrets
+        required: true
+        default: false
+        type: boolean
+
+jobs:
+  package:
+    runs-on: windows-latest
+    permissions:
+      contents: read
+    env:
+      STIGFORGE_SIGN_CERT_BASE64: ${{ secrets.STIGFORGE_SIGN_CERT_BASE64 }}
+      STIGFORGE_SIGN_CERT_PASSWORD: ${{ secrets.STIGFORGE_SIGN_CERT_PASSWORD }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Pre-package release gate
+        if: ${{ inputs.run_release_gate }}
+        shell: pwsh
+        run: ./tools/release/Invoke-ReleaseGate.ps1 -Configuration ${{ inputs.configuration }} -OutputRoot ./.artifacts/release-gate/release-package
+
+      - name: Build release packages
+        shell: pwsh
+        run: |
+          $args = @(
+            '-ExecutionPolicy', 'Bypass',
+            '-File', '.\tools\release\Invoke-PackageBuild.ps1',
+            '-Configuration', '${{ inputs.configuration }}',
+            '-Runtime', '${{ inputs.runtime }}',
+            '-OutputRoot', '.\.artifacts\release-package\latest',
+            '-VersionTag', '${{ inputs.version_tag }}'
+          )
+
+          if ([System.Convert]::ToBoolean('${{ inputs.require_signing }}')) {
+            $args += '-RequireSigning'
+          }
+
+          powershell @args
+
+      - name: Upload package artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-package-${{ github.run_id }}
+          path: ./.artifacts/release-package/latest
+          if-no-files-found: error
+
+      - name: Upload release gate artifacts
+        if: always() && inputs.run_release_gate
+        uses: actions/upload-artifact@v4
+        with:
+          name: release-gate-release-package-${{ github.run_id }}
+          path: ./.artifacts/release-gate/release-package
+          if-no-files-found: warn
