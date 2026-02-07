@@ -1,6 +1,7 @@
 using System.CommandLine;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using STIGForge.Verify;
 
 namespace STIGForge.Cli.Commands;
@@ -135,6 +136,8 @@ internal static class VerifyCommands
     {
       using var host = buildHost();
       await host.StartAsync();
+      var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("VerifyCommands");
+      logger.LogInformation("export-emass started: bundle={Bundle}", bundle);
       var exporter = host.Services.GetRequiredService<STIGForge.Export.EmassExporter>();
       var result = await exporter.ExportAsync(new STIGForge.Export.ExportRequest
       {
@@ -153,6 +156,7 @@ internal static class VerifyCommands
         foreach (var warning in result.ValidationResult.Warnings) Console.WriteLine($"  Warning: {warning}");
         if (result.ValidationResult.IsValid) Console.WriteLine("  Package is ready for eMASS submission!");
       }
+      logger.LogInformation("export-emass completed: outputRoot={OutputRoot}, valid={IsValid}", result.OutputRoot, result.ValidationResult?.IsValid);
       await host.StopAsync();
     }, bundleOpt, outOpt);
 

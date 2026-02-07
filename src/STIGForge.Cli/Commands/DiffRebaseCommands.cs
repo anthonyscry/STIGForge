@@ -3,6 +3,7 @@ using System.CommandLine.Invocation;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
 using STIGForge.Core.Services;

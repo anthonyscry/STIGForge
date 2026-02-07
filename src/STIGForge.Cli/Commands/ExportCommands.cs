@@ -1,0 +1,92 @@
+using System.CommandLine;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using STIGForge.Export;
+
+namespace STIGForge.Cli.Commands;
+
+internal static class ExportCommands
+{
+  public static void Register(RootCommand rootCmd, Func<IHost> buildHost)
+  {
+    RegisterExportPoam(rootCmd, buildHost);
+    RegisterExportCkl(rootCmd, buildHost);
+  }
+
+  private static void RegisterExportPoam(RootCommand rootCmd, Func<IHost> buildHost)
+  {
+    var cmd = new Command("export-poam", "Export standalone POA&M (Plan of Action & Milestones) from a bundle");
+    var bundleOpt = new Option<string>("--bundle", "Bundle root path") { IsRequired = true };
+    var outOpt = new Option<string>("--output", () => string.Empty, "Output directory override");
+    var systemOpt = new Option<string>("--system-name", () => string.Empty, "System name override");
+    cmd.AddOption(bundleOpt); cmd.AddOption(outOpt); cmd.AddOption(systemOpt);
+
+    cmd.SetHandler(async (bundle, output, systemName) =>
+    {
+      using var host = buildHost();
+      await host.StartAsync();
+      var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("ExportCommands");
+      logger.LogInformation("export-poam started: bundle={Bundle}", bundle);
+
+      var result = StandalonePoamExporter.ExportPoam(new PoamExportRequest
+      {
+        BundleRoot = bundle,
+        OutputDirectory = string.IsNullOrWhiteSpace(output) ? null : output,
+        SystemName = string.IsNullOrWhiteSpace(systemName) ? null : systemName
+      });
+
+      Console.WriteLine("POA&M export:");
+      Console.WriteLine("  Output: " + result.OutputDirectory);
+      Console.WriteLine("  Open findings: " + result.ItemCount);
+      Console.WriteLine($"  CAT I: {result.CriticalCount}  CAT II: {result.HighCount}  CAT III: {result.MediumCount}");
+
+      logger.LogInformation("export-poam completed: {ItemCount} findings exported to {Output}", result.ItemCount, result.OutputDirectory);
+      await host.StopAsync();
+    }, bundleOpt, outOpt, systemOpt);
+
+    rootCmd.AddCommand(cmd);
+  }
+
+  private static void RegisterExportCkl(RootCommand rootCmd, Func<IHost> buildHost)
+  {
+    var cmd = new Command("export-ckl", "Export STIG Viewer-compatible CKL (Checklist) from a bundle");
+    var bundleOpt = new Option<string>("--bundle", "Bundle root path") { IsRequired = true };
+    var outOpt = new Option<string>("--output", () => string.Empty, "Output directory override");
+    var fileNameOpt = new Option<string>("--file-name", () => string.Empty, "Output file name (default: stigforge_checklist.ckl)");
+    var hostOpt = new Option<string>("--host-name", () => string.Empty, "Host name for CKL ASSET section");
+    var ipOpt = new Option<string>("--host-ip", () => string.Empty, "Host IP for CKL ASSET section");
+    var macOpt = new Option<string>("--host-mac", () => string.Empty, "Host MAC for CKL ASSET section");
+    var stigIdOpt = new Option<string>("--stig-id", () => string.Empty, "STIG ID for CKL header");
+    cmd.AddOption(bundleOpt); cmd.AddOption(outOpt); cmd.AddOption(fileNameOpt);
+    cmd.AddOption(hostOpt); cmd.AddOption(ipOpt); cmd.AddOption(macOpt); cmd.AddOption(stigIdOpt);
+
+    cmd.SetHandler(async (bundle, output, fileName, hostName, hostIp, hostMac, stigId) =>
+    {
+      using var host = buildHost();
+      await host.StartAsync();
+      var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("ExportCommands");
+      logger.LogInformation("export-ckl started: bundle={Bundle}", bundle);
+
+      var result = CklExporter.ExportCkl(new CklExportRequest
+      {
+        BundleRoot = bundle,
+        OutputDirectory = string.IsNullOrWhiteSpace(output) ? null : output,
+        FileName = string.IsNullOrWhiteSpace(fileName) ? null : fileName,
+        HostName = string.IsNullOrWhiteSpace(hostName) ? null : hostName,
+        HostIp = string.IsNullOrWhiteSpace(hostIp) ? null : hostIp,
+        HostMac = string.IsNullOrWhiteSpace(hostMac) ? null : hostMac,
+        StigId = string.IsNullOrWhiteSpace(stigId) ? null : stigId
+      });
+
+      Console.WriteLine("CKL export:");
+      Console.WriteLine("  File: " + result.OutputPath);
+      Console.WriteLine("  Controls: " + result.ControlCount);
+
+      logger.LogInformation("export-ckl completed: {ControlCount} controls exported to {Output}", result.ControlCount, result.OutputPath);
+      await host.StopAsync();
+    }, bundleOpt, outOpt, fileNameOpt, hostOpt, ipOpt, macOpt, stigIdOpt);
+
+    rootCmd.AddCommand(cmd);
+  }
+}
