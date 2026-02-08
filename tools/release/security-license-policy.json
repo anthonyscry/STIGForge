@@ -29,5 +29,6 @@
     "FluentAssertions",
     "Microsoft.NET.Test.Sdk",
     "Microsoft.NETFramework.ReferenceAssemblies"
-  ]
+  ],
+  "localPackageIntelligence": []
 }

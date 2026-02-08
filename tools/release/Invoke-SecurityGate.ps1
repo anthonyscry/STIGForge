@@ -4,6 +4,8 @@ param(
   [string]$VulnerabilityExceptionsPath = "",
   [string]$LicensePolicyPath = "",
   [string]$SecretsPolicyPath = "",
+  [switch]$Strict,
+  [switch]$EnableNetworkLicenseLookup,
   [switch]$SkipLicenseLookup,
   [switch]$SkipSecrets
 )
@@ -29,9 +31,30 @@ function Convert-ToRelativePath {
     [Parameter(Mandatory = $true)][string]$TargetPath
   )
 
-  $baseFull = [IO.Path]::GetFullPath($BasePath)
-  $targetFull = [IO.Path]::GetFullPath($TargetPath)
-  return [IO.Path]::GetRelativePath($baseFull, $targetFull)
+  $baseResolved = (Resolve-Path $BasePath).Path
+  $targetResolved = (Resolve-Path $TargetPath).Path
+
+  $baseSuffix = if ($baseResolved.EndsWith([IO.Path]::DirectorySeparatorChar) -or $baseResolved.EndsWith([IO.Path]::AltDirectorySeparatorChar)) { "" } else { [string][IO.Path]::DirectorySeparatorChar }
+  $baseUri = [System.Uri]::new(($baseResolved + $baseSuffix), [System.UriKind]::Absolute)
+  $targetUri = [System.Uri]::new($targetResolved, [System.UriKind]::Absolute)
+
+  return [System.Uri]::UnescapeDataString($baseUri.MakeRelativeUri($targetUri).ToString().Replace('/', [IO.Path]::DirectorySeparatorChar))
+}
+
+function New-UnresolvedFinding {
+  param(
+    [Parameter(Mandatory = $true)][string]$Category,
+    [Parameter(Mandatory = $true)][string]$Subject,
+    [Parameter(Mandatory = $true)][string]$Reason,
+    [Parameter(Mandatory = $true)][string]$Evidence
+  )
+
+  return [pscustomobject]@{
+    category = $Category
+    subject = $Subject
+    reason = $Reason
+    evidence = $Evidence
+  }
 }
 
 function Invoke-DotnetJson {
@@ -339,21 +362,41 @@ try {
   $licensePolicy = Get-Content -Path $LicensePolicyPath -Raw | ConvertFrom-Json
   $secretsPolicy = Get-Content -Path $SecretsPolicyPath -Raw | ConvertFrom-Json
 
+  $deterministicOfflineMode = -not $EnableNetworkLicenseLookup
+  if ($SkipLicenseLookup) {
+    $deterministicOfflineMode = $true
+  }
+
+  $unresolvedIntelligence = New-Object System.Collections.Generic.List[object]
+
   $vulnerablePackagesJsonPath = Join-Path $reportsRoot "dependency-vulnerabilities.json"
-  $vulnerablePackages = Invoke-DotnetJson -Name "dependency-vulnerability-scan" -Arguments @("list", $scanTarget, "package", "--vulnerable", "--include-transitive", "--format", "json") -LogPath (Join-Path $logsRoot "dependency-vulnerability-scan.log") -JsonPath $vulnerablePackagesJsonPath
+  $vulnerabilityScanStatus = "completed"
+  $vulnerabilityScanError = ""
+  $vulnerablePackages = $null
+  try {
+    $vulnerablePackages = Invoke-DotnetJson -Name "dependency-vulnerability-scan" -Arguments @("list", $scanTarget, "package", "--vulnerable", "--include-transitive", "--format", "json") -LogPath (Join-Path $logsRoot "dependency-vulnerability-scan.log") -JsonPath $vulnerablePackagesJsonPath
+  }
+  catch {
+    $vulnerabilityScanStatus = "unresolved"
+    $vulnerabilityScanError = $_.Exception.Message
+    @() | ConvertTo-Json -Depth 2 | Set-Content -Path $vulnerablePackagesJsonPath -Encoding UTF8
+    $unresolvedIntelligence.Add((New-UnresolvedFinding -Category "dependency-vulnerabilities" -Subject "dotnet list package --vulnerable" -Reason "Vulnerability intelligence is unavailable in deterministic mode." -Evidence $vulnerabilityScanError))
+  }
 
   $vulnerabilityRows = New-Object System.Collections.Generic.List[object]
-  foreach ($row in Get-PackageRowsFromDotnetList -DotnetListJson $vulnerablePackages -IncludeTransitive) {
-    foreach ($v in @($row.vulnerabilities)) {
-      $vulnerabilityRows.Add([pscustomobject]@{
-        project = $row.project
-        framework = $row.framework
-        packageId = $row.packageId
-        version = $row.version
-        transitive = $row.transitive
-        severity = [string]$v.severity
-        advisoryUrl = [string]$v.advisoryurl
-      })
+  if ($null -ne $vulnerablePackages) {
+    foreach ($row in Get-PackageRowsFromDotnetList -DotnetListJson $vulnerablePackages -IncludeTransitive) {
+      foreach ($v in @($row.vulnerabilities)) {
+        $vulnerabilityRows.Add([pscustomobject]@{
+          project = $row.project
+          framework = $row.framework
+          packageId = $row.packageId
+          version = $row.version
+          transitive = $row.transitive
+          severity = [string]$v.severity
+          advisoryUrl = [string]$v.advisoryurl
+        })
+      }
     }
   }
 
@@ -387,9 +430,23 @@ try {
   }
 
   $dependenciesJsonPath = Join-Path $reportsRoot "dependencies.json"
-  $dependencies = Invoke-DotnetJson -Name "dependency-inventory" -Arguments @("list", $scanTarget, "package", "--format", "json") -LogPath (Join-Path $logsRoot "dependency-inventory.log") -JsonPath $dependenciesJsonPath
+  $dependencyInventoryStatus = "completed"
+  $dependencyInventoryError = ""
+  $dependencies = $null
+  try {
+    $dependencies = Invoke-DotnetJson -Name "dependency-inventory" -Arguments @("list", $scanTarget, "package", "--format", "json") -LogPath (Join-Path $logsRoot "dependency-inventory.log") -JsonPath $dependenciesJsonPath
+  }
+  catch {
+    $dependencyInventoryStatus = "unresolved"
+    $dependencyInventoryError = $_.Exception.Message
+    @() | ConvertTo-Json -Depth 2 | Set-Content -Path $dependenciesJsonPath -Encoding UTF8
+    $unresolvedIntelligence.Add((New-UnresolvedFinding -Category "license-compliance" -Subject "dotnet list package" -Reason "Package inventory is unavailable in deterministic mode." -Evidence $dependencyInventoryError))
+  }
 
-  $directPackages = Get-PackageRowsFromDotnetList -DotnetListJson $dependencies
+  $directPackages = @()
+  if ($null -ne $dependencies) {
+    $directPackages = Get-PackageRowsFromDotnetList -DotnetListJson $dependencies
+  }
   $uniqueDirectPackages = @($directPackages |
       Group-Object packageId, version |
       ForEach-Object {
@@ -414,24 +471,60 @@ try {
   }
 
   $licenseLookupCache = @{}
+  $localLicenseIntelMap = @{}
+  if ($licensePolicy.PSObject.Properties.Name -contains "localPackageIntelligence") {
+    foreach ($entry in @($licensePolicy.localPackageIntelligence)) {
+      if ($null -eq $entry) { continue }
+      $entryPackage = [string]$entry.packageId
+      $entryVersion = [string]$entry.version
+      if ([string]::IsNullOrWhiteSpace($entryPackage) -or [string]::IsNullOrWhiteSpace($entryVersion)) { continue }
+      $localLicenseIntelMap[($entryPackage + "|" + $entryVersion).ToLowerInvariant()] = $entry
+    }
+  }
+
+  $licenseLookupAllowed = (-not $deterministicOfflineMode) -and (-not $SkipLicenseLookup)
+
   $licenseResults = New-Object System.Collections.Generic.List[object]
   $licenseErrors = New-Object System.Collections.Generic.List[object]
+  $licenseUnresolved = New-Object System.Collections.Generic.List[object]
 
   foreach ($pkg in $uniqueDirectPackages) {
     $cacheKey = ($pkg.packageId + "|" + $pkg.version).ToLowerInvariant()
     if (-not $licenseLookupCache.ContainsKey($cacheKey)) {
-      if ($SkipLicenseLookup) {
+      if ($localLicenseIntelMap.ContainsKey($cacheKey)) {
+        $entry = $localLicenseIntelMap[$cacheKey]
+        $licenseLookupCache[$cacheKey] = [pscustomobject]@{
+          packageId = $pkg.packageId
+          version = $pkg.version
+          sourceUrl = "local-policy"
+          licenseExpression = [string]$entry.licenseExpression
+          licenseUrl = [string]$entry.licenseUrl
+          error = ""
+          fromLocalPolicy = $true
+        }
+      }
+      elseif ($licenseLookupAllowed) {
+        $networkLookup = Get-NuGetLicenseInfo -PackageId $pkg.packageId -Version $pkg.version
+        $licenseLookupCache[$cacheKey] = [pscustomobject]@{
+          packageId = $networkLookup.packageId
+          version = $networkLookup.version
+          sourceUrl = $networkLookup.sourceUrl
+          licenseExpression = $networkLookup.licenseExpression
+          licenseUrl = $networkLookup.licenseUrl
+          error = $networkLookup.error
+          fromLocalPolicy = $false
+        }
+      }
+      else {
         $licenseLookupCache[$cacheKey] = [pscustomobject]@{
           packageId = $pkg.packageId
           version = $pkg.version
           sourceUrl = ""
           licenseExpression = ""
           licenseUrl = ""
-          error = "Skipped by -SkipLicenseLookup"
+          error = "No local license intelligence available for deterministic mode"
+          fromLocalPolicy = $false
         }
-      }
-      else {
-        $licenseLookupCache[$cacheKey] = Get-NuGetLicenseInfo -PackageId $pkg.packageId -Version $pkg.version
       }
     }
 
@@ -464,13 +557,14 @@ try {
         $reason = "License URL is not in allowed policy"
       }
     }
-    elseif ($SkipLicenseLookup) {
-      $status = "warning"
-      $reason = "License lookup skipped"
-    }
     else {
-      $status = "rejected"
-      $reason = if ([string]::IsNullOrWhiteSpace($licenseInfo.error)) { "No license metadata found" } else { "License lookup failed: " + $licenseInfo.error }
+      $status = "unresolved"
+      if ($licenseLookupAllowed) {
+        $reason = if ([string]::IsNullOrWhiteSpace($licenseInfo.error)) { "No license metadata found" } else { "License lookup failed: " + $licenseInfo.error }
+      }
+      else {
+        $reason = "No local license intelligence available in deterministic mode"
+      }
     }
 
     $result = [pscustomobject]@{
@@ -487,6 +581,9 @@ try {
     $licenseResults.Add($result)
     if ($status -eq "rejected") {
       $licenseErrors.Add($result)
+    }
+    elseif ($status -eq "unresolved") {
+      $licenseUnresolved.Add($result)
     }
   }
 
@@ -513,25 +610,56 @@ try {
   $secretFindings | ConvertTo-Json -Depth 10 | Set-Content -Path $secretsReportPath -Encoding UTF8
 
   $summaryPath = Join-Path $reportsRoot "security-gate-summary.json"
-  $licenseWarningCount = @($licenseResults | Where-Object { $_.status -eq "warning" }).Count
+  $unresolvedCount = $unresolvedIntelligence.Count + $licenseUnresolved.Count
+  $strictBlockingCount = if ($Strict) { $unresolvedCount } else { 0 }
+  $blockingFindingsCount = $unresolvedVulnerabilities.Count + $licenseErrors.Count + $secretFindings.Count + $strictBlockingCount
+
+  foreach ($item in $licenseUnresolved) {
+    $unresolvedIntelligence.Add((New-UnresolvedFinding -Category "license-compliance" -Subject ("{0} {1}" -f $item.packageId, $item.version) -Reason $item.reason -Evidence "license-compliance.json"))
+  }
+
+  $licenseLookupMode = "local-policy-only"
+  if ($licenseLookupAllowed) {
+    $licenseLookupMode = "network"
+  }
+
   $summary = [pscustomobject]@{
     generatedAtUtc = (Get-Date).ToUniversalTime().ToString("o")
     repository = $RepositoryRoot
     outputRoot = $outputRootFull
+    mode = [pscustomobject]@{
+      strict = [bool]$Strict
+      deterministicOffline = [bool]$deterministicOfflineMode
+      networkLicenseLookup = [bool]$licenseLookupAllowed
+    }
     dependencyVulnerabilities = [pscustomobject]@{
       total = $vulnerabilityRows.Count
       suppressed = $suppressedVulnerabilities.Count
       unresolved = $unresolvedVulnerabilities.Count
+      scanStatus = $vulnerabilityScanStatus
+      scanError = $vulnerabilityScanError
     }
     licenseCompliance = [pscustomobject]@{
       totalPackages = $licenseResults.Count
       rejected = $licenseErrors.Count
-      warnings = $licenseWarningCount
-      lookupSkipped = [bool]$SkipLicenseLookup
+      unresolved = $licenseUnresolved.Count
+      inventoryStatus = $dependencyInventoryStatus
+      inventoryError = $dependencyInventoryError
+      lookupMode = $licenseLookupMode
     }
     secrets = [pscustomobject]@{
       findings = $secretFindings.Count
       scanSkipped = [bool]$SkipSecrets
+    }
+    unresolvedIntelligence = [pscustomobject]@{
+      total = $unresolvedCount
+      strictModeBlocking = [bool]$Strict
+      findings = @($unresolvedIntelligence)
+    }
+    gateDecision = [pscustomobject]@{
+      blockingFindings = $blockingFindingsCount
+      strictBlockingCount = $strictBlockingCount
+      passed = ($blockingFindingsCount -eq 0)
     }
     artifacts = [pscustomobject]@{
       vulnerabilities = $vulnerablePackagesJsonPath
@@ -548,9 +676,12 @@ try {
   [void]$md.AppendLine()
   [void]$md.AppendLine("- Generated (UTC): $(Get-Date -Format 'yyyy-MM-ddTHH:mm:ssZ')")
   [void]$md.AppendLine("- Repository: $RepositoryRoot")
+  [void]$md.AppendLine("- Mode: $(if ($deterministicOfflineMode) { 'deterministic-offline' } else { 'network-assisted' })")
+  [void]$md.AppendLine("- Strict mode: $([bool]$Strict)")
   [void]$md.AppendLine("- Vulnerabilities: $($unresolvedVulnerabilities.Count) unresolved ($($suppressedVulnerabilities.Count) suppressed)")
-  [void]$md.AppendLine("- License compliance: $($licenseErrors.Count) rejected")
+  [void]$md.AppendLine("- License compliance: $($licenseErrors.Count) rejected, $($licenseUnresolved.Count) unresolved")
   [void]$md.AppendLine("- Secret findings: $($secretFindings.Count)")
+  [void]$md.AppendLine("- Unresolved intelligence: $unresolvedCount $(if ($Strict) { '(blocking)' } else { '(review required)' })")
   [void]$md.AppendLine()
 
   if ($unresolvedVulnerabilities.Count -gt 0) {
@@ -575,6 +706,17 @@ try {
     [void]$md.AppendLine()
   }
 
+  if ($licenseUnresolved.Count -gt 0) {
+    [void]$md.AppendLine("## License Findings Requiring Review")
+    [void]$md.AppendLine()
+    [void]$md.AppendLine("| Package | Version | Reason | Lookup Source |")
+    [void]$md.AppendLine("|---------|---------|--------|---------------|")
+    foreach ($item in $licenseUnresolved | Sort-Object packageId, version) {
+      [void]$md.AppendLine("| $($item.packageId) | $($item.version) | $($item.reason) | $($item.sourceUrl) |")
+    }
+    [void]$md.AppendLine()
+  }
+
   if ($secretFindings.Count -gt 0) {
     [void]$md.AppendLine("## Secret Findings")
     [void]$md.AppendLine()
@@ -586,15 +728,36 @@ try {
     [void]$md.AppendLine()
   }
 
+  if ($unresolvedCount -gt 0) {
+    [void]$md.AppendLine("## Unresolved Intelligence")
+    [void]$md.AppendLine()
+    [void]$md.AppendLine("| Category | Subject | Reason | Evidence |")
+    [void]$md.AppendLine("|----------|---------|--------|----------|")
+    foreach ($item in $unresolvedIntelligence | Sort-Object category, subject) {
+      [void]$md.AppendLine("| $($item.category) | $($item.subject) | $($item.reason) | $($item.evidence) |")
+    }
+    [void]$md.AppendLine()
+  }
+
   Set-Content -Path $markdownPath -Value $md.ToString() -Encoding UTF8
 
   Write-Host "[security-gate] report:   $markdownPath" -ForegroundColor Green
   Write-Host "[security-gate] summary:  $summaryPath" -ForegroundColor Green
 
-  $failed = ($unresolvedVulnerabilities.Count -gt 0) -or ($licenseErrors.Count -gt 0) -or ($secretFindings.Count -gt 0)
+  $failed = ($blockingFindingsCount -gt 0)
   if ($failed) {
-    Write-Host "[security-gate] Security gate failed." -ForegroundColor Red
+    if ($Strict -and $unresolvedCount -gt 0 -and $strictBlockingCount -gt 0) {
+      Write-Host "[security-gate] Security gate failed: unresolved intelligence is blocking in strict mode." -ForegroundColor Red
+    }
+    else {
+      Write-Host "[security-gate] Security gate failed." -ForegroundColor Red
+    }
     exit 1
+  }
+
+  if ($unresolvedCount -gt 0) {
+    Write-Host "[security-gate] Security gate passed with unresolved intelligence findings requiring review." -ForegroundColor Yellow
+    exit 0
   }
 
   Write-Host "[security-gate] Security gate passed." -ForegroundColor Green
