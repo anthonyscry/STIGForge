@@ -82,7 +82,7 @@ Exit Criteria:
 Plans:
 - [x] 06-security-and-operational-hardening-01-PLAN.md - Enforce explicit break-glass guardrails and CLI/WPF parity for high-risk actions.
 - [x] 06-security-and-operational-hardening-02-PLAN.md - Harden input/file boundaries with safe archive extraction and secure XML parsing.
-- [ ] 06-security-and-operational-hardening-03-PLAN.md - Make release/security gates deterministic offline with strict unresolved-finding mode.
+- [x] 06-security-and-operational-hardening-03-PLAN.md - Make release/security gates deterministic offline with strict unresolved-finding mode.
 - [ ] 06-security-and-operational-hardening-04-PLAN.md - Enforce fail-closed integrity checkpoints and mission-summary severity classification.
 
 Planned Focus:
