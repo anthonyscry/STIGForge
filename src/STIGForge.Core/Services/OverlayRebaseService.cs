@@ -11,11 +11,13 @@ public sealed class OverlayRebaseService
 {
   private readonly IOverlayRepository _overlays;
   private readonly BaselineDiffService _diffService;
+  private readonly IAuditTrailService? _audit;
 
-  public OverlayRebaseService(IOverlayRepository overlays, BaselineDiffService diffService)
+  public OverlayRebaseService(IOverlayRepository overlays, BaselineDiffService diffService, IAuditTrailService? audit = null)
   {
     _overlays = overlays;
     _diffService = diffService;
+    _audit = audit;
   }
 
   /// <summary>
@@ -65,6 +67,28 @@ public sealed class OverlayRebaseService
     report.HighRisk = report.Actions.Count(a => a.Confidence < 0.5);
 
     report.Success = true;
+
+    if (_audit != null)
+    {
+      _ = Task.Run(async () =>
+      {
+        try
+        {
+          await _audit.RecordAsync(new AuditEntry
+          {
+            Action = "rebase-overlay",
+            Target = overlayId,
+            Result = "success",
+            Detail = $"Baseline={baselinePackId}, New={newPackId}, Safe={report.SafeActions}, Review={report.ReviewNeeded}, HighRisk={report.HighRisk}",
+            User = Environment.UserName,
+            Machine = Environment.MachineName,
+            Timestamp = DateTimeOffset.Now
+          }, CancellationToken.None).ConfigureAwait(false);
+        }
+        catch { /* fire-and-forget audit */ }
+      });
+    }
+
     return report;
   }
 

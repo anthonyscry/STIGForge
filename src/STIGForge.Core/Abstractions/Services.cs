@@ -91,3 +91,15 @@ public sealed class CompiledControls
   public IReadOnlyList<CompiledControl> Controls { get; }
   public IReadOnlyList<CompiledControl> ReviewQueue { get; }
 }
+
+/// <summary>
+/// Secure credential storage for fleet operations using DPAPI (Windows Data Protection).
+/// Credentials are encrypted per-user and stored locally.
+/// </summary>
+public interface ICredentialStore
+{
+  void Save(string targetHost, string username, string password);
+  (string Username, string Password)? Load(string targetHost);
+  bool Remove(string targetHost);
+  IReadOnlyList<string> ListHosts();
+}

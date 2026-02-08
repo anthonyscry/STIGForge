@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text.Json;
+using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
 using STIGForge.Apply.Snapshot;
 using STIGForge.Apply.Dsc;
@@ -15,19 +16,22 @@ public sealed class ApplyRunner
     private readonly RollbackScriptGenerator _rollbackScriptGenerator;
     private readonly LcmService _lcmService;
     private readonly RebootCoordinator _rebootCoordinator;
+    private readonly IAuditTrailService? _audit;
 
     public ApplyRunner(
       ILogger<ApplyRunner> logger,
       SnapshotService snapshotService,
       RollbackScriptGenerator rollbackScriptGenerator,
       LcmService lcmService,
-      RebootCoordinator rebootCoordinator)
+      RebootCoordinator rebootCoordinator,
+      IAuditTrailService? audit = null)
     {
        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
        _snapshotService = snapshotService ?? throw new ArgumentNullException(nameof(snapshotService));
        _rollbackScriptGenerator = rollbackScriptGenerator ?? throw new ArgumentNullException(nameof(rollbackScriptGenerator));
        _lcmService = lcmService ?? throw new ArgumentNullException(nameof(lcmService));
        _rebootCoordinator = rebootCoordinator ?? throw new ArgumentNullException(nameof(rebootCoordinator));
+       _audit = audit;
     }
 
    public async Task<ApplyResult> RunAsync(ApplyRequest request, CancellationToken ct)
@@ -212,6 +216,27 @@ public sealed class ApplyRunner
 
      var json = JsonSerializer.Serialize(summary, new JsonSerializerOptions { WriteIndented = true });
      File.WriteAllText(logPath, json);
+
+     if (_audit != null)
+     {
+       try
+       {
+         await _audit.RecordAsync(new AuditEntry
+         {
+           Action = "apply",
+           Target = root,
+           Result = steps.All(s => s.ExitCode == 0) ? "success" : "failure",
+           Detail = $"Mode={mode}, Steps={steps.Count}",
+           User = Environment.UserName,
+           Machine = Environment.MachineName,
+           Timestamp = DateTimeOffset.Now
+         }, ct).ConfigureAwait(false);
+       }
+       catch (Exception ex)
+       {
+         _logger.LogWarning(ex, "Failed to record audit entry for apply operation");
+       }
+     }
 
      return new ApplyResult
      {

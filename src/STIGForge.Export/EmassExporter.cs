@@ -10,11 +10,13 @@ public sealed class EmassExporter
 {
   private readonly IPathBuilder _paths;
   private readonly IHashingService _hash;
+  private readonly IAuditTrailService? _audit;
 
-  public EmassExporter(IPathBuilder paths, IHashingService hash)
+  public EmassExporter(IPathBuilder paths, IHashingService hash, IAuditTrailService? audit = null)
   {
     _paths = paths;
     _hash = hash;
+    _audit = audit;
   }
 
   public async Task<ExportResult> ExportAsync(ExportRequest request, CancellationToken ct)
@@ -109,6 +111,24 @@ public sealed class EmassExporter
     // Validate package integrity
     var validator = new EmassPackageValidator();
     var validationResult = validator.ValidatePackage(exportRoot);
+
+    if (_audit != null)
+    {
+      try
+      {
+        await _audit.RecordAsync(new AuditEntry
+        {
+          Action = "export-emass",
+          Target = bundleRoot,
+          Result = "success",
+          Detail = $"ExportRoot={exportRoot}, Controls={consolidated.Count}",
+          User = Environment.UserName,
+          Machine = Environment.MachineName,
+          Timestamp = DateTimeOffset.Now
+        }, ct).ConfigureAwait(false);
+      }
+      catch { /* audit failure should not block export */ }
+    }
 
     return new ExportResult
     {

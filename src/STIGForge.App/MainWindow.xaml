@@ -576,6 +576,155 @@
           </StackPanel>
         </Grid>
       </TabItem>
+
+      <TabItem Header="Audit Log">
+        <Grid Margin="12">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+          </Grid.RowDefinitions>
+
+          <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,8">
+            <TextBlock Text="Action:" Width="60" VerticalAlignment="Center"/>
+            <TextBox Width="160" Text="{Binding AuditActionFilter}"/>
+            <TextBlock Text="Target:" Width="60" Margin="12,0,0,0" VerticalAlignment="Center"/>
+            <TextBox Width="200" Text="{Binding AuditTargetFilter}"/>
+            <TextBlock Text="Limit:" Width="50" Margin="12,0,0,0" VerticalAlignment="Center"/>
+            <TextBox Width="60" Text="{Binding AuditLimit}"/>
+            <Button Content="Query" Width="80" Margin="12,0,0,0" Command="{Binding AuditQueryCommand}" IsEnabled="{Binding ActionsEnabled}"/>
+            <Button Content="Verify Integrity" Width="120" Margin="8,0,0,0" Command="{Binding AuditVerifyCommand}" IsEnabled="{Binding ActionsEnabled}"/>
+          </StackPanel>
+
+          <TextBlock Grid.Row="1" Text="{Binding AuditVerifyResult}" Margin="0,0,0,8" FontWeight="SemiBold"/>
+
+          <ListView Grid.Row="2" ItemsSource="{Binding AuditEntries}">
+            <ListView.View>
+              <GridView>
+                <GridViewColumn Header="ID" DisplayMemberBinding="{Binding Id}" Width="50"/>
+                <GridViewColumn Header="Timestamp" DisplayMemberBinding="{Binding Timestamp}" Width="160"/>
+                <GridViewColumn Header="Action" DisplayMemberBinding="{Binding Action}" Width="100"/>
+                <GridViewColumn Header="Target" DisplayMemberBinding="{Binding Target}" Width="200"/>
+                <GridViewColumn Header="Result" DisplayMemberBinding="{Binding Result}" Width="80"/>
+                <GridViewColumn Header="User" DisplayMemberBinding="{Binding User}" Width="100"/>
+                <GridViewColumn Header="Detail" DisplayMemberBinding="{Binding Detail}" Width="300"/>
+              </GridView>
+            </ListView.View>
+          </ListView>
+        </Grid>
+      </TabItem>
+
+      <TabItem Header="Export">
+        <Grid Margin="12">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+          </Grid.RowDefinitions>
+
+          <!-- POA&M Export -->
+          <Border Grid.Row="0" BorderBrush="LightGray" BorderThickness="1" Padding="16" Margin="0,0,0,16" Background="#FAFAFA">
+            <StackPanel>
+              <TextBlock Text="POA&amp;M Export" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,12"/>
+              <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                <TextBlock Text="System Name:" Width="100" VerticalAlignment="Center"/>
+                <TextBox Width="300" Text="{Binding PoamSystemName}"/>
+              </StackPanel>
+              <Button Content="Export POA&amp;M" Width="140" Command="{Binding ExportPoamCommand}" IsEnabled="{Binding ActionsEnabled}"/>
+              <TextBlock Text="{Binding PoamStatus}" Margin="0,8,0,0" Foreground="Gray"/>
+            </StackPanel>
+          </Border>
+
+          <!-- CKL Export -->
+          <Border Grid.Row="1" BorderBrush="LightGray" BorderThickness="1" Padding="16" Background="#FAFAFA">
+            <StackPanel>
+              <TextBlock Text="CKL (Checklist) Export" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,12"/>
+              <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                <TextBlock Text="Host Name:" Width="100" VerticalAlignment="Center"/>
+                <TextBox Width="200" Text="{Binding CklHostName}"/>
+                <TextBlock Text="STIG ID:" Width="70" Margin="12,0,0,0" VerticalAlignment="Center"/>
+                <TextBox Width="200" Text="{Binding CklStigId}"/>
+              </StackPanel>
+              <Button Content="Export CKL" Width="140" Command="{Binding ExportCklCommand}" IsEnabled="{Binding ActionsEnabled}"/>
+              <TextBlock Text="{Binding CklStatus}" Margin="0,8,0,0" Foreground="Gray"/>
+            </StackPanel>
+          </Border>
+        </Grid>
+      </TabItem>
+
+      <TabItem Header="Schedule">
+        <Grid Margin="12">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+          </Grid.RowDefinitions>
+
+          <Border Grid.Row="0" BorderBrush="LightGray" BorderThickness="1" Padding="16" Margin="0,0,0,16" Background="#FAFAFA">
+            <StackPanel>
+              <TextBlock Text="Scheduled Re-Verification" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,12"/>
+              <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                <TextBlock Text="Task Name:" Width="90" VerticalAlignment="Center"/>
+                <TextBox Width="240" Text="{Binding SchedTaskName}"/>
+                <TextBlock Text="Frequency:" Width="80" Margin="12,0,0,0" VerticalAlignment="Center"/>
+                <ComboBox Width="120" ItemsSource="{Binding ScheduleFrequencies}" SelectedItem="{Binding SchedFrequency}"/>
+                <TextBlock Text="Time:" Width="50" Margin="12,0,0,0" VerticalAlignment="Center"/>
+                <TextBox Width="80" Text="{Binding SchedTime}"/>
+              </StackPanel>
+              <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                <Button Content="Register Task" Width="120" Command="{Binding ScheduleRegisterCommand}" IsEnabled="{Binding ActionsEnabled}"/>
+                <Button Content="Remove Task" Width="120" Margin="8,0,0,0" Command="{Binding ScheduleRemoveCommand}" IsEnabled="{Binding ActionsEnabled}"/>
+                <Button Content="Refresh" Width="80" Margin="8,0,0,0" Command="{Binding ScheduleRefreshCommand}"/>
+              </StackPanel>
+              <TextBlock Text="{Binding SchedStatus}" Foreground="Gray"/>
+            </StackPanel>
+          </Border>
+
+          <Border Grid.Row="1" BorderBrush="LightGray" BorderThickness="1" Background="White">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+              <TextBlock Text="{Binding SchedListOutput}" FontFamily="Consolas" FontSize="11" Padding="8" TextWrapping="Wrap"/>
+            </ScrollViewer>
+          </Border>
+        </Grid>
+      </TabItem>
+
+      <TabItem Header="Fleet">
+        <Grid Margin="12">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+          </Grid.RowDefinitions>
+
+          <Border Grid.Row="0" BorderBrush="LightGray" BorderThickness="1" Padding="16" Margin="0,0,0,16" Background="#FAFAFA">
+            <StackPanel>
+              <TextBlock Text="Fleet Operations (WinRM)" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,12"/>
+              <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                <TextBlock Text="Targets:" Width="80" VerticalAlignment="Center"/>
+                <TextBox Width="600" Text="{Binding FleetTargets}" ToolTip="Comma-separated: host1,host2:ip,host3"/>
+              </StackPanel>
+              <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                <TextBlock Text="Operation:" Width="80" VerticalAlignment="Center"/>
+                <ComboBox Width="120" ItemsSource="{Binding FleetOperations}" SelectedItem="{Binding FleetOperation}"/>
+                <TextBlock Text="Concurrency:" Width="90" Margin="12,0,0,0" VerticalAlignment="Center"/>
+                <TextBox Width="60" Text="{Binding FleetConcurrency}"/>
+                <TextBlock Text="Timeout:" Width="70" Margin="12,0,0,0" VerticalAlignment="Center"/>
+                <TextBox Width="60" Text="{Binding FleetTimeout}"/>
+              </StackPanel>
+              <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                <Button Content="Execute" Width="100" Height="32" FontWeight="SemiBold"
+                        Command="{Binding FleetExecuteCommand}" IsEnabled="{Binding ActionsEnabled}"/>
+                <Button Content="Check Status" Width="120" Height="32" Margin="8,0,0,0"
+                        Command="{Binding FleetCheckStatusCommand}" IsEnabled="{Binding ActionsEnabled}"/>
+                <TextBlock Text="{Binding FleetStatus}" Margin="12,8,0,0" Foreground="Gray"/>
+              </StackPanel>
+            </StackPanel>
+          </Border>
+
+          <Border Grid.Row="1" BorderBrush="LightGray" BorderThickness="1" Background="White">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+              <TextBlock Text="{Binding FleetLog}" FontFamily="Consolas" FontSize="11" Padding="8" TextWrapping="Wrap"/>
+            </ScrollViewer>
+          </Border>
+        </Grid>
+      </TabItem>
     </TabControl>
   </Grid>
 </Window>
