@@ -7,11 +7,15 @@ using Microsoft.Extensions.Logging;
 using STIGForge.Build;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
+using STIGForge.Core.Services;
 
 namespace STIGForge.Cli.Commands;
 
 internal static class BuildCommands
 {
+  private const string BreakGlassAckOptionName = "--break-glass-ack";
+  private const string BreakGlassReasonOptionName = "--break-glass-reason";
+
   public static void Register(RootCommand rootCmd, Func<IHost> buildHost)
   {
     RegisterBuildBundle(rootCmd, buildHost);
@@ -29,16 +33,27 @@ internal static class BuildCommands
     var outputOpt = new Option<string>("--output", "Output path override (optional)");
     var saveProfileOpt = new Option<bool>("--save-profile", "Save profile to repo when using --profile-json");
     var forceAutoApplyOpt = new Option<bool>("--force-auto-apply", "Override release-age gate (use with caution)");
+    var breakGlassAckOpt = new Option<bool>(BreakGlassAckOptionName, "Acknowledge high-risk break-glass use for --force-auto-apply");
+    var breakGlassReasonOpt = new Option<string>(BreakGlassReasonOptionName, "Reason for break-glass use (required with --force-auto-apply)");
 
     cmd.AddOption(packIdOpt); cmd.AddOption(profileIdOpt); cmd.AddOption(profileJsonOpt);
     cmd.AddOption(bundleIdOpt); cmd.AddOption(outputOpt); cmd.AddOption(saveProfileOpt); cmd.AddOption(forceAutoApplyOpt);
+    cmd.AddOption(breakGlassAckOpt); cmd.AddOption(breakGlassReasonOpt);
 
-    cmd.SetHandler(async (packId, profileId, profileJson, bundleId, output, saveProfile, forceAutoApply) =>
+    cmd.SetHandler(async (packId, profileId, profileJson, bundleId, output, saveProfile, forceAutoApply, breakGlassAck, breakGlassReason) =>
     {
       using var host = buildHost();
       await host.StartAsync();
       var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("BuildCommands");
       logger.LogInformation("build-bundle started: packId={PackId}, forceAutoApply={ForceAutoApply}", packId, forceAutoApply);
+
+      var breakGlassValidationError = ValidateBreakGlassArguments(
+        forceAutoApply,
+        breakGlassAck,
+        breakGlassReason,
+        "--force-auto-apply");
+      if (breakGlassValidationError != null)
+        throw new ArgumentException(breakGlassValidationError);
 
       if (string.IsNullOrWhiteSpace(profileId) && string.IsNullOrWhiteSpace(profileJson))
         throw new ArgumentException("Provide --profile-id or --profile-json.");
@@ -50,6 +65,7 @@ internal static class BuildCommands
       var overlaysRepo = host.Services.GetRequiredService<IOverlayRepository>();
       var controls = host.Services.GetRequiredService<IControlRepository>();
       var builder = host.Services.GetRequiredService<BundleBuilder>();
+      var audit = host.Services.GetService<IAuditTrailService>();
 
       var pack = await packs.GetAsync(packId, CancellationToken.None) ?? throw new ArgumentException("Pack not found: " + packId);
 
@@ -84,13 +100,22 @@ internal static class BuildCommands
         ToolVersion = "0.1.0-dev", ForceAutoApply = forceAutoApply
       }, CancellationToken.None);
 
+      await RecordBreakGlassAuditAsync(
+        audit,
+        forceAutoApply,
+        "build-bundle",
+        result.BundleRoot,
+        "force-auto-apply",
+        breakGlassReason,
+        CancellationToken.None);
+
       logger.LogInformation("build-bundle completed: bundleRoot={BundleRoot}", result.BundleRoot);
       Console.WriteLine("Bundle created: " + result.BundleRoot);
       Console.WriteLine("Manifest: " + result.ManifestPath);
       var gatePath = Path.Combine(result.BundleRoot, "Reports", "automation_gate.json");
       if (File.Exists(gatePath)) Console.WriteLine("Automation gate: " + gatePath);
       await host.StopAsync();
-    }, packIdOpt, profileIdOpt, profileJsonOpt, bundleIdOpt, outputOpt, saveProfileOpt, forceAutoApplyOpt);
+    }, packIdOpt, profileIdOpt, profileJsonOpt, bundleIdOpt, outputOpt, saveProfileOpt, forceAutoApplyOpt, breakGlassAckOpt, breakGlassReasonOpt);
 
     rootCmd.AddCommand(cmd);
   }
@@ -110,8 +135,11 @@ internal static class BuildCommands
     var scapOpt = new Option<string>("--scap-cmd", () => string.Empty, "SCAP/SCC command path");
     var scapArgsOpt = new Option<string>("--scap-args", () => string.Empty, "SCAP args");
     var scapLabelOpt = new Option<string>("--scap-label", () => string.Empty, "Label for SCAP tool");
+    var skipSnapOpt = new Option<bool>("--skip-snapshot", "Skip pre-apply snapshot during orchestration (high risk)");
+    var breakGlassAckOpt = new Option<bool>(BreakGlassAckOptionName, "Acknowledge high-risk break-glass use for --skip-snapshot");
+    var breakGlassReasonOpt = new Option<string>(BreakGlassReasonOptionName, "Reason for break-glass use (required with --skip-snapshot)");
 
-    foreach (var o in new Option[] { bOpt, dscOpt, dscVOpt, psModOpt, psDataOpt, psOutOpt, psVOpt, evalOpt, evalArgsOpt, scapOpt, scapArgsOpt, scapLabelOpt })
+    foreach (var o in new Option[] { bOpt, dscOpt, dscVOpt, psModOpt, psDataOpt, psOutOpt, psVOpt, evalOpt, evalArgsOpt, scapOpt, scapArgsOpt, scapLabelOpt, skipSnapOpt, breakGlassAckOpt, breakGlassReasonOpt })
       cmd.AddOption(o);
 
     cmd.SetHandler(async (InvocationContext ctx) =>
@@ -121,10 +149,24 @@ internal static class BuildCommands
       await host.StartAsync();
       var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("BuildCommands");
       logger.LogInformation("orchestrate started: bundle={Bundle}", bundle);
+      var skipSnapshot = ctx.ParseResult.GetValueForOption(skipSnapOpt);
+      var breakGlassAck = ctx.ParseResult.GetValueForOption(breakGlassAckOpt);
+      var breakGlassReason = ctx.ParseResult.GetValueForOption(breakGlassReasonOpt);
+      var breakGlassValidationError = ValidateBreakGlassArguments(
+        skipSnapshot,
+        breakGlassAck,
+        breakGlassReason,
+        "--skip-snapshot");
+      if (breakGlassValidationError != null)
+        throw new ArgumentException(breakGlassValidationError);
+
       var orchestrator = host.Services.GetRequiredService<BundleOrchestrator>();
       await orchestrator.OrchestrateAsync(new OrchestrateRequest
       {
         BundleRoot = bundle,
+        SkipSnapshot = skipSnapshot,
+        BreakGlassAcknowledged = breakGlassAck,
+        BreakGlassReason = breakGlassReason,
         DscMofPath = NullIfEmpty(ctx, dscOpt), DscVerbose = ctx.ParseResult.GetValueForOption(dscVOpt),
         PowerStigModulePath = NullIfEmpty(ctx, psModOpt), PowerStigDataFile = NullIfEmpty(ctx, psDataOpt),
         PowerStigOutputPath = NullIfEmpty(ctx, psOutOpt), PowerStigVerbose = ctx.ParseResult.GetValueForOption(psVOpt),
@@ -149,12 +191,14 @@ internal static class BuildCommands
     var dscOpt = new Option<string>("--dsc-path", () => string.Empty, "DSC MOF directory");
     var dscVOpt = new Option<bool>("--dsc-verbose", "Verbose DSC output");
     var skipSnap = new Option<bool>("--skip-snapshot", "Skip snapshot generation");
+    var breakGlassAckOpt = new Option<bool>(BreakGlassAckOptionName, "Acknowledge high-risk break-glass use for --skip-snapshot");
+    var breakGlassReasonOpt = new Option<string>(BreakGlassReasonOptionName, "Reason for break-glass use (required with --skip-snapshot)");
     var psModOpt = new Option<string>("--powerstig-module", () => string.Empty, "PowerSTIG module folder");
     var psDataOpt = new Option<string>("--powerstig-data", () => string.Empty, "PowerSTIG data file");
     var psOutOpt = new Option<string>("--powerstig-out", () => string.Empty, "PowerSTIG MOF output folder");
     var psVOpt = new Option<bool>("--powerstig-verbose", "Verbose PowerSTIG compile");
 
-    foreach (var o in new Option[] { bOpt, modeOpt, scriptOpt, scriptArgsOpt, dscOpt, dscVOpt, skipSnap, psModOpt, psDataOpt, psOutOpt, psVOpt })
+    foreach (var o in new Option[] { bOpt, modeOpt, scriptOpt, scriptArgsOpt, dscOpt, dscVOpt, skipSnap, breakGlassAckOpt, breakGlassReasonOpt, psModOpt, psDataOpt, psOutOpt, psVOpt })
       cmd.AddOption(o);
 
     cmd.SetHandler(async (InvocationContext ctx) =>
@@ -168,13 +212,35 @@ internal static class BuildCommands
       await host.StartAsync();
       var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("BuildCommands");
       logger.LogInformation("apply-run started: bundle={Bundle}, mode={Mode}", bundle, mode);
+
+      var skipSnapshot = ctx.ParseResult.GetValueForOption(skipSnap);
+      var breakGlassAck = ctx.ParseResult.GetValueForOption(breakGlassAckOpt);
+      var breakGlassReason = ctx.ParseResult.GetValueForOption(breakGlassReasonOpt);
+      var breakGlassValidationError = ValidateBreakGlassArguments(
+        skipSnapshot,
+        breakGlassAck,
+        breakGlassReason,
+        "--skip-snapshot");
+      if (breakGlassValidationError != null)
+        throw new ArgumentException(breakGlassValidationError);
+
+      var audit = host.Services.GetService<IAuditTrailService>();
+      await RecordBreakGlassAuditAsync(
+        audit,
+        skipSnapshot,
+        "apply-run",
+        bundle,
+        "skip-snapshot",
+        breakGlassReason,
+        CancellationToken.None);
+
       var runner = host.Services.GetRequiredService<STIGForge.Apply.ApplyRunner>();
       var result = await runner.RunAsync(new STIGForge.Apply.ApplyRequest
       {
         BundleRoot = bundle, ModeOverride = parsedMode,
         ScriptPath = NullIfEmpty(ctx, scriptOpt), ScriptArgs = NullIfEmpty(ctx, scriptArgsOpt),
         DscMofPath = NullIfEmpty(ctx, dscOpt), DscVerbose = ctx.ParseResult.GetValueForOption(dscVOpt),
-        SkipSnapshot = ctx.ParseResult.GetValueForOption(skipSnap),
+        SkipSnapshot = skipSnapshot,
         PowerStigModulePath = NullIfEmpty(ctx, psModOpt), PowerStigDataFile = NullIfEmpty(ctx, psDataOpt),
         PowerStigOutputPath = NullIfEmpty(ctx, psOutOpt), PowerStigVerbose = ctx.ParseResult.GetValueForOption(psVOpt)
       }, CancellationToken.None);
@@ -190,5 +256,49 @@ internal static class BuildCommands
   {
     var val = ctx.ParseResult.GetValueForOption(opt);
     return string.IsNullOrWhiteSpace(val) ? null : val;
+  }
+
+  private static string? ValidateBreakGlassArguments(bool highRiskOptionEnabled, bool breakGlassAck, string? breakGlassReason, string optionName)
+  {
+    if (!highRiskOptionEnabled)
+      return null;
+
+    if (!breakGlassAck)
+      return $"{optionName} is high risk. Add {BreakGlassAckOptionName} and provide a specific reason with {BreakGlassReasonOptionName}.";
+
+    try
+    {
+      new ManualAnswerService().ValidateBreakGlassReason(breakGlassReason);
+    }
+    catch (ArgumentException)
+    {
+      return $"{BreakGlassReasonOptionName} is required for {optionName} and must be specific (minimum 8 characters).";
+    }
+
+    return null;
+  }
+
+  private static async Task RecordBreakGlassAuditAsync(
+    IAuditTrailService? audit,
+    bool highRiskOptionEnabled,
+    string action,
+    string target,
+    string bypassName,
+    string? reason,
+    CancellationToken ct)
+  {
+    if (!highRiskOptionEnabled || audit == null)
+      return;
+
+    await audit.RecordAsync(new AuditEntry
+    {
+      Action = "break-glass",
+      Target = string.IsNullOrWhiteSpace(target) ? action : target,
+      Result = "acknowledged",
+      Detail = $"Action={action}; Bypass={bypassName}; Reason={reason?.Trim()}",
+      User = Environment.UserName,
+      Machine = Environment.MachineName,
+      Timestamp = DateTimeOffset.Now
+    }, ct).ConfigureAwait(false);
   }
 }
