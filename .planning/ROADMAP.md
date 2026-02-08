@@ -103,7 +103,7 @@ Exit Criteria:
 **Plans:** 4 plans
 
 Plans:
-- [ ] 07-release-readiness-and-compatibility-01-PLAN.md - Define deterministic fixture/compatibility matrix and gate compatibility contract checks in CI.
+- [x] 07-release-readiness-and-compatibility-01-PLAN.md - Define deterministic fixture/compatibility matrix and gate compatibility contract checks in CI.
 - [ ] 07-release-readiness-and-compatibility-02-PLAN.md - Implement long-run stability budget and enforce smoke/stability signals in CI and VM matrix.
 - [ ] 07-release-readiness-and-compatibility-03-PLAN.md - Add quarterly regression pack runner with drift artifacts and release-gate integration.
 - [ ] 07-release-readiness-and-compatibility-04-PLAN.md - Finalize RC checklist, reproducibility evidence, and upgrade/rebase validation gating.
