@@ -2,6 +2,7 @@ using STIGForge.Apply;
 using STIGForge.Apply.PowerStig;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
+using STIGForge.Core.Services;
 using STIGForge.Verify;
 
 namespace STIGForge.Build;
@@ -44,6 +45,12 @@ public sealed class BundleOrchestrator
     Directory.CreateDirectory(verifyRoot);
     Directory.CreateDirectory(Path.Combine(root, "Reports"));
 
+    if (request.SkipSnapshot)
+    {
+      ValidateBreakGlass(request.BreakGlassAcknowledged, request.BreakGlassReason, "orchestrate --skip-snapshot");
+      await RecordBreakGlassAsync(root, "skip-snapshot", request.BreakGlassReason, ct).ConfigureAwait(false);
+    }
+
     var psd1Path = request.PowerStigDataFile;
     if (!string.IsNullOrWhiteSpace(request.PowerStigModulePath) && string.IsNullOrWhiteSpace(psd1Path))
     {
@@ -63,6 +70,7 @@ public sealed class BundleOrchestrator
       BundleRoot = root,
       ScriptPath = ResolveApplyScript(root, request.ApplyScriptPath),
       ScriptArgs = BuildApplyArgs(root, request),
+      SkipSnapshot = request.SkipSnapshot,
       DscMofPath = request.DscMofPath,
       DscVerbose = request.DscVerbose,
       PowerStigModulePath = request.PowerStigModulePath,
@@ -225,12 +233,40 @@ public sealed class BundleOrchestrator
     if (request.PowerStigVerbose)
       args.Add("-VerboseDsc");
 
+    if (request.SkipSnapshot)
+      args.Add("-SkipSnapshot");
+
     return string.Join(" ", args);
   }
 
   private static string Quote(string value)
   {
     return "\"" + value + "\"";
+  }
+
+  private static void ValidateBreakGlass(bool breakGlassAcknowledged, string? breakGlassReason, string action)
+  {
+    if (!breakGlassAcknowledged)
+      throw new ArgumentException($"{action} is high risk and requires explicit break-glass acknowledgment.");
+
+    new ManualAnswerService().ValidateBreakGlassReason(breakGlassReason);
+  }
+
+  private async Task RecordBreakGlassAsync(string target, string bypassName, string? reason, CancellationToken ct)
+  {
+    if (_audit == null)
+      return;
+
+    await _audit.RecordAsync(new AuditEntry
+    {
+      Action = "break-glass",
+      Target = target,
+      Result = "acknowledged",
+      Detail = $"Action=orchestrate; Bypass={bypassName}; Reason={reason?.Trim()}",
+      User = Environment.UserName,
+      Machine = Environment.MachineName,
+      Timestamp = DateTimeOffset.Now
+    }, ct).ConfigureAwait(false);
   }
 
   private static void WritePhaseMarker(string path, string logPath)

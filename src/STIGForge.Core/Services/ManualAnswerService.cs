@@ -11,6 +11,16 @@ namespace STIGForge.Core.Services;
 /// </summary>
 public sealed class ManualAnswerService
 {
+  private static readonly HashSet<string> PlaceholderReasons = new(StringComparer.OrdinalIgnoreCase)
+  {
+    "na",
+    "n/a",
+    "none",
+    "unknown",
+    "test",
+    "tbd"
+  };
+
   private readonly IAuditTrailService? _audit;
 
   public ManualAnswerService(IAuditTrailService? audit = null)
@@ -51,8 +61,26 @@ public sealed class ManualAnswerService
     if (!RequiresReason(status))
       return;
 
+    if (!IsMeaningfulReason(reason))
+      throw new ArgumentException("Reason is required for Fail and NotApplicable manual decisions and must be specific.", nameof(reason));
+  }
+
+  public void ValidateBreakGlassReason(string? reason)
+  {
+    if (!IsMeaningfulReason(reason, minimumLength: 8))
+      throw new ArgumentException("Break-glass reason must be specific and at least 8 characters.", nameof(reason));
+  }
+
+  public bool IsMeaningfulReason(string? reason, int minimumLength = 3)
+  {
     if (string.IsNullOrWhiteSpace(reason))
-      throw new ArgumentException("Reason is required for Fail and NotApplicable manual decisions.", nameof(reason));
+      return false;
+
+    var trimmed = reason.Trim();
+    if (trimmed.Length < minimumLength)
+      return false;
+
+    return !PlaceholderReasons.Contains(trimmed);
   }
 
   /// <summary>
