@@ -2,12 +2,12 @@
 
 ## Current Position
 
-**Phase:** 06-security-and-operational-hardening - plan 01 completed, ready for plan 02
-**Last Completed:** 06-security-and-operational-hardening-01 (break-glass contracts for CLI/WPF/orchestrate high-risk paths)
+**Phase:** 06-security-and-operational-hardening - plan 02 completed, ready for plan 03
+**Last Completed:** 06-security-and-operational-hardening-02 (archive boundary hardening and secure XML parser standardization)
 
 **Started:** February 3, 2026
 
-Progress: ███████████████████████████████████████████░ (97%)
+Progress: ████████████████████████████████████████████░ (98%)
 
 ---
 
@@ -58,6 +58,16 @@ Progress: ███████████████████████�
 - **Rationale:** Preserve tamper-evident accountability for emergency override behavior
 - **Status:** Implemented (BuildCommands, MainViewModel.ApplyVerify, BundleOrchestrator)
 
+### Archive Extraction Boundary Enforcement
+- **Decision:** ZIP extraction now validates canonical destination paths and blocks writes outside extraction roots before any file write.
+- **Rationale:** Prevent path traversal and uncontrolled unpack behavior from untrusted content bundles.
+- **Status:** Implemented (ContentPackImporter, ScapBundleParser)
+
+### Hardened XML Parsing Baseline
+- **Decision:** OVAL and verify adapter XML entry points now enforce one hardened reader configuration (`DtdProcessing=Prohibit`, `XmlResolver=null`).
+- **Rationale:** Ensure unsafe XML constructs fail predictably with actionable diagnostics across import/verify workflows.
+- **Status:** Implemented (OvalParser, CklAdapter, EvaluateStigAdapter, ScapResultAdapter)
+
 ---
 
 ## Pending Todos
@@ -99,9 +109,9 @@ Progress: ███████████████████████�
 
 ## Session Continuity
 
-**Last session:** 2026-02-08T21:09:48.979Z
-**Stopped at:** Completed 06-security-and-operational-hardening-01-PLAN.md (verification hardening pass)
-**Resume file:** .planning/phases/06-security-and-operational-hardening/06-security-and-operational-hardening-02-PLAN.md
+**Last session:** 2026-02-08T21:13:37Z
+**Stopped at:** Completed 06-security-and-operational-hardening-02-PLAN.md (input/file boundary hardening and secure XML loading)
+**Resume file:** .planning/phases/06-security-and-operational-hardening/06-security-and-operational-hardening-03-PLAN.md
 
 ---
 
@@ -109,4 +119,4 @@ Progress: ███████████████████████�
 
 **Date:** February 8, 2026
 **Updated By:** OpenCode Executor
-**Reason:** Phase 06 plan 01 verification hardening completed with break-glass audit reason coverage updates
+**Reason:** Phase 06 plan 02 completed with safe archive extraction boundaries and secure XML parser standardization
