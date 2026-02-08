@@ -40,8 +40,18 @@ internal static class BuildCommands
     cmd.AddOption(bundleIdOpt); cmd.AddOption(outputOpt); cmd.AddOption(saveProfileOpt); cmd.AddOption(forceAutoApplyOpt);
     cmd.AddOption(breakGlassAckOpt); cmd.AddOption(breakGlassReasonOpt);
 
-    cmd.SetHandler(async (packId, profileId, profileJson, bundleId, output, saveProfile, forceAutoApply, breakGlassAck, breakGlassReason) =>
+    cmd.SetHandler(async (InvocationContext ctx) =>
     {
+      var packId = ctx.ParseResult.GetValueForOption(packIdOpt) ?? string.Empty;
+      var profileId = ctx.ParseResult.GetValueForOption(profileIdOpt) ?? string.Empty;
+      var profileJson = ctx.ParseResult.GetValueForOption(profileJsonOpt) ?? string.Empty;
+      var bundleId = ctx.ParseResult.GetValueForOption(bundleIdOpt) ?? string.Empty;
+      var output = ctx.ParseResult.GetValueForOption(outputOpt) ?? string.Empty;
+      var saveProfile = ctx.ParseResult.GetValueForOption(saveProfileOpt);
+      var forceAutoApply = ctx.ParseResult.GetValueForOption(forceAutoApplyOpt);
+      var breakGlassAck = ctx.ParseResult.GetValueForOption(breakGlassAckOpt);
+      var breakGlassReason = ctx.ParseResult.GetValueForOption(breakGlassReasonOpt);
+
       using var host = buildHost();
       await host.StartAsync();
       var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("BuildCommands");
@@ -115,7 +125,7 @@ internal static class BuildCommands
       var gatePath = Path.Combine(result.BundleRoot, "Reports", "automation_gate.json");
       if (File.Exists(gatePath)) Console.WriteLine("Automation gate: " + gatePath);
       await host.StopAsync();
-    }, packIdOpt, profileIdOpt, profileJsonOpt, bundleIdOpt, outputOpt, saveProfileOpt, forceAutoApplyOpt, breakGlassAckOpt, breakGlassReasonOpt);
+    });
 
     rootCmd.AddCommand(cmd);
   }
