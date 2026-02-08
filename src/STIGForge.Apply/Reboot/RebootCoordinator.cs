@@ -12,10 +12,12 @@ namespace STIGForge.Apply.Reboot;
 public sealed class RebootCoordinator
 {
     private readonly ILogger<RebootCoordinator> _logger;
+    private readonly Func<int, bool> _scheduleReboot;
 
-    public RebootCoordinator(ILogger<RebootCoordinator> logger)
+    public RebootCoordinator(ILogger<RebootCoordinator> logger, Func<int, bool>? scheduleReboot = null)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _scheduleReboot = scheduleReboot ?? ScheduleSystemReboot;
     }
 
     /// <summary>
@@ -77,7 +79,7 @@ public sealed class RebootCoordinator
             _logger.LogInformation("Resume marker created at {MarkerPath}", GetMarkerPath(context.BundleRoot));
 
             // Schedule system reboot
-            var result = ScheduleSystemReboot(delaySeconds);
+            var result = _scheduleReboot(delaySeconds);
             if (!result)
             {
                 throw new RebootException("Failed to schedule system reboot");

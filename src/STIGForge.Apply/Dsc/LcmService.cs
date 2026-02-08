@@ -57,6 +57,15 @@ public sealed class LcmService
 
             _logger.LogInformation("LCM configured successfully.");
         }
+        catch (LcmException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "LCM configuration failed with unexpected exception");
+            throw new LcmException("LCM configuration failed due to an unexpected error.", ex);
+        }
         finally
         {
             // Clean up temp files
@@ -82,28 +91,26 @@ public sealed class LcmService
     {
         _logger.LogInformation("Querying Local Configuration Manager (LCM) state...");
 
-        var command = "Get-DscLocalConfigurationManager | ConvertTo-Json -Depth 3";
-
-        _logger.LogDebug("Executing LCM query command: {Command}", command);
-
-        var (exitCode, stdout, stderr) = await ExecutePowerShellCommand(command, ct);
-
-        if (exitCode != 0)
-        {
-            _logger.LogError("LCM query failed. Exit code: {ExitCode}", exitCode);
-            _logger.LogError("StdOut: {StdOut}", stdout);
-            _logger.LogError("StdErr: {StdErr}", stderr);
-            throw new LcmException($"LCM query failed with exit code {exitCode}.");
-        }
-
-        // Parse JSON output to LcmState
-        LcmState? state;
         try
         {
+            var command = "Get-DscLocalConfigurationManager | ConvertTo-Json -Depth 3";
+
+            _logger.LogDebug("Executing LCM query command: {Command}", command);
+
+            var (exitCode, stdout, stderr) = await ExecutePowerShellCommand(command, ct);
+
+            if (exitCode != 0)
+            {
+                _logger.LogError("LCM query failed. Exit code: {ExitCode}", exitCode);
+                _logger.LogError("StdOut: {StdOut}", stdout);
+                _logger.LogError("StdErr: {StdErr}", stderr);
+                throw new LcmException($"LCM query failed with exit code {exitCode}.");
+            }
+
             var jsonDoc = JsonDocument.Parse(stdout);
             var root = jsonDoc.RootElement;
 
-            state = new LcmState
+            var state = new LcmState
             {
                 ConfigurationMode = TryGetString(root, "ConfigurationMode") ?? string.Empty,
                 RebootNodeIfNeeded = TryGetBool(root, "RebootNodeIfNeeded"),
@@ -116,15 +123,23 @@ public sealed class LcmService
             _logger.LogInformation("  RebootNodeIfNeeded: {RebootNodeIfNeeded}", state.RebootNodeIfNeeded);
             _logger.LogInformation("  ConfigurationModeFrequencyMins: {ConfigurationModeFrequencyMins}", state.ConfigurationModeFrequencyMins);
             _logger.LogInformation("  LCMState: {LCMState}", state.LCMState);
+
+            return state;
         }
         catch (JsonException ex)
         {
             _logger.LogError(ex, "Failed to parse LCM state JSON output");
-            _logger.LogError("Raw output: {StdOut}", stdout);
             throw new LcmException("Failed to parse LCM state from PowerShell output.", ex);
         }
-
-        return state;
+        catch (LcmException)
+        {
+            throw;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "LCM query failed with unexpected exception");
+            throw new LcmException("LCM query failed due to an unexpected error.", ex);
+        }
     }
 
     /// <summary>

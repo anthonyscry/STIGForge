@@ -214,6 +214,56 @@ public class ManualAnswerServiceTests : IDisposable
   }
 
   [Fact]
+  public void SaveAnswer_NormalizesLegacyStatusAliases()
+  {
+    _svc.SaveAnswer(_tempDir, new ManualAnswer { RuleId = "SV-100_rule", VulnId = "V-100", Status = "NotAFinding" });
+    _svc.SaveAnswer(_tempDir, new ManualAnswer { RuleId = "SV-101_rule", VulnId = "V-101", Status = "Open" });
+    _svc.SaveAnswer(_tempDir, new ManualAnswer { RuleId = "SV-102_rule", VulnId = "V-102", Status = "not_applicable" });
+    _svc.SaveAnswer(_tempDir, new ManualAnswer { RuleId = "SV-103_rule", VulnId = "V-103", Status = "not reviewed" });
+
+    var file = _svc.LoadAnswerFile(_tempDir);
+    file.Answers.Should().ContainSingle(a => a.RuleId == "SV-100_rule" && a.Status == "Pass");
+    file.Answers.Should().ContainSingle(a => a.RuleId == "SV-101_rule" && a.Status == "Open");
+    file.Answers.Should().ContainSingle(a => a.RuleId == "SV-102_rule" && a.Status == "NotApplicable");
+    file.Answers.Should().ContainSingle(a => a.RuleId == "SV-103_rule" && a.Status == "Open");
+  }
+
+  [Fact]
+  public void ValidateReasonRequirement_FailAndNotApplicable_RequireReason()
+  {
+    var failAction = () => _svc.ValidateReasonRequirement("Fail", "");
+    var naAction = () => _svc.ValidateReasonRequirement("NotApplicable", "   ");
+    var passAction = () => _svc.ValidateReasonRequirement("Pass", "");
+
+    failAction.Should().Throw<ArgumentException>();
+    naAction.Should().Throw<ArgumentException>();
+    passAction.Should().NotThrow();
+  }
+
+  [Fact]
+  public void GetProgressStats_OpenStatus_RemainsUnanswered()
+  {
+    var controls = new List<ControlRecord>
+    {
+      MakeManualControl("SV-200_rule", "V-200")
+    };
+
+    _svc.SaveAnswer(_tempDir, new ManualAnswer
+    {
+      RuleId = "SV-200_rule",
+      VulnId = "V-200",
+      Status = "Open"
+    });
+
+    var stats = _svc.GetProgressStats(_tempDir, controls);
+    stats.TotalControls.Should().Be(1);
+    stats.AnsweredControls.Should().Be(0);
+    stats.UnansweredControls.Should().Be(1);
+    stats.FailCount.Should().Be(0);
+    stats.PercentComplete.Should().Be(0.0);
+  }
+
+  [Fact]
   public void SaveAnswerFile_CreatesDirectoryIfMissing()
   {
     var deepDir = Path.Combine(_tempDir, "sub", "deep");

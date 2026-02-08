@@ -10,12 +10,16 @@ public sealed class BundleOrchestrator
 {
   private readonly BundleBuilder _builder;
   private readonly ApplyRunner _apply;
+  private readonly IVerificationWorkflowService _verificationWorkflow;
+  private readonly VerificationArtifactAggregationService _artifactAggregation;
   private readonly IAuditTrailService? _audit;
 
-  public BundleOrchestrator(BundleBuilder builder, ApplyRunner apply, IAuditTrailService? audit = null)
+  public BundleOrchestrator(BundleBuilder builder, ApplyRunner apply, IVerificationWorkflowService verificationWorkflow, VerificationArtifactAggregationService artifactAggregation, IAuditTrailService? audit = null)
   {
     _builder = builder;
     _apply = apply;
+    _verificationWorkflow = verificationWorkflow;
+    _artifactAggregation = artifactAggregation;
     _audit = audit;
   }
 
@@ -70,51 +74,65 @@ public sealed class BundleOrchestrator
 
     WritePhaseMarker(Path.Combine(root, "Apply", "apply.complete"), applyResult.LogPath);
 
-    var coverageInputs = new List<string>();
+    var coverageInputs = new List<VerificationCoverageInput>();
 
     if (!string.IsNullOrWhiteSpace(request.EvaluateStigRoot))
     {
-      var evalRunner = new EvaluateStigRunner();
-      var evalResult = evalRunner.Run(
-        request.EvaluateStigRoot!,
-        request.EvaluateStigArgs ?? string.Empty,
-        request.EvaluateStigRoot);
-
       var evalOutput = Path.Combine(verifyRoot, "Evaluate-STIG");
-      Directory.CreateDirectory(evalOutput);
-      var evalReport = VerifyReportWriter.BuildFromCkls(evalOutput, "Evaluate-STIG");
-      evalReport.StartedAt = evalResult.StartedAt;
-      evalReport.FinishedAt = evalResult.FinishedAt;
+      var evalWorkflow = await _verificationWorkflow.RunAsync(new VerificationWorkflowRequest
+      {
+        OutputRoot = evalOutput,
+        ConsolidatedToolLabel = "Evaluate-STIG",
+        EvaluateStig = new EvaluateStigWorkflowOptions
+        {
+          Enabled = true,
+          ToolRoot = request.EvaluateStigRoot!,
+          Arguments = request.EvaluateStigArgs ?? string.Empty,
+          WorkingDirectory = request.EvaluateStigRoot
+        }
+      }, ct);
 
-      VerifyReportWriter.WriteJson(Path.Combine(evalOutput, "consolidated-results.json"), evalReport);
-      VerifyReportWriter.WriteCsv(Path.Combine(evalOutput, "consolidated-results.csv"), evalReport.Results);
+      var evalRun = evalWorkflow.ToolRuns.FirstOrDefault(r => r.Tool.IndexOf("Evaluate", StringComparison.OrdinalIgnoreCase) >= 0);
+      if (evalRun == null || !evalRun.Executed)
+        throw new InvalidOperationException("Evaluate-STIG execution did not run successfully.");
 
-      coverageInputs.Add("Evaluate-STIG|" + evalOutput);
+      coverageInputs.Add(new VerificationCoverageInput
+      {
+        ToolLabel = "Evaluate-STIG",
+        ReportPath = evalWorkflow.ConsolidatedJsonPath
+      });
     }
 
     if (!string.IsNullOrWhiteSpace(request.ScapCommandPath))
     {
-      var scapRunner = new ScapRunner();
-      var scapResult = scapRunner.Run(
-        request.ScapCommandPath!,
-        request.ScapArgs ?? string.Empty,
-        null);
-
       var scapOutput = Path.Combine(verifyRoot, "SCAP");
-      Directory.CreateDirectory(scapOutput);
       var toolName = string.IsNullOrWhiteSpace(request.ScapToolLabel) ? "SCAP" : request.ScapToolLabel!;
-      var scapReport = VerifyReportWriter.BuildFromCkls(scapOutput, toolName);
-      scapReport.StartedAt = scapResult.StartedAt;
-      scapReport.FinishedAt = scapResult.FinishedAt;
+      var scapWorkflow = await _verificationWorkflow.RunAsync(new VerificationWorkflowRequest
+      {
+        OutputRoot = scapOutput,
+        ConsolidatedToolLabel = toolName,
+        Scap = new ScapWorkflowOptions
+        {
+          Enabled = true,
+          CommandPath = request.ScapCommandPath!,
+          Arguments = request.ScapArgs ?? string.Empty,
+          ToolLabel = toolName
+        }
+      }, ct);
 
-      VerifyReportWriter.WriteJson(Path.Combine(scapOutput, "consolidated-results.json"), scapReport);
-      VerifyReportWriter.WriteCsv(Path.Combine(scapOutput, "consolidated-results.csv"), scapReport.Results);
+      var scapRun = scapWorkflow.ToolRuns.FirstOrDefault(r => string.Equals(r.Tool, toolName, StringComparison.OrdinalIgnoreCase) || r.Tool.IndexOf("SCAP", StringComparison.OrdinalIgnoreCase) >= 0);
+      if (scapRun == null || !scapRun.Executed)
+        throw new InvalidOperationException(toolName + " execution did not run successfully.");
 
-      coverageInputs.Add(toolName + "|" + scapOutput);
+      coverageInputs.Add(new VerificationCoverageInput
+      {
+        ToolLabel = toolName,
+        ReportPath = scapWorkflow.ConsolidatedJsonPath
+      });
     }
 
     if (coverageInputs.Count > 0)
-      WriteCoverageOverlap(root, coverageInputs);
+      _artifactAggregation.WriteCoverageArtifacts(Path.Combine(root, "Reports"), coverageInputs);
 
     if (_audit != null)
     {
@@ -213,61 +231,6 @@ public sealed class BundleOrchestrator
   private static string Quote(string value)
   {
     return "\"" + value + "\"";
-  }
-
-  private static void WriteCoverageOverlap(string bundleRoot, IReadOnlyList<string> inputs)
-  {
-    var reportsRoot = Path.Combine(bundleRoot, "Reports");
-    var allResults = new List<ControlResult>();
-
-    foreach (var raw in inputs)
-    {
-      var parts = raw.Split('|');
-      var label = parts.Length > 1 ? parts[0] : string.Empty;
-      var path = parts.Length > 1 ? parts[1] : parts[0];
-
-      var resolved = ResolveReportPath(path);
-      var report = VerifyReportReader.LoadFromJson(resolved);
-      if (!string.IsNullOrWhiteSpace(label))
-        report.Tool = label;
-
-      foreach (var r in report.Results)
-      {
-        if (string.IsNullOrWhiteSpace(r.Tool))
-          r.Tool = report.Tool;
-      }
-
-      allResults.AddRange(report.Results);
-    }
-
-    var coverage = VerifyReportWriter.BuildCoverageSummary(allResults);
-    VerifyReportWriter.WriteCoverageSummary(
-      Path.Combine(reportsRoot, "coverage_by_tool.csv"),
-      Path.Combine(reportsRoot, "coverage_by_tool.json"),
-      coverage);
-
-    var maps = VerifyReportWriter.BuildControlSourceMap(allResults);
-    VerifyReportWriter.WriteControlSourceMap(
-      Path.Combine(reportsRoot, "control_sources.csv"),
-      maps);
-
-    var overlaps = VerifyReportWriter.BuildOverlapSummary(allResults);
-    VerifyReportWriter.WriteOverlapSummary(
-      Path.Combine(reportsRoot, "coverage_overlap.csv"),
-      Path.Combine(reportsRoot, "coverage_overlap.json"),
-      overlaps);
-  }
-
-  private static string ResolveReportPath(string path)
-  {
-    if (File.Exists(path)) return path;
-    if (Directory.Exists(path))
-    {
-      var candidate = Path.Combine(path, "consolidated-results.json");
-      if (File.Exists(candidate)) return candidate;
-    }
-
-    throw new FileNotFoundException("Report not found: " + path);
   }
 
   private static void WritePhaseMarker(string path, string logPath)

@@ -13,6 +13,7 @@ using STIGForge.Infrastructure.Storage;
 using STIGForge.Infrastructure.System;
 using STIGForge.Evidence;
 using STIGForge.Cli.Commands;
+using STIGForge.Verify;
 
 var rootCmd = new RootCommand("STIGForge CLI (offline-first)");
 
@@ -68,9 +69,14 @@ static IHost BuildHost()
       services.AddSingleton<SnapshotService>();
       services.AddSingleton<RollbackScriptGenerator>();
       services.AddSingleton<STIGForge.Apply.ApplyRunner>();
+      services.AddSingleton<EvaluateStigRunner>();
+      services.AddSingleton<ScapRunner>();
+      services.AddSingleton<IVerificationWorkflowService, VerificationWorkflowService>();
+      services.AddSingleton<VerificationArtifactAggregationService>();
       services.AddSingleton<BaselineDiffService>();
       services.AddSingleton<OverlayRebaseService>();
       services.AddSingleton<ManualAnswerService>();
+      services.AddSingleton<IBundleMissionSummaryService, BundleMissionSummaryService>();
       services.AddSingleton<EvidenceCollector>();
       services.AddSingleton<BundleOrchestrator>();
       services.AddSingleton<STIGForge.Export.EmassExporter>();

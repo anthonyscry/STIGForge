@@ -2,7 +2,6 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using System.IO;
 using System.Text.Json;
-using STIGForge.Core.Models;
 
 namespace STIGForge.App;
 
@@ -126,77 +125,72 @@ public partial class MainViewModel
     }
 
     DashBundleLabel = Path.GetFileName(BundleRoot);
-
-    // Load manifest for pack/profile info
-    var manifestPath = Path.Combine(BundleRoot, "Manifest", "manifest.json");
-    if (File.Exists(manifestPath))
+    try
     {
-      try
-      {
-        var json = File.ReadAllText(manifestPath);
-        using var doc = JsonDocument.Parse(json);
-        var root = doc.RootElement;
-        DashPackLabel = root.TryGetProperty("packName", out var pn) ? pn.GetString() ?? "" : "";
-        DashProfileLabel = root.TryGetProperty("profileName", out var pr) ? pr.GetString() ?? "" : "";
-      }
-      catch (Exception ex) { System.Diagnostics.Debug.WriteLine("Dashboard manifest load failed: " + ex.Message); }
+      var summary = _bundleMissionSummary.LoadSummary(BundleRoot);
+      DashPackLabel = summary.PackName;
+      DashProfileLabel = summary.ProfileName;
+
+      DashTotalControls = summary.TotalControls;
+      DashAutoControls = summary.AutoControls;
+      DashManualControls = summary.ManualControls;
+
+      DashVerifyClosed = summary.Verify.ClosedCount;
+      DashVerifyOpen = summary.Verify.OpenCount;
+      DashVerifyTotal = summary.Verify.TotalCount;
+      DashVerifyPercent = DashVerifyTotal > 0
+        ? $"{(double)DashVerifyClosed / DashVerifyTotal:P0}"
+        : "—";
+
+      DashManualPass = summary.Manual.PassCount;
+      DashManualFail = summary.Manual.FailCount;
+      DashManualNa = summary.Manual.NotApplicableCount;
+      DashManualOpen = summary.Manual.OpenCount;
+      DashManualPercent = summary.Manual.TotalCount > 0
+        ? $"{(double)summary.Manual.AnsweredCount / summary.Manual.TotalCount:P0}"
+        : "—";
+    }
+    catch (Exception ex)
+    {
+      System.Diagnostics.Debug.WriteLine("Dashboard summary load failed: " + ex.Message);
+      DashPackLabel = "";
+      DashProfileLabel = "";
+      DashTotalControls = 0;
+      DashAutoControls = 0;
+      DashManualControls = 0;
+      DashVerifyClosed = 0;
+      DashVerifyOpen = 0;
+      DashVerifyTotal = 0;
+      DashVerifyPercent = "—";
+      DashManualPass = 0;
+      DashManualFail = 0;
+      DashManualNa = 0;
+      DashManualOpen = 0;
+      DashManualPercent = "—";
     }
 
-    // Load controls count
-    var controlsPath = Path.Combine(BundleRoot, "Manifest", "pack_controls.json");
-    if (File.Exists(controlsPath))
-    {
-      try
-      {
-        var json = File.ReadAllText(controlsPath);
-        var controls = JsonSerializer.Deserialize<List<ControlRecord>>(json,
-          new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<ControlRecord>();
-        DashTotalControls = controls.Count;
-        DashManualControls = controls.Count(c => c.IsManual);
-        DashAutoControls = DashTotalControls - DashManualControls;
-      }
-      catch (Exception ex) { System.Diagnostics.Debug.WriteLine("Dashboard controls load failed: " + ex.Message); }
-    }
-
-    // Load verify results
-    DashVerifyClosed = 0;
-    DashVerifyOpen = 0;
-    DashVerifyTotal = 0;
     DashLastVerify = "";
-
     var verifyDir = Path.Combine(BundleRoot, "Verify");
     if (Directory.Exists(verifyDir))
     {
       try
       {
+        var lastVerify = DateTimeOffset.MinValue;
         foreach (var reportFile in Directory.GetFiles(verifyDir, "consolidated-results.json", SearchOption.AllDirectories))
         {
           var report = STIGForge.Verify.VerifyReportReader.LoadFromJson(reportFile);
-          DashVerifyTotal += report.Results.Count;
-          DashVerifyClosed += report.Results.Count(r => r.Status != null && r.Status.IndexOf("open", StringComparison.OrdinalIgnoreCase) < 0);
-          DashVerifyOpen += report.Results.Count(r => r.Status != null && r.Status.IndexOf("open", StringComparison.OrdinalIgnoreCase) >= 0);
-          if (report.FinishedAt > DateTimeOffset.MinValue)
-            DashLastVerify = report.FinishedAt.ToString("yyyy-MM-dd HH:mm");
+          if (report.FinishedAt > lastVerify)
+            lastVerify = report.FinishedAt;
         }
+
+        if (lastVerify > DateTimeOffset.MinValue)
+          DashLastVerify = lastVerify.ToString("yyyy-MM-dd HH:mm");
       }
-      catch (Exception ex) { System.Diagnostics.Debug.WriteLine("Dashboard verify load failed: " + ex.Message); }
+      catch (Exception ex)
+      {
+        System.Diagnostics.Debug.WriteLine("Dashboard verify timestamp load failed: " + ex.Message);
+      }
     }
-
-    DashVerifyPercent = DashVerifyTotal > 0 
-      ? $"{(double)DashVerifyClosed / DashVerifyTotal:P0}" 
-      : "—";
-
-    // Load manual answer stats
-    DashManualPass = ManualControls.Count(x => string.Equals(x.Status, "Pass", StringComparison.OrdinalIgnoreCase));
-    DashManualFail = ManualControls.Count(x => string.Equals(x.Status, "Fail", StringComparison.OrdinalIgnoreCase));
-    DashManualNa = ManualControls.Count(x => string.Equals(x.Status, "NotApplicable", StringComparison.OrdinalIgnoreCase));
-    DashManualOpen = ManualControls.Count(x => string.Equals(x.Status, "Open", StringComparison.OrdinalIgnoreCase));
-
-    var manualAnswered = DashManualPass + DashManualFail + DashManualNa;
-    var manualTotal = DashManualControls;
-    DashManualPercent = manualTotal > 0 
-      ? $"{(double)manualAnswered / manualTotal:P0}" 
-      : "—";
 
     // Check for eMASS export
     var emassDir = Path.Combine(BundleRoot, "Export");

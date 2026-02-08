@@ -18,7 +18,8 @@ Thumbs.db
 
 # Local data
 .stigforge/
-import/
+/import/
+.artifacts/
 
 # Planning docs
 .planning/

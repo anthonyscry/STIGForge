@@ -103,3 +103,137 @@ public interface ICredentialStore
   bool Remove(string targetHost);
   IReadOnlyList<string> ListHosts();
 }
+
+public interface IVerificationWorkflowService
+{
+  Task<VerificationWorkflowResult> RunAsync(VerificationWorkflowRequest request, CancellationToken ct);
+}
+
+public sealed class VerificationWorkflowRequest
+{
+  public string OutputRoot { get; set; } = string.Empty;
+
+  public string ConsolidatedToolLabel { get; set; } = "Verification";
+
+  public EvaluateStigWorkflowOptions EvaluateStig { get; set; } = new();
+
+  public ScapWorkflowOptions Scap { get; set; } = new();
+}
+
+public sealed class EvaluateStigWorkflowOptions
+{
+  public bool Enabled { get; set; }
+
+  public string ToolRoot { get; set; } = string.Empty;
+
+  public string Arguments { get; set; } = string.Empty;
+
+  public string? WorkingDirectory { get; set; }
+}
+
+public sealed class ScapWorkflowOptions
+{
+  public bool Enabled { get; set; }
+
+  public string CommandPath { get; set; } = string.Empty;
+
+  public string Arguments { get; set; } = string.Empty;
+
+  public string? WorkingDirectory { get; set; }
+
+  public string ToolLabel { get; set; } = "SCAP";
+}
+
+public sealed class VerificationWorkflowResult
+{
+  public DateTimeOffset StartedAt { get; set; }
+
+  public DateTimeOffset FinishedAt { get; set; }
+
+  public string ConsolidatedJsonPath { get; set; } = string.Empty;
+
+  public string ConsolidatedCsvPath { get; set; } = string.Empty;
+
+  public string CoverageSummaryJsonPath { get; set; } = string.Empty;
+
+  public string CoverageSummaryCsvPath { get; set; } = string.Empty;
+
+  public int ConsolidatedResultCount { get; set; }
+
+  public IReadOnlyList<VerificationToolRunResult> ToolRuns { get; set; } = Array.Empty<VerificationToolRunResult>();
+
+  public IReadOnlyList<string> Diagnostics { get; set; } = Array.Empty<string>();
+}
+
+public sealed class VerificationToolRunResult
+{
+  public string Tool { get; set; } = string.Empty;
+
+  public bool Executed { get; set; }
+
+  public int ExitCode { get; set; }
+
+  public DateTimeOffset StartedAt { get; set; }
+
+  public DateTimeOffset FinishedAt { get; set; }
+
+  public string Output { get; set; } = string.Empty;
+
+  public string Error { get; set; } = string.Empty;
+}
+
+public interface IBundleMissionSummaryService
+{
+  BundleMissionSummary LoadSummary(string bundleRoot);
+
+  string NormalizeStatus(string? status);
+}
+
+public sealed class BundleMissionSummary
+{
+  public string BundleRoot { get; set; } = string.Empty;
+
+  public string PackName { get; set; } = "unknown";
+
+  public string ProfileName { get; set; } = "unknown";
+
+  public int TotalControls { get; set; }
+
+  public int AutoControls { get; set; }
+
+  public int ManualControls { get; set; }
+
+  public BundleVerifySummary Verify { get; set; } = new();
+
+  public BundleManualSummary Manual { get; set; } = new();
+
+  public IReadOnlyList<string> Diagnostics { get; set; } = Array.Empty<string>();
+}
+
+public sealed class BundleVerifySummary
+{
+  public int ClosedCount { get; set; }
+
+  public int OpenCount { get; set; }
+
+  public int TotalCount { get; set; }
+
+  public int ReportCount { get; set; }
+}
+
+public sealed class BundleManualSummary
+{
+  public int PassCount { get; set; }
+
+  public int FailCount { get; set; }
+
+  public int NotApplicableCount { get; set; }
+
+  public int OpenCount { get; set; }
+
+  public int AnsweredCount { get; set; }
+
+  public int TotalCount { get; set; }
+
+  public double PercentComplete { get; set; }
+}

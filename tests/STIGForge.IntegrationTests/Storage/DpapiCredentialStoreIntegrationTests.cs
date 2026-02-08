@@ -38,6 +38,8 @@ public class DpapiCredentialStoreIntegrationTests : IDisposable
     [Fact]
     public void SaveAndLoad_RoundTrip()
     {
+        if (!OperatingSystem.IsWindows()) return;
+
         var store = new DpapiCredentialStore(new TempPathBuilder(_testRoot));
 
         store.Save("server01.example.com", "admin", "P@ssw0rd!");
@@ -62,6 +64,8 @@ public class DpapiCredentialStoreIntegrationTests : IDisposable
     [Fact]
     public void Remove_ExistingHost_ReturnsTrue()
     {
+        if (!OperatingSystem.IsWindows()) return;
+
         var store = new DpapiCredentialStore(new TempPathBuilder(_testRoot));
 
         store.Save("remove-me.local", "user1", "pass1");
@@ -77,6 +81,8 @@ public class DpapiCredentialStoreIntegrationTests : IDisposable
     [Fact]
     public void ListHosts_ReturnsAllSaved()
     {
+        if (!OperatingSystem.IsWindows()) return;
+
         var store = new DpapiCredentialStore(new TempPathBuilder(_testRoot));
 
         store.Save("host-a", "userA", "passA");

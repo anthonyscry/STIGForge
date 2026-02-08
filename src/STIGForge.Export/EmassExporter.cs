@@ -62,7 +62,8 @@ public sealed class EmassExporter
     CopyChecklists(bundleRoot, checklistsDir);
     CopyEvidence(bundleRoot, evidenceDir);
 
-    var consolidated = LoadConsolidatedResults(bundleRoot);
+    var consolidatedLoad = LoadConsolidatedResults(bundleRoot);
+    var consolidated = consolidatedLoad.Results;
     var answers = LoadManualAnswers(bundleRoot);
     MergeManualAnswers(consolidated, answers);
     
@@ -97,7 +98,8 @@ public sealed class EmassExporter
     WriteIndexHtml(indexDir, consolidated);
 
     var manifestPath = Path.Combine(manifestDir, "manifest.json");
-    WriteManifest(manifestPath, bundleManifest, consolidated);
+    var exportTrace = BuildExportTrace(bundleRoot, consolidatedLoad.SourceReports, consolidated);
+    WriteManifest(manifestPath, bundleManifest, consolidated, exportTrace);
 
     var logPath = Path.Combine(manifestDir, "export_log.txt");
     File.WriteAllText(logPath, "Exported: " + DateTimeOffset.Now.ToString("o"), Encoding.UTF8);
@@ -111,6 +113,11 @@ public sealed class EmassExporter
     // Validate package integrity
     var validator = new EmassPackageValidator();
     var validationResult = validator.ValidatePackage(exportRoot);
+    var validationReportPath = Path.Combine(manifestDir, "validation_report.txt");
+    validator.WriteValidationReport(validationResult, validationReportPath);
+
+    var validationReportJsonPath = Path.Combine(manifestDir, "validation_report.json");
+    WriteValidationReportJson(validationReportJsonPath, validationResult);
 
     if (_audit != null)
     {
@@ -121,7 +128,7 @@ public sealed class EmassExporter
           Action = "export-emass",
           Target = bundleRoot,
           Result = "success",
-          Detail = $"ExportRoot={exportRoot}, Controls={consolidated.Count}",
+          Detail = $"ExportRoot={exportRoot}, Controls={consolidated.Count}, Valid={validationResult.IsValid}, Errors={validationResult.Errors.Count}, Warnings={validationResult.Warnings.Count}",
           User = Environment.UserName,
           Machine = Environment.MachineName,
           Timestamp = DateTimeOffset.Now
@@ -135,6 +142,8 @@ public sealed class EmassExporter
       OutputRoot = exportRoot,
       ManifestPath = manifestPath,
       IndexPath = indexPath,
+      ValidationReportPath = validationReportPath,
+      ValidationReportJsonPath = validationReportJsonPath,
       ValidationResult = validationResult
     };
   }
@@ -180,12 +189,21 @@ public sealed class EmassExporter
 
 
 
-  private static List<ControlResult> LoadConsolidatedResults(string bundleRoot)
+  private static ConsolidatedLoadResult LoadConsolidatedResults(string bundleRoot)
   {
     var verifyRoot = Path.Combine(bundleRoot, "Verify");
-    if (!Directory.Exists(verifyRoot)) return new List<ControlResult>();
+    if (!Directory.Exists(verifyRoot))
+    {
+      return new ConsolidatedLoadResult
+      {
+        Results = new List<ControlResult>(),
+        SourceReports = new List<string>()
+      };
+    }
 
-    var reports = Directory.GetFiles(verifyRoot, "consolidated-results.json", SearchOption.AllDirectories);
+    var reports = Directory.GetFiles(verifyRoot, "consolidated-results.json", SearchOption.AllDirectories)
+      .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
+      .ToList();
     var all = new List<ControlResult>();
     foreach (var reportPath in reports)
     {
@@ -193,7 +211,11 @@ public sealed class EmassExporter
       all.AddRange(report.Results);
     }
 
-    return all;
+    return new ConsolidatedLoadResult
+    {
+      Results = all,
+      SourceReports = reports
+    };
   }
 
   private static IReadOnlyList<ManualAnswer> LoadManualAnswers(string bundleRoot)
@@ -220,7 +242,7 @@ public sealed class EmassExporter
       RuleId = r.RuleId,
       Title = r.Title,
       Severity = r.Severity,
-      Status = MapStatusToVerifyStatus(r.Status),
+      Status = ExportStatusMapper.MapToVerifyStatus(r.Status),
       Comments = r.Comments,
       FindingDetails = r.Comments,
       Tool = r.Tool,
@@ -228,26 +250,6 @@ public sealed class EmassExporter
       VerifiedAt = r.VerifiedAt,
       Metadata = new Dictionary<string, string>()
     }).ToList();
-  }
-
-  private static VerifyStatus MapStatusToVerifyStatus(string? status)
-  {
-    if (string.IsNullOrWhiteSpace(status))
-      return VerifyStatus.NotReviewed;
-
-    var s = status!.Trim().ToLowerInvariant();
-    if (s.Contains("pass") || s.Contains("notafinding"))
-      return VerifyStatus.Pass;
-    if (s.Contains("fail") || s.Contains("open"))
-      return VerifyStatus.Fail;
-    if (s.Contains("not_applicable") || s.Contains("not applicable") || s == "na")
-      return VerifyStatus.NotApplicable;
-    if (s.Contains("not_reviewed") || s.Contains("not reviewed"))
-      return VerifyStatus.NotReviewed;
-    if (s.Contains("error"))
-      return VerifyStatus.Error;
-
-    return VerifyStatus.NotReviewed;
   }
 
   private static void MergeManualAnswers(List<ControlResult> results, IReadOnlyList<ManualAnswer> answers)
@@ -294,20 +296,36 @@ public sealed class EmassExporter
     string scansDir,
     IReadOnlyDictionary<string, string> naMap)
   {
-    var grouped = results.GroupBy(r => GetControlKey(r), StringComparer.OrdinalIgnoreCase);
+    var grouped = results
+      .GroupBy(r => GetControlKey(r), StringComparer.OrdinalIgnoreCase)
+      .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
+      .ToList();
     var sb = new StringBuilder(4096);
     sb.AppendLine("VulnId,RuleId,Title,Severity,Status,NaReason,NaOrigin,EvidencePaths,ScanSources,LastVerified");
 
     foreach (var g in grouped)
     {
-      var sample = g.First();
-      var status = ResolveStatus(g.Select(x => x.Status));
+      var orderedGroup = g
+        .OrderBy(x => x.RuleId ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+        .ThenBy(x => x.VulnId ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+        .ThenBy(x => x.Title ?? string.Empty, StringComparer.Ordinal)
+        .ThenBy(x => x.Tool ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+        .ThenBy(x => x.SourceFile ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+        .ThenBy(x => x.VerifiedAt ?? DateTimeOffset.MinValue)
+        .ToList();
+
+      var sample = orderedGroup[0];
+      var status = ExportStatusMapper.MapToIndexStatus(orderedGroup.Select(x => x.Status));
       var naReason = ResolveNaReason(sample, naMap);
       var naOrigin = string.IsNullOrWhiteSpace(naReason) ? string.Empty : "classification_scope_filter";
 
       var evidencePaths = ResolveEvidencePaths(evidenceDir, sample);
-      var scanPaths = string.Join(";", g.Select(x => RelOrFull(scansDir, x.SourceFile)).Distinct());
-      var lastVerified = g.Select(x => x.VerifiedAt).Where(x => x.HasValue).Select(x => x!.Value).OrderByDescending(x => x).FirstOrDefault();
+      var scanPaths = string.Join(";", orderedGroup
+        .Select(x => RelOrFull(scansDir, x.SourceFile))
+        .Where(x => !string.IsNullOrWhiteSpace(x))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .OrderBy(x => x, StringComparer.OrdinalIgnoreCase));
+      var lastVerified = orderedGroup.Select(x => x.VerifiedAt).Where(x => x.HasValue).Select(x => x!.Value).OrderByDescending(x => x).FirstOrDefault();
 
       sb.AppendLine(string.Join(",",
         Csv(sample.VulnId),
@@ -328,7 +346,7 @@ public sealed class EmassExporter
   private static void WriteIndexHtml(string indexDir, IReadOnlyList<ControlResult> results)
   {
     var total = results.Count;
-    var open = results.Count(r => IsOpen(r.Status));
+    var open = results.Count(r => ExportStatusMapper.IsOpenStatus(r.Status));
     var closed = total - open;
 
     var html = new StringBuilder(1024);
@@ -346,7 +364,7 @@ public sealed class EmassExporter
     File.WriteAllText(Path.Combine(indexDir, "index.html"), html.ToString(), Encoding.UTF8);
   }
 
-  private static void WriteManifest(string path, BundleManifestDto bundle, IReadOnlyList<ControlResult> results)
+  private static void WriteManifest(string path, BundleManifestDto bundle, IReadOnlyList<ControlResult> results, ExportTrace exportTrace)
   {
     var manifest = new
     {
@@ -358,7 +376,8 @@ public sealed class EmassExporter
       role = bundle.Run.RoleTemplate.ToString(),
       profile = bundle.Run.ProfileName,
       pack = bundle.Run.PackName,
-      totalControls = results.Count
+      totalControls = results.Count,
+      exportTrace
     };
 
     var json = JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true });
@@ -383,6 +402,7 @@ public sealed class EmassExporter
   {
     var files = Directory.GetFiles(root, "*", SearchOption.AllDirectories)
       .Where(p => !string.Equals(p, outputPath, StringComparison.OrdinalIgnoreCase))
+      .Where(p => !IsValidationReportFile(root, p))
       .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
       .ToList();
 
@@ -395,6 +415,16 @@ public sealed class EmassExporter
     }
 
     File.WriteAllText(outputPath, sb.ToString(), Encoding.UTF8);
+  }
+
+  private static void WriteValidationReportJson(string outputPath, ValidationResult validationResult)
+  {
+    var json = JsonSerializer.Serialize(validationResult, new JsonSerializerOptions
+    {
+      WriteIndented = true,
+      PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    });
+    File.WriteAllText(outputPath, json, Encoding.UTF8);
   }
 
   private static BundleManifestDto ReadBundleManifest(string bundleRoot)
@@ -439,24 +469,6 @@ public sealed class EmassExporter
     return map;
   }
 
-  private static string ResolveStatus(IEnumerable<string?> statuses)
-  {
-    var list = statuses.Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => s!.Trim().ToLowerInvariant()).ToList();
-    if (list.Any(s => s.Contains("open") || s.Contains("fail"))) return "Fail";
-    if (list.Any(s => s.Contains("not_reviewed") || s.Contains("not reviewed"))) return "Open";
-    if (list.Any(s => s.Contains("not_applicable") || s.Contains("not applicable"))) return "NA";
-    if (list.Any(s => s.Contains("notafinding") || s.Contains("pass"))) return "Pass";
-    return "Open";
-  }
-
-  private static bool IsOpen(string? status)
-  {
-    var s = (status ?? string.Empty).Trim().ToLowerInvariant();
-    if (s.Contains("open") || s.Contains("fail")) return true;
-    if (s.Contains("not_reviewed") || s.Contains("not reviewed")) return true;
-    return false;
-  }
-
   private static string ResolveNaReason(ControlResult sample, IReadOnlyDictionary<string, string> naMap)
   {
     var key = GetControlKey(sample);
@@ -480,19 +492,45 @@ public sealed class EmassExporter
     if (!string.IsNullOrWhiteSpace(sample.VulnId))
       candidates.Add(sample.VulnId!.Trim());
 
-    foreach (var c in candidates)
+    var files = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    foreach (var c in candidates.OrderBy(x => x, StringComparer.OrdinalIgnoreCase))
     {
       var dir = Path.Combine(evidenceDir, "by_control", c);
       if (Directory.Exists(dir))
       {
-        var files = Directory.GetFiles(dir, "*", SearchOption.AllDirectories)
-          .Select(p => RelOrFull(evidenceDir, p))
-          .ToList();
-        return string.Join(";", files);
+        foreach (var file in Directory.GetFiles(dir, "*", SearchOption.AllDirectories))
+          files.Add(RelOrFull(evidenceDir, file));
       }
     }
 
-    return string.Empty;
+    return string.Join(";", files.OrderBy(f => f, StringComparer.OrdinalIgnoreCase));
+  }
+
+  private static ExportTrace BuildExportTrace(string bundleRoot, IReadOnlyList<string> sourceReports, IReadOnlyList<ControlResult> consolidated)
+  {
+    var reportPaths = sourceReports
+      .Select(path => RelOrFull(bundleRoot, path))
+      .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+      .ToList();
+
+    var toolCounts = consolidated
+      .GroupBy(r => string.IsNullOrWhiteSpace(r.Tool) ? "Unknown" : r.Tool.Trim(), StringComparer.OrdinalIgnoreCase)
+      .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
+      .ToDictionary(g => g.Key, g => g.Count(), StringComparer.OrdinalIgnoreCase);
+
+    var statusTotals = consolidated
+      .GroupBy(r => ExportStatusMapper.MapToVerifyStatus(r.Status).ToString(), StringComparer.OrdinalIgnoreCase)
+      .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
+      .ToDictionary(g => g.Key, g => g.Count(), StringComparer.OrdinalIgnoreCase);
+
+    return new ExportTrace
+    {
+      SourceReports = reportPaths,
+      ToolCounts = toolCounts,
+      StatusTotals = statusTotals,
+      ManualOverrideCount = consolidated.Count(r => string.Equals(r.Tool, "Manual", StringComparison.OrdinalIgnoreCase)),
+      TotalConsolidatedResults = consolidated.Count
+    };
   }
 
   private static string RelOrFull(string root, string path)
@@ -543,6 +581,13 @@ public sealed class EmassExporter
     return path;
   }
 
+  private static bool IsValidationReportFile(string root, string path)
+  {
+    var rel = GetRelativePath(root, path).Replace('\\', '/');
+    return string.Equals(rel, "00_Manifest/validation_report.txt", StringComparison.OrdinalIgnoreCase)
+      || string.Equals(rel, "00_Manifest/validation_report.json", StringComparison.OrdinalIgnoreCase);
+  }
+
   private static string[] ParseCsvLine(string line)
   {
     var list = new List<string>();
@@ -581,5 +626,25 @@ public sealed class EmassExporter
   {
     public string BundleId { get; set; } = string.Empty;
     public RunManifest Run { get; set; } = new();
+  }
+
+  private sealed class ConsolidatedLoadResult
+  {
+    public List<ControlResult> Results { get; set; } = new();
+
+    public List<string> SourceReports { get; set; } = new();
+  }
+
+  private sealed class ExportTrace
+  {
+    public IReadOnlyList<string> SourceReports { get; set; } = Array.Empty<string>();
+
+    public IReadOnlyDictionary<string, int> ToolCounts { get; set; } = new Dictionary<string, int>();
+
+    public IReadOnlyDictionary<string, int> StatusTotals { get; set; } = new Dictionary<string, int>();
+
+    public int ManualOverrideCount { get; set; }
+
+    public int TotalConsolidatedResults { get; set; }
   }
 }

@@ -4,6 +4,7 @@ using CommunityToolkit.Mvvm.Input;
 using System.Windows.Media;
 using STIGForge.Core.Models;
 using STIGForge.Core.Services;
+using STIGForge.Evidence;
 
 namespace STIGForge.App.ViewModels;
 
@@ -12,6 +13,7 @@ public partial class ManualCheckWizardViewModel : ObservableObject
   private readonly string _bundleRoot;
   private readonly List<ControlRecord> _controls;
   private readonly ManualAnswerService _answerService;
+  private readonly EvidenceAutopilot _evidenceAutopilot;
   private int _currentIndex = -1;
 
   [ObservableProperty] private WizardScreen _currentScreen = WizardScreen.Welcome;
@@ -39,6 +41,7 @@ public partial class ManualCheckWizardViewModel : ObservableObject
   [ObservableProperty] private bool _isNotReviewed = true;
   [ObservableProperty] private string _answerReason = string.Empty;
   [ObservableProperty] private string _answerComment = string.Empty;
+  [ObservableProperty] private string _evidenceStatus = string.Empty;
 
   // Screen visibility
   public bool ShowWelcome => CurrentScreen == WizardScreen.Welcome;
@@ -51,6 +54,7 @@ public partial class ManualCheckWizardViewModel : ObservableObject
   {
     _bundleRoot = bundleRoot;
     _answerService = new ManualAnswerService();
+    _evidenceAutopilot = new EvidenceAutopilot(Path.Combine(bundleRoot, "Evidence"));
     
     // Get unanswered controls
     _controls = _answerService.GetUnansweredControls(bundleRoot, manualControls);
@@ -99,18 +103,29 @@ public partial class ManualCheckWizardViewModel : ObservableObject
   [RelayCommand]
   private void SaveAndNext()
   {
+    if (_currentIndex < 0 || _currentIndex >= _controls.Count)
+      return;
+
+    var selectedStatus = GetSelectedStatus();
+    if (_answerService.RequiresReason(selectedStatus) && string.IsNullOrWhiteSpace(AnswerReason))
+    {
+      EvidenceStatus = "Reason is required for Fail and NotApplicable decisions.";
+      return;
+    }
+
     // Save current answer
     var control = _controls[_currentIndex];
     var answer = new ManualAnswer
     {
       RuleId = control.ExternalIds.RuleId,
       VulnId = control.ExternalIds.VulnId,
-      Status = GetSelectedStatus(),
+      Status = selectedStatus,
       Reason = string.IsNullOrWhiteSpace(AnswerReason) ? null : AnswerReason,
       Comment = string.IsNullOrWhiteSpace(AnswerComment) ? null : AnswerComment
     };
 
-    _answerService.SaveAnswer(_bundleRoot, answer);
+    _answerService.SaveAnswer(_bundleRoot, answer, requireReasonForDecision: true);
+    EvidenceStatus = string.Empty;
 
     // Remove from unanswered list
     _controls.RemoveAt(_currentIndex);
@@ -126,6 +141,32 @@ public partial class ManualCheckWizardViewModel : ObservableObject
     else
     {
       LoadCurrentControl();
+    }
+  }
+
+  [RelayCommand]
+  private async Task CollectEvidence()
+  {
+    if (_currentIndex < 0 || _currentIndex >= _controls.Count)
+      return;
+
+    try
+    {
+      var control = _controls[_currentIndex];
+      EvidenceStatus = "Collecting evidence...";
+
+      var result = await _evidenceAutopilot.CollectEvidenceAsync(control, CancellationToken.None);
+      var controlDir = GetControlEvidenceDirectory(control);
+
+      var status = "Collected " + result.EvidenceFiles.Count + " file(s).";
+      if (result.Errors.Count > 0)
+        status += " Errors: " + result.Errors.Count + ".";
+
+      EvidenceStatus = status + " Folder: " + controlDir;
+    }
+    catch (Exception ex)
+    {
+      EvidenceStatus = "Evidence collection failed: " + ex.Message;
     }
   }
 
@@ -154,6 +195,7 @@ public partial class ManualCheckWizardViewModel : ObservableObject
     IsNotReviewed = true;
     AnswerReason = string.Empty;
     AnswerComment = string.Empty;
+    EvidenceStatus = string.Empty;
 
     UpdateProgress();
   }
@@ -223,10 +265,17 @@ public partial class ManualCheckWizardViewModel : ObservableObject
 
   private string GetSelectedStatus()
   {
-    if (IsPass) return "NotAFinding";
-    if (IsFail) return "Open";
+    if (IsPass) return "Pass";
+    if (IsFail) return "Fail";
     if (IsNotApplicable) return "NotApplicable";
-    return "NotReviewed";
+    return "Open";
+  }
+
+  private string GetControlEvidenceDirectory(ControlRecord control)
+  {
+    var controlId = control.ExternalIds.VulnId ?? control.ExternalIds.RuleId ?? control.ControlId;
+    var safeId = string.Join("_", controlId.Split(Path.GetInvalidFileNameChars()));
+    return Path.Combine(_bundleRoot, "Evidence", "by_control", safeId);
   }
 
   private static Brush GetSeverityBrush(string severity)

@@ -41,12 +41,9 @@ public sealed class CklAdapter : IVerifyResultAdapter
     var diagnostics = new List<string>();
 
     // Extract metadata from CHECKLIST header
-    var assetElement = doc.Descendants("ASSET").FirstOrDefault();
     var stigInfoElement = doc.Descendants("STIG_INFO").FirstOrDefault();
 
     var toolVersion = ExtractStigInfoValue(stigInfoElement, "version") ?? "unknown";
-    var hostName = assetElement?.Element("HOST_NAME")?.Value?.Trim() ?? "unknown";
-
     foreach (var vuln in vulnNodes)
     {
       try
@@ -132,12 +129,26 @@ public sealed class CklAdapter : IVerifyResultAdapter
     if (string.IsNullOrWhiteSpace(cklStatus))
       return VerifyStatus.NotReviewed;
 
-    return cklStatus switch
+    var normalized = cklStatus
+      .Trim()
+      .Replace("_", string.Empty)
+      .Replace("-", string.Empty)
+      .Replace(" ", string.Empty)
+      .ToLowerInvariant();
+
+    return normalized switch
     {
-      "NotAFinding" => VerifyStatus.Pass,
-      "Open" => VerifyStatus.Fail,
-      "Not_Applicable" => VerifyStatus.NotApplicable,
-      "Not_Reviewed" => VerifyStatus.NotReviewed,
+      "notafinding" => VerifyStatus.Pass,
+      "pass" => VerifyStatus.Pass,
+      "open" => VerifyStatus.Fail,
+      "fail" => VerifyStatus.Fail,
+      "notapplicable" => VerifyStatus.NotApplicable,
+      "na" => VerifyStatus.NotApplicable,
+      "notreviewed" => VerifyStatus.NotReviewed,
+      "notchecked" => VerifyStatus.NotReviewed,
+      "informational" => VerifyStatus.Informational,
+      "error" => VerifyStatus.Error,
+      "unknown" => VerifyStatus.Unknown,
       _ => VerifyStatus.Unknown
     };
   }

@@ -12,6 +12,7 @@ using STIGForge.Infrastructure.Hashing;
 using STIGForge.Infrastructure.Paths;
 using STIGForge.Infrastructure.Storage;
 using STIGForge.Infrastructure.System;
+using STIGForge.Verify;
 
 namespace STIGForge.App;
 
@@ -63,6 +64,11 @@ public partial class App : Application
         services.AddSingleton<SnapshotService>();
         services.AddSingleton<RollbackScriptGenerator>();
         services.AddSingleton<STIGForge.Apply.ApplyRunner>();
+        services.AddSingleton<EvaluateStigRunner>();
+        services.AddSingleton<ScapRunner>();
+        services.AddSingleton<IVerificationWorkflowService, VerificationWorkflowService>();
+        services.AddSingleton<VerificationArtifactAggregationService>();
+        services.AddSingleton<IBundleMissionSummaryService, BundleMissionSummaryService>();
         services.AddSingleton<BundleOrchestrator>();
         services.AddSingleton<STIGForge.Export.EmassExporter>();
         services.AddSingleton<STIGForge.Evidence.EvidenceCollector>();
@@ -83,9 +89,12 @@ public partial class App : Application
           sp.GetRequiredService<IOverlayRepository>(),
           sp.GetRequiredService<BundleBuilder>(),
           sp.GetRequiredService<STIGForge.Apply.ApplyRunner>(),
+          sp.GetRequiredService<IVerificationWorkflowService>(),
           sp.GetRequiredService<STIGForge.Export.EmassExporter>(),
           sp.GetRequiredService<IPathBuilder>(),
           sp.GetRequiredService<STIGForge.Evidence.EvidenceCollector>(),
+          sp.GetRequiredService<IBundleMissionSummaryService>(),
+          sp.GetRequiredService<VerificationArtifactAggregationService>(),
           sp.GetRequiredService<IAuditTrailService>(),
           sp.GetRequiredService<ScheduledTaskService>(),
           sp.GetRequiredService<FleetService>()));
