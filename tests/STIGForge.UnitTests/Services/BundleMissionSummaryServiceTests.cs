@@ -54,6 +54,9 @@ public sealed class BundleMissionSummaryServiceTests : IDisposable
     summary.Verify.TotalCount.Should().Be(5);
     summary.Verify.ClosedCount.Should().Be(2);
     summary.Verify.OpenCount.Should().Be(3);
+    summary.Verify.BlockingFailureCount.Should().Be(3);
+    summary.Verify.RecoverableWarningCount.Should().Be(0);
+    summary.Verify.OptionalSkipCount.Should().Be(1);
 
     summary.Manual.TotalCount.Should().Be(2);
     summary.Manual.AnsweredCount.Should().Be(2);
@@ -88,6 +91,8 @@ public sealed class BundleMissionSummaryServiceTests : IDisposable
     summary.Verify.TotalCount.Should().Be(9);
     summary.Verify.ClosedCount.Should().Be(5);
     summary.Verify.OpenCount.Should().Be(4);
+    summary.Verify.BlockingFailureCount.Should().Be(4);
+    summary.Verify.OptionalSkipCount.Should().Be(2);
   }
 
   [Fact]
@@ -103,6 +108,7 @@ public sealed class BundleMissionSummaryServiceTests : IDisposable
     var summary = service.LoadSummary(_bundleRoot);
 
     summary.Verify.TotalCount.Should().Be(0);
+    summary.Verify.RecoverableWarningCount.Should().Be(1);
     summary.Diagnostics.Should().NotBeEmpty();
     summary.Diagnostics.Any(d => d.Contains("Failed to parse verify report", StringComparison.OrdinalIgnoreCase)).Should().BeTrue();
   }

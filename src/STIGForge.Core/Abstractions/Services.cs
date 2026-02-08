@@ -219,6 +219,12 @@ public sealed class BundleVerifySummary
   public int TotalCount { get; set; }
 
   public int ReportCount { get; set; }
+
+  public int BlockingFailureCount { get; set; }
+
+  public int RecoverableWarningCount { get; set; }
+
+  public int OptionalSkipCount { get; set; }
 }
 
 public sealed class BundleManualSummary
