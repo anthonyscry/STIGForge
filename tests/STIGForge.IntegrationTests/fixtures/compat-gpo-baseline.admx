@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<policyDefinitions xmlns="http://schemas.microsoft.com/GroupPolicy/2006/07/PolicyDefinitions">
+  <policyNamespaces>
+    <target prefix="compatint" namespace="Microsoft.Policies.Compatibility.Integration" />
+  </policyNamespaces>
+  <policies>
+    <policy name="CompatIntegrationPolicy" class="Machine" displayName="$(string.CompatIntegrationPolicy)" key="SOFTWARE\Policies\CompatInt">
+      <parentCategory ref="CompatIntCategory" />
+      <supportedOn ref="windows:SUPPORTED_Windows10" />
+      <elements>
+        <boolean id="CompatIntegrationPolicyEnabled" valueName="Enabled" />
+      </elements>
+    </policy>
+  </policies>
+</policyDefinitions>

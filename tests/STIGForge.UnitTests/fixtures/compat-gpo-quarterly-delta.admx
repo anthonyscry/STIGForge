@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<policyDefinitions xmlns="http://schemas.microsoft.com/GroupPolicy/2006/07/PolicyDefinitions">
+  <policyNamespaces>
+    <target prefix="compat" namespace="Microsoft.Policies.Compatibility" />
+  </policyNamespaces>
+  <policies>
+    <policy name="CompatDeltaPolicy" class="Machine" displayName="$(string.CompatDeltaPolicy)" key="SOFTWARE\Policies\Compat\Delta">
+      <parentCategory ref="CompatCategory" />
+      <supportedOn ref="windows:SUPPORTED_Windows11" />
+      <elements>
+        <decimal id="CompatDeltaMax" valueName="MaxValue" />
+      </elements>
+    </policy>
+  </policies>
+</policyDefinitions>

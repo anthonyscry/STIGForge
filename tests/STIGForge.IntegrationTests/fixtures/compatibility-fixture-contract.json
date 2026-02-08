@@ -1,0 +1,41 @@
+{
+  "schemaVersion": 1,
+  "fixtures": [
+    {
+      "scenario": "stig-baseline",
+      "archiveEntries": [
+        "compat-stig-baseline-xccdf.xml"
+      ],
+      "expectedFormat": "Stig"
+    },
+    {
+      "scenario": "stig-quarterly-delta",
+      "archiveEntries": [
+        "compat-stig-quarterly-delta-xccdf.xml"
+      ],
+      "expectedFormat": "Stig"
+    },
+    {
+      "scenario": "scap-baseline",
+      "archiveEntries": [
+        "compat-scap-baseline-xccdf.xml",
+        "compat-scap-baseline-oval.xml"
+      ],
+      "expectedFormat": "Scap"
+    },
+    {
+      "scenario": "gpo-baseline",
+      "archiveEntries": [
+        "compat-gpo-baseline.admx"
+      ],
+      "expectedFormat": "Gpo"
+    },
+    {
+      "scenario": "stig-malformed",
+      "archiveEntries": [
+        "compat-stig-malformed-xccdf.xml"
+      ],
+      "expectedFormat": "Stig"
+    }
+  ]
+}

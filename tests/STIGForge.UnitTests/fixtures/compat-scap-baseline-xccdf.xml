@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Benchmark xmlns="http://checklists.nist.gov/xccdf/1.2" id="compat-scap-baseline">
+  <Rule id="SV-500001r1_rule" severity="medium">
+    <title>SCAP Compatibility Baseline Rule</title>
+    <description>SCAP baseline benchmark control.</description>
+    <check system="http://scap.nist.gov/schema/ocil/2">
+      <check-content>Execute SCAP baseline evaluator.</check-content>
+    </check>
+    <fixtext>Apply SCAP baseline mitigation.</fixtext>
+  </Rule>
+</Benchmark>

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<policyDefinitions xmlns="http://schemas.microsoft.com/GroupPolicy/2006/07/PolicyDefinitions">
+  <policyNamespaces>
+    <target prefix="compat" namespace="Microsoft.Policies.Compatibility" />
+  </policyNamespaces>
+  <policies>
+    <policy name="CompatBaselinePolicy" class="Machine" displayName="$(string.CompatBaselinePolicy)" key="SOFTWARE\Policies\Compat">
+      <parentCategory ref="CompatCategory" />
+      <supportedOn ref="windows:SUPPORTED_Windows10" />
+      <elements>
+        <boolean id="CompatBaselinePolicyEnabled" valueName="Enabled" />
+      </elements>
+    </policy>
+  </policies>
+</policyDefinitions>
