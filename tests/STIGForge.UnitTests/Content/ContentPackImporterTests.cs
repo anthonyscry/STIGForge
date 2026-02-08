@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using System.Text.Json;
 using Moq;
 using STIGForge.Content.Import;
 using STIGForge.Content.Models;
@@ -95,6 +96,168 @@ public sealed class ContentPackImporterTests : IDisposable
     controlsMock.Verify(c => c.SaveControlsAsync(It.IsAny<string>(), It.Is<IReadOnlyList<ControlRecord>>(list => list.Count > 0), It.IsAny<CancellationToken>()), Times.Once);
   }
 
+  [Theory]
+  [MemberData(nameof(CompatibilityMatrixScenarios))]
+  public async Task ImportZipAsync_CompatibilityMatrixContractMatchesFixtureScenario(
+    string scenario,
+    string[] fixtureFiles,
+    string expectedFormat,
+    bool expectedFallback,
+    int minimumParsingErrors,
+    bool expectedOvalMetadata,
+    bool expectedAdmx,
+    int minimumWarnings,
+    int expectedConflictErrors)
+  {
+    var zipPath = await CreateZipFromFixturesAsync($"{scenario}.zip", fixtureFiles);
+
+    var importer = CreateImporter(out _, out _);
+    var result = await importer.ImportZipAsync(zipPath, scenario, "compat-fixture", CancellationToken.None);
+
+    var compatibilityPath = Path.Combine(_tempRoot, "packs", result.PackId, "compatibility_matrix.json");
+    Assert.True(File.Exists(compatibilityPath), "compatibility_matrix.json should be emitted for every imported fixture scenario");
+
+    using var matrixDoc = JsonDocument.Parse(File.ReadAllText(compatibilityPath));
+    var root = matrixDoc.RootElement;
+
+    AssertCompatibilityMatrixHasRequiredKeys(root);
+    Assert.Equal(expectedFormat, root.GetProperty("detectedFormat").GetString());
+    Assert.Equal(expectedFallback, root.GetProperty("usedFallbackParser").GetBoolean());
+    Assert.Equal(expectedOvalMetadata, root.GetProperty("support").GetProperty("ovalMetadata").GetBoolean());
+    Assert.Equal(expectedAdmx, root.GetProperty("support").GetProperty("admx").GetBoolean());
+
+    var parsingErrors = root.GetProperty("parsingErrors");
+    Assert.True(parsingErrors.GetArrayLength() >= minimumParsingErrors, $"Scenario '{scenario}' expected at least {minimumParsingErrors} parsing errors");
+
+    var warnings = root.GetProperty("unsupportedMappings").GetArrayLength() + root.GetProperty("conflicts").GetProperty("bySeverity").GetProperty("warning").GetInt32();
+    Assert.True(warnings >= minimumWarnings, $"Scenario '{scenario}' expected at least {minimumWarnings} warning classifications");
+
+    var conflictErrors = root.GetProperty("conflicts").GetProperty("bySeverity").GetProperty("error").GetInt32();
+    Assert.Equal(expectedConflictErrors, conflictErrors);
+  }
+
+  public static IEnumerable<object[]> CompatibilityMatrixScenarios()
+  {
+    yield return new object[]
+    {
+      "stig-baseline",
+      new[] { "compat-stig-baseline-xccdf.xml" },
+      "Stig",
+      false,
+      0,
+      false,
+      false,
+      0,
+      0
+    };
+    yield return new object[]
+    {
+      "stig-quarterly-delta",
+      new[] { "compat-stig-quarterly-delta-xccdf.xml" },
+      "Stig",
+      false,
+      0,
+      false,
+      false,
+      0,
+      0
+    };
+    yield return new object[]
+    {
+      "stig-malformed",
+      new[] { "compat-stig-malformed-xccdf.xml" },
+      "Stig",
+      false,
+      1,
+      false,
+      false,
+      1,
+      0
+    };
+    yield return new object[]
+    {
+      "scap-baseline",
+      new[] { "compat-scap-baseline-xccdf.xml", "compat-scap-baseline-oval.xml" },
+      "Scap",
+      false,
+      0,
+      true,
+      false,
+      0,
+      0
+    };
+    yield return new object[]
+    {
+      "scap-malformed-oval",
+      new[] { "compat-scap-baseline-xccdf.xml", "compat-scap-malformed-oval.xml" },
+      "Scap",
+      false,
+      1,
+      true,
+      false,
+      0,
+      0
+    };
+    yield return new object[]
+    {
+      "gpo-baseline",
+      new[] { "compat-gpo-baseline.admx" },
+      "Gpo",
+      false,
+      0,
+      false,
+      true,
+      0,
+      0
+    };
+    yield return new object[]
+    {
+      "gpo-quarterly-delta",
+      new[] { "compat-gpo-quarterly-delta.admx" },
+      "Gpo",
+      false,
+      0,
+      false,
+      true,
+      0,
+      0
+    };
+    yield return new object[]
+    {
+      "unknown-oval-only",
+      new[] { "compat-unknown-oval-only.xml" },
+      "Unknown",
+      true,
+      0,
+      false,
+      false,
+      1,
+      0
+    };
+  }
+
+  [Fact]
+  public async Task ImportZipAsync_CompatibilityMatrixPropertyOrderIsDeterministic()
+  {
+    var fixtureFiles = new[] { "compat-stig-quarterly-delta-xccdf.xml" };
+    var firstZip = await CreateZipFromFixturesAsync("deterministic-first.zip", fixtureFiles);
+    var secondZip = await CreateZipFromFixturesAsync("deterministic-second.zip", fixtureFiles);
+
+    var importer = CreateImporter(out _, out _);
+    var firstImport = await importer.ImportZipAsync(firstZip, "deterministic-1", "compat-fixture", CancellationToken.None);
+    var secondImport = await importer.ImportZipAsync(secondZip, "deterministic-2", "compat-fixture", CancellationToken.None);
+
+    var firstPath = Path.Combine(_tempRoot, "packs", firstImport.PackId, "compatibility_matrix.json");
+    var secondPath = Path.Combine(_tempRoot, "packs", secondImport.PackId, "compatibility_matrix.json");
+
+    using var firstDoc = JsonDocument.Parse(File.ReadAllText(firstPath));
+    using var secondDoc = JsonDocument.Parse(File.ReadAllText(secondPath));
+
+    var firstKeys = firstDoc.RootElement.EnumerateObject().Select(property => property.Name).ToArray();
+    var secondKeys = secondDoc.RootElement.EnumerateObject().Select(property => property.Name).ToArray();
+    Assert.Equal(firstKeys, secondKeys);
+  }
+
   private ContentPackImporter CreateImporter(out Mock<IContentPackRepository> packsMock, out Mock<IControlRepository> controlsMock)
   {
     var pathsMock = new Mock<IPathBuilder>();
@@ -116,8 +279,76 @@ public sealed class ContentPackImporterTests : IDisposable
     controlsMock
       .Setup(c => c.ListControlsAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
       .ReturnsAsync(Array.Empty<ControlRecord>());
+    controlsMock
+      .Setup(c => c.VerifySchemaAsync(It.IsAny<CancellationToken>()))
+      .ReturnsAsync(true);
 
     return new ContentPackImporter(pathsMock.Object, hashMock.Object, packsMock.Object, controlsMock.Object);
+  }
+
+  private async Task<string> CreateZipFromFixturesAsync(string zipName, IReadOnlyList<string> fixtureFiles)
+  {
+    var zipPath = Path.Combine(_tempRoot, zipName);
+    using var archive = ZipFile.Open(zipPath, ZipArchiveMode.Create);
+
+    foreach (var fixtureName in fixtureFiles)
+    {
+      var fixturePath = GetFixturePath(fixtureName);
+      var entry = archive.CreateEntry(fixtureName);
+      await using var entryStream = entry.Open();
+      await using var fixtureStream = File.OpenRead(fixturePath);
+      await fixtureStream.CopyToAsync(entryStream);
+    }
+
+    return zipPath;
+  }
+
+  private static string GetFixturePath(string fileName)
+  {
+    var baseDir = AppDomain.CurrentDomain.BaseDirectory;
+    return Path.Combine(baseDir, "..", "..", "..", "fixtures", fileName);
+  }
+
+  private static void AssertCompatibilityMatrixHasRequiredKeys(JsonElement root)
+  {
+    var expectedTopLevelKeys = new[]
+    {
+      "schemaVersion",
+      "detectedFormat",
+      "detectionConfidence",
+      "detectionReasons",
+      "parsedControls",
+      "usedFallbackParser",
+      "sourceArtifacts",
+      "support",
+      "lossyMappings",
+      "unsupportedMappings",
+      "parsingErrors",
+      "conflicts"
+    };
+
+    var actualTopLevelKeys = root.EnumerateObject().Select(property => property.Name).ToArray();
+    Assert.Equal(expectedTopLevelKeys, actualTopLevelKeys);
+
+    Assert.True(root.TryGetProperty("sourceArtifacts", out var sourceArtifacts));
+    Assert.True(sourceArtifacts.TryGetProperty("XccdfXmlCount", out _));
+    Assert.True(sourceArtifacts.TryGetProperty("OvalXmlCount", out _));
+    Assert.True(sourceArtifacts.TryGetProperty("AdmxCount", out _));
+    Assert.True(sourceArtifacts.TryGetProperty("TotalXmlCount", out _));
+    Assert.True(sourceArtifacts.TryGetProperty("expectedFormatFiles", out _));
+
+    Assert.True(root.TryGetProperty("support", out var support));
+    Assert.True(support.TryGetProperty("xccdf", out _));
+    Assert.True(support.TryGetProperty("ovalMetadata", out _));
+    Assert.True(support.TryGetProperty("admx", out _));
+
+    Assert.True(root.TryGetProperty("conflicts", out var conflicts));
+    Assert.True(conflicts.TryGetProperty("total", out _));
+    Assert.True(conflicts.TryGetProperty("bySeverity", out var bySeverity));
+    Assert.True(bySeverity.TryGetProperty("info", out _));
+    Assert.True(bySeverity.TryGetProperty("warning", out _));
+    Assert.True(bySeverity.TryGetProperty("error", out _));
+    Assert.True(conflicts.TryGetProperty("details", out _));
   }
 
   private static string CreateMinimalXccdf()

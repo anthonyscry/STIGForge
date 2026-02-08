@@ -18,6 +18,12 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
+      - name: Compatibility contract tests
+        shell: pwsh
+        run: |
+          dotnet test .\tests\STIGForge.UnitTests\STIGForge.UnitTests.csproj --configuration Release --framework net8.0 --filter "FullyQualifiedName~ContentPackImporterTests"
+          dotnet test .\tests\STIGForge.IntegrationTests\STIGForge.IntegrationTests.csproj --configuration Release --framework net8.0 --filter "FullyQualifiedName~RoundTrip"
+
       - name: Run release gate
         shell: pwsh
         run: |
