@@ -1,6 +1,8 @@
 param(
   [string]$Configuration = "Release",
   [string]$OutputRoot = "",
+  [switch]$SecurityStrict,
+  [switch]$EnableNetworkLicenseLookup,
   [switch]$SkipSbom
 )
 
@@ -64,9 +66,14 @@ function Convert-ToRelativePath {
     [Parameter(Mandatory = $true)][string]$TargetPath
   )
 
-  $baseFull = [IO.Path]::GetFullPath($BasePath)
-  $targetFull = [IO.Path]::GetFullPath($TargetPath)
-  return [IO.Path]::GetRelativePath($baseFull, $targetFull)
+  $baseResolved = (Resolve-Path $BasePath).Path
+  $targetResolved = (Resolve-Path $TargetPath).Path
+
+  $baseSuffix = if ($baseResolved.EndsWith([IO.Path]::DirectorySeparatorChar) -or $baseResolved.EndsWith([IO.Path]::AltDirectorySeparatorChar)) { "" } else { [string][IO.Path]::DirectorySeparatorChar }
+  $baseUri = [System.Uri]::new(($baseResolved + $baseSuffix), [System.UriKind]::Absolute)
+  $targetUri = [System.Uri]::new($targetResolved, [System.UriKind]::Absolute)
+
+  return [System.Uri]::UnescapeDataString($baseUri.MakeRelativeUri($targetUri).ToString().Replace('/', [IO.Path]::DirectorySeparatorChar))
 }
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -99,7 +106,20 @@ try {
   $steps += New-Step -Name "dotnet-info" -Command "dotnet --info" -LogPath (Join-Path $logRoot "dotnet-info.log")
   $steps += New-Step -Name "restore" -Command "dotnet restore STIGForge.sln --nologo -p:EnableWindowsTargeting=true" -LogPath (Join-Path $logRoot "restore.log")
   $steps += New-Step -Name "build" -Command "dotnet build STIGForge.sln --configuration $Configuration --nologo --no-restore -p:EnableWindowsTargeting=true" -LogPath (Join-Path $logRoot "build.log")
-  $steps += New-Step -Name "security-gate" -Command "$script:CommandShell -NoProfile -ExecutionPolicy Bypass -File .\tools\release\Invoke-SecurityGate.ps1 -OutputRoot '$securityOutputRoot'" -LogPath (Join-Path $logRoot "security-gate.log")
+  $securityGateArgs = @(
+    "$script:CommandShell",
+    "-NoProfile",
+    "-ExecutionPolicy Bypass",
+    "-File .\tools\release\Invoke-SecurityGate.ps1",
+    "-OutputRoot '$securityOutputRoot'"
+  )
+  if ($SecurityStrict) {
+    $securityGateArgs += "-Strict"
+  }
+  if ($EnableNetworkLicenseLookup) {
+    $securityGateArgs += "-EnableNetworkLicenseLookup"
+  }
+  $steps += New-Step -Name "security-gate" -Command ($securityGateArgs -join " ") -LogPath (Join-Path $logRoot "security-gate.log")
   $steps += New-Step -Name "test-unit" -Command "dotnet test tests/STIGForge.UnitTests/STIGForge.UnitTests.csproj --configuration $Configuration --framework net8.0 --nologo --no-build --filter 'FullyQualifiedName!~RebootCoordinator'" -LogPath (Join-Path $logRoot "test-unit.log")
   $steps += New-Step -Name "test-integration" -Command "dotnet test tests/STIGForge.IntegrationTests/STIGForge.IntegrationTests.csproj --configuration $Configuration --framework net8.0 --nologo --no-build --filter 'FullyQualifiedName!~E2E'" -LogPath (Join-Path $logRoot "test-integration.log")
   $steps += New-Step -Name "test-e2e" -Command "dotnet test tests/STIGForge.IntegrationTests/STIGForge.IntegrationTests.csproj --configuration $Configuration --framework net8.0 --nologo --no-build --filter 'FullyQualifiedName~E2E'" -LogPath (Join-Path $logRoot "test-e2e.log")
@@ -175,6 +195,10 @@ try {
     configuration = $Configuration
     repository = $repoRoot
     outputRoot = $OutputRoot
+    securityGateMode = [pscustomobject]@{
+      strict = [bool]$SecurityStrict
+      deterministicOffline = [bool](-not $EnableNetworkLicenseLookup)
+    }
     overallPassed = $overallPass
     sbom = [pscustomobject]@{
       status = $sbomStatus
