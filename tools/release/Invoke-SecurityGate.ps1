@@ -623,23 +623,23 @@ try {
     $licenseLookupMode = "network"
   }
 
-  $summary = [pscustomobject]@{
+  $summary = @{
     generatedAtUtc = (Get-Date).ToUniversalTime().ToString("o")
     repository = $RepositoryRoot
     outputRoot = $outputRootFull
-    mode = [pscustomobject]@{
+    mode = @{
       strict = [bool]$Strict
       deterministicOffline = [bool]$deterministicOfflineMode
       networkLicenseLookup = [bool]$licenseLookupAllowed
     }
-    dependencyVulnerabilities = [pscustomobject]@{
+    dependencyVulnerabilities = @{
       total = $vulnerabilityRows.Count
       suppressed = $suppressedVulnerabilities.Count
       unresolved = $unresolvedVulnerabilities.Count
       scanStatus = $vulnerabilityScanStatus
       scanError = $vulnerabilityScanError
     }
-    licenseCompliance = [pscustomobject]@{
+    licenseCompliance = @{
       totalPackages = $licenseResults.Count
       rejected = $licenseErrors.Count
       unresolved = $licenseUnresolved.Count
@@ -647,21 +647,28 @@ try {
       inventoryError = $dependencyInventoryError
       lookupMode = $licenseLookupMode
     }
-    secrets = [pscustomobject]@{
+    secrets = @{
       findings = $secretFindings.Count
       scanSkipped = [bool]$SkipSecrets
     }
-    unresolvedIntelligence = [pscustomobject]@{
+    unresolvedIntelligence = @{
       total = $unresolvedCount
       strictModeBlocking = [bool]$Strict
-      findings = @($unresolvedIntelligence)
+      findings = @($unresolvedIntelligence | ForEach-Object {
+          @{
+            category = $_.category
+            subject = $_.subject
+            reason = $_.reason
+            evidence = $_.evidence
+          }
+        })
     }
-    gateDecision = [pscustomobject]@{
+    gateDecision = @{
       blockingFindings = $blockingFindingsCount
       strictBlockingCount = $strictBlockingCount
       passed = ($blockingFindingsCount -eq 0)
     }
-    artifacts = [pscustomobject]@{
+    artifacts = @{
       vulnerabilities = $vulnerablePackagesJsonPath
       dependencies = $dependenciesJsonPath
       licenses = $licenseReportPath
