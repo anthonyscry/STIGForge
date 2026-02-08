@@ -37,6 +37,9 @@ public sealed class ParsingError
 
 public sealed class ContentPackImporter
 {
+    private const int MaxArchiveEntryCount = 4096;
+    private const long MaxExtractedBytes = 512L * 1024L * 1024L;
+
     private readonly IPathBuilder _paths;
     private readonly IHashingService _hash;
     private readonly IContentPackRepository _packs;
@@ -101,8 +104,7 @@ public sealed class ContentPackImporter
 
         try
         {
-            // Extract ZIP
-            ZipFile.ExtractToDirectory(zipPath, rawRoot);
+            ExtractZipSafely(zipPath, rawRoot, ct);
             
             checkpoint.Stage = ImportStage.Parsing;
             checkpoint.Save(packRoot);
@@ -614,5 +616,50 @@ public sealed class ContentPackImporter
         }
 
         return null;
+    }
+
+    private static void ExtractZipSafely(string zipPath, string destinationRoot, CancellationToken ct)
+    {
+        var destinationRootFullPath = Path.GetFullPath(destinationRoot);
+        var destinationRootPrefix = destinationRootFullPath.EndsWith(Path.DirectorySeparatorChar)
+            ? destinationRootFullPath
+            : destinationRootFullPath + Path.DirectorySeparatorChar;
+
+        using var archive = ZipFile.OpenRead(zipPath);
+
+        if (archive.Entries.Count > MaxArchiveEntryCount)
+            throw new ParsingException($"[IMPORT-ARCHIVE-001] Archive contains {archive.Entries.Count} entries, exceeding the maximum allowed {MaxArchiveEntryCount}.");
+
+        long extractedBytes = 0;
+
+        foreach (var entry in archive.Entries)
+        {
+            ct.ThrowIfCancellationRequested();
+
+            var destinationPath = Path.GetFullPath(Path.Combine(destinationRootFullPath, entry.FullName));
+            var isWithinRoot = destinationPath.StartsWith(destinationRootPrefix, StringComparison.OrdinalIgnoreCase)
+                || string.Equals(destinationPath, destinationRootFullPath, StringComparison.OrdinalIgnoreCase);
+            if (!isWithinRoot)
+                throw new ParsingException($"[IMPORT-ARCHIVE-002] Archive entry '{entry.FullName}' resolves outside extraction root and was rejected.");
+
+            var isDirectory = entry.FullName.EndsWith('/') || entry.FullName.EndsWith('\\');
+            if (isDirectory)
+            {
+                Directory.CreateDirectory(destinationPath);
+                continue;
+            }
+
+            extractedBytes += entry.Length;
+            if (extractedBytes > MaxExtractedBytes)
+                throw new ParsingException($"[IMPORT-ARCHIVE-003] Archive expanded size exceeds {MaxExtractedBytes} bytes and was rejected.");
+
+            var directory = Path.GetDirectoryName(destinationPath);
+            if (!string.IsNullOrWhiteSpace(directory))
+                Directory.CreateDirectory(directory);
+
+            using var entryStream = entry.Open();
+            using var outputStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None);
+            entryStream.CopyTo(outputStream);
+        }
     }
 }
