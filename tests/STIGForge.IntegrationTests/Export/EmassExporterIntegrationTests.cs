@@ -74,6 +74,25 @@ public sealed class EmassExporterIntegrationTests : IDisposable
     tamperedValidation.Errors.Should().Contain(e => e.Contains("Hash mismatch", StringComparison.Ordinal));
   }
 
+  [Fact]
+  public async Task ExportAsync_WhenValidationFails_ReturnsBlockedSubmissionReadiness()
+  {
+    var bundleRoot = CreateBundleFixture("bundle-invalid-readiness");
+    var outputRoot = Path.Combine(_tempRoot, "export-invalid-readiness");
+
+    var exporter = new EmassExporter(new TestPathBuilder(_tempRoot), new AlwaysInvalidHashingService());
+    var result = await exporter.ExportAsync(new ExportRequest
+    {
+      BundleRoot = bundleRoot,
+      OutputRoot = outputRoot
+    }, CancellationToken.None);
+
+    result.ValidationResult.Should().NotBeNull();
+    result.ValidationResult!.IsValid.Should().BeFalse();
+    result.IsReadyForSubmission.Should().BeFalse();
+    result.BlockingFailures.Should().NotBeEmpty();
+  }
+
   private string CreateBundleFixture(string name)
   {
     var bundleRoot = Path.Combine(_tempRoot, name);
@@ -197,5 +216,14 @@ public sealed class EmassExporterIntegrationTests : IDisposable
 
     public string GetEmassExportRoot(string systemName, string os, string role, string profileName, string packName, DateTimeOffset ts)
       => Path.Combine(_root, "exports", "default");
+  }
+
+  private sealed class AlwaysInvalidHashingService : IHashingService
+  {
+    public Task<string> Sha256FileAsync(string path, CancellationToken ct)
+      => Task.FromResult(new string('0', 64));
+
+    public Task<string> Sha256TextAsync(string content, CancellationToken ct)
+      => Task.FromResult(new string('0', 64));
   }
 }
