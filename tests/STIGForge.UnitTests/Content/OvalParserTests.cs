@@ -96,4 +96,28 @@ public class OvalParserTests
             File.Delete(tempFile);
         }
     }
+
+    [Fact]
+    public void ParseOval_RejectsDtdPayload()
+    {
+        var tempFile = Path.Combine(Path.GetTempPath(), "oval-dtd-" + Guid.NewGuid().ToString("N") + ".xml");
+        File.WriteAllText(tempFile, """
+<!DOCTYPE oval_definitions [
+  <!ENTITY xxe SYSTEM "file:///etc/passwd">
+]>
+<oval_definitions xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5">
+  <definitions />
+</oval_definitions>
+""");
+
+        try
+        {
+            var ex = Assert.Throws<ParsingException>(() => OvalParser.Parse(tempFile));
+            Assert.Contains("OVAL-XML-001", ex.Message, StringComparison.Ordinal);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
 }

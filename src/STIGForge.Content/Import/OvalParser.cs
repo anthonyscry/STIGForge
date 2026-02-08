@@ -1,3 +1,4 @@
+using System.Xml;
 using System.Xml.Linq;
 using STIGForge.Content.Models;
 
@@ -12,7 +13,7 @@ public static class OvalParser
     if (!File.Exists(xmlPath))
       throw new FileNotFoundException("OVAL XML file not found", xmlPath);
 
-    var doc = XDocument.Load(xmlPath, LoadOptions.None);
+    var doc = LoadSecureXml(xmlPath);
     var definitions = doc.Descendants(OvalNs + "definition").ToList();
     var results = new List<OvalDefinition>(definitions.Count);
 
@@ -36,5 +37,28 @@ public static class OvalParser
     }
 
     return results;
+  }
+
+  private static XDocument LoadSecureXml(string xmlPath)
+  {
+    var settings = new XmlReaderSettings
+    {
+      DtdProcessing = DtdProcessing.Prohibit,
+      XmlResolver = null,
+      IgnoreWhitespace = true,
+      MaxCharactersFromEntities = 1024,
+      MaxCharactersInDocument = 20_000_000,
+      Async = false
+    };
+
+    try
+    {
+      using var reader = XmlReader.Create(xmlPath, settings);
+      return XDocument.Load(reader, LoadOptions.None);
+    }
+    catch (XmlException ex)
+    {
+      throw new ParsingException($"[OVAL-XML-001] Failed to parse OVAL XML '{xmlPath}': {ex.Message}", xmlPath, null, ex);
+    }
   }
 }

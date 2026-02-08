@@ -1,5 +1,6 @@
 using System.Xml.Linq;
 using System.Globalization;
+using System.Xml;
 
 namespace STIGForge.Verify.Adapters;
 
@@ -22,7 +23,7 @@ public sealed class EvaluateStigAdapter : IVerifyResultAdapter
 
     try
     {
-      var doc = XDocument.Load(filePath);
+      var doc = LoadSecureXml(filePath);
       var root = doc.Root;
 
       // Evaluate-STIG uses custom XML format with STIGChecks root or similar
@@ -42,7 +43,7 @@ public sealed class EvaluateStigAdapter : IVerifyResultAdapter
     if (!File.Exists(outputPath))
       throw new FileNotFoundException("Evaluate-STIG result file not found", outputPath);
 
-    var doc = XDocument.Load(outputPath);
+    var doc = LoadSecureXml(outputPath);
     var diagnostics = new List<string>();
 
     // Evaluate-STIG format varies - try multiple structures
@@ -268,5 +269,28 @@ public sealed class EvaluateStigAdapter : IVerifyResultAdapter
       return parsed;
 
     return fallback;
+  }
+
+  private static XDocument LoadSecureXml(string filePath)
+  {
+    var settings = new XmlReaderSettings
+    {
+      DtdProcessing = DtdProcessing.Prohibit,
+      XmlResolver = null,
+      IgnoreWhitespace = true,
+      MaxCharactersFromEntities = 1024,
+      MaxCharactersInDocument = 20_000_000,
+      Async = false
+    };
+
+    try
+    {
+      using var reader = XmlReader.Create(filePath, settings);
+      return XDocument.Load(reader, LoadOptions.None);
+    }
+    catch (XmlException ex)
+    {
+      throw new InvalidDataException($"[VERIFY-EVAL-XML-001] Failed to parse Evaluate-STIG XML '{filePath}': {ex.Message}", ex);
+    }
   }
 }

@@ -92,6 +92,42 @@ public sealed class VerifyAdapterParsingTests : IDisposable
   }
 
   [Fact]
+  public void CklAdapter_ParseResults_RejectsDtdPayload()
+  {
+    var filePath = WriteTempFile("ckl-dtd.ckl", """
+<!DOCTYPE CHECKLIST [
+  <!ENTITY xxe SYSTEM "file:///etc/passwd">
+]>
+<CHECKLIST></CHECKLIST>
+""");
+
+    var adapter = new CklAdapter();
+    var act = () => adapter.ParseResults(filePath);
+
+    act.Should()
+      .Throw<InvalidDataException>()
+      .WithMessage("*VERIFY-CKL-XML-001*");
+  }
+
+  [Fact]
+  public void EvaluateStigAdapter_ParseResults_RejectsDtdPayload()
+  {
+    var filePath = WriteTempFile("evaluate-dtd.xml", """
+<!DOCTYPE STIGChecks [
+  <!ENTITY xxe SYSTEM "file:///etc/passwd">
+]>
+<STIGChecks Version="1.0"></STIGChecks>
+""");
+
+    var adapter = new EvaluateStigAdapter();
+    var act = () => adapter.ParseResults(filePath);
+
+    act.Should()
+      .Throw<InvalidDataException>()
+      .WithMessage("*VERIFY-EVAL-XML-001*");
+  }
+
+  [Fact]
   public void ScapResultAdapter_ParseResults_UsesRuleTimestampAndStatusNormalization()
   {
     var filePath = WriteTempFile("scap.xml", """
@@ -132,6 +168,24 @@ public sealed class VerifyAdapterParsingTests : IDisposable
 
     report.Results.Should().BeEmpty();
     report.DiagnosticMessages.Should().Contain(d => d.Contains("No TestResult", StringComparison.Ordinal));
+  }
+
+  [Fact]
+  public void ScapResultAdapter_ParseResults_RejectsDtdPayload()
+  {
+    var filePath = WriteTempFile("scap-dtd.xml", """
+<!DOCTYPE Benchmark [
+  <!ENTITY xxe SYSTEM "file:///etc/passwd">
+]>
+<Benchmark xmlns="http://checklists.nist.gov/xccdf/1.2"></Benchmark>
+""");
+
+    var adapter = new ScapResultAdapter();
+    var act = () => adapter.ParseResults(filePath);
+
+    act.Should()
+      .Throw<InvalidDataException>()
+      .WithMessage("*VERIFY-SCAP-XML-001*");
   }
 
   private string WriteTempFile(string fileName, string content)

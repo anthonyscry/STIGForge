@@ -1,3 +1,4 @@
+using System.Xml;
 using System.Xml.Linq;
 
 namespace STIGForge.Verify.Adapters;
@@ -21,7 +22,7 @@ public sealed class CklAdapter : IVerifyResultAdapter
 
     try
     {
-      var doc = XDocument.Load(filePath);
+      var doc = LoadSecureXml(filePath);
       return doc.Root?.Name.LocalName == "CHECKLIST";
     }
     catch
@@ -35,7 +36,7 @@ public sealed class CklAdapter : IVerifyResultAdapter
     if (!File.Exists(outputPath))
       throw new FileNotFoundException("CKL file not found", outputPath);
 
-    var doc = XDocument.Load(outputPath);
+    var doc = LoadSecureXml(outputPath);
     var vulnNodes = doc.Descendants("VULN").ToList();
     var results = new List<NormalizedVerifyResult>(vulnNodes.Count);
     var diagnostics = new List<string>();
@@ -212,5 +213,28 @@ public sealed class CklAdapter : IVerifyResultAdapter
       : 0.0;
 
     return summary;
+  }
+
+  private static XDocument LoadSecureXml(string filePath)
+  {
+    var settings = new XmlReaderSettings
+    {
+      DtdProcessing = DtdProcessing.Prohibit,
+      XmlResolver = null,
+      IgnoreWhitespace = true,
+      MaxCharactersFromEntities = 1024,
+      MaxCharactersInDocument = 20_000_000,
+      Async = false
+    };
+
+    try
+    {
+      using var reader = XmlReader.Create(filePath, settings);
+      return XDocument.Load(reader, LoadOptions.None);
+    }
+    catch (XmlException ex)
+    {
+      throw new InvalidDataException($"[VERIFY-CKL-XML-001] Failed to parse CKL XML '{filePath}': {ex.Message}", ex);
+    }
   }
 }
