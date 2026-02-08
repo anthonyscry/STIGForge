@@ -14,6 +14,9 @@ public sealed class ExportResult
   public string ValidationReportPath { get; set; } = string.Empty;
   public string ValidationReportJsonPath { get; set; } = string.Empty;
   public ValidationResult? ValidationResult { get; set; }
+  public bool IsReadyForSubmission { get; set; }
+  public IReadOnlyList<string> BlockingFailures { get; set; } = Array.Empty<string>();
+  public IReadOnlyList<string> Warnings { get; set; } = Array.Empty<string>();
 }
 
 public sealed class ValidationResult

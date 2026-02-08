@@ -39,6 +39,7 @@ public sealed class EmassExporterIntegrationTests : IDisposable
 
     result.ValidationResult.Should().NotBeNull();
     result.ValidationResult!.IsValid.Should().BeTrue();
+    result.IsReadyForSubmission.Should().BeTrue();
 
     result.ValidationReportPath.Should().Be(Path.Combine(outputRoot, "00_Manifest", "validation_report.txt"));
     result.ValidationReportJsonPath.Should().Be(Path.Combine(outputRoot, "00_Manifest", "validation_report.json"));

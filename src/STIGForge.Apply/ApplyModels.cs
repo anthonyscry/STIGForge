@@ -37,4 +37,8 @@ public sealed class ApplyResult
    public IReadOnlyList<ApplyStepOutcome> Steps { get; set; } = Array.Empty<ApplyStepOutcome>();
    public string SnapshotId { get; set; } = string.Empty;
    public string RollbackScriptPath { get; set; } = string.Empty;
+   public bool IsMissionComplete { get; set; }
+   public bool IntegrityVerified { get; set; }
+   public IReadOnlyList<string> BlockingFailures { get; set; } = Array.Empty<string>();
+   public IReadOnlyList<string> RecoveryArtifactPaths { get; set; } = Array.Empty<string>();
 }

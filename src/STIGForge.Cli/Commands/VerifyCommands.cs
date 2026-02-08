@@ -194,7 +194,16 @@ internal static class VerifyCommands
         Console.WriteLine($"  Cross-artifact mismatches: {result.ValidationResult.Metrics.CrossArtifactMismatchCount}");
         foreach (var error in result.ValidationResult.Errors) Console.WriteLine($"  Error: {error}");
         foreach (var warning in result.ValidationResult.Warnings) Console.WriteLine($"  Warning: {warning}");
-        if (result.ValidationResult.IsValid) Console.WriteLine("  Package is ready for eMASS submission!");
+        if (result.ValidationResult.IsValid)
+        {
+          Console.WriteLine("  Package is ready for eMASS submission!");
+          Environment.ExitCode = 0;
+        }
+        else
+        {
+          Console.Error.WriteLine("  Submission readiness BLOCKED. Resolve validation errors before mission completion.");
+          Environment.ExitCode = 1;
+        }
       }
       logger.LogInformation(
         "export-emass completed: outputRoot={OutputRoot}, valid={IsValid}, errors={Errors}, warnings={Warnings}",
