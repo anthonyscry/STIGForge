@@ -51,6 +51,9 @@ public partial class MainViewModel : ObservableObject
   [ObservableProperty] private string verifySummary = "";
   [ObservableProperty] private string automationGatePath = "";
   [ObservableProperty] private bool isBusy;
+  [ObservableProperty] private bool applySkipSnapshot;
+  [ObservableProperty] private bool breakGlassAcknowledged;
+  [ObservableProperty] private string breakGlassReason = "";
 
   // Dashboard
   [ObservableProperty] private string dashBundleLabel = "(no bundle selected)";

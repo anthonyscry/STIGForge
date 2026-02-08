@@ -19,6 +19,9 @@ public sealed class OrchestrateRequest
   public string BundleRoot { get; set; } = string.Empty;
   public string? ApplyScriptPath { get; set; }
   public string? ApplyScriptArgs { get; set; }
+  public bool SkipSnapshot { get; set; }
+  public bool BreakGlassAcknowledged { get; set; }
+  public string? BreakGlassReason { get; set; }
   public string? DscMofPath { get; set; }
   public bool DscVerbose { get; set; }
   public string? PowerStigModulePath { get; set; }

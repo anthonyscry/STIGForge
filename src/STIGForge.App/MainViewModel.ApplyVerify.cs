@@ -29,11 +29,15 @@ public partial class MainViewModel
       }
 
       ApplyStatus = "Running apply...";
+      if (ApplySkipSnapshot)
+        await ValidateAndRecordBreakGlassAsync("apply-run", BundleRoot, "skip-snapshot", CancellationToken.None);
+
       var result = await _applyRunner.RunAsync(new STIGForge.Apply.ApplyRequest
       {
         BundleRoot = BundleRoot,
         ScriptPath = script,
-        ScriptArgs = "-BundleRoot \"" + BundleRoot + "\""
+        ScriptArgs = "-BundleRoot \"" + BundleRoot + "\"",
+        SkipSnapshot = ApplySkipSnapshot
       }, CancellationToken.None);
 
       ApplyStatus = "Apply complete: " + result.LogPath;
@@ -218,11 +222,15 @@ public partial class MainViewModel
         {
           try
           {
+            if (ApplySkipSnapshot)
+              await ValidateAndRecordBreakGlassAsync("orchestrate", BundleRoot, "skip-snapshot", CancellationToken.None);
+
             var result = await _applyRunner.RunAsync(new STIGForge.Apply.ApplyRequest
             {
               BundleRoot = BundleRoot,
               ScriptPath = script,
-              ScriptArgs = "-BundleRoot \"" + BundleRoot + "\""
+              ScriptArgs = "-BundleRoot \"" + BundleRoot + "\"",
+              SkipSnapshot = ApplySkipSnapshot
             }, CancellationToken.None);
 
             log.AppendLine("  OK: Apply complete. Log: " + result.LogPath);
@@ -408,5 +416,34 @@ public partial class MainViewModel
     {
       return "Summary unavailable: " + ex.Message;
     }
+  }
+
+  private async Task ValidateAndRecordBreakGlassAsync(string action, string target, string bypassName, CancellationToken ct)
+  {
+    if (!BreakGlassAcknowledged)
+      throw new InvalidOperationException($"{action} {bypassName} is high risk. Acknowledge break-glass before continuing.");
+
+    try
+    {
+      _manualAnswerService.ValidateBreakGlassReason(BreakGlassReason);
+    }
+    catch (ArgumentException ex)
+    {
+      throw new InvalidOperationException($"{action} {bypassName} requires a specific break-glass reason.", ex);
+    }
+
+    if (_audit == null)
+      return;
+
+    await _audit.RecordAsync(new AuditEntry
+    {
+      Action = "break-glass",
+      Target = string.IsNullOrWhiteSpace(target) ? action : target,
+      Result = "acknowledged",
+      Detail = $"Action={action}; Bypass={bypassName}; Reason={BreakGlassReason.Trim()}",
+      User = Environment.UserName,
+      Machine = Environment.MachineName,
+      Timestamp = DateTimeOffset.Now
+    }, ct).ConfigureAwait(false);
   }
 }

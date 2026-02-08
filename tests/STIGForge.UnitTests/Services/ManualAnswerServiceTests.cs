@@ -233,11 +233,25 @@ public class ManualAnswerServiceTests : IDisposable
   {
     var failAction = () => _svc.ValidateReasonRequirement("Fail", "");
     var naAction = () => _svc.ValidateReasonRequirement("NotApplicable", "   ");
+    var placeholderAction = () => _svc.ValidateReasonRequirement("Fail", "none");
     var passAction = () => _svc.ValidateReasonRequirement("Pass", "");
 
     failAction.Should().Throw<ArgumentException>();
     naAction.Should().Throw<ArgumentException>();
+    placeholderAction.Should().Throw<ArgumentException>();
     passAction.Should().NotThrow();
+  }
+
+  [Fact]
+  public void ValidateBreakGlassReason_RequiresSpecificReason()
+  {
+    var shortReason = () => _svc.ValidateBreakGlassReason("urgent");
+    var placeholder = () => _svc.ValidateBreakGlassReason("N/A");
+    var valid = () => _svc.ValidateBreakGlassReason("Emergency rollback baseline unavailable");
+
+    shortReason.Should().Throw<ArgumentException>();
+    placeholder.Should().Throw<ArgumentException>();
+    valid.Should().NotThrow();
   }
 
   [Fact]
@@ -279,5 +293,31 @@ public class ManualAnswerServiceTests : IDisposable
     _svc.SaveAnswerFile(deepDir, answerFile);
 
     File.Exists(Path.Combine(deepDir, "Manual", "answers.json")).Should().BeTrue();
+  }
+
+  [Fact]
+  public void ValidateBreakGlassReason_RejectsPlaceholderAndShortReasons()
+  {
+    var shortReason = () => _svc.ValidateBreakGlassReason("urgent");
+    var placeholderReason = () => _svc.ValidateBreakGlassReason("N/A");
+
+    shortReason.Should().Throw<ArgumentException>();
+    placeholderReason.Should().Throw<ArgumentException>();
+  }
+
+  [Fact]
+  public void ValidateBreakGlassReason_AcceptsSpecificReason()
+  {
+    var action = () => _svc.ValidateBreakGlassReason("Emergency rollback baseline unavailable");
+
+    action.Should().NotThrow();
+  }
+
+  [Fact]
+  public void ValidateReasonRequirement_RejectsPlaceholderReason()
+  {
+    var action = () => _svc.ValidateReasonRequirement("Fail", "none");
+
+    action.Should().Throw<ArgumentException>();
   }
 }
