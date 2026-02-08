@@ -11,6 +11,10 @@ using Microsoft.Extensions.Logging;
  
 public sealed class ApplyRunner
 {
+    private const string PowerStigStepName = "powerstig_compile";
+    private const string ScriptStepName = "apply_script";
+    private const string DscStepName = "apply_dsc";
+
     private readonly ILogger<ApplyRunner> _logger;
     private readonly SnapshotService _snapshotService;
     private readonly RollbackScriptGenerator _rollbackScriptGenerator;
@@ -52,18 +56,41 @@ public sealed class ApplyRunner
 
     var mode = request.ModeOverride ?? TryReadModeFromManifest(root) ?? HardeningMode.Safe;
 
+      var plannedSteps = BuildPlannedStepNames(request);
+
       // Check for resume after reboot (must be FIRST operation)
-      var resumeContext = await _rebootCoordinator.ResumeAfterReboot(root, ct);
+      RebootContext? resumeContext;
+      try
+      {
+        resumeContext = await _rebootCoordinator.ResumeAfterReboot(root, ct);
+      }
+      catch (RebootException ex)
+      {
+        throw new InvalidOperationException(
+          "Resume context is invalid or exhausted. Automatic continuation is blocked until operator decision. "
+          + "Review Apply/.resume_marker.json and recovery artifacts before retrying.",
+          ex);
+      }
+
       if (resumeContext != null)
       {
+         ValidateResumeContext(resumeContext, plannedSteps, root);
+
          _logger.LogInformation("Resuming apply after reboot from step {CurrentStepIndex} ({CompletedCount} steps completed)",
-           resumeContext.CurrentStepIndex, resumeContext.CompletedSteps?.Count ?? 0);
+            resumeContext.CurrentStepIndex, resumeContext.CompletedSteps?.Count ?? 0);
          // Mark previously completed steps so they are skipped below
          if (resumeContext.CompletedSteps != null)
          {
            foreach (var completedStep in resumeContext.CompletedSteps)
              _logger.LogInformation("  Skipping already-completed step: {Step}", completedStep);
          }
+      }
+
+      var completedSteps = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+      if (resumeContext?.CompletedSteps != null)
+      {
+        foreach (var completedStep in resumeContext.CompletedSteps)
+          completedSteps.Add(completedStep);
       }
 
       var steps = new List<ApplyStepOutcome>();
@@ -116,19 +143,26 @@ public sealed class ApplyRunner
 
     if (!string.IsNullOrWhiteSpace(request.PowerStigModulePath))
     {
-      var outcome = await RunPowerStigCompileAsync(
-         request.PowerStigModulePath!,
-         request.PowerStigDataFile,
-         string.IsNullOrWhiteSpace(request.PowerStigOutputPath)
-           ? Path.Combine(applyRoot, "Dsc")
-           : request.PowerStigOutputPath!,
-         root,
-         logsDir,
-         snapshotsDir,
-         mode,
-         request.PowerStigVerbose,
-         ct);
-      steps.Add(outcome);
+      if (completedSteps.Contains(PowerStigStepName))
+      {
+        _logger.LogInformation("Skipping previously completed step: {StepName}", PowerStigStepName);
+      }
+      else
+      {
+        var outcome = await RunPowerStigCompileAsync(
+           request.PowerStigModulePath!,
+           request.PowerStigDataFile,
+           string.IsNullOrWhiteSpace(request.PowerStigOutputPath)
+             ? Path.Combine(applyRoot, "Dsc")
+             : request.PowerStigOutputPath!,
+           root,
+           logsDir,
+           snapshotsDir,
+           mode,
+           request.PowerStigVerbose,
+           ct);
+        steps.Add(outcome);
+      }
 
       // Check for reboot after PowerSTIG compile
       if (await _rebootCoordinator.DetectRebootRequired(ct))
@@ -142,22 +176,32 @@ public sealed class ApplyRunner
             RebootScheduledAt = DateTimeOffset.UtcNow
          };
          await _rebootCoordinator.ScheduleReboot(context, ct);
-         return new ApplyResult
-         {
-            BundleRoot = root,
-            Mode = mode,
-            LogPath = string.Empty,
-            Steps = steps,
-            SnapshotId = snapshot?.SnapshotId ?? string.Empty,
-            RollbackScriptPath = snapshot?.RollbackScriptPath ?? string.Empty
-         };
-      }
+          return new ApplyResult
+          {
+             BundleRoot = root,
+             Mode = mode,
+             LogPath = string.Empty,
+             Steps = steps,
+             SnapshotId = snapshot?.SnapshotId ?? string.Empty,
+             RollbackScriptPath = snapshot?.RollbackScriptPath ?? string.Empty,
+             IsMissionComplete = false,
+             IntegrityVerified = false,
+             RecoveryArtifactPaths = GetRecoveryArtifactPaths(snapshot, snapshotsDir, string.Empty)
+          };
+       }
     }
 
     if (!string.IsNullOrWhiteSpace(request.ScriptPath))
     {
-      var outcome = await RunScriptAsync(request.ScriptPath!, request.ScriptArgs, root, logsDir, snapshotsDir, mode, ct);
-      steps.Add(outcome);
+      if (completedSteps.Contains(ScriptStepName))
+      {
+        _logger.LogInformation("Skipping previously completed step: {StepName}", ScriptStepName);
+      }
+      else
+      {
+        var outcome = await RunScriptAsync(request.ScriptPath!, request.ScriptArgs, root, logsDir, snapshotsDir, mode, ct);
+        steps.Add(outcome);
+      }
 
       // Check for reboot after script execution
       if (await _rebootCoordinator.DetectRebootRequired(ct))
@@ -171,22 +215,32 @@ public sealed class ApplyRunner
             RebootScheduledAt = DateTimeOffset.UtcNow
          };
          await _rebootCoordinator.ScheduleReboot(context, ct);
-         return new ApplyResult
-         {
-            BundleRoot = root,
-            Mode = mode,
-            LogPath = string.Empty,
-            Steps = steps,
-            SnapshotId = snapshot?.SnapshotId ?? string.Empty,
-            RollbackScriptPath = snapshot?.RollbackScriptPath ?? string.Empty
-         };
-      }
+          return new ApplyResult
+          {
+             BundleRoot = root,
+             Mode = mode,
+             LogPath = string.Empty,
+             Steps = steps,
+             SnapshotId = snapshot?.SnapshotId ?? string.Empty,
+             RollbackScriptPath = snapshot?.RollbackScriptPath ?? string.Empty,
+             IsMissionComplete = false,
+             IntegrityVerified = false,
+             RecoveryArtifactPaths = GetRecoveryArtifactPaths(snapshot, snapshotsDir, string.Empty)
+          };
+       }
     }
 
    if (!string.IsNullOrWhiteSpace(request.DscMofPath))
-     {
-       var outcome = await RunDscAsync(request.DscMofPath!, root, logsDir, snapshotsDir, mode, request.DscVerbose, ct);
-       steps.Add(outcome);
+      {
+        if (completedSteps.Contains(DscStepName))
+        {
+          _logger.LogInformation("Skipping previously completed step: {StepName}", DscStepName);
+        }
+        else
+        {
+          var outcome = await RunDscAsync(request.DscMofPath!, root, logsDir, snapshotsDir, mode, request.DscVerbose, ct);
+          steps.Add(outcome);
+        }
 
        // Reset LCM after DSC application (optional)
        if (originalLcm != null && request.ResetLcmAfterApply)
@@ -217,36 +271,64 @@ public sealed class ApplyRunner
      var json = JsonSerializer.Serialize(summary, new JsonSerializerOptions { WriteIndented = true });
      File.WriteAllText(logPath, json);
 
-     if (_audit != null)
-     {
-       try
-       {
+      var blockingFailures = new List<string>();
+      var integrityVerified = false;
+      var recoveryArtifacts = GetRecoveryArtifactPaths(snapshot, snapshotsDir, logPath);
+
+      var stepFailures = steps
+        .Where(s => s.ExitCode != 0)
+        .Select(s => $"Step '{s.StepName}' exited with code {s.ExitCode}.")
+        .ToList();
+      blockingFailures.AddRange(stepFailures);
+
+      if (_audit == null)
+      {
+        blockingFailures.Add("Audit trail service unavailable - integrity evidence cannot be verified.");
+      }
+      else
+      {
+        try
+        {
          await _audit.RecordAsync(new AuditEntry
          {
            Action = "apply",
            Target = root,
-           Result = steps.All(s => s.ExitCode == 0) ? "success" : "failure",
-           Detail = $"Mode={mode}, Steps={steps.Count}",
-           User = Environment.UserName,
-           Machine = Environment.MachineName,
-           Timestamp = DateTimeOffset.Now
-         }, ct).ConfigureAwait(false);
-       }
-       catch (Exception ex)
-       {
-         _logger.LogWarning(ex, "Failed to record audit entry for apply operation");
-       }
-     }
+            Result = stepFailures.Count == 0 ? "success" : "failure",
+            Detail = $"Mode={mode}, Steps={steps.Count}",
+            User = Environment.UserName,
+            Machine = Environment.MachineName,
+            Timestamp = DateTimeOffset.Now
+          }, ct).ConfigureAwait(false);
 
-     return new ApplyResult
-     {
+          integrityVerified = await _audit.VerifyIntegrityAsync(ct).ConfigureAwait(false);
+          if (!integrityVerified)
+            blockingFailures.Add("Audit trail integrity verification failed.");
+        }
+        catch (Exception ex)
+        {
+          _logger.LogWarning(ex, "Failed to record or verify audit evidence for apply operation");
+          blockingFailures.Add("Unable to verify audit integrity evidence: " + ex.Message);
+        }
+      }
+
+      if (blockingFailures.Count > 0)
+      {
+        throw new InvalidOperationException(BuildBlockingFailureMessage(blockingFailures, recoveryArtifacts));
+      }
+
+      return new ApplyResult
+      {
        BundleRoot = root,
        Mode = mode,
-       LogPath = logPath,
-       Steps = steps,
-       SnapshotId = snapshot?.SnapshotId ?? string.Empty,
-       RollbackScriptPath = snapshot?.RollbackScriptPath ?? string.Empty
-     };
+        LogPath = logPath,
+        Steps = steps,
+        SnapshotId = snapshot?.SnapshotId ?? string.Empty,
+        RollbackScriptPath = snapshot?.RollbackScriptPath ?? string.Empty,
+        IsMissionComplete = true,
+        IntegrityVerified = integrityVerified,
+        BlockingFailures = blockingFailures,
+        RecoveryArtifactPaths = recoveryArtifacts
+      };
    }
 
    private static HardeningMode? TryReadModeFromManifest(string bundleRoot)
@@ -319,7 +401,7 @@ public sealed class ApplyRunner
 
     return new ApplyStepOutcome
     {
-      StepName = "apply_script",
+      StepName = ScriptStepName,
       ExitCode = process.ExitCode,
       StartedAt = started,
       FinishedAt = DateTimeOffset.Now,
@@ -379,7 +461,7 @@ public sealed class ApplyRunner
 
     return new ApplyStepOutcome
     {
-      StepName = "apply_dsc",
+      StepName = DscStepName,
       ExitCode = process.ExitCode,
       StartedAt = started,
       FinishedAt = DateTimeOffset.Now,
@@ -447,7 +529,7 @@ public sealed class ApplyRunner
 
     return new ApplyStepOutcome
     {
-      StepName = "powerstig_compile",
+      StepName = PowerStigStepName,
       ExitCode = process.ExitCode,
       StartedAt = started,
       FinishedAt = DateTimeOffset.Now,
@@ -455,6 +537,58 @@ public sealed class ApplyRunner
       StdErrPath = stderr
     };
   }
+
+  private static IReadOnlyList<string> BuildPlannedStepNames(ApplyRequest request)
+  {
+    var planned = new List<string>();
+    if (!string.IsNullOrWhiteSpace(request.PowerStigModulePath)) planned.Add(PowerStigStepName);
+    if (!string.IsNullOrWhiteSpace(request.ScriptPath)) planned.Add(ScriptStepName);
+    if (!string.IsNullOrWhiteSpace(request.DscMofPath)) planned.Add(DscStepName);
+    return planned;
+  }
+
+  private static void ValidateResumeContext(RebootContext context, IReadOnlyList<string> plannedSteps, string bundleRoot)
+  {
+    if (!string.Equals(context.BundleRoot, bundleRoot, StringComparison.OrdinalIgnoreCase))
+      throw new InvalidOperationException("Resume context bundle path does not match current bundle. Operator decision required before continuation.");
+
+    if (plannedSteps.Count == 0)
+      throw new InvalidOperationException("Resume marker exists but no apply steps are configured. Operator decision required before continuation.");
+
+    if (context.CurrentStepIndex >= plannedSteps.Count)
+      throw new InvalidOperationException("Resume marker is exhausted (no remaining steps). Operator decision required before continuation.");
+
+    foreach (var completedStep in context.CompletedSteps ?? Array.Empty<string>())
+    {
+      if (!plannedSteps.Contains(completedStep, StringComparer.OrdinalIgnoreCase))
+      {
+        throw new InvalidOperationException("Resume marker references unknown completed steps. Operator decision required before continuation.");
+      }
+    }
+  }
+
+  private static List<string> GetRecoveryArtifactPaths(SnapshotResult? snapshot, string snapshotsDir, string logPath)
+  {
+    var artifacts = new List<string>();
+    if (!string.IsNullOrWhiteSpace(snapshot?.RollbackScriptPath)) artifacts.Add(snapshot.RollbackScriptPath);
+    if (Directory.Exists(snapshotsDir)) artifacts.Add(snapshotsDir);
+    if (!string.IsNullOrWhiteSpace(logPath)) artifacts.Add(logPath);
+    return artifacts.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+  }
+
+  private static string BuildBlockingFailureMessage(IReadOnlyList<string> blockingFailures, IReadOnlyList<string> recoveryArtifacts)
+  {
+    var sb = new System.Text.StringBuilder();
+    sb.Append("Mission completion blocked due to integrity-critical failures: ");
+    sb.Append(string.Join(" ", blockingFailures));
+    if (recoveryArtifacts.Count > 0)
+    {
+      sb.Append(" Recovery artifacts: ");
+      sb.Append(string.Join(", ", recoveryArtifacts));
+      sb.Append(". Rollback remains operator-initiated.");
+    }
+
+    return sb.ToString();
+  }
  
 }
-

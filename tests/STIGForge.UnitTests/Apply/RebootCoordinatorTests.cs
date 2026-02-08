@@ -220,4 +220,47 @@ public sealed class RebootCoordinatorTests : IDisposable
         exception.Should().BeOfType<RebootException>()
             .Which.Message.Should().Contain("Invalid resume marker");
     }
+
+    [Fact]
+    public async Task ResumeAfterReboot_WhenMarkerExpired_ThrowsOperatorDecisionMessage()
+    {
+        var context = new RebootContext
+        {
+            BundleRoot = _testRoot,
+            CurrentStepIndex = 1,
+            CompletedSteps = new List<string> { "apply_script" },
+            RebootScheduledAt = DateTimeOffset.UtcNow.AddDays(-30)
+        };
+        var applyDir = Path.Combine(_testRoot, "Apply");
+        Directory.CreateDirectory(applyDir);
+        var markerPath = Path.Combine(applyDir, ".resume_marker.json");
+        var json = JsonSerializer.Serialize(context);
+        await File.WriteAllTextAsync(markerPath, json);
+
+        var exception = await Record.ExceptionAsync(() => _coordinator.ResumeAfterReboot(_testRoot, CancellationToken.None));
+
+        exception.Should().BeOfType<RebootException>()
+            .Which.Message.Should().Contain("exhausted/expired");
+    }
+
+    [Fact]
+    public async Task ResumeAfterReboot_WhenBundleRootDoesNotMatch_ThrowsRebootException()
+    {
+        var applyDir = Path.Combine(_testRoot, "Apply");
+        Directory.CreateDirectory(applyDir);
+        var markerPath = Path.Combine(applyDir, ".resume_marker.json");
+        var marker = new RebootContext
+        {
+            BundleRoot = Path.Combine(_testRoot, "different-bundle"),
+            CurrentStepIndex = 0,
+            CompletedSteps = new List<string>(),
+            RebootScheduledAt = DateTimeOffset.UtcNow
+        };
+        await File.WriteAllTextAsync(markerPath, JsonSerializer.Serialize(marker));
+
+        var exception = await Record.ExceptionAsync(() => _coordinator.ResumeAfterReboot(_testRoot, CancellationToken.None));
+
+        exception.Should().BeOfType<RebootException>()
+            .Which.Message.Should().Contain("does not match requested bundle", StringComparison.OrdinalIgnoreCase);
+    }
 }

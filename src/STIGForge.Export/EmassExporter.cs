@@ -119,6 +119,9 @@ public sealed class EmassExporter
     var validationReportJsonPath = Path.Combine(manifestDir, "validation_report.json");
     WriteValidationReportJson(validationReportJsonPath, validationResult);
 
+    var blockingFailures = validationResult.Errors.ToList();
+    var warnings = validationResult.Warnings.ToList();
+
     if (_audit != null)
     {
       try
@@ -127,14 +130,17 @@ public sealed class EmassExporter
         {
           Action = "export-emass",
           Target = bundleRoot,
-          Result = "success",
+          Result = validationResult.IsValid ? "success" : "failure",
           Detail = $"ExportRoot={exportRoot}, Controls={consolidated.Count}, Valid={validationResult.IsValid}, Errors={validationResult.Errors.Count}, Warnings={validationResult.Warnings.Count}",
           User = Environment.UserName,
           Machine = Environment.MachineName,
           Timestamp = DateTimeOffset.Now
         }, ct).ConfigureAwait(false);
       }
-      catch { /* audit failure should not block export */ }
+      catch (Exception ex)
+      {
+        warnings.Add("Failed to record export audit entry: " + ex.Message);
+      }
     }
 
     return new ExportResult
@@ -144,7 +150,10 @@ public sealed class EmassExporter
       IndexPath = indexPath,
       ValidationReportPath = validationReportPath,
       ValidationReportJsonPath = validationReportJsonPath,
-      ValidationResult = validationResult
+      ValidationResult = validationResult,
+      IsReadyForSubmission = validationResult.IsValid,
+      BlockingFailures = blockingFailures,
+      Warnings = warnings
     };
   }
 

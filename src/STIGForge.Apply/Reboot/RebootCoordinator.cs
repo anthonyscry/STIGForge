@@ -131,8 +131,14 @@ public sealed class RebootCoordinator
             if (string.IsNullOrWhiteSpace(context.BundleRoot))
                 throw new RebootException($"Invalid resume marker: BundleRoot is missing in {markerPath}");
 
+            if (!string.Equals(context.BundleRoot, bundleRoot, StringComparison.OrdinalIgnoreCase))
+                throw new RebootException($"Invalid resume marker: BundleRoot '{context.BundleRoot}' does not match requested bundle '{bundleRoot}'");
+
             if (context.CurrentStepIndex < 0)
                 throw new RebootException($"Invalid resume marker: CurrentStepIndex is invalid in {markerPath}");
+
+            if (context.RebootScheduledAt != default && context.RebootScheduledAt < DateTimeOffset.UtcNow.AddDays(-7))
+                throw new RebootException($"Resume marker is exhausted/expired (scheduled at {context.RebootScheduledAt:o}). Explicit operator decision is required before continuation.");
 
             _logger.LogInformation("Resume context loaded: BundleRoot={BundleRoot}, Step={CurrentStepIndex}, CompletedSteps={CompletedStepsCount}", 
                 context.BundleRoot, context.CurrentStepIndex, context.CompletedSteps?.Count ?? 0);
@@ -149,6 +155,10 @@ public sealed class RebootCoordinator
             }
 
             return context;
+        }
+        catch (RebootException)
+        {
+            throw;
         }
         catch (JsonException ex)
         {

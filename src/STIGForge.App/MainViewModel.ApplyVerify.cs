@@ -168,7 +168,7 @@ public partial class MainViewModel
       }
       else
       {
-        var verdict = result.ValidationResult.IsValid ? "VALID" : "INVALID";
+        var verdict = result.ValidationResult.IsValid ? "VALID" : "INVALID (BLOCKING)";
         ExportStatus = "Exported: " + result.OutputRoot
           + " | Validation: " + verdict
           + " (errors=" + result.ValidationResult.Errors.Count
@@ -207,6 +207,8 @@ public partial class MainViewModel
       var log = new StringBuilder();
 
       // Step 1: Apply
+      var blockingFailures = new List<string>();
+
       if (OrchRunApply)
       {
         log.AppendLine("[" + DateTime.Now.ToString("HH:mm:ss") + "] === APPLY ===");
@@ -234,11 +236,14 @@ public partial class MainViewModel
             }, CancellationToken.None);
 
             log.AppendLine("  OK: Apply complete. Log: " + result.LogPath);
+            if (!result.IsMissionComplete)
+              log.AppendLine("  INFO: Apply paused for reboot/resume continuation.");
             LastOutputPath = result.LogPath;
           }
           catch (Exception ex)
           {
-            log.AppendLine("  WARN: Apply failed: " + ex.Message);
+            log.AppendLine("  BLOCKING: Apply failed: " + ex.Message);
+            blockingFailures.Add("Apply: " + ex.Message);
           }
         }
         OrchLog = log.ToString();
@@ -248,6 +253,14 @@ public partial class MainViewModel
       var coverageInputs = new List<VerificationCoverageInput>();
       if (OrchRunVerify)
       {
+        if (blockingFailures.Count > 0)
+        {
+          log.AppendLine("[" + DateTime.Now.ToString("HH:mm:ss") + "] === VERIFY ===");
+          log.AppendLine("  SKIP: Verification skipped due to earlier blocking failures.");
+          OrchLog = log.ToString();
+        }
+        else
+        {
         log.AppendLine("[" + DateTime.Now.ToString("HH:mm:ss") + "] === VERIFY ===");
         OrchStatus = "Running Verify...";
         OrchLog = log.ToString();
@@ -339,11 +352,20 @@ public partial class MainViewModel
         }
 
         OrchLog = log.ToString();
+        }
       }
 
       // Step 3: Export eMASS
       if (OrchRunExport)
       {
+        if (blockingFailures.Count > 0)
+        {
+          log.AppendLine("[" + DateTime.Now.ToString("HH:mm:ss") + "] === EXPORT eMASS ===");
+          log.AppendLine("  SKIP: eMASS export skipped due to earlier blocking failures.");
+          OrchLog = log.ToString();
+        }
+        else
+        {
         log.AppendLine("[" + DateTime.Now.ToString("HH:mm:ss") + "] === EXPORT eMASS ===");
         OrchStatus = "Exporting eMASS...";
         OrchLog = log.ToString();
@@ -362,6 +384,13 @@ public partial class MainViewModel
               + " (errors=" + result.ValidationResult.Errors.Count
               + ", warnings=" + result.ValidationResult.Warnings.Count + ")");
 
+            if (!result.IsReadyForSubmission)
+            {
+              var blockingMessage = "Export readiness blocked. Resolve package validation errors before mission completion.";
+              log.AppendLine("  BLOCKING: " + blockingMessage);
+              blockingFailures.Add(blockingMessage);
+            }
+
             if (!string.IsNullOrWhiteSpace(result.ValidationReportPath))
               log.AppendLine("  Validation report: " + result.ValidationReportPath);
             if (!string.IsNullOrWhiteSpace(result.ValidationReportJsonPath))
@@ -372,17 +401,27 @@ public partial class MainViewModel
         }
         catch (Exception ex)
         {
-          log.AppendLine("  WARN: Export failed: " + ex.Message);
+          log.AppendLine("  BLOCKING: Export failed: " + ex.Message);
+          blockingFailures.Add("Export: " + ex.Message);
         }
 
         OrchLog = log.ToString();
+        }
       }
 
       // Done
       log.AppendLine();
       log.AppendLine("[" + DateTime.Now.ToString("HH:mm:ss") + "] === COMPLETE ===");
+      if (blockingFailures.Count > 0)
+      {
+        log.AppendLine("  Mission completion blocked:");
+        foreach (var failure in blockingFailures)
+          log.AppendLine("  - " + failure);
+      }
       OrchLog = log.ToString();
-      OrchStatus = "Orchestration complete.";
+      OrchStatus = blockingFailures.Count == 0
+        ? "Orchestration complete."
+        : "Orchestration blocked - operator decision required.";
 
       // Refresh dashboard
       ReportSummary = BuildReportSummary(BundleRoot);
@@ -410,7 +449,10 @@ public partial class MainViewModel
       return "Summary: total=" + summary.Verify.TotalCount
         + " closed=" + summary.Verify.ClosedCount
         + " open=" + summary.Verify.OpenCount
-        + " reports=" + summary.Verify.ReportCount;
+        + " reports=" + summary.Verify.ReportCount
+        + " blocking=" + summary.Verify.BlockingFailureCount
+        + " warnings=" + summary.Verify.RecoverableWarningCount
+        + " skipped=" + summary.Verify.OptionalSkipCount;
     }
     catch (Exception ex)
     {
