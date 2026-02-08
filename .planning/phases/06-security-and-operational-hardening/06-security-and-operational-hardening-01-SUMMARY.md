@@ -68,6 +68,7 @@ Each task was committed atomically:
 
 1. **Task 1: Add explicit break-glass contract to CLI high-risk flags** - `ae0d8e4`, `0ad1a6c`, `2d77183` (feat/fix)
 2. **Task 2: Add WPF parity and audit trace for break-glass behavior** - `1dcc254` (feat)
+3. **Task 1 verification hardening: Assert break-glass audit reason capture** - `ff1b55d` (test)
 
 **Plan metadata:** `18cd696`, `60ec00d` (docs)
 
@@ -101,8 +102,8 @@ Each task was committed atomically:
 **Impact on plan:** Improved safety verification coverage without changing requested scope.
 
 ## Issues Encountered
-- `dotnet` runtime was unavailable in this execution environment (`dotnet: command not found`), so requested `dotnet test` verification commands could not be executed here.
 - `csharp-ls` was unavailable (`csharp-ls: command not found`), so `lsp_diagnostics` verification could not run.
+- CLI runtime verification with valid break-glass arguments reached host startup, but host initialization failed in this Linux environment due write access denial on `/usr/share/STIGForge`; unit tests were used to verify break-glass audit reason capture behavior.
 
 ## User Setup Required
 
