@@ -2,12 +2,12 @@
 
 ## Current Position
 
-**Phase:** 06-security-and-operational-hardening - plan 03 completed, ready for plan 04
-**Last Completed:** 06-security-and-operational-hardening-03 (deterministic offline security gate + strict mode CI wiring)
+**Phase:** 06-security-and-operational-hardening completed, ready for phase 07 planning
+**Last Completed:** 06-security-and-operational-hardening-04 (fail-closed integrity checkpoints + least-disclosure support bundles)
 
 **Started:** February 3, 2026
 
-Progress: █████████████████████████████████████████████░ (99%)
+Progress: ██████████████████████████████████████████████ (100%)
 
 ---
 
@@ -78,6 +78,21 @@ Progress: ███████████████████████�
 - **Rationale:** Allow high-assurance environments to enforce fail-closed behavior while keeping default offline deterministic mode usable.
 - **Status:** Implemented (Invoke-ReleaseGate + GitHub workflows strict mode wiring)
 
+### Fail-Closed Mission Completion Gates
+- **Decision:** Apply/export completion is blocked when integrity-critical evidence fails (audit chain invalid, required export validation invalid).
+- **Rationale:** Mission completion and submission readiness must never report success when integrity evidence is invalid or unavailable.
+- **Status:** Implemented (ApplyRunner, EmassExporter, VerifyCommands, MainViewModel.ApplyVerify)
+
+### Resume Context Operator Decision Gate
+- **Decision:** Invalid or exhausted reboot resume context stops automated continuation and requires explicit operator decision.
+- **Rationale:** Prevent unsafe automatic continuation when reboot recovery evidence is stale or inconsistent.
+- **Status:** Implemented (RebootCoordinator + ApplyRunner validation)
+
+### Support Bundle Least-Disclosure Default
+- **Decision:** Support bundles redact sensitive metadata and exclude sensitive artifact paths by default, with explicit opt-in for sensitive collection.
+- **Rationale:** Troubleshooting bundles must remain portable without leaking secrets/credentials unless operator explicitly accepts risk.
+- **Status:** Implemented (SupportBundleBuilder + BundleCommands)
+
 ---
 
 ## Pending Todos
@@ -119,9 +134,9 @@ Progress: ███████████████████████�
 
 ## Session Continuity
 
-**Last session:** 2026-02-08T21:25:13.503Z
-**Stopped at:** Completed 06-security-and-operational-hardening-03-PLAN.md
-**Resume file:** .planning/phases/06-security-and-operational-hardening/06-security-and-operational-hardening-04-PLAN.md
+**Last session:** 2026-02-08T21:31:53Z
+**Stopped at:** Completed 06-security-and-operational-hardening-04-PLAN.md
+**Resume file:** None
 
 ---
 
@@ -129,4 +144,4 @@ Progress: ███████████████████████�
 
 **Date:** February 8, 2026
 **Updated By:** OpenCode Executor
-**Reason:** Phase 06 plan 03 completed with deterministic offline security-gate behavior and strict mode release/CI wiring
+**Reason:** Phase 06 plan 04 completed with fail-closed integrity enforcement, mission severity classification, and least-disclosure support bundles

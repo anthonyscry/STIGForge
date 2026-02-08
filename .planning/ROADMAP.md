@@ -6,8 +6,8 @@ Solo developer + Claude execution, phase-by-phase delivery with small executable
 
 ## Current Position
 
-- Completed: `01-content-parsing`, `02-apply-logic`, `03-verification-integration`, `04-compliance-export-integrity`, `06-security-and-operational-hardening-01`, `06-security-and-operational-hardening-02`, `06-security-and-operational-hardening-03`
-- Next: `06-security-and-operational-hardening-04-PLAN.md`
+- Completed: `01-content-parsing`, `02-apply-logic`, `03-verification-integration`, `04-compliance-export-integrity`, `06-security-and-operational-hardening-01`, `06-security-and-operational-hardening-02`, `06-security-and-operational-hardening-03`, `06-security-and-operational-hardening-04`
+- Next: `07-release-readiness-and-compatibility` planning
 
 ---
 
@@ -75,7 +75,7 @@ Exit Criteria:
 
 ### Phase 06: Security and Operational Hardening
 
-**Status:** In progress
+**Status:** Completed (2026-02-08)
 **Goal:** Raise security posture and failure safety for enterprise/air-gapped operations.
 **Plans:** 4 plans
 
@@ -83,7 +83,7 @@ Plans:
 - [x] 06-security-and-operational-hardening-01-PLAN.md - Enforce explicit break-glass guardrails and CLI/WPF parity for high-risk actions.
 - [x] 06-security-and-operational-hardening-02-PLAN.md - Harden input/file boundaries with safe archive extraction and secure XML parsing.
 - [x] 06-security-and-operational-hardening-03-PLAN.md - Make release/security gates deterministic offline with strict unresolved-finding mode.
-- [ ] 06-security-and-operational-hardening-04-PLAN.md - Enforce fail-closed integrity checkpoints and mission-summary severity classification.
+- [x] 06-security-and-operational-hardening-04-PLAN.md - Enforce fail-closed integrity checkpoints and mission-summary severity classification.
 
 Planned Focus:
 - Input/process/file hardening and defensive defaults.
