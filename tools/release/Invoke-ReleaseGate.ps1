@@ -7,6 +7,29 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
+$script:CommandShell = ""
+if (Get-Command powershell -ErrorAction SilentlyContinue) {
+  $script:CommandShell = "powershell"
+}
+elseif (Get-Command pwsh -ErrorAction SilentlyContinue) {
+  $script:CommandShell = "pwsh"
+}
+else {
+  throw "Neither 'powershell' nor 'pwsh' was found on PATH."
+}
+
+if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {
+  $dotnetCandidate = Join-Path $HOME ".dotnet/dotnet"
+  if (Test-Path $dotnetCandidate) {
+    $dotnetDir = [IO.Path]::GetDirectoryName($dotnetCandidate)
+    $env:PATH = "$dotnetDir$([IO.Path]::PathSeparator)$env:PATH"
+  }
+}
+
+if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {
+  throw "'dotnet' was not found on PATH. Install .NET SDK or add dotnet to PATH."
+}
+
 function New-Step {
   param(
     [Parameter(Mandatory = $true)][string]$Name,
@@ -18,7 +41,7 @@ function New-Step {
   Write-Host "[release-gate]   $Command"
 
   $started = Get-Date
-  $output = & powershell -NoProfile -ExecutionPolicy Bypass -Command $Command 2>&1
+  $output = & $script:CommandShell -NoProfile -ExecutionPolicy Bypass -Command $Command 2>&1
   $exitCode = $LASTEXITCODE
   $finished = Get-Date
 
@@ -41,9 +64,9 @@ function Convert-ToRelativePath {
     [Parameter(Mandatory = $true)][string]$TargetPath
   )
 
-  $baseUri = [System.Uri]((Resolve-Path $BasePath).Path + [IO.Path]::DirectorySeparatorChar)
-  $targetUri = [System.Uri]((Resolve-Path $TargetPath).Path)
-  return [System.Uri]::UnescapeDataString($baseUri.MakeRelativeUri($targetUri).ToString().Replace('/', [IO.Path]::DirectorySeparatorChar))
+  $baseFull = [IO.Path]::GetFullPath($BasePath)
+  $targetFull = [IO.Path]::GetFullPath($TargetPath)
+  return [IO.Path]::GetRelativePath($baseFull, $targetFull)
 }
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -64,16 +87,19 @@ New-Item -ItemType Directory -Force -Path $reportRoot | Out-Null
 
 Write-Host "[release-gate] repository: $repoRoot"
 Write-Host "[release-gate] artifacts:  $OutputRoot"
+Write-Host "[release-gate] shell:      $script:CommandShell"
+Write-Host "[release-gate] dotnet:     $((Get-Command dotnet).Source)"
 
 Push-Location $repoRoot
 
 try {
   $steps = @()
+  $securityOutputRoot = Join-Path $OutputRoot "security"
 
   $steps += New-Step -Name "dotnet-info" -Command "dotnet --info" -LogPath (Join-Path $logRoot "dotnet-info.log")
-  $steps += New-Step -Name "restore" -Command "dotnet restore STIGForge.sln --nologo" -LogPath (Join-Path $logRoot "restore.log")
-  $steps += New-Step -Name "build" -Command "dotnet build STIGForge.sln --configuration $Configuration --nologo --no-restore" -LogPath (Join-Path $logRoot "build.log")
-  $steps += New-Step -Name "security-gate" -Command "powershell -ExecutionPolicy Bypass -File .\tools\release\Invoke-SecurityGate.ps1 -OutputRoot '$OutputRoot\security'" -LogPath (Join-Path $logRoot "security-gate.log")
+  $steps += New-Step -Name "restore" -Command "dotnet restore STIGForge.sln --nologo -p:EnableWindowsTargeting=true" -LogPath (Join-Path $logRoot "restore.log")
+  $steps += New-Step -Name "build" -Command "dotnet build STIGForge.sln --configuration $Configuration --nologo --no-restore -p:EnableWindowsTargeting=true" -LogPath (Join-Path $logRoot "build.log")
+  $steps += New-Step -Name "security-gate" -Command "$script:CommandShell -NoProfile -ExecutionPolicy Bypass -File .\tools\release\Invoke-SecurityGate.ps1 -OutputRoot '$securityOutputRoot'" -LogPath (Join-Path $logRoot "security-gate.log")
   $steps += New-Step -Name "test-unit" -Command "dotnet test tests/STIGForge.UnitTests/STIGForge.UnitTests.csproj --configuration $Configuration --framework net8.0 --nologo --no-build --filter 'FullyQualifiedName!~RebootCoordinator'" -LogPath (Join-Path $logRoot "test-unit.log")
   $steps += New-Step -Name "test-integration" -Command "dotnet test tests/STIGForge.IntegrationTests/STIGForge.IntegrationTests.csproj --configuration $Configuration --framework net8.0 --nologo --no-build --filter 'FullyQualifiedName!~E2E'" -LogPath (Join-Path $logRoot "test-integration.log")
   $steps += New-Step -Name "test-e2e" -Command "dotnet test tests/STIGForge.IntegrationTests/STIGForge.IntegrationTests.csproj --configuration $Configuration --framework net8.0 --nologo --no-build --filter 'FullyQualifiedName~E2E'" -LogPath (Join-Path $logRoot "test-e2e.log")
@@ -131,7 +157,7 @@ try {
   foreach ($step in $steps) {
     $status = if ($step.Succeeded) { "PASS" } else { "FAIL" }
     $relativeLog = Convert-ToRelativePath -BasePath $reportRoot -TargetPath $step.LogPath
-    [void]$report.AppendLine("| $($step.Name) | $status | $($step.ExitCode) | `$relativeLog` |")
+    [void]$report.AppendLine("| $($step.Name) | $status | $($step.ExitCode) | $relativeLog |")
   }
 
   [void]$report.AppendLine()

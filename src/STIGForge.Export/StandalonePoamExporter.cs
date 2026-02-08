@@ -62,7 +62,7 @@ public static class StandalonePoamExporter
           RuleId = r.RuleId,
           Title = r.Title,
           Severity = r.Severity,
-          Status = MapStatus(r.Status),
+          Status = ExportStatusMapper.MapToVerifyStatus(r.Status),
           Comments = r.Comments,
           FindingDetails = r.FindingDetails ?? r.Comments,
           Tool = r.Tool,
@@ -73,17 +73,6 @@ public static class StandalonePoamExporter
       }
     }
     return all;
-  }
-
-  private static VerifyStatus MapStatus(string? status)
-  {
-    if (string.IsNullOrWhiteSpace(status)) return VerifyStatus.NotReviewed;
-    var s = status!.Trim().ToLowerInvariant();
-    if (s.Contains("pass") || s.Contains("notafinding")) return VerifyStatus.Pass;
-    if (s.Contains("fail") || s.Contains("open")) return VerifyStatus.Fail;
-    if (s.Contains("not_applicable") || s.Contains("not applicable") || s == "na") return VerifyStatus.NotApplicable;
-    if (s.Contains("error")) return VerifyStatus.Error;
-    return VerifyStatus.NotReviewed;
   }
 
   private static string? ReadSystemName(string bundleRoot)

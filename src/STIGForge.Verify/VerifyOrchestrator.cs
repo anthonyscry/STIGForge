@@ -70,20 +70,29 @@ public sealed class VerifyOrchestrator
   public ConsolidatedVerifyReport MergeReports(IReadOnlyList<NormalizedVerifyReport> reports, IReadOnlyList<string> errors)
   {
     var allResults = reports.SelectMany(r => r.Results).ToList();
-    var allDiagnostics = reports.SelectMany(r => r.DiagnosticMessages).Concat(errors).ToList();
+    var allDiagnostics = reports
+      .SelectMany(r => r.DiagnosticMessages)
+      .Concat(errors)
+      .OrderBy(d => d, StringComparer.Ordinal)
+      .ToList();
 
-    // Group results by ControlId
-    var grouped = allResults
-      .GroupBy(r => r.ControlId, StringComparer.OrdinalIgnoreCase)
-      .ToDictionary(g => g.Key, g => g.ToList(), StringComparer.OrdinalIgnoreCase);
+    // Group results by stable key and process in deterministic order.
+    var indexedResults = allResults
+      .Select((result, index) => new IndexedResult(result, index))
+      .ToList();
+
+    var grouped = indexedResults
+      .GroupBy(x => BuildGroupKey(x.Result, x.Index), StringComparer.OrdinalIgnoreCase)
+      .OrderBy(g => g.Key, StringComparer.OrdinalIgnoreCase)
+      .ToList();
 
     var mergedResults = new List<NormalizedVerifyResult>(grouped.Count);
     var conflicts = new List<ResultConflict>();
 
-    foreach (var kvp in grouped)
+    foreach (var group in grouped)
     {
-      var controlId = kvp.Key;
-      var controlResults = kvp.Value;
+      var controlId = group.Key;
+      var controlResults = group.Select(x => x.Result).ToList();
 
       if (controlResults.Count == 1)
       {
@@ -102,19 +111,41 @@ public sealed class VerifyOrchestrator
 
     var summary = CalculateSummary(mergedResults);
 
-    return new ConsolidatedVerifyReport
-    {
-      MergedAt = DateTimeOffset.Now,
-      SourceReports = reports.Select(r => new SourceReportInfo
+    var orderedSourceReports = reports
+      .Select(r => new SourceReportInfo
       {
         Tool = r.Tool,
         ToolVersion = r.ToolVersion,
         ResultCount = r.Results.Count,
         SourcePath = r.OutputRoot
-      }).ToList(),
+      })
+      .OrderBy(r => r.Tool, StringComparer.OrdinalIgnoreCase)
+      .ThenBy(r => r.SourcePath, StringComparer.OrdinalIgnoreCase)
+      .ThenBy(r => r.ToolVersion, StringComparer.OrdinalIgnoreCase)
+      .ToList();
+
+    var orderedConflicts = conflicts
+      .OrderBy(c => c.ControlId, StringComparer.OrdinalIgnoreCase)
+      .Select(c => new ResultConflict
+      {
+        ControlId = c.ControlId,
+        ResolvedStatus = c.ResolvedStatus,
+        ResolutionReason = c.ResolutionReason,
+        ConflictingResults = c.ConflictingResults
+          .OrderBy(r => r.Tool, StringComparer.OrdinalIgnoreCase)
+          .ThenBy(r => r.VerifiedAt)
+          .ThenBy(r => r.Status)
+          .ToList()
+      })
+      .ToList();
+
+    return new ConsolidatedVerifyReport
+    {
+      MergedAt = DateTimeOffset.Now,
+      SourceReports = orderedSourceReports,
       Results = mergedResults,
       Summary = summary,
-      Conflicts = conflicts,
+      Conflicts = orderedConflicts,
       DiagnosticMessages = allDiagnostics
     };
   }
@@ -131,6 +162,10 @@ public sealed class VerifyOrchestrator
     var sorted = results.OrderByDescending(r => GetToolPrecedence(r.Tool))
                         .ThenByDescending(r => r.VerifiedAt ?? DateTimeOffset.MinValue)
                         .ThenByDescending(r => GetStatusSeverity(r.Status))
+                        .ThenBy(r => r.Tool, StringComparer.OrdinalIgnoreCase)
+                        .ThenBy(r => r.SourceFile, StringComparer.OrdinalIgnoreCase)
+                        .ThenBy(r => r.RuleId ?? string.Empty, StringComparer.OrdinalIgnoreCase)
+                        .ThenBy(r => r.VulnId ?? string.Empty, StringComparer.OrdinalIgnoreCase)
                         .ToList();
 
     var primary = sorted[0];
@@ -155,25 +190,32 @@ public sealed class VerifyOrchestrator
     }
 
     // Merge metadata from all sources
-    var mergedMetadata = new Dictionary<string, string>();
-    foreach (var kvp in primary.Metadata)
-      mergedMetadata[kvp.Key] = kvp.Value;
+    var mergedMetadata = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    AddMetadata(mergedMetadata, primary.Metadata, string.Empty);
 
     foreach (var alt in alternatives)
     {
-      foreach (var kvp in alt.Metadata)
-      {
-        var key = $"{alt.Tool.ToLowerInvariant().Replace(" ", "_")}_{kvp.Key}";
-        if (!mergedMetadata.ContainsKey(key))
-          mergedMetadata[key] = kvp.Value;
-      }
+      var prefix = alt.Tool.ToLowerInvariant().Replace(" ", "_") + "_";
+      AddMetadata(mergedMetadata, alt.Metadata, prefix);
     }
 
     // Merge evidence paths
-    var evidencePaths = results.SelectMany(r => r.EvidencePaths).Distinct().ToList();
+    var evidencePaths = results
+      .SelectMany(r => r.EvidencePaths)
+      .Where(p => !string.IsNullOrWhiteSpace(p))
+      .Select(p => p.Trim())
+      .Distinct(StringComparer.OrdinalIgnoreCase)
+      .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
+      .ToList();
 
     // Merge comments
-    var comments = results.Select(r => r.Comments).Where(c => !string.IsNullOrWhiteSpace(c)).Distinct().ToList();
+    var comments = results
+      .Select(r => r.Comments)
+      .Where(c => !string.IsNullOrWhiteSpace(c))
+      .Select(c => c!.Trim())
+      .Distinct(StringComparer.Ordinal)
+      .OrderBy(c => c, StringComparer.Ordinal)
+      .ToList();
     var mergedComments = comments.Count > 0 ? string.Join("\n---\n", comments) : primary.Comments;
 
     return new NormalizedVerifyResult
@@ -278,6 +320,53 @@ public sealed class VerifyOrchestrator
     });
 
     File.WriteAllText(outputPath, json);
+  }
+
+  private static string BuildGroupKey(NormalizedVerifyResult result, int fallbackIndex)
+  {
+    if (!string.IsNullOrWhiteSpace(result.ControlId))
+      return result.ControlId.Trim();
+
+    if (!string.IsNullOrWhiteSpace(result.VulnId))
+      return result.VulnId.Trim();
+
+    if (!string.IsNullOrWhiteSpace(result.RuleId))
+      return result.RuleId.Trim();
+
+    var tool = string.IsNullOrWhiteSpace(result.Tool) ? "unknown-tool" : result.Tool.Trim();
+    var source = string.IsNullOrWhiteSpace(result.SourceFile) ? "unknown-source" : result.SourceFile.Trim();
+    var title = string.IsNullOrWhiteSpace(result.Title) ? "unknown-title" : result.Title.Trim();
+    if (!string.Equals(tool, "unknown-tool", StringComparison.Ordinal)
+        || !string.Equals(source, "unknown-source", StringComparison.Ordinal)
+        || !string.Equals(title, "unknown-title", StringComparison.Ordinal))
+    {
+      return $"{tool}::{source}::{title}";
+    }
+
+    return $"{source}::index-{fallbackIndex:D6}";
+  }
+
+  private static void AddMetadata(IDictionary<string, string> target, IReadOnlyDictionary<string, string> source, string prefix)
+  {
+    foreach (var kvp in source.OrderBy(k => k.Key, StringComparer.OrdinalIgnoreCase))
+    {
+      var key = string.IsNullOrEmpty(prefix) ? kvp.Key : prefix + kvp.Key;
+      if (!target.ContainsKey(key))
+        target[key] = kvp.Value;
+    }
+  }
+
+  private sealed class IndexedResult
+  {
+    public IndexedResult(NormalizedVerifyResult result, int index)
+    {
+      Result = result;
+      Index = index;
+    }
+
+    public NormalizedVerifyResult Result { get; }
+
+    public int Index { get; }
   }
 }
 

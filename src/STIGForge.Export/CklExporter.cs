@@ -88,7 +88,7 @@ public static class CklExporter
         StigData("Check_Content", string.Empty),
         StigData("Fix_Text", string.Empty),
         StigData("STIGRef", r.Tool),
-        new XElement("STATUS", MapToCklStatus(r.Status)),
+        new XElement("STATUS", ExportStatusMapper.MapToCklStatus(r.Status)),
         new XElement("FINDING_DETAILS", r.FindingDetails ?? string.Empty),
         new XElement("COMMENTS", r.Comments ?? string.Empty),
         new XElement("SEVERITY_OVERRIDE", string.Empty),
@@ -103,16 +103,6 @@ public static class CklExporter
     return new XElement("STIG_DATA",
       new XElement("VULN_ATTRIBUTE", attribute),
       new XElement("ATTRIBUTE_DATA", data));
-  }
-
-  private static string MapToCklStatus(string? status)
-  {
-    if (string.IsNullOrWhiteSpace(status)) return "Not_Reviewed";
-    var s = status!.Trim().ToLowerInvariant();
-    if (s.Contains("pass") || s.Contains("notafinding")) return "NotAFinding";
-    if (s.Contains("fail") || s.Contains("open")) return "Open";
-    if (s.Contains("not_applicable") || s.Contains("not applicable") || s == "na") return "Not_Applicable";
-    return "Not_Reviewed";
   }
 
   private static List<ControlResult> LoadResults(string bundleRoot)

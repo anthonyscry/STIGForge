@@ -11,15 +11,27 @@ param(
 Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
+if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {
+  $dotnetCandidate = Join-Path $HOME ".dotnet/dotnet"
+  if (Test-Path $dotnetCandidate) {
+    $dotnetDir = [IO.Path]::GetDirectoryName($dotnetCandidate)
+    $env:PATH = "$dotnetDir$([IO.Path]::PathSeparator)$env:PATH"
+  }
+}
+
+if (-not (Get-Command dotnet -ErrorAction SilentlyContinue)) {
+  throw "'dotnet' was not found on PATH. Install .NET SDK or add dotnet to PATH."
+}
+
 function Convert-ToRelativePath {
   param(
     [Parameter(Mandatory = $true)][string]$BasePath,
     [Parameter(Mandatory = $true)][string]$TargetPath
   )
 
-  $baseUri = [System.Uri]((Resolve-Path $BasePath).Path + [IO.Path]::DirectorySeparatorChar)
-  $targetUri = [System.Uri]((Resolve-Path $TargetPath).Path)
-  return [System.Uri]::UnescapeDataString($baseUri.MakeRelativeUri($targetUri).ToString().Replace('/', [IO.Path]::DirectorySeparatorChar))
+  $baseFull = [IO.Path]::GetFullPath($BasePath)
+  $targetFull = [IO.Path]::GetFullPath($TargetPath)
+  return [IO.Path]::GetRelativePath($baseFull, $targetFull)
 }
 
 function Invoke-DotnetJson {
@@ -311,6 +323,15 @@ New-Item -ItemType Directory -Path $reportsRoot -Force | Out-Null
 Write-Host "[security-gate] repository: $RepositoryRoot"
 Write-Host "[security-gate] output:     $outputRootFull"
 
+$scanTarget = "STIGForge.sln"
+if (-not $IsWindows) {
+  $scanTarget = "src/STIGForge.Cli/STIGForge.Cli.csproj"
+  Write-Host "[security-gate] scan target: $scanTarget (non-Windows host)"
+}
+else {
+  Write-Host "[security-gate] scan target: $scanTarget"
+}
+
 Push-Location $RepositoryRoot
 
 try {
@@ -319,7 +340,7 @@ try {
   $secretsPolicy = Get-Content -Path $SecretsPolicyPath -Raw | ConvertFrom-Json
 
   $vulnerablePackagesJsonPath = Join-Path $reportsRoot "dependency-vulnerabilities.json"
-  $vulnerablePackages = Invoke-DotnetJson -Name "dependency-vulnerability-scan" -Arguments @("list", "STIGForge.sln", "package", "--vulnerable", "--include-transitive", "--format", "json") -LogPath (Join-Path $logsRoot "dependency-vulnerability-scan.log") -JsonPath $vulnerablePackagesJsonPath
+  $vulnerablePackages = Invoke-DotnetJson -Name "dependency-vulnerability-scan" -Arguments @("list", $scanTarget, "package", "--vulnerable", "--include-transitive", "--format", "json") -LogPath (Join-Path $logsRoot "dependency-vulnerability-scan.log") -JsonPath $vulnerablePackagesJsonPath
 
   $vulnerabilityRows = New-Object System.Collections.Generic.List[object]
   foreach ($row in Get-PackageRowsFromDotnetList -DotnetListJson $vulnerablePackages -IncludeTransitive) {
@@ -366,7 +387,7 @@ try {
   }
 
   $dependenciesJsonPath = Join-Path $reportsRoot "dependencies.json"
-  $dependencies = Invoke-DotnetJson -Name "dependency-inventory" -Arguments @("list", "STIGForge.sln", "package", "--format", "json") -LogPath (Join-Path $logsRoot "dependency-inventory.log") -JsonPath $dependenciesJsonPath
+  $dependencies = Invoke-DotnetJson -Name "dependency-inventory" -Arguments @("list", $scanTarget, "package", "--format", "json") -LogPath (Join-Path $logsRoot "dependency-inventory.log") -JsonPath $dependenciesJsonPath
 
   $directPackages = Get-PackageRowsFromDotnetList -DotnetListJson $dependencies
   $uniqueDirectPackages = @($directPackages |

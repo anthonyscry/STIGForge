@@ -153,7 +153,7 @@ public sealed class ContentPackImporter
             }
 
             // Detect conflicts before saving
-            var conflictDetector = new ConflictDetector(_controls);
+            var conflictDetector = new ConflictDetector(_packs, _controls);
             var conflicts = await conflictDetector.DetectConflictsAsync(pack.PackId, parsed, ct);
             
             // Block import if any ERROR-level conflicts exist

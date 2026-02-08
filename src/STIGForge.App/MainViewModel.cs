@@ -7,7 +7,9 @@ using STIGForge.Build;
 using STIGForge.Content.Import;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
+using STIGForge.Core.Services;
 using STIGForge.Evidence;
+using STIGForge.Verify;
 
 namespace STIGForge.App;
 
@@ -20,9 +22,13 @@ public partial class MainViewModel : ObservableObject
   private readonly IOverlayRepository _overlays;
   private readonly BundleBuilder _builder;
   private readonly STIGForge.Apply.ApplyRunner _applyRunner;
+  private readonly IVerificationWorkflowService _verificationWorkflow;
   private readonly STIGForge.Export.EmassExporter _emassExporter;
   private readonly IPathBuilder _paths;
   private readonly EvidenceCollector _evidence;
+  private readonly ManualAnswerService _manualAnswerService;
+  private readonly IBundleMissionSummaryService _bundleMissionSummary;
+  private readonly VerificationArtifactAggregationService _artifactAggregation;
   private readonly IAuditTrailService? _audit;
   private readonly STIGForge.Infrastructure.System.ScheduledTaskService? _scheduledTaskService;
   private readonly STIGForge.Infrastructure.System.FleetService? _fleetService;
@@ -140,7 +146,7 @@ public partial class MainViewModel : ObservableObject
     "Open"
   };
 
-  public MainViewModel(ContentPackImporter importer, IContentPackRepository packs, IProfileRepository profiles, IControlRepository controls, IOverlayRepository overlays, BundleBuilder builder, STIGForge.Apply.ApplyRunner applyRunner, STIGForge.Export.EmassExporter emassExporter, IPathBuilder paths, EvidenceCollector evidence, IAuditTrailService? audit = null, STIGForge.Infrastructure.System.ScheduledTaskService? scheduledTaskService = null, STIGForge.Infrastructure.System.FleetService? fleetService = null)
+  public MainViewModel(ContentPackImporter importer, IContentPackRepository packs, IProfileRepository profiles, IControlRepository controls, IOverlayRepository overlays, BundleBuilder builder, STIGForge.Apply.ApplyRunner applyRunner, IVerificationWorkflowService verificationWorkflow, STIGForge.Export.EmassExporter emassExporter, IPathBuilder paths, EvidenceCollector evidence, IBundleMissionSummaryService bundleMissionSummary, VerificationArtifactAggregationService artifactAggregation, IAuditTrailService? audit = null, STIGForge.Infrastructure.System.ScheduledTaskService? scheduledTaskService = null, STIGForge.Infrastructure.System.FleetService? fleetService = null)
   {
     _importer = importer;
     _packs = packs;
@@ -149,10 +155,14 @@ public partial class MainViewModel : ObservableObject
     _overlays = overlays;
     _builder = builder;
     _applyRunner = applyRunner;
+    _verificationWorkflow = verificationWorkflow;
     _emassExporter = emassExporter;
     _paths = paths;
     _evidence = evidence;
+    _bundleMissionSummary = bundleMissionSummary;
+    _artifactAggregation = artifactAggregation;
     _audit = audit;
+    _manualAnswerService = new ManualAnswerService(_audit);
     _scheduledTaskService = scheduledTaskService;
     _fleetService = fleetService;
     _ = LoadAsync();

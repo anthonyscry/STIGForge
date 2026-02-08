@@ -1,9 +1,6 @@
 using CommunityToolkit.Mvvm.Input;
-using System.ComponentModel;
 using System.IO;
-using System.Text;
 using System.Text.Json;
-using System.Windows.Data;
 using STIGForge.Core.Models;
 using STIGForge.Evidence;
 
@@ -78,32 +75,31 @@ public partial class MainViewModel
         return;
       }
 
-      var file = LoadAnswerFile();
-      if (SelectedProfile != null) file.ProfileId = SelectedProfile.ProfileId;
-      if (SelectedPack != null) file.PackId = SelectedPack.PackId;
-      if (file.CreatedAt == default) file.CreatedAt = DateTimeOffset.Now;
-      var answer = FindAnswer(file, SelectedManualControl.Control) ?? new ManualAnswer
+      var normalizedStatus = _manualAnswerService.NormalizeStatus(ManualStatus);
+      _manualAnswerService.ValidateReasonRequirement(normalizedStatus, ManualReason);
+
+      var answer = new ManualAnswer
       {
         RuleId = SelectedManualControl.Control.ExternalIds.RuleId,
-        VulnId = SelectedManualControl.Control.ExternalIds.VulnId
+        VulnId = SelectedManualControl.Control.ExternalIds.VulnId,
+        Status = normalizedStatus,
+        Reason = string.IsNullOrWhiteSpace(ManualReason) ? null : ManualReason,
+        Comment = string.IsNullOrWhiteSpace(ManualComment) ? null : ManualComment
       };
 
-      answer.Status = ManualStatus;
-      answer.Reason = string.IsNullOrWhiteSpace(ManualReason) ? null : ManualReason;
-      answer.Comment = string.IsNullOrWhiteSpace(ManualComment) ? null : ManualComment;
-      answer.UpdatedAt = DateTimeOffset.Now;
-
-      if (!file.Answers.Contains(answer))
-        file.Answers.Add(answer);
+      _manualAnswerService.SaveAnswer(
+        BundleRoot,
+        answer,
+        requireReasonForDecision: true,
+        profileId: SelectedProfile?.ProfileId,
+        packId: SelectedPack?.PackId);
 
       var path = Path.Combine(BundleRoot, "Manual", "answers.json");
-      Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-      var json = JsonSerializer.Serialize(file, new JsonSerializerOptions { WriteIndented = true });
-      File.WriteAllText(path, json, Encoding.UTF8);
-
-      SelectedManualControl.Status = ManualStatus;
+      SelectedManualControl.Status = normalizedStatus;
       SelectedManualControl.Reason = ManualReason;
       SelectedManualControl.Comment = ManualComment;
+      ManualStatus = normalizedStatus;
+
       OnPropertyChanged(nameof(ManualControls));
       UpdateManualSummary();
 
@@ -114,6 +110,80 @@ public partial class MainViewModel
     {
       EvidenceStatus = "Save failed: " + ex.Message;
     }
+  }
+
+  [RelayCommand]
+  private void UseSelectedControlForEvidence()
+  {
+    if (SelectedManualControl == null)
+    {
+      EvidenceStatus = "Select a manual control first.";
+      return;
+    }
+
+    var rule = SelectedManualControl.Control.ExternalIds.RuleId;
+    var vuln = SelectedManualControl.Control.ExternalIds.VulnId;
+    EvidenceRuleId = !string.IsNullOrWhiteSpace(rule) ? rule : (vuln ?? string.Empty);
+    EvidenceStatus = string.IsNullOrWhiteSpace(EvidenceRuleId)
+      ? "Selected control has no RuleId/VulnId."
+      : "Evidence target set: " + EvidenceRuleId;
+  }
+
+  [RelayCommand]
+  private async Task CollectSelectedControlEvidence()
+  {
+    try
+    {
+      if (string.IsNullOrWhiteSpace(BundleRoot))
+      {
+        EvidenceStatus = "Select a bundle first.";
+        return;
+      }
+
+      if (SelectedManualControl == null)
+      {
+        EvidenceStatus = "Select a manual control first.";
+        return;
+      }
+
+      var autopilot = new EvidenceAutopilot(Path.Combine(BundleRoot, "Evidence"));
+      var result = await autopilot.CollectEvidenceAsync(SelectedManualControl.Control, CancellationToken.None);
+      var folder = GetSelectedManualEvidenceFolder(SelectedManualControl.Control, BundleRoot);
+
+      var outcome = "Collected " + result.EvidenceFiles.Count + " evidence file(s).";
+      if (result.Errors.Count > 0)
+        outcome += " Errors: " + result.Errors.Count + ".";
+
+      EvidenceStatus = outcome + " Folder: " + folder;
+      LastOutputPath = folder;
+    }
+    catch (Exception ex)
+    {
+      EvidenceStatus = "Auto-collection failed: " + ex.Message;
+    }
+  }
+
+  [RelayCommand]
+  private void OpenSelectedControlEvidenceFolder()
+  {
+    if (string.IsNullOrWhiteSpace(BundleRoot) || SelectedManualControl == null)
+    {
+      EvidenceStatus = "Select a bundle and manual control first.";
+      return;
+    }
+
+    var folder = GetSelectedManualEvidenceFolder(SelectedManualControl.Control, BundleRoot);
+    if (!Directory.Exists(folder))
+    {
+      EvidenceStatus = "No evidence folder yet for selected control.";
+      return;
+    }
+
+    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+    {
+      FileName = folder,
+      UseShellExecute = true
+    });
   }
 
   [RelayCommand]
@@ -148,7 +218,7 @@ public partial class MainViewModel
   partial void OnSelectedManualControlChanged(ManualControlItem? value)
   {
     if (value == null) return;
-    ManualStatus = value.Status;
+    ManualStatus = _manualAnswerService.NormalizeStatus(value.Status);
     ManualReason = value.Reason ?? string.Empty;
     ManualComment = value.Comment ?? string.Empty;
   }
@@ -183,7 +253,7 @@ public partial class MainViewModel
       var ans = FindAnswer(answers, c);
       if (ans != null)
       {
-        item.Status = ans.Status;
+        item.Status = _manualAnswerService.NormalizeStatus(ans.Status);
         item.Reason = ans.Reason;
         item.Comment = ans.Comment;
       }
@@ -238,14 +308,7 @@ public partial class MainViewModel
 
   private AnswerFile LoadAnswerFile()
   {
-    var path = Path.Combine(BundleRoot, "Manual", "answers.json");
-    if (!File.Exists(path)) return new AnswerFile();
-
-    var json = File.ReadAllText(path);
-    return JsonSerializer.Deserialize<AnswerFile>(json, new JsonSerializerOptions
-    {
-      PropertyNameCaseInsensitive = true
-    }) ?? new AnswerFile();
+    return _manualAnswerService.LoadAnswerFile(BundleRoot);
   }
 
   private static ManualAnswer? FindAnswer(AnswerFile file, ControlRecord control)
@@ -264,5 +327,12 @@ public partial class MainViewModel
   {
     return !string.IsNullOrWhiteSpace(source)
       && source.Contains(value, StringComparison.OrdinalIgnoreCase);
+  }
+
+  private static string GetSelectedManualEvidenceFolder(ControlRecord control, string bundleRoot)
+  {
+    var controlId = control.ExternalIds.VulnId ?? control.ExternalIds.RuleId ?? control.ControlId;
+    var safeId = string.Join("_", controlId.Split(Path.GetInvalidFileNameChars()));
+    return Path.Combine(bundleRoot, "Evidence", "by_control", safeId);
   }
 }

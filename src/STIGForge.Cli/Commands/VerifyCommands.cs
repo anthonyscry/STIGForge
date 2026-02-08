@@ -2,6 +2,7 @@ using System.CommandLine;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using STIGForge.Core.Abstractions;
 using STIGForge.Verify;
 
 namespace STIGForge.Cli.Commands;
@@ -10,13 +11,13 @@ internal static class VerifyCommands
 {
   public static void Register(RootCommand rootCmd, Func<IHost> buildHost)
   {
-    RegisterVerifyEvaluateStig(rootCmd);
-    RegisterVerifyScap(rootCmd);
+    RegisterVerifyEvaluateStig(rootCmd, buildHost);
+    RegisterVerifyScap(rootCmd, buildHost);
     RegisterCoverageOverlap(rootCmd);
     RegisterExportEmass(rootCmd, buildHost);
   }
 
-  private static void RegisterVerifyEvaluateStig(RootCommand rootCmd)
+  private static void RegisterVerifyEvaluateStig(RootCommand rootCmd, Func<IHost> buildHost)
   {
     var cmd = new Command("verify-evaluate-stig", "Run Evaluate-STIG.ps1 with provided arguments");
     var toolRootOpt = new Option<string>("--tool-root", () => Path.GetFullPath(".\\.stigforge\\tools\\Evaluate-STIG\\Evaluate-STIG"), "Root folder containing Evaluate-STIG.ps1");
@@ -28,27 +29,42 @@ internal static class VerifyCommands
     cmd.AddOption(toolRootOpt); cmd.AddOption(argsOpt); cmd.AddOption(workDirOpt);
     cmd.AddOption(logOpt); cmd.AddOption(outputRootOpt);
 
-    cmd.SetHandler((toolRoot, args, workDir, logPath, outputRoot) =>
+    cmd.SetHandler(async (toolRoot, args, workDir, logPath, outputRoot) =>
     {
-      var runner = new EvaluateStigRunner();
-      var result = runner.Run(toolRoot, args, string.IsNullOrWhiteSpace(workDir) ? null : workDir);
+      var workflowResult = await RunWorkflowAsync(
+        buildHost,
+        outputRoot,
+        request =>
+        {
+          request.ConsolidatedToolLabel = "Evaluate-STIG";
+          request.EvaluateStig = new EvaluateStigWorkflowOptions
+          {
+            Enabled = true,
+            ToolRoot = toolRoot,
+            Arguments = args ?? string.Empty,
+            WorkingDirectory = string.IsNullOrWhiteSpace(workDir) ? null : workDir
+          };
+        });
 
-      if (!string.IsNullOrWhiteSpace(result.Output)) Console.WriteLine(result.Output);
-      if (!string.IsNullOrWhiteSpace(result.Error)) Console.Error.WriteLine(result.Error);
+      var evalRun = workflowResult.ToolRuns.FirstOrDefault(r => r.Tool.IndexOf("Evaluate", StringComparison.OrdinalIgnoreCase) >= 0);
+      if (evalRun != null)
+      {
+        if (!string.IsNullOrWhiteSpace(evalRun.Output)) Console.WriteLine(evalRun.Output);
+        if (!string.IsNullOrWhiteSpace(evalRun.Error)) Console.Error.WriteLine(evalRun.Error);
 
-      if (!string.IsNullOrWhiteSpace(logPath))
-        File.WriteAllText(logPath, result.Output + Environment.NewLine + result.Error);
+        if (!string.IsNullOrWhiteSpace(logPath))
+          File.WriteAllText(logPath, evalRun.Output + Environment.NewLine + evalRun.Error);
 
-      if (!string.IsNullOrWhiteSpace(outputRoot) && Directory.Exists(outputRoot))
-        WriteConsolidatedResults(outputRoot, "Evaluate-STIG", result.StartedAt, result.FinishedAt);
+        Environment.ExitCode = evalRun.ExitCode;
+      }
 
-      Environment.ExitCode = result.ExitCode;
+      PrintConsolidatedOutput(outputRoot, workflowResult);
     }, toolRootOpt, argsOpt, workDirOpt, logOpt, outputRootOpt);
 
     rootCmd.AddCommand(cmd);
   }
 
-  private static void RegisterVerifyScap(RootCommand rootCmd)
+  private static void RegisterVerifyScap(RootCommand rootCmd, Func<IHost> buildHost)
   {
     var cmd = new Command("verify-scap", "Run a SCAP tool and consolidate CKL results");
     var exeOpt = new Option<string>("--cmd", "Path to SCAP/SCC executable") { IsRequired = true };
@@ -61,21 +77,37 @@ internal static class VerifyCommands
     cmd.AddOption(exeOpt); cmd.AddOption(argsOpt); cmd.AddOption(workOpt);
     cmd.AddOption(outOpt); cmd.AddOption(toolOpt); cmd.AddOption(logOpt);
 
-    cmd.SetHandler((exe, args, workDir, outputRoot, toolName, logPath) =>
+    cmd.SetHandler(async (exe, args, workDir, outputRoot, toolName, logPath) =>
     {
-      var runner = new ScapRunner();
-      var result = runner.Run(exe, args, string.IsNullOrWhiteSpace(workDir) ? null : workDir);
+      var workflowResult = await RunWorkflowAsync(
+        buildHost,
+        outputRoot,
+        request =>
+        {
+          request.ConsolidatedToolLabel = string.IsNullOrWhiteSpace(toolName) ? "SCAP" : toolName;
+          request.Scap = new ScapWorkflowOptions
+          {
+            Enabled = true,
+            CommandPath = exe,
+            Arguments = args ?? string.Empty,
+            WorkingDirectory = string.IsNullOrWhiteSpace(workDir) ? null : workDir,
+            ToolLabel = string.IsNullOrWhiteSpace(toolName) ? "SCAP" : toolName
+          };
+        });
 
-      if (!string.IsNullOrWhiteSpace(result.Output)) Console.WriteLine(result.Output);
-      if (!string.IsNullOrWhiteSpace(result.Error)) Console.Error.WriteLine(result.Error);
+      var scapRun = workflowResult.ToolRuns.FirstOrDefault(r => r.Tool.IndexOf("SCAP", StringComparison.OrdinalIgnoreCase) >= 0 || string.Equals(r.Tool, toolName, StringComparison.OrdinalIgnoreCase));
+      if (scapRun != null)
+      {
+        if (!string.IsNullOrWhiteSpace(scapRun.Output)) Console.WriteLine(scapRun.Output);
+        if (!string.IsNullOrWhiteSpace(scapRun.Error)) Console.Error.WriteLine(scapRun.Error);
 
-      if (!string.IsNullOrWhiteSpace(logPath))
-        File.WriteAllText(logPath, result.Output + Environment.NewLine + result.Error);
+        if (!string.IsNullOrWhiteSpace(logPath))
+          File.WriteAllText(logPath, scapRun.Output + Environment.NewLine + scapRun.Error);
 
-      if (!string.IsNullOrWhiteSpace(outputRoot) && Directory.Exists(outputRoot))
-        WriteConsolidatedResults(outputRoot, toolName, result.StartedAt, result.FinishedAt);
+        Environment.ExitCode = scapRun.ExitCode;
+      }
 
-      Environment.ExitCode = result.ExitCode;
+      PrintConsolidatedOutput(outputRoot, workflowResult);
     }, exeOpt, argsOpt, workOpt, outOpt, toolOpt, logOpt);
 
     rootCmd.AddCommand(cmd);
@@ -147,38 +179,76 @@ internal static class VerifyCommands
       Console.WriteLine("Exported eMASS package:");
       Console.WriteLine("  " + result.OutputRoot);
       Console.WriteLine("  " + result.ManifestPath);
+      if (!string.IsNullOrWhiteSpace(result.ValidationReportPath))
+        Console.WriteLine("  Validation report (text): " + result.ValidationReportPath);
+      if (!string.IsNullOrWhiteSpace(result.ValidationReportJsonPath))
+        Console.WriteLine("  Validation report (json): " + result.ValidationReportJsonPath);
 
       if (result.ValidationResult != null)
       {
         Console.WriteLine();
         Console.WriteLine($"Package validation: {(result.ValidationResult.IsValid ? "VALID" : "INVALID")}");
+        Console.WriteLine($"  Errors: {result.ValidationResult.Errors.Count}");
+        Console.WriteLine($"  Warnings: {result.ValidationResult.Warnings.Count}");
+        Console.WriteLine($"  Indexed controls: {result.ValidationResult.Metrics.IndexedControlCount}");
+        Console.WriteLine($"  Cross-artifact mismatches: {result.ValidationResult.Metrics.CrossArtifactMismatchCount}");
         foreach (var error in result.ValidationResult.Errors) Console.WriteLine($"  Error: {error}");
         foreach (var warning in result.ValidationResult.Warnings) Console.WriteLine($"  Warning: {warning}");
         if (result.ValidationResult.IsValid) Console.WriteLine("  Package is ready for eMASS submission!");
       }
-      logger.LogInformation("export-emass completed: outputRoot={OutputRoot}, valid={IsValid}", result.OutputRoot, result.ValidationResult?.IsValid);
+      logger.LogInformation(
+        "export-emass completed: outputRoot={OutputRoot}, valid={IsValid}, errors={Errors}, warnings={Warnings}",
+        result.OutputRoot,
+        result.ValidationResult?.IsValid,
+        result.ValidationResult?.Errors.Count,
+        result.ValidationResult?.Warnings.Count);
       await host.StopAsync();
     }, bundleOpt, outOpt);
 
     rootCmd.AddCommand(cmd);
   }
 
-  private static void WriteConsolidatedResults(string outputRoot, string toolName, DateTimeOffset startedAt, DateTimeOffset finishedAt)
+  private static async Task<VerificationWorkflowResult> RunWorkflowAsync(Func<IHost> buildHost, string? outputRoot, Action<VerificationWorkflowRequest> configure)
   {
-    var report = VerifyReportWriter.BuildFromCkls(outputRoot, toolName);
-    report.StartedAt = startedAt;
-    report.FinishedAt = finishedAt;
+    using var host = buildHost();
+    await host.StartAsync();
 
-    var jsonPath = Path.Combine(outputRoot, "consolidated-results.json");
-    var csvPath = Path.Combine(outputRoot, "consolidated-results.csv");
-    VerifyReportWriter.WriteJson(jsonPath, report);
-    VerifyReportWriter.WriteCsv(csvPath, report.Results);
+    var useRequestedRoot = !string.IsNullOrWhiteSpace(outputRoot) && Directory.Exists(outputRoot);
+    var tempRoot = string.Empty;
+    var workflowRoot = outputRoot ?? string.Empty;
 
-    var summary = VerifyReportWriter.BuildCoverageSummary(report.Results);
-    VerifyReportWriter.WriteCoverageSummary(Path.Combine(outputRoot, "coverage_summary.csv"), Path.Combine(outputRoot, "coverage_summary.json"), summary);
+    if (!useRequestedRoot)
+    {
+      tempRoot = Path.Combine(Path.GetTempPath(), "stigforge-verify-cli-" + Guid.NewGuid().ToString("N"));
+      Directory.CreateDirectory(tempRoot);
+      workflowRoot = tempRoot;
+    }
+
+    var request = new VerificationWorkflowRequest
+    {
+      OutputRoot = workflowRoot
+    };
+    configure(request);
+
+    var service = host.Services.GetRequiredService<IVerificationWorkflowService>();
+    var result = await service.RunAsync(request, CancellationToken.None);
+
+    if (!string.IsNullOrWhiteSpace(tempRoot))
+    {
+      try { Directory.Delete(tempRoot, true); } catch { }
+    }
+
+    await host.StopAsync();
+    return result;
+  }
+
+  private static void PrintConsolidatedOutput(string? outputRoot, VerificationWorkflowResult workflowResult)
+  {
+    if (string.IsNullOrWhiteSpace(outputRoot) || !Directory.Exists(outputRoot))
+      return;
 
     Console.WriteLine("Wrote consolidated results:");
-    Console.WriteLine("  " + jsonPath);
-    Console.WriteLine("  " + csvPath);
+    Console.WriteLine("  " + workflowResult.ConsolidatedJsonPath);
+    Console.WriteLine("  " + workflowResult.ConsolidatedCsvPath);
   }
 }

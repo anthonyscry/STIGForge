@@ -1,6 +1,8 @@
 using CommunityToolkit.Mvvm.Input;
 using System.IO;
 using System.Text;
+using STIGForge.Core.Abstractions;
+using STIGForge.Verify;
 
 namespace STIGForge.App;
 
@@ -68,39 +70,64 @@ public partial class MainViewModel
 
       var verifyRoot = Path.Combine(BundleRoot, "Verify");
       Directory.CreateDirectory(verifyRoot);
+      var coverageInputs = new List<VerificationCoverageInput>();
 
       if (!string.IsNullOrWhiteSpace(EvaluateStigRoot))
       {
-        var evalRunner = new STIGForge.Verify.EvaluateStigRunner();
-        var evalResult = evalRunner.Run(EvaluateStigRoot, EvaluateStigArgs ?? string.Empty, EvaluateStigRoot);
         var evalOutput = Path.Combine(verifyRoot, "Evaluate-STIG");
-        Directory.CreateDirectory(evalOutput);
-        var report = STIGForge.Verify.VerifyReportWriter.BuildFromCkls(evalOutput, "Evaluate-STIG");
-        report.StartedAt = evalResult.StartedAt;
-        report.FinishedAt = evalResult.FinishedAt;
-        STIGForge.Verify.VerifyReportWriter.WriteJson(Path.Combine(evalOutput, "consolidated-results.json"), report);
-        STIGForge.Verify.VerifyReportWriter.WriteCsv(Path.Combine(evalOutput, "consolidated-results.csv"), report.Results);
+        var evalWorkflow = await _verificationWorkflow.RunAsync(new VerificationWorkflowRequest
+        {
+          OutputRoot = evalOutput,
+          ConsolidatedToolLabel = "Evaluate-STIG",
+          EvaluateStig = new EvaluateStigWorkflowOptions
+          {
+            Enabled = true,
+            ToolRoot = EvaluateStigRoot,
+            Arguments = EvaluateStigArgs ?? string.Empty,
+            WorkingDirectory = EvaluateStigRoot
+          }
+        }, CancellationToken.None);
+
+        coverageInputs.Add(new VerificationCoverageInput
+        {
+          ToolLabel = "Evaluate-STIG",
+          ReportPath = evalWorkflow.ConsolidatedJsonPath
+        });
       }
 
       if (!string.IsNullOrWhiteSpace(ScapCommandPath))
       {
-        var scapRunner = new STIGForge.Verify.ScapRunner();
-        var scapResult = scapRunner.Run(ScapCommandPath, ScapArgs ?? string.Empty, null);
         var scapOutput = Path.Combine(verifyRoot, "SCAP");
-        Directory.CreateDirectory(scapOutput);
         var toolName = string.IsNullOrWhiteSpace(ScapLabel) ? "SCAP" : ScapLabel;
-        var report = STIGForge.Verify.VerifyReportWriter.BuildFromCkls(scapOutput, toolName);
-        report.StartedAt = scapResult.StartedAt;
-        report.FinishedAt = scapResult.FinishedAt;
-        STIGForge.Verify.VerifyReportWriter.WriteJson(Path.Combine(scapOutput, "consolidated-results.json"), report);
-        STIGForge.Verify.VerifyReportWriter.WriteCsv(Path.Combine(scapOutput, "consolidated-results.csv"), report.Results);
+        var scapWorkflow = await _verificationWorkflow.RunAsync(new VerificationWorkflowRequest
+        {
+          OutputRoot = scapOutput,
+          ConsolidatedToolLabel = toolName,
+          Scap = new ScapWorkflowOptions
+          {
+            Enabled = true,
+            CommandPath = ScapCommandPath,
+            Arguments = ScapArgs ?? string.Empty,
+            ToolLabel = toolName
+          }
+        }, CancellationToken.None);
+
+        coverageInputs.Add(new VerificationCoverageInput
+        {
+          ToolLabel = toolName,
+          ReportPath = scapWorkflow.ConsolidatedJsonPath
+        });
       }
+
+      if (coverageInputs.Count > 0)
+        _artifactAggregation.WriteCoverageArtifacts(Path.Combine(BundleRoot, "Reports"), coverageInputs);
 
       VerifyStatus = "Verify complete.";
       LastOutputPath = Path.Combine(BundleRoot, "Verify");
       ReportSummary = BuildReportSummary(BundleRoot);
-      VerifySummary = BuildReportSummary(BundleRoot);
+      VerifySummary = ReportSummary;
       LoadCoverageOverlap();
+      RefreshDashboard();
       await Task.CompletedTask;
     }
     catch (Exception ex)
@@ -131,7 +158,19 @@ public partial class MainViewModel
         BundleRoot = BundleRoot
       }, CancellationToken.None);
 
-      ExportStatus = "Exported: " + result.OutputRoot;
+      if (result.ValidationResult == null)
+      {
+        ExportStatus = "Exported: " + result.OutputRoot;
+      }
+      else
+      {
+        var verdict = result.ValidationResult.IsValid ? "VALID" : "INVALID";
+        ExportStatus = "Exported: " + result.OutputRoot
+          + " | Validation: " + verdict
+          + " (errors=" + result.ValidationResult.Errors.Count
+          + ", warnings=" + result.ValidationResult.Warnings.Count + ")";
+      }
+
       LastOutputPath = result.OutputRoot;
       ReportSummary = BuildReportSummary(BundleRoot);
       LoadCoverageOverlap();
@@ -198,6 +237,7 @@ public partial class MainViewModel
       }
 
       // Step 2: Verify
+      var coverageInputs = new List<VerificationCoverageInput>();
       if (OrchRunVerify)
       {
         log.AppendLine("[" + DateTime.Now.ToString("HH:mm:ss") + "] === VERIFY ===");
@@ -213,16 +253,25 @@ public partial class MainViewModel
           {
             log.AppendLine("  Running Evaluate-STIG...");
             OrchLog = log.ToString();
-            var evalRunner = new STIGForge.Verify.EvaluateStigRunner();
-            var evalResult = evalRunner.Run(EvaluateStigRoot, EvaluateStigArgs ?? string.Empty, EvaluateStigRoot);
             var evalOutput = Path.Combine(verifyRoot, "Evaluate-STIG");
-            Directory.CreateDirectory(evalOutput);
-            var report = STIGForge.Verify.VerifyReportWriter.BuildFromCkls(evalOutput, "Evaluate-STIG");
-            report.StartedAt = evalResult.StartedAt;
-            report.FinishedAt = evalResult.FinishedAt;
-            STIGForge.Verify.VerifyReportWriter.WriteJson(Path.Combine(evalOutput, "consolidated-results.json"), report);
-            STIGForge.Verify.VerifyReportWriter.WriteCsv(Path.Combine(evalOutput, "consolidated-results.csv"), report.Results);
-            log.AppendLine("  OK: Evaluate-STIG complete. " + report.Results.Count + " results.");
+            var evalWorkflow = await _verificationWorkflow.RunAsync(new VerificationWorkflowRequest
+            {
+              OutputRoot = evalOutput,
+              ConsolidatedToolLabel = "Evaluate-STIG",
+              EvaluateStig = new EvaluateStigWorkflowOptions
+              {
+                Enabled = true,
+                ToolRoot = EvaluateStigRoot,
+                Arguments = EvaluateStigArgs ?? string.Empty,
+                WorkingDirectory = EvaluateStigRoot
+              }
+            }, CancellationToken.None);
+            coverageInputs.Add(new VerificationCoverageInput
+            {
+              ToolLabel = "Evaluate-STIG",
+              ReportPath = evalWorkflow.ConsolidatedJsonPath
+            });
+            log.AppendLine("  OK: Evaluate-STIG complete. " + evalWorkflow.ConsolidatedResultCount + " results.");
           }
           catch (Exception ex)
           {
@@ -236,17 +285,26 @@ public partial class MainViewModel
           {
             log.AppendLine("  Running SCAP...");
             OrchLog = log.ToString();
-            var scapRunner = new STIGForge.Verify.ScapRunner();
-            var scapResult = scapRunner.Run(ScapCommandPath, ScapArgs ?? string.Empty, null);
             var scapOutput = Path.Combine(verifyRoot, "SCAP");
-            Directory.CreateDirectory(scapOutput);
             var toolName = string.IsNullOrWhiteSpace(ScapLabel) ? "SCAP" : ScapLabel;
-            var report = STIGForge.Verify.VerifyReportWriter.BuildFromCkls(scapOutput, toolName);
-            report.StartedAt = scapResult.StartedAt;
-            report.FinishedAt = scapResult.FinishedAt;
-            STIGForge.Verify.VerifyReportWriter.WriteJson(Path.Combine(scapOutput, "consolidated-results.json"), report);
-            STIGForge.Verify.VerifyReportWriter.WriteCsv(Path.Combine(scapOutput, "consolidated-results.csv"), report.Results);
-            log.AppendLine("  OK: SCAP complete. " + report.Results.Count + " results.");
+            var scapWorkflow = await _verificationWorkflow.RunAsync(new VerificationWorkflowRequest
+            {
+              OutputRoot = scapOutput,
+              ConsolidatedToolLabel = toolName,
+              Scap = new ScapWorkflowOptions
+              {
+                Enabled = true,
+                CommandPath = ScapCommandPath,
+                Arguments = ScapArgs ?? string.Empty,
+                ToolLabel = toolName
+              }
+            }, CancellationToken.None);
+            coverageInputs.Add(new VerificationCoverageInput
+            {
+              ToolLabel = toolName,
+              ReportPath = scapWorkflow.ConsolidatedJsonPath
+            });
+            log.AppendLine("  OK: SCAP complete. " + scapWorkflow.ConsolidatedResultCount + " results.");
           }
           catch (Exception ex)
           {
@@ -257,6 +315,19 @@ public partial class MainViewModel
         if (string.IsNullOrWhiteSpace(EvaluateStigRoot) && string.IsNullOrWhiteSpace(ScapCommandPath))
         {
           log.AppendLine("  SKIP: No verify tools configured.");
+        }
+
+        if (coverageInputs.Count > 0)
+        {
+          try
+          {
+            var artifacts = _artifactAggregation.WriteCoverageArtifacts(Path.Combine(BundleRoot, "Reports"), coverageInputs);
+            log.AppendLine("  OK: Coverage artifacts written: " + artifacts.CoverageOverlapCsvPath);
+          }
+          catch (Exception ex)
+          {
+            log.AppendLine("  WARN: Coverage artifact aggregation failed: " + ex.Message);
+          }
         }
 
         OrchLog = log.ToString();
@@ -277,6 +348,18 @@ public partial class MainViewModel
           }, CancellationToken.None);
 
           log.AppendLine("  OK: eMASS exported to " + result.OutputRoot);
+          if (result.ValidationResult != null)
+          {
+            log.AppendLine("  Validation: " + (result.ValidationResult.IsValid ? "VALID" : "INVALID")
+              + " (errors=" + result.ValidationResult.Errors.Count
+              + ", warnings=" + result.ValidationResult.Warnings.Count + ")");
+
+            if (!string.IsNullOrWhiteSpace(result.ValidationReportPath))
+              log.AppendLine("  Validation report: " + result.ValidationReportPath);
+            if (!string.IsNullOrWhiteSpace(result.ValidationReportJsonPath))
+              log.AppendLine("  Validation report (json): " + result.ValidationReportJsonPath);
+          }
+
           LastOutputPath = result.OutputRoot;
         }
         catch (Exception ex)
@@ -308,15 +391,22 @@ public partial class MainViewModel
     }
   }
 
-  private static string BuildReportSummary(string bundleRoot)
+  private string BuildReportSummary(string bundleRoot)
   {
-    var reportPath = Path.Combine(bundleRoot, "Verify", "consolidated-results.json");
-    if (!File.Exists(reportPath)) return "";
+    if (string.IsNullOrWhiteSpace(bundleRoot) || !Directory.Exists(bundleRoot))
+      return string.Empty;
 
-    var report = STIGForge.Verify.VerifyReportReader.LoadFromJson(reportPath);
-    var total = report.Results.Count;
-    var open = report.Results.Count(r => r.Status != null && r.Status.IndexOf("open", StringComparison.OrdinalIgnoreCase) >= 0);
-    var closed = total - open;
-    return "Summary: total=" + total + " closed=" + closed + " open=" + open;
+    try
+    {
+      var summary = _bundleMissionSummary.LoadSummary(bundleRoot);
+      return "Summary: total=" + summary.Verify.TotalCount
+        + " closed=" + summary.Verify.ClosedCount
+        + " open=" + summary.Verify.OpenCount
+        + " reports=" + summary.Verify.ReportCount;
+    }
+    catch (Exception ex)
+    {
+      return "Summary unavailable: " + ex.Message;
+    }
   }
 }

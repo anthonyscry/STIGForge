@@ -1,4 +1,5 @@
 using System.Xml.Linq;
+using System.Globalization;
 
 namespace STIGForge.Verify.Adapters;
 
@@ -58,13 +59,14 @@ public sealed class EvaluateStigAdapter : IVerifyResultAdapter
     var endTimeStr = root.Attribute("EndTime")?.Value ?? root.Element("EndTime")?.Value;
 
     var fileTimestamp = new DateTimeOffset(File.GetLastWriteTimeUtc(outputPath), TimeSpan.Zero);
-    var startTime = DateTimeOffset.TryParse(startTimeStr, out var st) ? st : fileTimestamp;
-    var endTime = DateTimeOffset.TryParse(endTimeStr, out var et) ? et : fileTimestamp;
+    var startTime = ParseTimestamp(startTimeStr, fileTimestamp);
+    var endTime = ParseTimestamp(endTimeStr, fileTimestamp);
 
     // Try multiple element names for findings
     var checkElements = root.Descendants("STIGCheck")
       .Concat(root.Descendants("Finding"))
       .Concat(root.Descendants("Check"))
+      .Distinct()
       .ToList();
 
     if (checkElements.Count == 0)
@@ -111,6 +113,7 @@ public sealed class EvaluateStigAdapter : IVerifyResultAdapter
     var title = check.Attribute("Title")?.Value ?? check.Element("Title")?.Value;
     var severity = check.Attribute("Severity")?.Value ?? check.Element("Severity")?.Value;
     var statusText = check.Attribute("Status")?.Value ?? check.Element("Status")?.Value ?? check.Attribute("Result")?.Value ?? check.Element("Result")?.Value;
+    var verifiedAtStr = check.Attribute("VerifiedAt")?.Value ?? check.Element("VerifiedAt")?.Value ?? check.Attribute("Timestamp")?.Value;
     var findingDetails = check.Element("FindingDetails")?.Value?.Trim() ?? check.Element("Details")?.Value?.Trim();
     var comments = check.Element("Comments")?.Value?.Trim();
 
@@ -140,7 +143,7 @@ public sealed class EvaluateStigAdapter : IVerifyResultAdapter
       Comments = comments,
       Tool = ToolName,
       SourceFile = sourcePath,
-      VerifiedAt = verifiedAt,
+      VerifiedAt = ParseTimestamp(verifiedAtStr, verifiedAt),
       EvidencePaths = Array.Empty<string>(),
       Metadata = metadata
     };
@@ -151,18 +154,25 @@ public sealed class EvaluateStigAdapter : IVerifyResultAdapter
     if (string.IsNullOrWhiteSpace(stigStatus))
       return VerifyStatus.NotReviewed;
 
-    var normalized = stigStatus!.Replace("_", "").Replace("-", "").ToLowerInvariant();
+    var normalized = stigStatus
+      .Trim()
+      .Replace("_", string.Empty)
+      .Replace("-", string.Empty)
+      .Replace(" ", string.Empty)
+      .ToLowerInvariant();
 
     return normalized switch
     {
       "compliant" => VerifyStatus.Pass,
       "pass" => VerifyStatus.Pass,
+      "notafinding" => VerifyStatus.Pass,
       "noncompliant" => VerifyStatus.Fail,
       "fail" => VerifyStatus.Fail,
       "open" => VerifyStatus.Fail,
       "notapplicable" => VerifyStatus.NotApplicable,
       "na" => VerifyStatus.NotApplicable,
       "notreviewed" => VerifyStatus.NotReviewed,
+      "notchecked" => VerifyStatus.NotReviewed,
       "informational" => VerifyStatus.Informational,
       "error" => VerifyStatus.Error,
       _ => VerifyStatus.Unknown
@@ -244,5 +254,19 @@ public sealed class EvaluateStigAdapter : IVerifyResultAdapter
       Summary = new VerifySummary(),
       DiagnosticMessages = diagnostics
     };
+  }
+
+  private static DateTimeOffset ParseTimestamp(string? value, DateTimeOffset fallback)
+  {
+    if (string.IsNullOrWhiteSpace(value))
+      return fallback;
+
+    if (DateTimeOffset.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var parsed))
+      return parsed;
+
+    if (DateTimeOffset.TryParse(value, out parsed))
+      return parsed;
+
+    return fallback;
   }
 }

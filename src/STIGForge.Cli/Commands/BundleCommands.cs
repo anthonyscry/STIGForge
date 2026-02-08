@@ -3,12 +3,10 @@ using System.CommandLine.Invocation;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.Extensions.Logging;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
 using STIGForge.Core.Services;
 using STIGForge.Evidence;
-using STIGForge.Verify;
 
 namespace STIGForge.Cli.Commands;
 
@@ -19,7 +17,7 @@ internal static class BundleCommands
     RegisterListManualControls(rootCmd);
     RegisterManualAnswer(rootCmd);
     RegisterEvidenceSave(rootCmd);
-    RegisterBundleSummary(rootCmd);
+    RegisterBundleSummary(rootCmd, buildHost);
     RegisterSupportBundle(rootCmd, buildHost);
     RegisterOverlayEdit(rootCmd, buildHost);
   }
@@ -162,7 +160,7 @@ internal static class BundleCommands
     rootCmd.AddCommand(cmd);
   }
 
-  private static void RegisterBundleSummary(RootCommand rootCmd)
+  private static void RegisterBundleSummary(RootCommand rootCmd, Func<IHost> buildHost)
   {
     var cmd = new Command("bundle-summary", "Show dashboard summary of a bundle");
     var bundleOpt = new Option<string>("--bundle", "Bundle root path") { IsRequired = true };
@@ -175,45 +173,51 @@ internal static class BundleCommands
       var json = ctx.ParseResult.GetValueForOption(jsonOpt);
       if (!Directory.Exists(bundle)) { Console.Error.WriteLine("Bundle not found: " + bundle); Environment.ExitCode = 2; return; }
 
-      string packName = "unknown", profileName = "unknown";
-      var manifestPath = Path.Combine(bundle, "Manifest", "manifest.json");
-      if (File.Exists(manifestPath))
-        try { using var doc = JsonDocument.Parse(File.ReadAllText(manifestPath)); var run = doc.RootElement.GetProperty("run"); packName = run.GetProperty("packName").GetString() ?? "unknown"; profileName = run.GetProperty("profileName").GetString() ?? "unknown"; }
-        catch (Exception ex) { Console.Error.WriteLine("Warning: " + ex.Message); }
+      using var host = buildHost();
+      await host.StartAsync();
 
-      int totalControls = 0, autoControls = 0, manualControls = 0;
-      var manualControlsList = new List<ControlRecord>();
-      var controlsPath = Path.Combine(bundle, "Manifest", "pack_controls.json");
-      if (File.Exists(controlsPath))
-        try { var all = JsonSerializer.Deserialize<List<ControlRecord>>(File.ReadAllText(controlsPath), new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<ControlRecord>(); totalControls = all.Count; manualControlsList = all.Where(c => c.IsManual).ToList(); manualControls = manualControlsList.Count; autoControls = totalControls - manualControls; }
-        catch (Exception ex) { Console.Error.WriteLine("Warning: " + ex.Message); }
+      BundleMissionSummary summary;
+      try
+      {
+        var summaryService = host.Services.GetRequiredService<IBundleMissionSummaryService>();
+        summary = summaryService.LoadSummary(bundle);
+      }
+      finally
+      {
+        await host.StopAsync();
+      }
 
-      int verifyClosed = 0, verifyOpen = 0, verifyTotal = 0;
-      var verifyDir = Path.Combine(bundle, "Verify");
-      if (Directory.Exists(verifyDir))
-        foreach (var dir in Directory.GetDirectories(verifyDir))
-        {
-          var rp = Path.Combine(dir, "consolidated-results.json");
-          if (!File.Exists(rp)) continue;
-          try { var report = VerifyReportReader.LoadFromJson(rp); foreach (var r in report.Results) { verifyTotal++; var s = (r.Status ?? "").ToLowerInvariant(); if (s == "notafinding" || s == "pass" || s == "not_applicable") verifyClosed++; else verifyOpen++; } }
-          catch (Exception ex) { Console.Error.WriteLine("Warning: " + ex.Message); }
-        }
-
-      var svc = new ManualAnswerService();
-      var stats = svc.GetProgressStats(bundle, manualControlsList);
+      foreach (var warning in summary.Diagnostics)
+        Console.Error.WriteLine("Warning: " + warning);
 
       if (json)
       {
-        Console.WriteLine(JsonSerializer.Serialize(new { pack = packName, profile = profileName, totalControls, autoControls, manualControls, verify = new { closed = verifyClosed, open = verifyOpen, total = verifyTotal }, manual = new { pass = stats.PassCount, fail = stats.FailCount, na = stats.NotApplicableCount, open = stats.UnansweredControls, percentComplete = stats.PercentComplete } }, new JsonSerializerOptions { WriteIndented = true }));
+        Console.WriteLine(JsonSerializer.Serialize(new
+        {
+          pack = summary.PackName,
+          profile = summary.ProfileName,
+          totalControls = summary.TotalControls,
+          autoControls = summary.AutoControls,
+          manualControls = summary.ManualControls,
+          verify = new { closed = summary.Verify.ClosedCount, open = summary.Verify.OpenCount, total = summary.Verify.TotalCount },
+          manual = new
+          {
+            pass = summary.Manual.PassCount,
+            fail = summary.Manual.FailCount,
+            na = summary.Manual.NotApplicableCount,
+            open = summary.Manual.OpenCount,
+            percentComplete = summary.Manual.PercentComplete
+          }
+        }, new JsonSerializerOptions { WriteIndented = true }));
       }
       else
       {
-        Console.WriteLine("Bundle: " + bundle); Console.WriteLine($"  Pack: {packName}"); Console.WriteLine($"  Profile: {profileName}"); Console.WriteLine();
-        Console.WriteLine($"Controls: {totalControls} total ({autoControls} auto, {manualControls} manual)"); Console.WriteLine();
-        if (verifyTotal > 0) Console.WriteLine($"Verify: {verifyClosed} closed / {verifyTotal} total ({verifyClosed * 100.0 / verifyTotal:F0}%)");
+        Console.WriteLine("Bundle: " + bundle); Console.WriteLine($"  Pack: {summary.PackName}"); Console.WriteLine($"  Profile: {summary.ProfileName}"); Console.WriteLine();
+        Console.WriteLine($"Controls: {summary.TotalControls} total ({summary.AutoControls} auto, {summary.ManualControls} manual)"); Console.WriteLine();
+        if (summary.Verify.TotalCount > 0) Console.WriteLine($"Verify: {summary.Verify.ClosedCount} closed / {summary.Verify.TotalCount} total ({summary.Verify.ClosedCount * 100.0 / summary.Verify.TotalCount:F0}%)");
         else Console.WriteLine("Verify: no results");
-        Console.WriteLine(); Console.WriteLine($"Manual: {stats.AnsweredControls}/{stats.TotalControls} answered ({stats.PercentComplete:F0}%)");
-        Console.WriteLine($"  Pass: {stats.PassCount}  Fail: {stats.FailCount}  NA: {stats.NotApplicableCount}  Open: {stats.UnansweredControls}");
+        Console.WriteLine(); Console.WriteLine($"Manual: {summary.Manual.AnsweredCount}/{summary.Manual.TotalCount} answered ({summary.Manual.PercentComplete:F0}%)");
+        Console.WriteLine($"  Pass: {summary.Manual.PassCount}  Fail: {summary.Manual.FailCount}  NA: {summary.Manual.NotApplicableCount}  Open: {summary.Manual.OpenCount}");
       }
       await Task.CompletedTask;
     });

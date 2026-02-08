@@ -25,6 +25,8 @@ public sealed class DpapiCredentialStoreTests : IDisposable
   [Fact]
   public void Save_and_Load_roundtrips_successfully()
   {
+    if (!OperatingSystem.IsWindows()) return;
+
     _store.Save("server01", "admin", "P@ssw0rd!");
     var cred = _store.Load("server01");
 
@@ -43,6 +45,8 @@ public sealed class DpapiCredentialStoreTests : IDisposable
   [Fact]
   public void Remove_returns_true_for_existing_credential()
   {
+    if (!OperatingSystem.IsWindows()) return;
+
     _store.Save("server02", "user", "pass");
     var removed = _store.Remove("server02");
     removed.Should().BeTrue();
@@ -61,6 +65,8 @@ public sealed class DpapiCredentialStoreTests : IDisposable
   [Fact]
   public void ListHosts_returns_all_saved_hosts()
   {
+    if (!OperatingSystem.IsWindows()) return;
+
     _store.Save("alpha", "u1", "p1");
     _store.Save("bravo", "u2", "p2");
     _store.Save("charlie", "u3", "p3");
@@ -82,6 +88,8 @@ public sealed class DpapiCredentialStoreTests : IDisposable
   [Fact]
   public void Save_overwrites_existing_credential()
   {
+    if (!OperatingSystem.IsWindows()) return;
+
     _store.Save("server03", "olduser", "oldpass");
     _store.Save("server03", "newuser", "newpass");
 

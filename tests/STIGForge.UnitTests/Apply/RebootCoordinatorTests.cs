@@ -3,7 +3,6 @@ using Moq;
 using STIGForge.Apply.Reboot;
 using FluentAssertions;
 using System.Text.Json;
-using System.Diagnostics;
 
 namespace STIGForge.UnitTests.Apply;
 
@@ -11,12 +10,14 @@ public sealed class RebootCoordinatorTests : IDisposable
 {
     private readonly Mock<ILogger<RebootCoordinator>> _loggerMock;
     private readonly RebootCoordinator _coordinator;
+    private readonly RebootCoordinator _failingCoordinator;
     private readonly string _testRoot;
 
     public RebootCoordinatorTests()
     {
         _loggerMock = new Mock<ILogger<RebootCoordinator>>();
-        _coordinator = new RebootCoordinator(_loggerMock.Object);
+        _coordinator = new RebootCoordinator(_loggerMock.Object, _ => true);
+        _failingCoordinator = new RebootCoordinator(_loggerMock.Object, _ => false);
         _testRoot = Path.Combine(Path.GetTempPath(), "STIGForge_RebootTests_" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_testRoot);
     }
@@ -116,6 +117,26 @@ public sealed class RebootCoordinatorTests : IDisposable
         deserialized.CurrentStepIndex.Should().Be(3);
         deserialized.CompletedSteps.Should().Contain("compile");
         deserialized.CompletedSteps.Should().Contain("apply");
+    }
+
+    [Fact]
+    public async Task ScheduleReboot_WhenSchedulerReturnsFalse_ThrowsRebootExceptionAndKeepsMarker()
+    {
+        var context = new RebootContext
+        {
+            BundleRoot = _testRoot,
+            CurrentStepIndex = 1,
+            CompletedSteps = new List<string> { "prepare" },
+            RebootScheduledAt = DateTimeOffset.UtcNow
+        };
+
+        var exception = await Record.ExceptionAsync(() => _failingCoordinator.ScheduleReboot(context, CancellationToken.None));
+
+        exception.Should().BeOfType<RebootException>()
+            .Which.Message.Should().Contain("Failed to schedule reboot");
+
+        var markerPath = Path.Combine(_testRoot, "Apply", ".resume_marker.json");
+        File.Exists(markerPath).Should().BeTrue();
     }
 
     [Fact]

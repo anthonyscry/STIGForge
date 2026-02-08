@@ -112,10 +112,10 @@
           <TextBlock Text="Your Assessment:" FontWeight="SemiBold" Margin="0,0,0,8"/>
           
           <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-            <RadioButton Content="Not a Finding (Pass)" GroupName="Status" IsChecked="{Binding IsPass}" Margin="0,0,16,0"/>
-            <RadioButton Content="Open (Fail)" GroupName="Status" IsChecked="{Binding IsFail}" Margin="0,0,16,0"/>
+            <RadioButton Content="Pass (Not a Finding)" GroupName="Status" IsChecked="{Binding IsPass}" Margin="0,0,16,0"/>
+            <RadioButton Content="Fail (Open Finding)" GroupName="Status" IsChecked="{Binding IsFail}" Margin="0,0,16,0"/>
             <RadioButton Content="Not Applicable" GroupName="Status" IsChecked="{Binding IsNotApplicable}" Margin="0,0,16,0"/>
-            <RadioButton Content="Not Reviewed" GroupName="Status" IsChecked="{Binding IsNotReviewed}"/>
+            <RadioButton Content="Open (Needs Review)" GroupName="Status" IsChecked="{Binding IsNotReviewed}"/>
           </StackPanel>
 
           <TextBlock Text="Reason/Justification:" FontWeight="SemiBold" Margin="0,0,0,4"/>
@@ -125,6 +125,11 @@
           <TextBlock Text="Additional Comments:" FontWeight="SemiBold" Margin="0,0,0,4"/>
           <TextBox Text="{Binding AnswerComment, UpdateSourceTrigger=PropertyChanged}" 
                    Height="60" TextWrapping="Wrap" AcceptsReturn="True"/>
+
+          <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
+            <Button Content="Collect Evidence" Width="140" Command="{Binding CollectEvidenceCommand}" />
+            <TextBlock Text="{Binding EvidenceStatus}" Margin="12,8,0,0" Foreground="Gray" TextWrapping="Wrap" />
+          </StackPanel>
         </StackPanel>
       </Grid>
 

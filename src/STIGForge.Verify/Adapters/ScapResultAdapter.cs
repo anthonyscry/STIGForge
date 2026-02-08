@@ -1,4 +1,5 @@
 using System.Xml.Linq;
+using System.Globalization;
 
 namespace STIGForge.Verify.Adapters;
 
@@ -49,12 +50,13 @@ public sealed class ScapResultAdapter : IVerifyResultAdapter
     if (testResult == null)
     {
       diagnostics.Add("No TestResult element found in SCAP output");
+      var fileTimestamp = new DateTimeOffset(File.GetLastWriteTimeUtc(outputPath), TimeSpan.Zero);
       return new NormalizedVerifyReport
       {
         Tool = ToolName,
         ToolVersion = "unknown",
-        StartedAt = DateTimeOffset.Now,
-        FinishedAt = DateTimeOffset.Now,
+        StartedAt = fileTimestamp,
+        FinishedAt = fileTimestamp,
         OutputRoot = Path.GetDirectoryName(outputPath) ?? string.Empty,
         Results = Array.Empty<NormalizedVerifyResult>(),
         Summary = new VerifySummary(),
@@ -66,8 +68,10 @@ public sealed class ScapResultAdapter : IVerifyResultAdapter
     var startTimeStr = testResult.Element(XccdfNs + "start-time")?.Value;
     var endTimeStr = testResult.Element(XccdfNs + "end-time")?.Value;
 
-    var startTime = DateTimeOffset.TryParse(startTimeStr, out var st) ? st : new DateTimeOffset(File.GetCreationTimeUtc(outputPath), TimeSpan.Zero);
-    var endTime = DateTimeOffset.TryParse(endTimeStr, out var et) ? et : new DateTimeOffset(File.GetLastWriteTimeUtc(outputPath), TimeSpan.Zero);
+    var startFallback = new DateTimeOffset(File.GetCreationTimeUtc(outputPath), TimeSpan.Zero);
+    var endFallback = new DateTimeOffset(File.GetLastWriteTimeUtc(outputPath), TimeSpan.Zero);
+    var startTime = ParseTimestamp(startTimeStr, startFallback);
+    var endTime = ParseTimestamp(endTimeStr, endFallback);
 
     var ruleResults = testResult.Elements(XccdfNs + "rule-result").ToList();
     var results = new List<NormalizedVerifyResult>(ruleResults.Count);
@@ -106,6 +110,7 @@ public sealed class ScapResultAdapter : IVerifyResultAdapter
     var timeAttr = ruleResult.Attribute("time")?.Value;
     var resultElement = ruleResult.Element(XccdfNs + "result");
     var statusText = resultElement?.Value?.Trim();
+    var itemVerifiedAt = ParseTimestamp(timeAttr, verifiedAt);
 
     // Extract VulnId and Title from check-content-ref or ident elements
     var identElements = ruleResult.Elements(XccdfNs + "ident").ToList();
@@ -131,13 +136,7 @@ public sealed class ScapResultAdapter : IVerifyResultAdapter
 
     // Extract severity from weight attribute if present
     var weight = ruleResult.Attribute("weight")?.Value;
-    var severity = weight switch
-    {
-      "10.0" => "high",
-      "5.0" => "medium",
-      "1.0" => "low",
-      _ => null
-    };
+    var severity = MapWeightToSeverity(weight);
 
     // Extract finding details from message elements
     var messages = ruleResult.Elements(XccdfNs + "message").Select(m => m.Value?.Trim()).Where(m => !string.IsNullOrWhiteSpace(m)).ToList();
@@ -155,7 +154,7 @@ public sealed class ScapResultAdapter : IVerifyResultAdapter
       Comments = null,
       Tool = ToolName,
       SourceFile = sourcePath,
-      VerifiedAt = verifiedAt,
+      VerifiedAt = itemVerifiedAt,
       EvidencePaths = Array.Empty<string>(),
       Metadata = metadata
     };
@@ -166,13 +165,24 @@ public sealed class ScapResultAdapter : IVerifyResultAdapter
     if (string.IsNullOrWhiteSpace(scapStatus))
       return VerifyStatus.Unknown;
 
-    return scapStatus!.ToLowerInvariant() switch
+    var normalized = scapStatus
+      .Trim()
+      .Replace("_", string.Empty)
+      .Replace("-", string.Empty)
+      .Replace(" ", string.Empty)
+      .ToLowerInvariant();
+
+    return normalized switch
     {
       "pass" => VerifyStatus.Pass,
+      "notafinding" => VerifyStatus.Pass,
       "fail" => VerifyStatus.Fail,
+      "open" => VerifyStatus.Fail,
       "notapplicable" => VerifyStatus.NotApplicable,
+      "na" => VerifyStatus.NotApplicable,
       "notchecked" => VerifyStatus.NotReviewed,
       "notselected" => VerifyStatus.NotReviewed,
+      "notreviewed" => VerifyStatus.NotReviewed,
       "informational" => VerifyStatus.Informational,
       "error" => VerifyStatus.Error,
       "unknown" => VerifyStatus.Unknown,
@@ -218,5 +228,33 @@ public sealed class ScapResultAdapter : IVerifyResultAdapter
       : 0.0;
 
     return summary;
+  }
+
+  private static string? MapWeightToSeverity(string? weight)
+  {
+    if (string.IsNullOrWhiteSpace(weight))
+      return null;
+
+    if (!double.TryParse(weight, NumberStyles.Float, CultureInfo.InvariantCulture, out var numericWeight))
+      return null;
+
+    if (numericWeight >= 9.0) return "high";
+    if (numericWeight >= 4.0) return "medium";
+    if (numericWeight > 0.0) return "low";
+    return null;
+  }
+
+  private static DateTimeOffset ParseTimestamp(string? value, DateTimeOffset fallback)
+  {
+    if (string.IsNullOrWhiteSpace(value))
+      return fallback;
+
+    if (DateTimeOffset.TryParse(value, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal | DateTimeStyles.AdjustToUniversal, out var parsed))
+      return parsed;
+
+    if (DateTimeOffset.TryParse(value, out parsed))
+      return parsed;
+
+    return fallback;
   }
 }
