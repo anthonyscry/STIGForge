@@ -26,6 +26,11 @@ on:
         required: true
         default: true
         type: boolean
+      run_quarterly_pack:
+        description: Run quarterly compatibility regression pack during release gate
+        required: true
+        default: true
+        type: boolean
       security_strict_mode:
         description: Block unresolved security findings in strict mode
         required: true
@@ -69,8 +74,27 @@ jobs:
           if ([System.Convert]::ToBoolean('${{ inputs.security_strict_mode }}')) {
             $args += '-SecurityStrict'
           }
+          if (-not [System.Convert]::ToBoolean('${{ inputs.run_quarterly_pack }}')) {
+            $args += '-SkipQuarterlyRegressionPack'
+          }
 
           powershell @args
+
+      - name: Validate upgrade/rebase evidence
+        if: ${{ inputs.run_release_gate }}
+        shell: pwsh
+        run: |
+          $summaryPath = '.\.artifacts\release-gate\release-package\upgrade-rebase\upgrade-rebase-summary.json'
+          if (-not (Test-Path -LiteralPath $summaryPath)) {
+            throw "Upgrade/rebase summary artifact missing at $summaryPath"
+          }
+
+          $summary = Get-Content -Path $summaryPath -Raw | ConvertFrom-Json
+          if ($summary.status -ne 'passed') {
+            throw "Upgrade/rebase validation status is '$($summary.status)': $($summary.message)"
+          }
+
+          Write-Host "Upgrade/rebase validation passed with $(@($summary.steps).Count) evidence step(s)." -ForegroundColor Green
 
       - name: Build release packages
         shell: pwsh
@@ -81,6 +105,7 @@ jobs:
             '-Configuration', '${{ inputs.configuration }}',
             '-Runtime', '${{ inputs.runtime }}',
             '-OutputRoot', '.\.artifacts\release-package\latest',
+            '-ReleaseGateRoot', '.\.artifacts\release-gate\release-package',
             '-VersionTag', '${{ inputs.version_tag }}'
           )
 
