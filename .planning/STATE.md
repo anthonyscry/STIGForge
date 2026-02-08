@@ -2,12 +2,12 @@
 
 ## Current Position
 
-**Phase:** 06-security-and-operational-hardening - ready for planning/execution
-**Last Completed:** 05-operator-workflow-completion-03 (manual workflow canonicalization + in-flow evidence capture)
+**Phase:** 06-security-and-operational-hardening - plan 01 completed, ready for plan 02
+**Last Completed:** 06-security-and-operational-hardening-01 (break-glass contracts for CLI/WPF/orchestrate high-risk paths)
 
 **Started:** February 3, 2026
 
-Progress: ██████████████████████████████████████████░ (96%)
+Progress: ███████████████████████████████████████████░ (97%)
 
 ---
 
@@ -47,6 +47,16 @@ Progress: ███████████████████████�
 - **Decision:** Configure LCM before DSC application, reset optionally after
 - **Rationale:** Ensures proper reboot behavior and consistency checks, restores original settings
 - **Status:** Implemented (LcmService with ConfigureLcm, GetLcmState, ResetLcm)
+
+### Break-Glass Guardrails
+- **Decision:** High-risk bypass flags require explicit acknowledgment and specific reason before execution
+- **Rationale:** Prevent silent safety bypass and ensure operator intent is explicit for destructive paths
+- **Status:** Implemented (CLI apply/orchestrate/build + WPF apply/orchestrate guard semantics)
+
+### Break-Glass Audit Trace
+- **Decision:** Every accepted high-risk bypass emits dedicated `break-glass` audit entry with action, bypass type, and reason
+- **Rationale:** Preserve tamper-evident accountability for emergency override behavior
+- **Status:** Implemented (BuildCommands, MainViewModel.ApplyVerify, BundleOrchestrator)
 
 ---
 
@@ -90,8 +100,8 @@ Progress: ███████████████████████�
 ## Session Continuity
 
 **Last session:** 2026-02-08 UTC
-**Stopped at:** Phase 05 implementation complete with full unit + integration suites passing on this environment
-**Resume file:** .planning/ROADMAP.md
+**Stopped at:** Completed 06-security-and-operational-hardening-01-PLAN.md with task-level atomic commits
+**Resume file:** .planning/phases/06-security-and-operational-hardening/06-security-and-operational-hardening-02-PLAN.md
 
 ---
 
@@ -99,4 +109,4 @@ Progress: ███████████████████████�
 
 **Date:** February 8, 2026
 **Updated By:** OpenCode Executor
-**Reason:** Phase 05 implemented and validated; release hardening pass completed with full automated test suites green
+**Reason:** Phase 06 plan 01 completed with break-glass hardening semantics and summary/state continuity updates
