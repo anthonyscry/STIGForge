@@ -41,13 +41,15 @@ public sealed class ContentPackImporter
     private readonly IHashingService _hash;
     private readonly IContentPackRepository _packs;
     private readonly IControlRepository _controls;
+    private readonly IAuditTrailService? _audit;
 
-    public ContentPackImporter(IPathBuilder paths, IHashingService hash, IContentPackRepository packs, IControlRepository controls)
+    public ContentPackImporter(IPathBuilder paths, IHashingService hash, IContentPackRepository packs, IControlRepository controls, IAuditTrailService? audit = null)
     {
         _paths = paths;
         _hash = hash;
         _packs = packs;
         _controls = controls;
+        _audit = audit;
     }
 
     /// <summary>
@@ -197,6 +199,24 @@ public sealed class ContentPackImporter
             checkpoint.Stage = ImportStage.Complete;
             checkpoint.CompletedAt = DateTimeOffset.Now;
             checkpoint.Save(packRoot);
+
+            if (_audit != null)
+            {
+              try
+              {
+                await _audit.RecordAsync(new AuditEntry
+                {
+                  Action = "import-pack",
+                  Target = packName,
+                  Result = "success",
+                  Detail = $"PackId={packId}, Format={format}, Controls={parsed.Count}",
+                  User = Environment.UserName,
+                  Machine = Environment.MachineName,
+                  Timestamp = DateTimeOffset.Now
+                }, ct).ConfigureAwait(false);
+              }
+              catch { /* audit failure should not block import */ }
+            }
 
             return pack;
         }

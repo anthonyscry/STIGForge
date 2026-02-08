@@ -4,6 +4,7 @@ using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using STIGForge.Core.Abstractions;
 using STIGForge.Infrastructure.System;
 
 namespace STIGForge.Cli.Commands;
@@ -15,6 +16,9 @@ internal static class FleetCommands
     RegisterFleetApply(rootCmd, buildHost);
     RegisterFleetVerify(rootCmd, buildHost);
     RegisterFleetStatus(rootCmd, buildHost);
+    RegisterFleetCredentialSave(rootCmd, buildHost);
+    RegisterFleetCredentialList(rootCmd, buildHost);
+    RegisterFleetCredentialRemove(rootCmd, buildHost);
   }
 
   private static void RegisterFleetApply(RootCommand rootCmd, Func<IHost> buildHost)
@@ -126,6 +130,73 @@ internal static class FleetCommands
       logger.LogInformation("fleet-status completed: {Reachable}/{Total} reachable", result.ReachableCount, result.TotalMachines);
       await host.StopAsync();
     }, targetsOpt, jsonOpt);
+
+    rootCmd.AddCommand(cmd);
+  }
+
+  private static void RegisterFleetCredentialSave(RootCommand rootCmd, Func<IHost> buildHost)
+  {
+    var cmd = new Command("fleet-credential-save", "Save encrypted credentials for a fleet target (DPAPI)");
+    var hostOpt = new Option<string>("--host", "Target hostname") { IsRequired = true };
+    var userOpt = new Option<string>("--user", "Username") { IsRequired = true };
+    var passOpt = new Option<string>("--password", "Password") { IsRequired = true };
+    cmd.AddOption(hostOpt); cmd.AddOption(userOpt); cmd.AddOption(passOpt);
+
+    cmd.SetHandler((host, user, password) =>
+    {
+      using var h = buildHost();
+      h.Start();
+      var store = h.Services.GetRequiredService<ICredentialStore>();
+      store.Save(host, user, password);
+      Console.WriteLine($"Credential saved for '{host}'.");
+      h.StopAsync().GetAwaiter().GetResult();
+    }, hostOpt, userOpt, passOpt);
+
+    rootCmd.AddCommand(cmd);
+  }
+
+  private static void RegisterFleetCredentialList(RootCommand rootCmd, Func<IHost> buildHost)
+  {
+    var cmd = new Command("fleet-credential-list", "List all stored fleet credentials");
+
+    cmd.SetHandler(() =>
+    {
+      using var h = buildHost();
+      h.Start();
+      var store = h.Services.GetRequiredService<ICredentialStore>();
+      var hosts = store.ListHosts();
+
+      if (hosts.Count == 0)
+      {
+        Console.WriteLine("No stored credentials.");
+      }
+      else
+      {
+        Console.WriteLine($"Stored credentials ({hosts.Count}):");
+        foreach (var host in hosts)
+          Console.WriteLine($"  {host}");
+      }
+      h.StopAsync().GetAwaiter().GetResult();
+    });
+
+    rootCmd.AddCommand(cmd);
+  }
+
+  private static void RegisterFleetCredentialRemove(RootCommand rootCmd, Func<IHost> buildHost)
+  {
+    var cmd = new Command("fleet-credential-remove", "Remove stored credential for a fleet target");
+    var hostOpt = new Option<string>("--host", "Target hostname") { IsRequired = true };
+    cmd.AddOption(hostOpt);
+
+    cmd.SetHandler((host) =>
+    {
+      using var h = buildHost();
+      h.Start();
+      var store = h.Services.GetRequiredService<ICredentialStore>();
+      var removed = store.Remove(host);
+      Console.WriteLine(removed ? $"Credential removed for '{host}'." : $"No credential found for '{host}'.");
+      h.StopAsync().GetAwaiter().GetResult();
+    }, hostOpt);
 
     rootCmd.AddCommand(cmd);
   }

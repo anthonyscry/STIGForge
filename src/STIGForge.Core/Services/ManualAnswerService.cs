@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
 
 namespace STIGForge.Core.Services;
@@ -10,6 +11,13 @@ namespace STIGForge.Core.Services;
 /// </summary>
 public sealed class ManualAnswerService
 {
+  private readonly IAuditTrailService? _audit;
+
+  public ManualAnswerService(IAuditTrailService? audit = null)
+  {
+    _audit = audit;
+  }
+
   /// <summary>
   /// Load or create answer file for a bundle.
   /// </summary>
@@ -82,6 +90,27 @@ public sealed class ManualAnswerService
     }
 
     SaveAnswerFile(bundleRoot, file);
+
+    if (_audit != null)
+    {
+      _ = Task.Run(async () =>
+      {
+        try
+        {
+          await _audit.RecordAsync(new AuditEntry
+          {
+            Action = "manual-answer",
+            Target = answer.RuleId ?? answer.VulnId ?? "unknown",
+            Result = answer.Status ?? "unknown",
+            Detail = answer.Reason ?? string.Empty,
+            User = Environment.UserName,
+            Machine = Environment.MachineName,
+            Timestamp = DateTimeOffset.Now
+          }, CancellationToken.None).ConfigureAwait(false);
+        }
+        catch { /* fire-and-forget audit */ }
+      });
+    }
   }
 
   /// <summary>

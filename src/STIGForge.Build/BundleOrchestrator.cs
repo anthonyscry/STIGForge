@@ -1,5 +1,6 @@
 using STIGForge.Apply;
 using STIGForge.Apply.PowerStig;
+using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
 using STIGForge.Verify;
 
@@ -9,11 +10,13 @@ public sealed class BundleOrchestrator
 {
   private readonly BundleBuilder _builder;
   private readonly ApplyRunner _apply;
+  private readonly IAuditTrailService? _audit;
 
-  public BundleOrchestrator(BundleBuilder builder, ApplyRunner apply)
+  public BundleOrchestrator(BundleBuilder builder, ApplyRunner apply, IAuditTrailService? audit = null)
   {
     _builder = builder;
     _apply = apply;
+    _audit = audit;
   }
 
   public async Task<BundleBuildResult> BuildBundleAsync(BundleBuildRequest request, CancellationToken ct)
@@ -112,6 +115,24 @@ public sealed class BundleOrchestrator
 
     if (coverageInputs.Count > 0)
       WriteCoverageOverlap(root, coverageInputs);
+
+    if (_audit != null)
+    {
+      try
+      {
+        await _audit.RecordAsync(new AuditEntry
+        {
+          Action = "orchestrate",
+          Target = root,
+          Result = "success",
+          Detail = $"CoverageInputs={coverageInputs.Count}",
+          User = Environment.UserName,
+          Machine = Environment.MachineName,
+          Timestamp = DateTimeOffset.Now
+        }, ct).ConfigureAwait(false);
+      }
+      catch { /* audit failure should not block orchestration */ }
+    }
   }
 
   private static IReadOnlyList<STIGForge.Core.Models.ControlRecord> LoadBundleControls(string bundleRoot)

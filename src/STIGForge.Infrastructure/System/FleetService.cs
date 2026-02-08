@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Text;
+using STIGForge.Core.Abstractions;
 
 namespace STIGForge.Infrastructure.System;
 
@@ -9,6 +10,12 @@ namespace STIGForge.Infrastructure.System;
 /// </summary>
 public sealed class FleetService
 {
+  private readonly ICredentialStore? _credentialStore;
+
+  public FleetService(ICredentialStore? credentialStore = null)
+  {
+    _credentialStore = credentialStore;
+  }
   /// <summary>
   /// Execute a fleet operation (apply or verify) across multiple target machines.
   /// Uses PowerShell Remoting (WinRM) to invoke STIGForge CLI on each target.
@@ -84,8 +91,9 @@ public sealed class FleetService
     };
   }
 
-  private static async Task<FleetMachineResult> ExecuteOnMachineAsync(FleetTarget target, FleetRequest request, CancellationToken ct)
+  private async Task<FleetMachineResult> ExecuteOnMachineAsync(FleetTarget target, FleetRequest request, CancellationToken ct)
   {
+    target = ResolveCredentials(target);
     var startedAt = DateTimeOffset.Now;
     try
     {
@@ -205,8 +213,9 @@ public sealed class FleetService
     return (proc.ExitCode, output.Trim(), error.Trim());
   }
 
-  private static async Task<FleetMachineStatus> TestConnectionAsync(FleetTarget target, CancellationToken ct)
+  private async Task<FleetMachineStatus> TestConnectionAsync(FleetTarget target, CancellationToken ct)
   {
+    target = ResolveCredentials(target);
     var connectionTarget = !string.IsNullOrWhiteSpace(target.IpAddress) ? target.IpAddress : target.HostName;
 
     try
@@ -245,6 +254,26 @@ public sealed class FleetService
         Message = ex.Message
       };
     }
+  }
+
+  private FleetTarget ResolveCredentials(FleetTarget target)
+  {
+    if (!string.IsNullOrWhiteSpace(target.CredentialUser))
+      return target;
+    if (_credentialStore == null)
+      return target;
+
+    var cred = _credentialStore.Load(target.HostName);
+    if (cred == null)
+      return target;
+
+    return new FleetTarget
+    {
+      HostName = target.HostName,
+      IpAddress = target.IpAddress,
+      CredentialUser = cred.Value.Username,
+      CredentialPassword = cred.Value.Password
+    };
   }
 }
 

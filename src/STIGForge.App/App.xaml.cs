@@ -66,9 +66,29 @@ public partial class App : Application
         services.AddSingleton<BundleOrchestrator>();
         services.AddSingleton<STIGForge.Export.EmassExporter>();
         services.AddSingleton<STIGForge.Evidence.EvidenceCollector>();
+        services.AddSingleton<IAuditTrailService>(sp =>
+          new AuditTrailService(sp.GetRequiredService<string>(), sp.GetRequiredService<IClock>()));
+        services.AddSingleton<ICredentialStore>(sp =>
+          new DpapiCredentialStore(sp.GetRequiredService<IPathBuilder>()));
+        services.AddSingleton<ScheduledTaskService>();
+        services.AddSingleton<FleetService>(sp =>
+          new FleetService(sp.GetRequiredService<ICredentialStore>()));
         services.AddSingleton<OverlayEditorViewModel>();
 
-        services.AddSingleton<MainViewModel>();
+        services.AddSingleton<MainViewModel>(sp => new MainViewModel(
+          sp.GetRequiredService<ContentPackImporter>(),
+          sp.GetRequiredService<IContentPackRepository>(),
+          sp.GetRequiredService<IProfileRepository>(),
+          sp.GetRequiredService<IControlRepository>(),
+          sp.GetRequiredService<IOverlayRepository>(),
+          sp.GetRequiredService<BundleBuilder>(),
+          sp.GetRequiredService<STIGForge.Apply.ApplyRunner>(),
+          sp.GetRequiredService<STIGForge.Export.EmassExporter>(),
+          sp.GetRequiredService<IPathBuilder>(),
+          sp.GetRequiredService<STIGForge.Evidence.EvidenceCollector>(),
+          sp.GetRequiredService<IAuditTrailService>(),
+          sp.GetRequiredService<ScheduledTaskService>(),
+          sp.GetRequiredService<FleetService>()));
         services.AddSingleton<MainWindow>();
       })
       .Build();

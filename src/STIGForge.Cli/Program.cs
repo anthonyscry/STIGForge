@@ -76,6 +76,8 @@ static IHost BuildHost()
       services.AddSingleton<STIGForge.Export.EmassExporter>();
       services.AddSingleton<IAuditTrailService>(sp =>
         new AuditTrailService(sp.GetRequiredService<string>(), sp.GetRequiredService<IClock>()));
+      services.AddSingleton<ICredentialStore>(sp =>
+        new DpapiCredentialStore(sp.GetRequiredService<IPathBuilder>()));
     })
     .Build();
 }
