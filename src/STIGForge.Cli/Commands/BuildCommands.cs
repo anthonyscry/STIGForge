@@ -52,11 +52,6 @@ internal static class BuildCommands
       var breakGlassAck = ctx.ParseResult.GetValueForOption(breakGlassAckOpt);
       var breakGlassReason = ctx.ParseResult.GetValueForOption(breakGlassReasonOpt);
 
-      using var host = buildHost();
-      await host.StartAsync();
-      var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("BuildCommands");
-      logger.LogInformation("build-bundle started: packId={PackId}, forceAutoApply={ForceAutoApply}", packId, forceAutoApply);
-
       var breakGlassValidationError = ValidateBreakGlassArguments(
         forceAutoApply,
         breakGlassAck,
@@ -64,6 +59,11 @@ internal static class BuildCommands
         "--force-auto-apply");
       if (breakGlassValidationError != null)
         throw new ArgumentException(breakGlassValidationError);
+
+      using var host = buildHost();
+      await host.StartAsync();
+      var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("BuildCommands");
+      logger.LogInformation("build-bundle started: packId={PackId}, forceAutoApply={ForceAutoApply}", packId, forceAutoApply);
 
       if (string.IsNullOrWhiteSpace(profileId) && string.IsNullOrWhiteSpace(profileJson))
         throw new ArgumentException("Provide --profile-id or --profile-json.");
@@ -155,10 +155,6 @@ internal static class BuildCommands
     cmd.SetHandler(async (InvocationContext ctx) =>
     {
       var bundle = ctx.ParseResult.GetValueForOption(bOpt) ?? string.Empty;
-      using var host = buildHost();
-      await host.StartAsync();
-      var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("BuildCommands");
-      logger.LogInformation("orchestrate started: bundle={Bundle}", bundle);
       var skipSnapshot = ctx.ParseResult.GetValueForOption(skipSnapOpt);
       var breakGlassAck = ctx.ParseResult.GetValueForOption(breakGlassAckOpt);
       var breakGlassReason = ctx.ParseResult.GetValueForOption(breakGlassReasonOpt);
@@ -169,6 +165,11 @@ internal static class BuildCommands
         "--skip-snapshot");
       if (breakGlassValidationError != null)
         throw new ArgumentException(breakGlassValidationError);
+
+      using var host = buildHost();
+      await host.StartAsync();
+      var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("BuildCommands");
+      logger.LogInformation("orchestrate started: bundle={Bundle}", bundle);
 
       var orchestrator = host.Services.GetRequiredService<BundleOrchestrator>();
       await orchestrator.OrchestrateAsync(new OrchestrateRequest
@@ -218,11 +219,6 @@ internal static class BuildCommands
       HardeningMode? parsedMode = null;
       if (!string.IsNullOrWhiteSpace(mode) && Enum.TryParse<HardeningMode>(mode, true, out var m)) parsedMode = m;
 
-      using var host = buildHost();
-      await host.StartAsync();
-      var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("BuildCommands");
-      logger.LogInformation("apply-run started: bundle={Bundle}, mode={Mode}", bundle, mode);
-
       var skipSnapshot = ctx.ParseResult.GetValueForOption(skipSnap);
       var breakGlassAck = ctx.ParseResult.GetValueForOption(breakGlassAckOpt);
       var breakGlassReason = ctx.ParseResult.GetValueForOption(breakGlassReasonOpt);
@@ -233,6 +229,11 @@ internal static class BuildCommands
         "--skip-snapshot");
       if (breakGlassValidationError != null)
         throw new ArgumentException(breakGlassValidationError);
+
+      using var host = buildHost();
+      await host.StartAsync();
+      var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("BuildCommands");
+      logger.LogInformation("apply-run started: bundle={Bundle}, mode={Mode}", bundle, mode);
 
       var audit = host.Services.GetService<IAuditTrailService>();
       await RecordBreakGlassAuditAsync(
