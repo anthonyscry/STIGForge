@@ -11,6 +11,8 @@ public sealed class SupportBundleRequest
   public string AppDataRoot { get; set; } = string.Empty;
   public string? BundleRoot { get; set; }
   public bool IncludeDatabase { get; set; }
+  public bool IncludeSensitive { get; set; }
+  public string? SensitiveReason { get; set; }
   public int MaxLogFiles { get; set; } = 20;
 }
 
@@ -24,6 +26,18 @@ public sealed class SupportBundleResult
 
 public sealed class SupportBundleBuilder
 {
+  private static readonly string[] SensitivePathFragments =
+  {
+    "secret",
+    "credential",
+    "password",
+    "token",
+    "apikey",
+    ".env",
+    "id_rsa",
+    "private"
+  };
+
   private static readonly string[] DiagnosticExtensions =
   {
     ".json", ".csv", ".txt", ".log", ".xml", ".ckl", ".md"
@@ -54,7 +68,7 @@ public sealed class SupportBundleBuilder
       CollectDatabase(request, stagingRoot, files, warnings);
       WriteMetadata(request, stagingRoot, files, warnings);
 
-      var manifestPath = WriteManifest(stagingRoot, files, warnings);
+      var manifestPath = WriteManifest(request, stagingRoot, files, warnings);
       var manifestExportPath = Path.Combine(outputDirectory, archiveName + "-manifest.json");
       File.Copy(manifestPath, manifestExportPath, true);
 
@@ -112,16 +126,22 @@ public sealed class SupportBundleBuilder
       return;
     }
 
-    CopyMatchingFiles(Path.Combine(bundleRoot, "Manifest"), Path.Combine(stagingRoot, "bundle", "Manifest"), files, warnings);
-    CopyMatchingFiles(Path.Combine(bundleRoot, "Reports"), Path.Combine(stagingRoot, "bundle", "Reports"), files, warnings);
-    CopyMatchingFiles(Path.Combine(bundleRoot, "Apply"), Path.Combine(stagingRoot, "bundle", "Apply"), files, warnings);
-    CopyMatchingFiles(Path.Combine(bundleRoot, "Verify"), Path.Combine(stagingRoot, "bundle", "Verify"), files, warnings);
-    CopyMatchingFiles(Path.Combine(bundleRoot, "Manual"), Path.Combine(stagingRoot, "bundle", "Manual"), files, warnings);
+    CopyMatchingFiles(request, Path.Combine(bundleRoot, "Manifest"), Path.Combine(stagingRoot, "bundle", "Manifest"), files, warnings);
+    CopyMatchingFiles(request, Path.Combine(bundleRoot, "Reports"), Path.Combine(stagingRoot, "bundle", "Reports"), files, warnings);
+    CopyMatchingFiles(request, Path.Combine(bundleRoot, "Apply"), Path.Combine(stagingRoot, "bundle", "Apply"), files, warnings);
+    CopyMatchingFiles(request, Path.Combine(bundleRoot, "Verify"), Path.Combine(stagingRoot, "bundle", "Verify"), files, warnings);
+    CopyMatchingFiles(request, Path.Combine(bundleRoot, "Manual"), Path.Combine(stagingRoot, "bundle", "Manual"), files, warnings);
   }
 
   private static void CollectDatabase(SupportBundleRequest request, string stagingRoot, List<BundleFile> files, List<string> warnings)
   {
     if (!request.IncludeDatabase) return;
+
+    if (!request.IncludeSensitive)
+    {
+      warnings.Add("Database excluded: --include-db requires --include-sensitive and a specific reason.");
+      return;
+    }
 
     var dbPath = Path.Combine(request.AppDataRoot, "data", "stigforge.db");
     if (!File.Exists(dbPath))
@@ -133,7 +153,7 @@ public sealed class SupportBundleBuilder
     CopyFile(dbPath, Path.Combine(stagingRoot, "data", "stigforge.db"), files, warnings);
   }
 
-  private static void CopyMatchingFiles(string sourceRoot, string destinationRoot, List<BundleFile> files, List<string> warnings)
+  private static void CopyMatchingFiles(SupportBundleRequest request, string sourceRoot, string destinationRoot, List<BundleFile> files, List<string> warnings)
   {
     if (!Directory.Exists(sourceRoot)) return;
 
@@ -141,6 +161,7 @@ public sealed class SupportBundleBuilder
     foreach (var sourcePath in Directory.GetFiles(sourceRootPath, "*", SearchOption.AllDirectories))
     {
       if (!ShouldInclude(sourcePath)) continue;
+      if (!request.IncludeSensitive && IsSensitivePath(sourcePath)) continue;
 
       var relative = Path.GetRelativePath(sourceRootPath, sourcePath);
       var destinationPath = Path.Combine(destinationRoot, relative);
@@ -152,6 +173,17 @@ public sealed class SupportBundleBuilder
   {
     var extension = Path.GetExtension(sourcePath);
     return DiagnosticExtensions.Contains(extension, StringComparer.OrdinalIgnoreCase);
+  }
+
+  private static bool IsSensitivePath(string sourcePath)
+  {
+    foreach (var fragment in SensitivePathFragments)
+    {
+      if (sourcePath.IndexOf(fragment, StringComparison.OrdinalIgnoreCase) >= 0)
+        return true;
+    }
+
+    return false;
   }
 
   private static void CopyFile(string sourcePath, string destinationPath, List<BundleFile> files, List<string> warnings)
@@ -186,17 +218,19 @@ public sealed class SupportBundleBuilder
     var metadata = new
     {
       collectedAtUtc = DateTimeOffset.UtcNow,
-      appDataRoot = request.AppDataRoot,
-      bundleRoot = request.BundleRoot,
+      appDataRoot = request.IncludeSensitive ? request.AppDataRoot : "[redacted]",
+      bundleRoot = request.IncludeSensitive ? request.BundleRoot : "[redacted]",
       includeDatabase = request.IncludeDatabase,
+      includeSensitive = request.IncludeSensitive,
+      sensitiveReason = request.IncludeSensitive ? request.SensitiveReason : null,
       maxLogFiles = request.MaxLogFiles,
-      machineName = Environment.MachineName,
-      userName = Environment.UserName,
+      machineName = request.IncludeSensitive ? Environment.MachineName : "[redacted]",
+      userName = request.IncludeSensitive ? Environment.UserName : "[redacted]",
       osDescription = RuntimeInformation.OSDescription,
       osArchitecture = RuntimeInformation.OSArchitecture.ToString(),
       processArchitecture = RuntimeInformation.ProcessArchitecture.ToString(),
       frameworkDescription = RuntimeInformation.FrameworkDescription,
-      commandLine = Environment.CommandLine
+      commandLine = request.IncludeSensitive ? Environment.CommandLine : "[redacted]"
     };
 
     File.WriteAllText(systemInfoPath, JsonSerializer.Serialize(metadata, new JsonSerializerOptions { WriteIndented = true }));
@@ -222,7 +256,7 @@ public sealed class SupportBundleBuilder
     }
   }
 
-  private static string WriteManifest(string stagingRoot, List<BundleFile> files, List<string> warnings)
+  private static string WriteManifest(SupportBundleRequest request, string stagingRoot, List<BundleFile> files, List<string> warnings)
   {
     var manifestPath = Path.Combine(stagingRoot, "metadata", "support-bundle-manifest.json");
     var payload = new
@@ -233,7 +267,7 @@ public sealed class SupportBundleBuilder
       files = files.Select(f => new
       {
         path = Path.GetRelativePath(stagingRoot, f.ArchivePath),
-        source = f.OriginalPath,
+        source = request.IncludeSensitive ? f.OriginalPath : "[redacted]",
         sizeBytes = f.SizeBytes,
         sha256 = f.Sha256
       }).OrderBy(f => f.path, StringComparer.OrdinalIgnoreCase).ToList()

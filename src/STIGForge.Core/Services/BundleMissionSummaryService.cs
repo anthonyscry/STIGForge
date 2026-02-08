@@ -89,6 +89,9 @@ public sealed class BundleMissionSummaryService : IBundleMissionSummaryService
 
     int closed = 0;
     int total = 0;
+    int blockingFailures = 0;
+    int warnings = 0;
+    int optionalSkips = 0;
 
     foreach (var reportPath in reportPaths)
     {
@@ -110,13 +113,29 @@ public sealed class BundleMissionSummaryService : IBundleMissionSummaryService
           total++;
 
           var status = ReadStringProperty(item, "status");
-          if (IsClosedStatus(status))
+          var normalized = NormalizeStatus(status);
+          if (string.Equals(normalized, "Pass", StringComparison.Ordinal))
+          {
             closed++;
+          }
+          else if (string.Equals(normalized, "NotApplicable", StringComparison.Ordinal))
+          {
+            closed++;
+            optionalSkips++;
+          }
+          else
+          {
+            blockingFailures++;
+          }
+
+          if (IsWarningStatus(status))
+            warnings++;
         }
       }
       catch (Exception ex)
       {
         diagnostics.Add("Failed to parse verify report " + reportPath + ": " + ex.Message);
+        warnings++;
       }
     }
 
@@ -125,7 +144,10 @@ public sealed class BundleMissionSummaryService : IBundleMissionSummaryService
       ClosedCount = closed,
       OpenCount = total - closed,
       TotalCount = total,
-      ReportCount = reportPaths.Count
+      ReportCount = reportPaths.Count,
+      BlockingFailureCount = blockingFailures,
+      RecoverableWarningCount = warnings,
+      OptionalSkipCount = optionalSkips
     };
   }
 
@@ -182,6 +204,12 @@ public sealed class BundleMissionSummaryService : IBundleMissionSummaryService
     var normalized = NormalizeStatus(status);
     return string.Equals(normalized, "Pass", StringComparison.Ordinal)
       || string.Equals(normalized, "NotApplicable", StringComparison.Ordinal);
+  }
+
+  private static bool IsWarningStatus(string? status)
+  {
+    var normalized = NormalizeToken(status);
+    return normalized == "informational" || normalized == "info" || normalized == "warning";
   }
 
   private static string? ReadStringProperty(JsonElement element, string propertyName)

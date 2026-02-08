@@ -200,6 +200,12 @@ internal static class BundleCommands
           autoControls = summary.AutoControls,
           manualControls = summary.ManualControls,
           verify = new { closed = summary.Verify.ClosedCount, open = summary.Verify.OpenCount, total = summary.Verify.TotalCount },
+          mission = new
+          {
+            blockingFailures = summary.Verify.BlockingFailureCount,
+            recoverableWarnings = summary.Verify.RecoverableWarningCount,
+            optionalSkips = summary.Verify.OptionalSkipCount
+          },
           manual = new
           {
             pass = summary.Manual.PassCount,
@@ -216,6 +222,7 @@ internal static class BundleCommands
         Console.WriteLine($"Controls: {summary.TotalControls} total ({summary.AutoControls} auto, {summary.ManualControls} manual)"); Console.WriteLine();
         if (summary.Verify.TotalCount > 0) Console.WriteLine($"Verify: {summary.Verify.ClosedCount} closed / {summary.Verify.TotalCount} total ({summary.Verify.ClosedCount * 100.0 / summary.Verify.TotalCount:F0}%)");
         else Console.WriteLine("Verify: no results");
+        Console.WriteLine($"Mission severity: blocking={summary.Verify.BlockingFailureCount} warnings={summary.Verify.RecoverableWarningCount} optional-skips={summary.Verify.OptionalSkipCount}");
         Console.WriteLine(); Console.WriteLine($"Manual: {summary.Manual.AnsweredCount}/{summary.Manual.TotalCount} answered ({summary.Manual.PercentComplete:F0}%)");
         Console.WriteLine($"  Pass: {summary.Manual.PassCount}  Fail: {summary.Manual.FailCount}  NA: {summary.Manual.NotApplicableCount}  Open: {summary.Manual.OpenCount}");
       }
@@ -278,14 +285,22 @@ internal static class BundleCommands
     var outputOpt = new Option<string>("--output", () => Environment.CurrentDirectory, "Output directory for support bundle artifacts");
     var bundleOpt = new Option<string>("--bundle", () => string.Empty, "Optional bundle root to include diagnostics from");
     var includeDbOpt = new Option<bool>("--include-db", "Include .stigforge/data/stigforge.db in support bundle");
+    var includeSensitiveOpt = new Option<bool>("--include-sensitive", "Include sensitive diagnostics and metadata (high risk)");
+    var sensitiveReasonOpt = new Option<string>("--sensitive-reason", () => string.Empty, "Required reason when --include-sensitive is used");
     var maxLogsOpt = new Option<int>("--max-log-files", () => 20, "Maximum number of recent log files to include");
     cmd.AddOption(outputOpt);
     cmd.AddOption(bundleOpt);
     cmd.AddOption(includeDbOpt);
+    cmd.AddOption(includeSensitiveOpt);
+    cmd.AddOption(sensitiveReasonOpt);
     cmd.AddOption(maxLogsOpt);
 
-    cmd.SetHandler(async (output, bundle, includeDb, maxLogFiles) =>
+    cmd.SetHandler(async (output, bundle, includeDb, includeSensitive, sensitiveReason, maxLogFiles) =>
     {
+      var sensitiveValidationError = ValidateSensitiveBundleArguments(includeDb, includeSensitive, sensitiveReason);
+      if (sensitiveValidationError != null)
+        throw new ArgumentException(sensitiveValidationError);
+
       using var host = buildHost();
       await host.StartAsync();
 
@@ -297,6 +312,8 @@ internal static class BundleCommands
         AppDataRoot = paths.GetAppDataRoot(),
         BundleRoot = string.IsNullOrWhiteSpace(bundle) ? null : bundle,
         IncludeDatabase = includeDb,
+        IncludeSensitive = includeSensitive,
+        SensitiveReason = string.IsNullOrWhiteSpace(sensitiveReason) ? null : sensitiveReason.Trim(),
         MaxLogFiles = maxLogFiles
       });
 
@@ -312,7 +329,7 @@ internal static class BundleCommands
       }
 
       await host.StopAsync();
-    }, outputOpt, bundleOpt, includeDbOpt, maxLogsOpt);
+    }, outputOpt, bundleOpt, includeDbOpt, includeSensitiveOpt, sensitiveReasonOpt, maxLogsOpt);
 
     rootCmd.AddCommand(cmd);
   }
@@ -321,5 +338,25 @@ internal static class BundleCommands
   {
     var val = ctx.ParseResult.GetValueForOption(opt);
     return string.IsNullOrWhiteSpace(val) ? null : val;
+  }
+
+  private static string? ValidateSensitiveBundleArguments(bool includeDb, bool includeSensitive, string? sensitiveReason)
+  {
+    if (includeDb && !includeSensitive)
+      return "--include-db requires --include-sensitive and --sensitive-reason because database content can include credentials and secrets.";
+
+    if (!includeSensitive)
+      return null;
+
+    try
+    {
+      new ManualAnswerService().ValidateBreakGlassReason(sensitiveReason);
+    }
+    catch (ArgumentException)
+    {
+      return "--sensitive-reason is required with --include-sensitive and must be specific (minimum 8 characters).";
+    }
+
+    return null;
   }
 }

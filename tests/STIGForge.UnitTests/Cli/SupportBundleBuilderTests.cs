@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using System.Text.Json;
 using FluentAssertions;
 using STIGForge.Cli.Commands;
 
@@ -86,12 +87,83 @@ public sealed class SupportBundleBuilderTests : IDisposable
     {
       OutputDirectory = outputRoot,
       AppDataRoot = appDataRoot,
-      IncludeDatabase = true
+      IncludeDatabase = true,
+      IncludeSensitive = true,
+      SensitiveReason = "Incident triage requires DB diagnostics"
     });
 
     var extractWithDb = Path.Combine(_root, "extract-with-db");
     ZipFile.ExtractToDirectory(withDb.BundleZipPath, extractWithDb);
     File.Exists(Path.Combine(extractWithDb, "data", "stigforge.db")).Should().BeTrue();
+  }
+
+  [Fact]
+  public void Create_DefaultModeRedactsSensitiveMetadataAndExcludesSecretNamedFiles()
+  {
+    var appDataRoot = Path.Combine(_root, ".stigforge-sensitive-default");
+    var bundleRoot = Path.Combine(_root, "bundle-sensitive");
+    var outputRoot = Path.Combine(_root, "out-sensitive-default");
+    Directory.CreateDirectory(Path.Combine(appDataRoot, "logs"));
+    Directory.CreateDirectory(Path.Combine(bundleRoot, "Manifest"));
+    File.WriteAllText(Path.Combine(appDataRoot, "logs", "session.log"), "log");
+    File.WriteAllText(Path.Combine(bundleRoot, "Manifest", "credentials.json"), "{\"secret\":\"value\"}");
+    File.WriteAllText(Path.Combine(bundleRoot, "Manifest", "manifest.json"), "{}");
+
+    var builder = new SupportBundleBuilder();
+    var result = builder.Create(new SupportBundleRequest
+    {
+      OutputDirectory = outputRoot,
+      AppDataRoot = appDataRoot,
+      BundleRoot = bundleRoot,
+      IncludeSensitive = false
+    });
+
+    var extractRoot = Path.Combine(_root, "extract-sensitive-default");
+    ZipFile.ExtractToDirectory(result.BundleZipPath, extractRoot);
+
+    File.Exists(Path.Combine(extractRoot, "bundle", "Manifest", "credentials.json")).Should().BeFalse();
+    var metadataPath = Path.Combine(extractRoot, "metadata", "system-info.json");
+    var metadata = File.ReadAllText(metadataPath);
+    metadata.Should().Contain("[redacted]");
+  }
+
+  [Fact]
+  public void Create_WhenIncludeSensitiveEnabled_IncludesSensitiveFilesAndSourcePaths()
+  {
+    var appDataRoot = Path.Combine(_root, ".stigforge-sensitive-optin");
+    var bundleRoot = Path.Combine(_root, "bundle-sensitive-optin");
+    var outputRoot = Path.Combine(_root, "out-sensitive-optin");
+    Directory.CreateDirectory(Path.Combine(appDataRoot, "logs"));
+    Directory.CreateDirectory(Path.Combine(bundleRoot, "Manifest"));
+    File.WriteAllText(Path.Combine(appDataRoot, "logs", "session.log"), "log");
+    File.WriteAllText(Path.Combine(bundleRoot, "Manifest", "credentials.json"), "{\"secret\":\"value\"}");
+    File.WriteAllText(Path.Combine(bundleRoot, "Manifest", "manifest.json"), "{}");
+
+    var builder = new SupportBundleBuilder();
+    var result = builder.Create(new SupportBundleRequest
+    {
+      OutputDirectory = outputRoot,
+      AppDataRoot = appDataRoot,
+      BundleRoot = bundleRoot,
+      IncludeSensitive = true,
+      SensitiveReason = "Incident response requires full diagnostics"
+    });
+
+    var extractRoot = Path.Combine(_root, "extract-sensitive-optin");
+    ZipFile.ExtractToDirectory(result.BundleZipPath, extractRoot);
+
+    File.Exists(Path.Combine(extractRoot, "bundle", "Manifest", "credentials.json")).Should().BeTrue();
+
+    var metadataPath = Path.Combine(extractRoot, "metadata", "system-info.json");
+    var metadataJson = File.ReadAllText(metadataPath);
+    metadataJson.Should().NotContain("[redacted]");
+
+    var manifestPath = Path.Combine(extractRoot, "metadata", "support-bundle-manifest.json");
+    using var manifestDoc = JsonDocument.Parse(File.ReadAllText(manifestPath));
+    manifestDoc.RootElement.GetProperty("files")
+      .EnumerateArray()
+      .Select(file => file.GetProperty("source").GetString())
+      .Should().OnlyContain(source => !string.Equals(source, "[redacted]", StringComparison.Ordinal));
   }
 
   [Fact]
