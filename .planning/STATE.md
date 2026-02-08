@@ -2,12 +2,12 @@
 
 ## Current Position
 
-**Phase:** 06-security-and-operational-hardening - plan 02 completed, ready for plan 03
-**Last Completed:** 06-security-and-operational-hardening-02 (archive boundary hardening and secure XML parser standardization)
+**Phase:** 06-security-and-operational-hardening - plan 03 completed, ready for plan 04
+**Last Completed:** 06-security-and-operational-hardening-03 (deterministic offline security gate + strict mode CI wiring)
 
 **Started:** February 3, 2026
 
-Progress: ████████████████████████████████████████████░ (98%)
+Progress: █████████████████████████████████████████████░ (99%)
 
 ---
 
@@ -68,6 +68,16 @@ Progress: ███████████████████████�
 - **Rationale:** Ensure unsafe XML constructs fail predictably with actionable diagnostics across import/verify workflows.
 - **Status:** Implemented (OvalParser, CklAdapter, EvaluateStigAdapter, ScapResultAdapter)
 
+### Deterministic Security Intelligence Handling
+- **Decision:** Security gate now classifies unavailable external intelligence as unresolved findings (review-required) instead of silent pass behavior.
+- **Rationale:** Preserve deterministic, auditable outcomes in air-gapped/offline environments without masking uncertainty.
+- **Status:** Implemented (Invoke-SecurityGate summary/report + unresolved intelligence model)
+
+### Strict Security Gate Execution Mode
+- **Decision:** Strict mode is exposed in release and CI workflows so unresolved findings can be treated as blocking by policy.
+- **Rationale:** Allow high-assurance environments to enforce fail-closed behavior while keeping default offline deterministic mode usable.
+- **Status:** Implemented (Invoke-ReleaseGate + GitHub workflows strict mode wiring)
+
 ---
 
 ## Pending Todos
@@ -109,9 +119,9 @@ Progress: ███████████████████████�
 
 ## Session Continuity
 
-**Last session:** 2026-02-08T21:13:37Z
-**Stopped at:** Completed 06-security-and-operational-hardening-02-PLAN.md (input/file boundary hardening and secure XML loading)
-**Resume file:** .planning/phases/06-security-and-operational-hardening/06-security-and-operational-hardening-03-PLAN.md
+**Last session:** 2026-02-08T21:26:00Z
+**Stopped at:** Completed 06-security-and-operational-hardening-03-PLAN.md (deterministic offline gate semantics and strict mode workflow propagation)
+**Resume file:** .planning/phases/06-security-and-operational-hardening/06-security-and-operational-hardening-04-PLAN.md
 
 ---
 
@@ -119,4 +129,4 @@ Progress: ███████████████████████�
 
 **Date:** February 8, 2026
 **Updated By:** OpenCode Executor
-**Reason:** Phase 06 plan 02 completed with safe archive extraction boundaries and secure XML parser standardization
+**Reason:** Phase 06 plan 03 completed with deterministic offline security-gate behavior and strict mode release/CI wiring
