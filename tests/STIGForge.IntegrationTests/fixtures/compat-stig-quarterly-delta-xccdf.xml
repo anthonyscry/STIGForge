@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Benchmark xmlns="http://checklists.nist.gov/xccdf/1.2" id="compat-stig-int-delta">
+  <Rule id="SV-810002r1_rule" severity="high">
+    <title>Integration STIG Delta Rule</title>
+    <description>Integration fixture for quarterly compatibility delta validation.</description>
+    <check system="http://scap.nist.gov/schema/scap/1.2">
+      <check-content>Automated check for quarterly delta integration fixture.</check-content>
+    </check>
+    <fixtext>Apply integration quarterly remediation.</fixtext>
+  </Rule>
+</Benchmark>

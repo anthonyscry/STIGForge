@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Benchmark xmlns="http://checklists.nist.gov/xccdf/1.2" id="compat-stig-malformed">
+  <Rule id="SV-400099r1_rule" severity="medium">
+    <title>Malformed Compatibility Rule</title>
+    <description>Missing closing tags should generate deterministic parsing errors.

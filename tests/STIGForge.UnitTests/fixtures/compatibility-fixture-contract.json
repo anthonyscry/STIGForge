@@ -1,0 +1,95 @@
+{
+  "schemaVersion": 1,
+  "fixtures": [
+    {
+      "scenario": "stig-baseline",
+      "format": "Stig",
+      "inputs": [
+        "compat-stig-baseline-xccdf.xml"
+      ],
+      "expected": {
+        "usedFallbackParser": false,
+        "parsingErrorMinimum": 0
+      }
+    },
+    {
+      "scenario": "stig-quarterly-delta",
+      "format": "Stig",
+      "inputs": [
+        "compat-stig-quarterly-delta-xccdf.xml"
+      ],
+      "expected": {
+        "usedFallbackParser": false,
+        "parsingErrorMinimum": 0
+      }
+    },
+    {
+      "scenario": "stig-malformed",
+      "format": "Stig",
+      "inputs": [
+        "compat-stig-malformed-xccdf.xml"
+      ],
+      "expected": {
+        "usedFallbackParser": false,
+        "parsingErrorMinimum": 1
+      }
+    },
+    {
+      "scenario": "scap-baseline",
+      "format": "Scap",
+      "inputs": [
+        "compat-scap-baseline-xccdf.xml",
+        "compat-scap-baseline-oval.xml"
+      ],
+      "expected": {
+        "usedFallbackParser": false,
+        "parsingErrorMinimum": 0
+      }
+    },
+    {
+      "scenario": "scap-malformed-oval",
+      "format": "Scap",
+      "inputs": [
+        "compat-scap-baseline-xccdf.xml",
+        "compat-scap-malformed-oval.xml"
+      ],
+      "expected": {
+        "usedFallbackParser": false,
+        "parsingErrorMinimum": 1
+      }
+    },
+    {
+      "scenario": "gpo-baseline",
+      "format": "Gpo",
+      "inputs": [
+        "compat-gpo-baseline.admx"
+      ],
+      "expected": {
+        "usedFallbackParser": false,
+        "parsingErrorMinimum": 0
+      }
+    },
+    {
+      "scenario": "gpo-quarterly-delta",
+      "format": "Gpo",
+      "inputs": [
+        "compat-gpo-quarterly-delta.admx"
+      ],
+      "expected": {
+        "usedFallbackParser": false,
+        "parsingErrorMinimum": 0
+      }
+    },
+    {
+      "scenario": "unknown-oval-only",
+      "format": "Unknown",
+      "inputs": [
+        "compat-unknown-oval-only.xml"
+      ],
+      "expected": {
+        "usedFallbackParser": true,
+        "parsingErrorMinimum": 0
+      }
+    }
+  ]
+}

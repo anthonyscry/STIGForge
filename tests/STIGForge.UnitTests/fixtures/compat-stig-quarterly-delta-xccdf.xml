@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Benchmark xmlns="http://checklists.nist.gov/xccdf/1.2" id="compat-stig-quarterly-delta">
+  <Rule id="SV-400001r2_rule" severity="high">
+    <title>Compatibility Delta Rule</title>
+    <description>Quarterly delta validates drift-sensitive parsing.</description>
+    <check system="http://scap.nist.gov/schema/scap/1.2">
+      <check-content>Run automated validation for quarterly delta.</check-content>
+    </check>
+    <fixtext>Apply quarterly update baseline.</fixtext>
+  </Rule>
+</Benchmark>

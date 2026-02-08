@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<oval_definitions xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5">
+  <definitions>
+    <definition id="oval:stigforge:compat:def:5001" class="compliance">
+      <metadata>
+        <title>Compatibility Baseline OVAL Definition</title>
+      </metadata>
+    </definition>
+  </definitions>
+</oval_definitions>
