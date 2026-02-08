@@ -1,5 +1,6 @@
 using System.Xml.Linq;
 using System.Globalization;
+using System.Xml;
 
 namespace STIGForge.Verify.Adapters;
 
@@ -24,7 +25,7 @@ public sealed class ScapResultAdapter : IVerifyResultAdapter
 
     try
     {
-      var doc = XDocument.Load(filePath);
+      var doc = LoadSecureXml(filePath);
       var root = doc.Root;
 
       // SCAP results use XCCDF namespace with TestResult element
@@ -42,7 +43,7 @@ public sealed class ScapResultAdapter : IVerifyResultAdapter
     if (!File.Exists(outputPath))
       throw new FileNotFoundException("SCAP result file not found", outputPath);
 
-    var doc = XDocument.Load(outputPath);
+    var doc = LoadSecureXml(outputPath);
     var diagnostics = new List<string>();
 
     // SCAP results can be in Benchmark/TestResult or standalone TestResult
@@ -256,5 +257,28 @@ public sealed class ScapResultAdapter : IVerifyResultAdapter
       return parsed;
 
     return fallback;
+  }
+
+  private static XDocument LoadSecureXml(string filePath)
+  {
+    var settings = new XmlReaderSettings
+    {
+      DtdProcessing = DtdProcessing.Prohibit,
+      XmlResolver = null,
+      IgnoreWhitespace = true,
+      MaxCharactersFromEntities = 1024,
+      MaxCharactersInDocument = 20_000_000,
+      Async = false
+    };
+
+    try
+    {
+      using var reader = XmlReader.Create(filePath, settings);
+      return XDocument.Load(reader, LoadOptions.None);
+    }
+    catch (XmlException ex)
+    {
+      throw new InvalidDataException($"[VERIFY-SCAP-XML-001] Failed to parse SCAP XML '{filePath}': {ex.Message}", ex);
+    }
   }
 }
