@@ -26,6 +26,11 @@ on:
         required: true
         default: true
         type: boolean
+      security_strict_mode:
+        description: Block unresolved security findings in strict mode
+        required: true
+        default: false
+        type: boolean
       require_signing:
         description: Require signing with STIGFORGE_SIGN_CERT_* secrets
         required: true
@@ -52,7 +57,20 @@ jobs:
       - name: Pre-package release gate
         if: ${{ inputs.run_release_gate }}
         shell: pwsh
-        run: ./tools/release/Invoke-ReleaseGate.ps1 -Configuration ${{ inputs.configuration }} -OutputRoot ./.artifacts/release-gate/release-package
+        run: |
+          $args = @(
+            '-NoProfile',
+            '-ExecutionPolicy', 'Bypass',
+            '-File', '.\tools\release\Invoke-ReleaseGate.ps1',
+            '-Configuration', '${{ inputs.configuration }}',
+            '-OutputRoot', '.\.artifacts\release-gate\release-package'
+          )
+
+          if ([System.Convert]::ToBoolean('${{ inputs.security_strict_mode }}')) {
+            $args += '-SecurityStrict'
+          }
+
+          powershell @args
 
       - name: Build release packages
         shell: pwsh

@@ -20,7 +20,21 @@ jobs:
 
       - name: Run release gate
         shell: pwsh
-        run: ./tools/release/Invoke-ReleaseGate.ps1 -Configuration Release -OutputRoot ./.artifacts/release-gate/latest
+        run: |
+          $args = @(
+            '-NoProfile',
+            '-ExecutionPolicy', 'Bypass',
+            '-File', '.\tools\release\Invoke-ReleaseGate.ps1',
+            '-Configuration', 'Release',
+            '-OutputRoot', '.\.artifacts\release-gate\latest'
+          )
+
+          $strictSetting = '${{ vars.STIGFORGE_SECURITY_GATE_STRICT }}'
+          if (-not [string]::IsNullOrWhiteSpace($strictSetting) -and $strictSetting.Equals('true', [StringComparison]::OrdinalIgnoreCase)) {
+            $args += '-SecurityStrict'
+          }
+
+          powershell @args
 
       - name: Upload release-gate artifacts
         if: always()
