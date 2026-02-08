@@ -66,10 +66,10 @@ completed: 2026-02-08
 
 Each task was committed atomically:
 
-1. **Task 1: Add explicit break-glass contract to CLI high-risk flags** - `ae0d8e4` (feat)
+1. **Task 1: Add explicit break-glass contract to CLI high-risk flags** - `ae0d8e4`, `0ad1a6c`, `2d77183` (feat/fix)
 2. **Task 2: Add WPF parity and audit trace for break-glass behavior** - `1dcc254` (feat)
 
-**Plan metadata:** `18cd696` (docs)
+**Plan metadata:** `18cd696`, `60ec00d` (docs)
 
 ## Files Created/Modified
 - `src/STIGForge.Cli/Commands/BuildCommands.cs` - Adds high-risk option guards and break-glass audit recording for CLI commands.
