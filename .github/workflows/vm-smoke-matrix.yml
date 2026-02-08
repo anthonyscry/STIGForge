@@ -39,16 +39,113 @@ jobs:
         shell: pwsh
         run: ./tools/release/Invoke-ReleaseGate.ps1 -Configuration ${{ inputs.configuration }} -OutputRoot ./.artifacts/release-gate/${{ matrix.name }}
 
-      - name: Run E2E integration suite
+      - name: Validate upgrade/rebase evidence
         shell: pwsh
-        run: dotnet test tests/STIGForge.IntegrationTests/STIGForge.IntegrationTests.csproj --configuration ${{ inputs.configuration }} --framework net8.0 --nologo --filter "FullyQualifiedName~E2E"
+        run: |
+          $summaryPath = '.\.artifacts\release-gate\${{ matrix.name }}\upgrade-rebase\upgrade-rebase-summary.json'
+          if (-not (Test-Path -LiteralPath $summaryPath)) {
+            throw "Upgrade/rebase summary artifact missing at $summaryPath"
+          }
+
+          $summary = Get-Content -Path $summaryPath -Raw | ConvertFrom-Json
+          if ($summary.status -ne 'passed') {
+            throw "Upgrade/rebase validation status is '$($summary.status)': $($summary.message)"
+          }
+
+          Write-Host "Upgrade/rebase validation passed for VM ${{ matrix.name }}." -ForegroundColor Green
+
+      - name: Evaluate VM stability budget
+        shell: pwsh
+        run: |
+          $outputRoot = '.\.artifacts\stability-budget\${{ matrix.name }}'
+          New-Item -ItemType Directory -Force -Path $outputRoot | Out-Null
+
+          $maxAttempts = 1
+          $requiredPasses = 1
+          $allowedFailures = 0
+          $attempts = @()
+
+          for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+            $logPath = Join-Path $outputRoot ("stability-attempt-{0}.log" -f $attempt)
+            Write-Host "[stability-budget] VM ${{ matrix.name }} attempt $attempt/$maxAttempts" -ForegroundColor Cyan
+
+            $runOutput = & dotnet test .\tests\STIGForge.IntegrationTests\STIGForge.IntegrationTests.csproj --configuration ${{ inputs.configuration }} --framework net8.0 --nologo --filter 'FullyQualifiedName~E2E' 2>&1
+            $exitCode = $LASTEXITCODE
+            $runOutput | Out-File -FilePath $logPath -Encoding UTF8
+
+            $attempts += [pscustomobject]@{
+              attempt = $attempt
+              exitCode = $exitCode
+              succeeded = ($exitCode -eq 0)
+              logPath = $logPath
+            }
+          }
+
+          $passCount = @($attempts | Where-Object { $_.succeeded }).Count
+          $failureCount = $maxAttempts - $passCount
+          $overallPassed = ($passCount -ge $requiredPasses -and $failureCount -le $allowedFailures)
+          $releaseGateSummaryPath = '.\.artifacts\release-gate\${{ matrix.name }}\report\release-gate-summary.json'
+          $upgradeRebaseSummaryPath = '.\.artifacts\release-gate\${{ matrix.name }}\upgrade-rebase\upgrade-rebase-summary.json'
+
+          $summaryPath = Join-Path $outputRoot 'stability-budget-summary.json'
+          $reportPath = Join-Path $outputRoot 'stability-budget-report.md'
+
+          $summary = [ordered]@{
+            generatedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
+            suite = 'E2E'
+            vm = '${{ matrix.name }}'
+            releaseGateSummaryPath = $releaseGateSummaryPath
+            upgradeRebaseSummaryPath = $upgradeRebaseSummaryPath
+            policy = [ordered]@{
+              maxAttempts = $maxAttempts
+              requiredPasses = $requiredPasses
+              allowedFailures = $allowedFailures
+            }
+            result = [ordered]@{
+              passes = $passCount
+              failures = $failureCount
+              overallPassed = $overallPassed
+            }
+            attempts = @($attempts)
+          }
+          $summary | ConvertTo-Json -Depth 6 | Set-Content -Path $summaryPath -Encoding UTF8
+
+          $report = New-Object System.Text.StringBuilder
+          [void]$report.AppendLine('# Stability Budget Report (VM Smoke)')
+          [void]$report.AppendLine()
+          [void]$report.AppendLine("- VM: ${{ matrix.name }}")
+          [void]$report.AppendLine("- Suite: E2E")
+          [void]$report.AppendLine("- Attempts: $maxAttempts")
+          [void]$report.AppendLine("- Required passes: $requiredPasses")
+          [void]$report.AppendLine("- Allowed failures: $allowedFailures")
+          [void]$report.AppendLine("- Result: $(if ($overallPassed) { 'PASS' } else { 'FAIL' })")
+          [void]$report.AppendLine("- Passes: $passCount")
+          [void]$report.AppendLine("- Failures: $failureCount")
+          [void]$report.AppendLine("- Release gate summary: $releaseGateSummaryPath")
+          [void]$report.AppendLine("- Upgrade/rebase summary: $upgradeRebaseSummaryPath")
+          [void]$report.AppendLine()
+          [void]$report.AppendLine('## Attempts')
+          [void]$report.AppendLine()
+          [void]$report.AppendLine('| Attempt | Status | Exit Code | Log |')
+          [void]$report.AppendLine('|---------|--------|-----------|-----|')
+          foreach ($attempt in $attempts) {
+            $status = if ($attempt.succeeded) { 'PASS' } else { 'FAIL' }
+            [void]$report.AppendLine("| $($attempt.attempt) | $status | $($attempt.exitCode) | $($attempt.logPath) |")
+          }
+          Set-Content -Path $reportPath -Value $report.ToString() -Encoding UTF8
+
+          if (-not $overallPassed) {
+            throw "VM stability budget failed on ${{ matrix.name }}: passes=$passCount required=$requiredPasses"
+          }
 
       - name: Upload VM smoke artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: vm-smoke-${{ matrix.name }}-${{ github.run_id }}
-          path: ./.artifacts/release-gate/${{ matrix.name }}
+          path: |
+            ./.artifacts/release-gate/${{ matrix.name }}
+            ./.artifacts/stability-budget/${{ matrix.name }}
           if-no-files-found: warn
 
   go-no-go:

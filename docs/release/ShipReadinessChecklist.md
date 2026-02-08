@@ -1,62 +1,57 @@
 # STIGForge Ship Readiness Checklist
 
-Use this checklist before declaring a build release-ready.
+Use this checklist to make the final RC go/no-go decision.
 
-## 1) Automated quality gates
+## 1) Release gate must pass with complete evidence
 
-- Run `tools/release/Invoke-ReleaseGate.ps1` on the release candidate commit.
-- Confirm `release-gate-report.md` shows `Result: PASS`.
-- Confirm `release-gate-summary.json` has all steps with `succeeded: true`.
-- Confirm `security/reports/security-gate-report.md` shows 0 unresolved vulnerabilities, 0 rejected licenses, and 0 secret findings.
-- Confirm `security/reports/security-gate-summary.json` aligns with release expectations.
-- Confirm `sha256-checksums.txt` exists and includes all generated artifacts.
-- Confirm dependency inventory exists at `sbom/dotnet-packages.json` (unless intentionally skipped).
+Run `tools/release/Invoke-ReleaseGate.ps1` on the exact RC commit and confirm:
 
-## 2) Functional verification
+- `report/release-gate-report.md` shows `Result: PASS`.
+- `report/release-gate-summary.json` has all required steps with `succeeded: true`.
+- `security/reports/security-gate-report.md` and `security/reports/security-gate-summary.json` show no unresolved blocking findings.
+- `quarterly-pack/quarterly-pack-summary.json` and `quarterly-pack/quarterly-pack-report.md` exist and are policy-clean for release.
+- `upgrade-rebase/upgrade-rebase-summary.json` has `status: passed`.
+- `upgrade-rebase/upgrade-rebase-report.md` documents diff contract, overlay rebase contract, CLI integration contract, and rollback safety checks.
+- `report/sha256-checksums.txt` exists and includes release gate outputs.
+- `sbom/dotnet-packages.json` exists unless explicitly skipped with policy exception.
 
-- Validate import -> build -> apply -> verify -> export path in a clean environment.
-- Validate at least one manual-control workflow (answer + evidence attach + summary).
-- Validate `export-emass` output passes package validator with no errors.
-- Validate `support-bundle` command produces a zip and manifest for triage.
+## 2) Package build must emit reproducibility artifacts
 
-## 3) Security and compliance
+Run `tools/release/Invoke-PackageBuild.ps1` for the same RC commit and confirm:
 
-- Validate dependency/license/secrets scans are completed and policy exceptions are reviewed.
-- Validate signing status for installer and CLI artifacts.
-- Validate published checksums match produced release binaries.
-- Validate release notes include known limitations and remediation guidance.
+- `bundle/stigforge-cli-<runtime>.zip` exists.
+- `bundle/stigforge-app-<runtime>.zip` exists.
+- `manifest/release-package-manifest.json` exists and references release gate and dependency evidence.
+- `manifest/reproducibility-evidence.json` exists and records commit, logs, dependency inventory, and linked gate artifacts.
+- `manifest/sha256-checksums.txt` exists and hashes all package artifacts.
+- `sbom/dotnet-packages.json` exists (unless intentionally skipped with approval).
 
-## 4) Upgrade and rollback
+## 3) Functional mission validation
 
-- Validate upgrade from previous production release.
-- Validate rollback or uninstall path.
-- Validate DB compatibility and data retention expectations.
-- Validate no data loss in `.stigforge` content packs, overlays, and profiles.
+- Validate import -> build -> apply -> verify -> export in a clean environment.
+- Validate at least one manual-control flow (answer + evidence + summary).
+- Validate `export-emass` package passes validator without errors.
+- Validate `support-bundle` output contains expected manifest and redacted artifacts.
 
-## 5) Release package contents
+## 4) Upgrade, rebase, and rollback assurance
 
-- Installer artifacts (MSI/MSIX or equivalent)
-- CLI artifact(s)
-- `release-gate-report.md`
-- `release-gate-summary.json`
-- `security-gate-report.md`
-- `security-gate-summary.json`
-- `sha256-checksums.txt`
-- Dependency inventory (SBOM/dependency report)
-- Release notes
+- Validate upgrade from previous production release to RC.
+- Validate overlay rebase workflow against quarterly content update.
+- Validate rollback/uninstall path and post-rollback operability.
+- Validate data retention for `.stigforge` packs, overlays, and profile state.
 
-## 6) Workflow promotion checks
+## 5) Workflow promotion checks
 
-- `release-package.yml` manual run completes successfully.
-- `vm-smoke-matrix.yml` succeeds for all runner labels (`win11`, `server2019`, `server2022`).
-- VM smoke artifacts are attached and reviewed before promotion.
+- `release-package.yml` manual run succeeds and uploads package + release gate artifacts.
+- `vm-smoke-matrix.yml` succeeds for `win11`, `server2019`, and `server2022`.
+- VM artifacts include release-gate, stability-budget, and upgrade/rebase evidence for each runner.
 
-## 7) Go / No-Go decision
+## 6) Go / No-Go
 
-Go only when:
+Go only when all conditions hold:
 
-- All automated gates pass.
-- No unresolved high/critical security findings.
-- Upgrade and rollback checks pass.
-- Artifact signing/checksum verification passes.
-- Release owner and approver both sign off.
+- Automated release/security/compatibility gates pass.
+- Reproducibility artifacts and checksums are complete and auditable.
+- Upgrade/rebase and rollback evidence is present and reviewed.
+- No unresolved critical or high-risk findings remain.
+- Release owner and approver sign off on the exact RC commit hash.
