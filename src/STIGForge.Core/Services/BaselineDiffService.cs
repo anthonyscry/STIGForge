@@ -32,7 +32,7 @@ public sealed class BaselineDiffService
     {
       BaselinePackId = baselinePackId,
       NewPackId = newPackId,
-      ComparedAt = DateTimeOffset.Now
+      ComparedAt = DateTimeOffset.UtcNow
     };
 
     // Build lookup maps
@@ -40,48 +40,64 @@ public sealed class BaselineDiffService
     var newMap = BuildControlMap(newControls);
 
     // Identify added controls (in new, not in baseline)
-    foreach (var kvp in newMap)
+    foreach (var key in newMap.Keys.OrderBy(k => k, StringComparer.OrdinalIgnoreCase))
     {
-      if (!baselineMap.ContainsKey(kvp.Key))
+      var newControl = newMap[key];
+      if (!baselineMap.ContainsKey(key))
       {
         diff.AddedControls.Add(new ControlDiff
         {
-          ControlKey = kvp.Key,
-          NewControl = kvp.Value,
-          ChangeType = ControlChangeType.Added
+          ControlKey = key,
+          NewControl = newControl,
+          ChangeType = ControlChangeType.Added,
+          RequiresReview = false
         });
       }
     }
 
     // Identify removed controls (in baseline, not in new)
-    foreach (var kvp in baselineMap)
+    foreach (var key in baselineMap.Keys.OrderBy(k => k, StringComparer.OrdinalIgnoreCase))
     {
-      if (!newMap.ContainsKey(kvp.Key))
+      var baselineControl = baselineMap[key];
+      if (!newMap.ContainsKey(key))
       {
         diff.RemovedControls.Add(new ControlDiff
         {
-          ControlKey = kvp.Key,
-          BaselineControl = kvp.Value,
-          ChangeType = ControlChangeType.Removed
+          ControlKey = key,
+          BaselineControl = baselineControl,
+          ChangeType = ControlChangeType.Removed,
+          RequiresReview = true,
+          ReviewReason = "Control removed from target baseline"
         });
       }
     }
 
     // Identify modified controls (in both, but different)
-    foreach (var kvp in baselineMap)
+    foreach (var key in baselineMap.Keys.OrderBy(k => k, StringComparer.OrdinalIgnoreCase))
     {
-      if (newMap.TryGetValue(kvp.Key, out var newControl))
+      var baselineControl = baselineMap[key];
+      if (newMap.TryGetValue(key, out var newControl))
       {
-        var changes = CompareControls(kvp.Value, newControl);
+        var changes = CompareControls(baselineControl, newControl);
         if (changes.Count > 0)
         {
+          var orderedChanges = changes
+            .OrderByDescending(ch => ch.Impact)
+            .ThenBy(ch => ch.FieldName, StringComparer.Ordinal)
+            .ToList();
+          var requiresReview = orderedChanges.Any(ch => ch.Impact == FieldChangeImpact.High);
+
           diff.ModifiedControls.Add(new ControlDiff
           {
-            ControlKey = kvp.Key,
-            BaselineControl = kvp.Value,
+            ControlKey = key,
+            BaselineControl = baselineControl,
             NewControl = newControl,
             ChangeType = ControlChangeType.Modified,
-            Changes = changes
+            Changes = orderedChanges,
+            RequiresReview = requiresReview,
+            ReviewReason = requiresReview
+              ? $"High-impact changes: {string.Join(", ", orderedChanges.Where(ch => ch.Impact == FieldChangeImpact.High).Select(ch => ch.FieldName))}"
+              : string.Empty
           });
         }
       }
@@ -92,6 +108,11 @@ public sealed class BaselineDiffService
     diff.TotalRemoved = diff.RemovedControls.Count;
     diff.TotalModified = diff.ModifiedControls.Count;
     diff.TotalUnchanged = baselineControls.Count() - diff.TotalRemoved - diff.TotalModified;
+    diff.ReviewRequiredControls = diff.RemovedControls
+      .Concat(diff.ModifiedControls.Where(c => c.RequiresReview))
+      .OrderBy(c => c.ControlKey, StringComparer.OrdinalIgnoreCase)
+      .ToList();
+    diff.TotalReviewRequired = diff.ReviewRequiredControls.Count;
 
     return diff;
   }
@@ -219,11 +240,13 @@ public sealed class BaselineDiff
   public List<ControlDiff> AddedControls { get; set; } = new();
   public List<ControlDiff> RemovedControls { get; set; } = new();
   public List<ControlDiff> ModifiedControls { get; set; } = new();
+  public List<ControlDiff> ReviewRequiredControls { get; set; } = new();
 
   public int TotalAdded { get; set; }
   public int TotalRemoved { get; set; }
   public int TotalModified { get; set; }
   public int TotalUnchanged { get; set; }
+  public int TotalReviewRequired { get; set; }
 
   public int TotalControls => TotalAdded + TotalRemoved + TotalModified + TotalUnchanged;
 }
@@ -238,6 +261,8 @@ public sealed class ControlDiff
   public ControlRecord? NewControl { get; set; }
   public ControlChangeType ChangeType { get; set; }
   public List<ControlFieldChange> Changes { get; set; } = new();
+  public bool RequiresReview { get; set; }
+  public string? ReviewReason { get; set; }
 }
 
 /// <summary>

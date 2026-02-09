@@ -94,7 +94,42 @@ jobs:
             throw "Upgrade/rebase validation status is '$($summary.status)': $($summary.message)"
           }
 
+          $parityStep = @($summary.steps | Where-Object { $_.name -eq 'upgrade-rebase-parity-contract' })
+          if ($parityStep.Count -ne 1) {
+            throw "Upgrade/rebase parity evidence step missing from summary."
+          }
+
+          if (-not [bool]$parityStep[0].succeeded) {
+            throw "Upgrade/rebase parity evidence step failed. See $($parityStep[0].logPath)"
+          }
+
           Write-Host "Upgrade/rebase validation passed with $(@($summary.steps).Count) evidence step(s)." -ForegroundColor Green
+
+      - name: Validate quarterly trend evidence
+        if: ${{ inputs.run_release_gate && inputs.run_quarterly_pack }}
+        shell: pwsh
+        run: |
+          $summaryPath = '.\.artifacts\release-gate\release-package\quarterly-pack\quarterly-pack-summary.json'
+          $reportPath = '.\.artifacts\release-gate\release-package\quarterly-pack\quarterly-pack-report.md'
+
+          if (-not (Test-Path -LiteralPath $summaryPath)) {
+            throw "Quarterly trend summary artifact missing at $summaryPath"
+          }
+
+          if (-not (Test-Path -LiteralPath $reportPath)) {
+            throw "Quarterly trend report artifact missing at $reportPath"
+          }
+
+          $summary = Get-Content -Path $summaryPath -Raw | ConvertFrom-Json
+          if (-not [bool]$summary.overallPassed) {
+            throw "Quarterly trend summary indicates failure: decision=$($summary.decision)"
+          }
+
+          if ($summary.decision -ne 'pass') {
+            throw "Quarterly trend decision is '$($summary.decision)' (expected 'pass')."
+          }
+
+          Write-Host "Quarterly trend evidence validated for release package. Fixtures: pass=$($summary.fixtures.passed) warning=$($summary.fixtures.warnings) fail=$($summary.fixtures.failed)" -ForegroundColor Green
 
       - name: Build release packages
         shell: pwsh

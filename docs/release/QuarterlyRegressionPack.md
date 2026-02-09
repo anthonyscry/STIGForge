@@ -57,6 +57,12 @@ Runner outputs in `-OutputRoot`:
 - Pack policy failures block release-gate success.
 - Warnings are captured explicitly for promotion review.
 
+## Workflow enforcement
+
+- `release-package.yml` validates quarterly summary/report presence and requires `overallPassed=true` with `decision=pass` when quarterly regression is enabled.
+- `vm-smoke-matrix.yml` validates quarterly summary/report presence and requires `overallPassed=true` with `decision=pass` per VM runner.
+- Promotion is blocked if quarterly trend artifacts are missing or indicate non-passing drift status.
+
 ## Security-gate integration
 
 - `tools/release/Invoke-SecurityGate.ps1` accepts quarterly summary/report paths.

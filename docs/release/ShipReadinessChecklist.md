@@ -10,7 +10,9 @@ Run `tools/release/Invoke-ReleaseGate.ps1` on the exact RC commit and confirm:
 - `report/release-gate-summary.json` has all required steps with `succeeded: true`.
 - `security/reports/security-gate-report.md` and `security/reports/security-gate-summary.json` show no unresolved blocking findings.
 - `quarterly-pack/quarterly-pack-summary.json` and `quarterly-pack/quarterly-pack-report.md` exist and are policy-clean for release.
+- `quarterly-pack/quarterly-pack-summary.json` has `overallPassed: true` and `decision: pass`.
 - `upgrade-rebase/upgrade-rebase-summary.json` has `status: passed`.
+- `upgrade-rebase/upgrade-rebase-summary.json` includes `upgrade-rebase-parity-contract` with `succeeded: true`.
 - `upgrade-rebase/upgrade-rebase-report.md` documents diff contract, overlay rebase contract, CLI integration contract, and rollback safety checks.
 - `report/sha256-checksums.txt` exists and includes release gate outputs.
 - `sbom/dotnet-packages.json` exists unless explicitly skipped with policy exception.
@@ -45,6 +47,7 @@ Run `tools/release/Invoke-PackageBuild.ps1` for the same RC commit and confirm:
 - `release-package.yml` manual run succeeds and uploads package + release gate artifacts.
 - `vm-smoke-matrix.yml` succeeds for `win11`, `server2019`, and `server2022`.
 - VM artifacts include release-gate, stability-budget, and upgrade/rebase evidence for each runner.
+- VM artifacts include `quarterly-pack-summary.json` + `quarterly-pack-report.md` and `stability-budget-summary.json` + `stability-budget-report.md` for each runner.
 
 ## 6) Go / No-Go
 

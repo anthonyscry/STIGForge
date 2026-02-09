@@ -91,6 +91,7 @@ public class OverlayRebaseServiceTests
     report.Actions.Should().HaveCount(1);
     report.Actions[0].ActionType.Should().Be(RebaseActionType.Keep);
     report.Actions[0].Confidence.Should().BeGreaterThanOrEqualTo(0.9);
+    report.BlockingConflicts.Should().Be(0);
   }
 
   [Fact]
@@ -123,6 +124,9 @@ public class OverlayRebaseServiceTests
     report.Actions.Should().HaveCount(1);
     report.Actions[0].ActionType.Should().Be(RebaseActionType.Remove);
     report.Actions[0].RequiresReview.Should().BeTrue();
+    report.Actions[0].IsBlockingConflict.Should().BeTrue();
+    report.Actions[0].RecommendedAction.Should().NotBeNullOrWhiteSpace();
+    report.BlockingConflicts.Should().Be(1);
     // Remove actions have high confidence (removal is certain), but require review
   }
 
@@ -154,8 +158,11 @@ public class OverlayRebaseServiceTests
 
     report.Success.Should().BeTrue();
     report.Actions.Should().HaveCount(1);
-    // High-impact change should either be ReviewRequired or KeepWithWarning
-    report.Actions[0].ActionType.Should().BeOneOf(RebaseActionType.ReviewRequired, RebaseActionType.KeepWithWarning);
+    report.Actions[0].ActionType.Should().Be(RebaseActionType.ReviewRequired);
+    report.Actions[0].RequiresReview.Should().BeTrue();
+    report.Actions[0].IsBlockingConflict.Should().BeTrue();
+    report.Actions[0].RecommendedAction.Should().NotBeNullOrWhiteSpace();
+    report.BlockingConflicts.Should().Be(1);
   }
 
   [Fact]
@@ -213,7 +220,40 @@ public class OverlayRebaseServiceTests
 
     // One action is Keep (1.0), one is Remove (1.0), but Remove requires review
     report.Actions.Should().HaveCount(2);
-    report.HighRisk.Should().Be(0); // Remove is high confidence, categorized differently
+    report.HighRisk.Should().Be(1);
+    report.BlockingConflicts.Should().Be(1);
     report.Actions.Should().Contain(a => a.ActionType == RebaseActionType.Remove);
+  }
+
+  [Fact]
+  public async Task ApplyRebase_WithBlockingConflicts_Throws()
+  {
+    var (svc, overlayRepo, controlRepo) = CreateService();
+    var baseline = new List<ControlRecord> { MakeControl("C1"), MakeControl("C2") };
+    var target = new List<ControlRecord> { MakeControl("C1") }; // C2 removed -> blocking
+
+    controlRepo.Setup(r => r.ListControlsAsync("base", It.IsAny<CancellationToken>())).ReturnsAsync(baseline);
+    controlRepo.Setup(r => r.ListControlsAsync("target", It.IsAny<CancellationToken>())).ReturnsAsync(target);
+
+    var overlay = new Overlay
+    {
+      OverlayId = "overlay1",
+      Name = "Blocking overlay",
+      UpdatedAt = DateTimeOffset.UtcNow,
+      Overrides = new List<ControlOverride>
+      {
+        new() { RuleId = "SV-C2_rule", VulnId = "V-C2", StatusOverride = ControlStatus.NotApplicable }
+      },
+      PowerStigOverrides = Array.Empty<PowerStigOverride>()
+    };
+
+    overlayRepo.Setup(r => r.GetAsync("overlay1", It.IsAny<CancellationToken>())).ReturnsAsync(overlay);
+
+    var report = await svc.RebaseOverlayAsync("overlay1", "base", "target");
+    report.HasBlockingConflicts.Should().BeTrue();
+
+    Func<Task> act = async () => await svc.ApplyRebaseAsync("overlay1", report);
+    await act.Should().ThrowAsync<InvalidOperationException>()
+      .WithMessage("*blocking conflicts*");
   }
 }

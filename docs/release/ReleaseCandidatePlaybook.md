@@ -23,7 +23,9 @@ Required pass conditions:
 - `report/release-gate-summary.json` -> `overallPassed=true`
 - `security/reports/security-gate-summary.json` -> no unresolved blocking findings
 - `quarterly-pack/quarterly-pack-summary.json` -> policy-compliant result
+- `quarterly-pack/quarterly-pack-summary.json` -> `overallPassed=true` and `decision=pass`
 - `upgrade-rebase/upgrade-rebase-summary.json` -> `status=passed`
+- `upgrade-rebase/upgrade-rebase-summary.json` includes `upgrade-rebase-parity-contract` with `succeeded=true`
 
 ## 3) Build package with reproducibility evidence
 
@@ -56,6 +58,7 @@ The release owner and approver must review:
 - Security gate report + summary
 - Quarterly pack summary + report
 - Upgrade/rebase summary + report
+- Upgrade/rebase parity contract evidence (`upgrade-rebase-parity-contract`)
 - Reproducibility evidence + checksums
 
 ## 5) Workflow parity checks
@@ -65,6 +68,7 @@ Before promotion, verify workflow parity:
 - `release-package.yml` run succeeds and uploads package + release gate artifacts.
 - `vm-smoke-matrix.yml` passes for `win11`, `server2019`, and `server2022`.
 - VM artifacts include stability budget and upgrade/rebase evidence references.
+- VM artifacts include quarterly trend summary/report and stability summary/report for each runner.
 
 ## 6) Go/No-Go decision record
 

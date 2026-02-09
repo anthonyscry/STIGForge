@@ -42,10 +42,14 @@ public partial class MainViewModel
 
       ApplyStatus = "Apply complete: " + result.LogPath;
       LastOutputPath = result.LogPath;
+      ReportSummary = BuildReportSummary(BundleRoot);
+      RefreshDashboard();
     }
     catch (Exception ex)
     {
       ApplyStatus = "Apply failed: " + ex.Message;
+      if (!string.IsNullOrWhiteSpace(BundleRoot))
+        ApplyStatus += " " + BuildApplyRecoveryGuidance(BundleRoot);
     }
     finally
     {
@@ -417,11 +421,12 @@ public partial class MainViewModel
         log.AppendLine("  Mission completion blocked:");
         foreach (var failure in blockingFailures)
           log.AppendLine("  - " + failure);
+        log.AppendLine("  Recovery guidance: " + BuildApplyRecoveryGuidance(BundleRoot));
       }
       OrchLog = log.ToString();
       OrchStatus = blockingFailures.Count == 0
         ? "Orchestration complete."
-        : "Orchestration blocked - operator decision required.";
+        : "Orchestration blocked - operator decision required. " + BuildApplyRecoveryGuidance(BundleRoot);
 
       // Refresh dashboard
       ReportSummary = BuildReportSummary(BundleRoot);
@@ -446,18 +451,34 @@ public partial class MainViewModel
     try
     {
       var summary = _bundleMissionSummary.LoadSummary(bundleRoot);
-      return "Summary: total=" + summary.Verify.TotalCount
+      var summaryLine = "Summary: total=" + summary.Verify.TotalCount
         + " closed=" + summary.Verify.ClosedCount
         + " open=" + summary.Verify.OpenCount
         + " reports=" + summary.Verify.ReportCount
         + " blocking=" + summary.Verify.BlockingFailureCount
         + " warnings=" + summary.Verify.RecoverableWarningCount
         + " skipped=" + summary.Verify.OptionalSkipCount;
+
+      var severityLine = BuildMissionSeverityLine(summary);
+      var guidanceLine = BuildMissionRecoveryGuidance(summary, bundleRoot);
+      return summaryLine + Environment.NewLine + severityLine + Environment.NewLine + guidanceLine;
     }
     catch (Exception ex)
     {
       return "Summary unavailable: " + ex.Message;
     }
+  }
+
+  private static string BuildApplyRecoveryGuidance(string bundleRoot)
+  {
+    var applyLog = Path.Combine(bundleRoot, "Apply", "apply_run.json");
+    var snapshotsDir = Path.Combine(bundleRoot, "Apply", "Snapshots");
+    var rollbackGuidance = GetRollbackGuidance(bundleRoot);
+
+    return "Required artifacts: " + applyLog
+      + (Directory.Exists(snapshotsDir) ? ", " + snapshotsDir : string.Empty)
+      + ". Next action: review blocking failures, fix prerequisites, and rerun apply/verify. "
+      + rollbackGuidance;
   }
 
   private async Task ValidateAndRecordBreakGlassAsync(string action, string target, string bypassName, CancellationToken ct)

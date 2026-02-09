@@ -147,6 +147,8 @@
                 <TextBlock Text="Last eMASS export:" Foreground="Gray" Margin="0,0,8,0"/>
                 <TextBlock Text="{Binding DashLastExport}" Foreground="Gray"/>
               </StackPanel>
+              <TextBlock Text="{Binding DashMissionSeverity}" Margin="0,8,0,0" Foreground="Gray" TextWrapping="Wrap"/>
+              <TextBlock Text="{Binding DashRecoveryGuidance}" Margin="0,4,0,0" Foreground="Gray" TextWrapping="Wrap"/>
             </StackPanel>
           </Border>
         </Grid>
@@ -322,7 +324,7 @@
             </StackPanel>
             <Button Content="Run Apply" Width="140" Command="{Binding ApplyRunCommand}" />
             <TextBlock Text="Applies using bundle Apply/RunApply.ps1" Margin="0,8,0,0" />
-            <TextBlock Text="{Binding ApplyStatus}" Margin="0,6,0,0" Foreground="Gray" />
+            <TextBlock Text="{Binding ApplyStatus}" Margin="0,6,0,0" Foreground="Gray" TextWrapping="Wrap" />
             <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
               <TextBlock Text="Last output:" Foreground="Gray" />
               <TextBlock Text=" {Binding LastOutputPath}" Foreground="Gray" />
@@ -366,7 +368,7 @@
             <Button Content="Run Verify" Width="140" Command="{Binding VerifyRunCommand}" IsEnabled="{Binding ActionsEnabled}" />
             <TextBlock Text="Runs Evaluate-STIG / SCAP if configured" Margin="0,8,0,0" />
             <TextBlock Text="{Binding VerifyStatus}" Margin="0,6,0,0" Foreground="Gray" />
-            <TextBlock Text="{Binding VerifySummary}" Margin="0,6,0,0" Foreground="Gray" />
+            <TextBlock Text="{Binding VerifySummary}" Margin="0,6,0,0" Foreground="Gray" TextWrapping="Wrap" />
             <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
               <TextBlock Text="Last output:" Foreground="Gray" />
               <TextBlock Text=" {Binding LastOutputPath}" Foreground="Gray" />
@@ -574,7 +576,7 @@
             <Button Content="Export eMASS" Width="140" Command="{Binding ExportEmassCommand}" IsEnabled="{Binding ActionsEnabled}" />
             <TextBlock Text="Exports eMASS package from bundle" Margin="0,8,0,0" />
             <TextBlock Text="{Binding ExportStatus}" Margin="0,6,0,0" Foreground="Gray" />
-            <TextBlock Text="{Binding ReportSummary}" Margin="0,6,0,0" Foreground="Gray" />
+            <TextBlock Text="{Binding ReportSummary}" Margin="0,6,0,0" Foreground="Gray" TextWrapping="Wrap" />
             <StackPanel Orientation="Horizontal" Margin="0,6,0,0">
               <TextBlock Text="Last output:" Foreground="Gray" />
               <TextBlock Text=" {Binding LastOutputPath}" Foreground="Gray" />

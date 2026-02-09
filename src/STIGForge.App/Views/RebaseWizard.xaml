@@ -49,37 +49,78 @@
         <Grid.RowDefinitions>
           <RowDefinition Height="Auto"/>
           <RowDefinition Height="Auto"/>
+          <RowDefinition Height="Auto"/>
+          <RowDefinition Height="Auto"/>
           <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
         <!-- Summary -->
         <Border Grid.Row="0" BorderBrush="LightGray" BorderThickness="1" Padding="12" Background="#F9F9F9" Margin="0,0,0,16">
           <Grid>
-            <Grid.ColumnDefinitions>
-              <ColumnDefinition Width="*"/>
-              <ColumnDefinition Width="*"/>
-              <ColumnDefinition Width="*"/>
-            </Grid.ColumnDefinitions>
-            
-            <StackPanel Grid.Column="0">
-              <TextBlock Text="Total Overrides:" FontWeight="SemiBold" Margin="0,0,0,4"/>
-              <TextBlock Text="{Binding TotalOverrides}" FontSize="20" Foreground="Gray"/>
-            </StackPanel>
-            
-            <StackPanel Grid.Column="1">
-              <TextBlock Text="Auto-Rebased:" FontWeight="SemiBold" Margin="0,0,0,4"/>
-              <TextBlock Text="{Binding AutoRebasedCount}" FontSize="20" Foreground="Green"/>
-            </StackPanel>
-            
-            <StackPanel Grid.Column="2">
-              <TextBlock Text="Needs Review:" FontWeight="SemiBold" Margin="0,0,0,4"/>
-              <TextBlock Text="{Binding NeedsReviewCount}" FontSize="20" Foreground="Orange"/>
+            <Grid.RowDefinitions>
+              <RowDefinition Height="Auto"/>
+              <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <Grid Grid.Row="0">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+              </Grid.ColumnDefinitions>
+
+              <StackPanel Grid.Column="0">
+                <TextBlock Text="Total Overrides:" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                <TextBlock Text="{Binding TotalOverrides}" FontSize="20" Foreground="Gray"/>
+              </StackPanel>
+
+              <StackPanel Grid.Column="1">
+                <TextBlock Text="Auto-Rebased:" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                <TextBlock Text="{Binding AutoRebasedCount}" FontSize="20" Foreground="Green"/>
+              </StackPanel>
+
+              <StackPanel Grid.Column="2">
+                <TextBlock Text="Needs Review:" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                <TextBlock Text="{Binding NeedsReviewCount}" FontSize="20" Foreground="Orange"/>
+              </StackPanel>
+
+              <StackPanel Grid.Column="3">
+                <TextBlock Text="Blocking Conflicts:" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                <TextBlock Text="{Binding BlockingConflictCount}" FontSize="20" Foreground="Red"/>
+              </StackPanel>
+            </Grid>
+
+            <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,12,0,0">
+              <TextBlock Text="Overall Confidence: " FontWeight="SemiBold"/>
+              <TextBlock Text="{Binding OverallConfidenceDisplay}" Margin="0,0,16,0"/>
+              <TextBlock Text="Safe Actions: " FontWeight="SemiBold"/>
+              <TextBlock Text="{Binding SafeActionCount}" Margin="0,0,16,0"/>
+              <TextBlock Text="High Risk: " FontWeight="SemiBold"/>
+              <TextBlock Text="{Binding HighRiskCount}"/>
             </StackPanel>
           </Grid>
         </Border>
 
+        <TextBlock Grid.Row="1" Text="{Binding AnalysisStatus}" Margin="0,0,0,12" Foreground="Gray"/>
+
+        <Border Grid.Row="2" BorderBrush="#FFCC0000" BorderThickness="1" Background="#FFFFF4F4" Padding="10" Margin="0,0,0,12"
+                Visibility="{Binding HasBlockingConflicts, Converter={StaticResource BoolToVis}}">
+          <StackPanel>
+            <TextBlock Text="Rebase apply is blocked until these conflicts are reviewed:" FontWeight="SemiBold" Foreground="#CC0000" Margin="0,0,0,6"/>
+            <TextBlock Text="{Binding BlockingConflictSummary}" TextWrapping="Wrap"/>
+          </StackPanel>
+        </Border>
+
+        <Border Grid.Row="3" BorderBrush="LightGray" BorderThickness="1" Background="#FFF7F7F7" Padding="10" Margin="0,0,0,12">
+          <StackPanel>
+            <TextBlock Text="Recovery Guidance" FontWeight="SemiBold" Margin="0,0,0,6"/>
+            <TextBlock Text="{Binding RecoveryGuidance}" TextWrapping="Wrap" Foreground="Gray"/>
+          </StackPanel>
+        </Border>
+
         <!-- Action Tabs -->
-        <TabControl Grid.Row="2">
+        <TabControl Grid.Row="4">
           <TabItem>
             <TabItem.Header>
               <StackPanel Orientation="Horizontal">
@@ -120,6 +161,7 @@
                 <DataGrid.Columns>
                   <DataGridTextColumn Header="Control ID" Binding="{Binding ControlId}" Width="120"/>
                   <DataGridTextColumn Header="Suggested Action" Binding="{Binding Action}" Width="140"/>
+                  <DataGridTextColumn Header="Blocking" Binding="{Binding IsBlockingConflict}" Width="90"/>
                   <DataGridTextColumn Header="Confidence" Binding="{Binding ConfidenceDisplay}" Width="100"/>
                   <DataGridTextColumn Header="Reason" Binding="{Binding Reason}" Width="*"/>
                 </DataGrid.Columns>
@@ -144,7 +186,10 @@
                   
                   <TextBlock Text="Reason:" FontWeight="SemiBold" Margin="0,8,0,4"/>
                   <TextBlock Text="{Binding SelectedReviewAction.Reason}" TextWrapping="Wrap" Margin="0,0,0,8"/>
-                  
+
+                  <TextBlock Text="Recommended action:" FontWeight="SemiBold" Margin="0,8,0,4"/>
+                  <TextBlock Text="{Binding SelectedReviewAction.RecommendedAction}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+                   
                   <TextBlock Text="What control changed:" FontWeight="SemiBold" Margin="0,8,0,4"/>
                   <TextBlock Text="{Binding SelectedReviewAction.ChangesSummary}" TextWrapping="Wrap" Foreground="Gray"/>
                 </StackPanel>
@@ -190,7 +235,9 @@
     <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0"
                 Visibility="{Binding ShowAnalysis, Converter={StaticResource BoolToVis}}">
       <Button Content="Cancel" Width="100" Height="32" Command="{Binding CancelCommand}" Margin="0,0,8,0"/>
-      <Button Content="Apply Rebase" Width="120" Height="32" Command="{Binding ApplyRebaseCommand}"/>
+      <Button Content="Export Markdown" Width="130" Height="32" Command="{Binding ExportMarkdownReportCommand}" IsEnabled="{Binding CanExportReport}" Margin="0,0,8,0"/>
+      <Button Content="Export JSON" Width="110" Height="32" Command="{Binding ExportJsonReportCommand}" IsEnabled="{Binding CanExportReport}" Margin="0,0,8,0"/>
+      <Button Content="Apply Rebase" Width="120" Height="32" Command="{Binding ApplyRebaseCommand}" IsEnabled="{Binding CanApplyRebase}"/>
     </StackPanel>
   </Grid>
 </Window>

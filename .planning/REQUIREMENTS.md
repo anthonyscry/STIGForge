@@ -1,29 +1,38 @@
-# Requirements: STIGForge v1.1 (Draft)
+# Requirements: STIGForge v1.1
 
 **Defined:** 2026-02-09
-**Milestone:** v1.1 (planning initialization)
-**Status:** Draft - awaiting final scope confirmation
+**Milestone:** v1.1
+**Status:** Active
 
 ## Core Value (Inherited)
 
 Operators can execute a deterministic offline hardening mission flow with auditable outputs.
 
-## Candidate Requirement Areas
+## v1.1 Requirements
 
-### Workflow Completion
+### Upgrade and Rebase Operator Workflow
 
-- [ ] **WF-01**: Define remaining operator-facing workflow gaps that block fully self-contained mission execution.
-- [ ] **WF-02**: Define required parity checks between CLI and WPF flows for selected v1.1 scope.
+- [x] **UR-01**: Operator can generate a deterministic baseline-to-target diff report that classifies `added`, `changed`, `removed`, and `review-required` controls.
+- [x] **UR-02**: Operator can run overlay rebase with deterministic conflict classification and explicit recommended actions for each conflict.
+- [x] **UR-03**: Rebase execution preserves non-conflicting operator intent and blocks completion when unresolved blocking conflicts remain.
+- [x] **UR-04**: Diff/rebase artifacts include machine-readable summary plus operator-readable report with enough detail for release review.
 
-### Upgrade/Rebase Operations
+### WPF Parity and Usability
 
-- [ ] **UR-01**: Define end-to-end operator workflow requirements for diff/rebase update handling.
-- [ ] **UR-02**: Define user-facing diagnostics and recovery expectations for failed rebase paths.
+- [x] **WP-01**: WPF app exposes diff/rebase workflow end-to-end without CLI fallback for standard operator paths.
+- [x] **WP-02**: WPF status and mission summaries match CLI semantics for blocking failures, warnings, and optional skips.
+- [x] **WP-03**: WPF surfaces actionable recovery guidance for failed apply/rebase paths (required artifacts, next command/action, and rollback guidance).
 
-### Quality and Stability
+### Quality and Release Operations
 
-- [ ] **QS-01**: Define additional regression coverage needed for sustained quarterly release cycles.
-- [ ] **QS-02**: Define measurable stability/quality gates for v1.1 promotion.
+- [x] **QA-01**: CI includes deterministic automated coverage for diff/rebase core workflows and conflict handling paths.
+- [x] **QA-02**: VM/release gate evidence includes diff/rebase and WPF parity validation signals for go/no-go review.
+- [x] **QA-03**: Stability and compatibility gates for v1.1 emit trendable artifacts that flag regression drift before promotion.
+
+## Future Requirements (v1.2+)
+
+- **FUT-01**: Advanced bulk remediation simulation and preview workflows.
+- **FUT-02**: Pluggable enterprise packaging/export adapters beyond eMASS baseline.
 
 ## Out of Scope (Unchanged)
 
@@ -37,12 +46,21 @@ Operators can execute a deterministic offline hardening mission flow with audita
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| WF-01 | TBD (Phase 08+) | Pending |
-| WF-02 | TBD (Phase 08+) | Pending |
-| UR-01 | TBD (Phase 08+) | Pending |
-| UR-02 | TBD (Phase 08+) | Pending |
-| QS-01 | TBD (Phase 08+) | Pending |
-| QS-02 | TBD (Phase 08+) | Pending |
+| UR-01 | Phase 08 | Completed |
+| UR-02 | Phase 08 | Completed |
+| UR-03 | Phase 08 | Completed |
+| UR-04 | Phase 08 | Completed |
+| WP-01 | Phase 09 | Completed |
+| WP-02 | Phase 09 | Completed |
+| WP-03 | Phase 09 | Completed |
+| QA-01 | Phase 10 | Completed |
+| QA-02 | Phase 10 | Completed |
+| QA-03 | Phase 10 | Completed |
+
+**Coverage:**
+- v1.1 requirements: 10 total
+- Mapped to phases: 10
+- Unmapped: 0
 
 ---
-*Last updated: 2026-02-09 during v1.1 planning initialization*
+*Last updated: 2026-02-09 after Phase 10 execution completion*

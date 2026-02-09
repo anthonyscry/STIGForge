@@ -2,12 +2,12 @@
 
 ## Current Position
 
-**Phase:** v1.1 planning initialization
-**Last Completed:** v1.0 milestone closeout (roadmap + requirements archive, UAT complete)
+**Phase:** v1.1-release-candidate-go-no-go (finalization)
+**Last Completed:** 10-quality-and-release-signal-hardening-02 (trend-signal promotion checks across CI/release/vm workflows)
 
 **Started:** February 9, 2026
 
-Progress: ███░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░ (8%)
+Progress: ████████████████████████████████████████████░░░░░░░░░░░░ (92%)
 
 ---
 
@@ -98,13 +98,27 @@ Progress: ███░░░░░░░░░░░░░░░░░░░░�
 ## Pending Todos
 
 ### High Priority
-- [ ] Confirm v1.1 milestone goals and boundaries
-- [ ] Finalize v1.1 requirement set with IDs and acceptance criteria
-- [ ] Break v1.1 scope into Phase 08+ executable plans
+- [x] Execute `08-upgrade-rebase-operator-workflow-01-PLAN.md`
+- [x] Execute `08-upgrade-rebase-operator-workflow-02-PLAN.md`
+- [x] Prepare Phase 09 context for WPF parity and recovery UX
+- [x] Execute `09-wpf-parity-and-recovery-ux-01-PLAN.md`
+- [x] Execute `09-wpf-parity-and-recovery-ux-02-PLAN.md`
+- [x] Prepare Phase 10 context for quality and release signal hardening
+- [x] Execute `10-quality-and-release-signal-hardening-01-PLAN.md`
+- [x] Execute `10-quality-and-release-signal-hardening-02-PLAN.md`
+- [x] Run release-gate and package-build evidence generation for v1.1 RC (`phase10-rc`)
+- [x] Execute `docs/release/ShipReadinessChecklist.md` for v1.1 release candidate
+- [ ] Close manual checklist blockers for functional UAT and upgrade/rollback validation
+- [ ] Pin RC commit and regenerate release/package evidence from clean working tree
+- [ ] Run `release-package.yml` and `vm-smoke-matrix.yml` for pinned RC commit and archive outputs
 
 ### Medium Priority
-- [ ] Validate updated requirement-to-phase traceability
-- [ ] Run initial planning verification for first v1.1 phase
+- [x] Validate requirement traceability remains 100% after Phase 08 updates
+- [x] Validate WP-02/WP-03 acceptance criteria for severity and recovery guidance parity
+- [x] Validate QA-01/QA-02 gating evidence after Phase 10 Plan 01
+- [x] Define v1.1 quality/release signal acceptance thresholds for Phase 10
+- [x] Capture initial go/no-go decision record with artifact roots and commit hash
+- [ ] Capture final go/no-go decision record after manual and workflow signoff
 
 ### Low Priority
 - [ ] SCCM packaging integration (v2/v3)
@@ -115,7 +129,8 @@ Progress: ███░░░░░░░░░░░░░░░░░░░░�
 
 ## Blockers & Concerns
 
-**None identified**
+- Current go/no-go is `NO-GO (temporary)` in `docs/release/GoNoGo-v1.1-rc1.md` until manual checklist and workflow promotion checks complete.
+- RC evidence was generated from a dirty working tree; final promotion requires evidence regenerated from a pinned clean commit.
 
 ---
 
@@ -131,8 +146,8 @@ Progress: ███░░░░░░░░░░░░░░░░░░░░�
 
 ## Session Continuity
 
-**Last session:** 2026-02-09T01:05:29Z
-**Stopped at:** Milestone v1.0 archived and v1.1 planning scaffold initialized (PROJECT/ROADMAP/REQUIREMENTS updated).
+**Last session:** 2026-02-09T07:37:00Z
+**Stopped at:** Produced initial RC go/no-go decision record (`docs/release/GoNoGo-v1.1-rc1.md`) with temporary NO-GO due outstanding manual validations and workflow-run evidence.
 **Resume file:** None
 
 ---
@@ -141,4 +156,4 @@ Progress: ███░░░░░░░░░░░░░░░░░░░░�
 
 **Date:** February 9, 2026
 **Updated By:** OpenCode Executor
-**Reason:** Closed v1.0 milestone and initialized v1.1 planning cycle artifacts
+**Reason:** Executed checklist audit and recorded initial RC decision with explicit blockers

@@ -185,6 +185,7 @@ public class CliCommandTests : IDisposable
     diff.TotalAdded.Should().Be(1);     // C4 added
     diff.TotalRemoved.Should().Be(1);   // C2 removed
     diff.TotalModified.Should().Be(1);  // C1 title changed
+    diff.TotalReviewRequired.Should().Be(1);
     diff.TotalUnchanged.Should().Be(1); // C3 unchanged
   }
 
@@ -254,6 +255,8 @@ public class CliCommandTests : IDisposable
     report.Actions.Should().HaveCount(1);
     report.Actions[0].ActionType.Should().Be(RebaseActionType.Remove);
     report.Actions[0].RequiresReview.Should().BeTrue();
+    report.Actions[0].IsBlockingConflict.Should().BeTrue();
+    report.BlockingConflicts.Should().Be(1);
   }
 
   [Fact]
@@ -276,6 +279,7 @@ public class CliCommandTests : IDisposable
     var report = await rebaseService.RebaseOverlayAsync("ap-ov1", "ap-base", "ap-tgt");
 
     report.Success.Should().BeTrue();
+    report.HasBlockingConflicts.Should().BeFalse();
 
     // Apply the rebase
     var rebased = await rebaseService.ApplyRebaseAsync("ap-ov1", report);
@@ -289,6 +293,33 @@ public class CliCommandTests : IDisposable
     var stored = await overlayRepo.GetAsync(rebased.OverlayId, CancellationToken.None);
     stored.Should().NotBeNull();
     stored!.Overrides.Should().HaveCount(1);
+  }
+
+  [Fact]
+  public async Task RebaseOverlay_ApplyRebase_WithBlockingConflicts_Fails()
+  {
+    var controlRepo = new SqliteJsonControlRepository(_cs);
+    var overlayRepo = new SqliteJsonOverlayRepository(_cs);
+
+    var baseline = new List<ControlRecord> { MakeControl("C1"), MakeControl("C2") };
+    var target = new List<ControlRecord> { MakeControl("C1") };
+    await controlRepo.SaveControlsAsync("blk-base", baseline, CancellationToken.None);
+    await controlRepo.SaveControlsAsync("blk-tgt", target, CancellationToken.None);
+
+    var overlay = MakeOverlay("blk-ov1", "Blocking Apply",
+      new ControlOverride { RuleId = "SV-C2_rule", VulnId = "V-C2", StatusOverride = ControlStatus.NotApplicable, NaReason = "Removed" }
+    );
+    await overlayRepo.SaveAsync(overlay, CancellationToken.None);
+
+    var diffService = new BaselineDiffService(controlRepo);
+    var rebaseService = new OverlayRebaseService(overlayRepo, diffService);
+    var report = await rebaseService.RebaseOverlayAsync("blk-ov1", "blk-base", "blk-tgt");
+
+    report.HasBlockingConflicts.Should().BeTrue();
+
+    Func<Task> act = async () => await rebaseService.ApplyRebaseAsync("blk-ov1", report);
+    await act.Should().ThrowAsync<InvalidOperationException>()
+      .WithMessage("*blocking conflicts*");
   }
 
   [Fact]

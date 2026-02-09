@@ -1,126 +1,72 @@
-# STIGForge Roadmap (v1.1 Planning)
+# STIGForge Roadmap (v1.1)
 
 ## Planning Mode
 
 Solo developer + Claude execution, phase-by-phase delivery with small executable plans.
 
+## Milestone History
+
+- ✅ `v1.0` shipped on 2026-02-09
+  - Archive: `.planning/milestones/v1.0-ROADMAP.md`
+  - Requirements archive: `.planning/milestones/v1.0-REQUIREMENTS.md`
+
 ## Current Position
 
-- Milestone `v1.0` is archived in `.planning/milestones/v1.0-ROADMAP.md`.
-- Completed execution baseline: `03-verification-integration`, `04-compliance-export-integrity`, `05-operator-workflow-completion`, `06-security-and-operational-hardening`, `07-release-readiness-and-compatibility`.
-- Next: define v1.1 requirements and phase breakdown starting at Phase 08.
-
-## Next Milestone Setup (v1.1)
-
-- [ ] Confirm v1.1 scope goals and exclusions.
-- [ ] Define `.planning/REQUIREMENTS.md` with requirement IDs and acceptance checks.
-- [ ] Create v1.1 phase structure (Phase 08+), objective mapping, and success criteria.
-- [ ] Begin planning for the first v1.1 phase.
+- Current milestone: `v1.1` (execution active)
+- Starting phase index: `08`
+- Requirement source: `.planning/REQUIREMENTS.md`
+- Next action: close manual RC checklist blockers and rerun evidence on pinned commit
 
 ---
 
-### Phase 03: Verification Integration
+### Phase 08: Upgrade/Rebase Operator Workflow
 
-**Status:** Completed
-**Goal:** Make verification deterministic and consistent across CLI and WPF flows, including conflict resolution and coverage outputs.
-**Plans:** 3 plans
+**Status:** Completed (2026-02-09)
+**Goal:** Complete deterministic diff/rebase operator workflows with blocking conflict semantics and audit-ready artifacts.
+**Requirements:** `UR-01`, `UR-02`, `UR-03`, `UR-04`
+**Plans:** 2 plans
 
 Plans:
-- [x] 03-verification-integration-01-PLAN.md - Harden adapters and merge reconciliation for deterministic consolidated outputs.
-- [x] 03-verification-integration-02-PLAN.md - Introduce a shared verification workflow service with unit-test coverage.
-- [x] 03-verification-integration-03-PLAN.md - Refactor CLI/WPF verify flows to shared orchestration and add parity integration tests.
+- [x] 08-upgrade-rebase-operator-workflow-01-PLAN.md - Harden deterministic diff/rebase contracts and artifact structure.
+- [x] 08-upgrade-rebase-operator-workflow-02-PLAN.md - Enforce unresolved-conflict fail-closed semantics and recovery guidance across operator surfaces.
 
 Exit Criteria:
-- Consolidated verify outputs are deterministic across repeated runs.
-- CLI and WPF verification paths produce the same artifact structure and summary behavior.
-- Conflict resolution is auditable and test-validated.
+- Diff/rebase outputs are deterministic and operator-actionable.
+- Rebase completion blocks on unresolved blocking conflicts.
+- Artifact bundle includes both machine-readable and operator-readable reports.
 
 ---
 
-### Phase 04: Compliance Export Integrity
+### Phase 09: WPF Parity and Recovery UX
 
-**Status:** Completed
-**Goal:** Guarantee eMASS/CKL/POA&M export completeness and traceability from source verification/manual evidence.
-**Plans:** 3 plans
+**Status:** Completed (2026-02-09)
+**Goal:** Remove remaining operator CLI fallback for scoped workflows and align WPF mission/recovery semantics with CLI.
+**Requirements:** `WP-01`, `WP-02`, `WP-03`
+**Plans:** 2 plans
 
 Plans:
-- [x] 04-compliance-export-integrity-01-PLAN.md - Centralize export status mapping and deterministic index/trace generation.
-- [x] 04-compliance-export-integrity-02-PLAN.md - Strengthen package validation with cross-artifact integrity checks.
-- [x] 04-compliance-export-integrity-03-PLAN.md - Surface validation diagnostics in CLI/WPF and add end-to-end export integrity tests.
-
-Planned Focus:
-- Enforce export schema and manifest integrity checks.
-- Add cross-artifact consistency validation (control IDs, statuses, evidence links).
-- Expand export failure diagnostics and recovery guidance.
+- [x] 09-wpf-parity-and-recovery-ux-01-PLAN.md - Wire end-to-end diff/rebase flows in WPF with parity to CLI orchestration.
+- [x] 09-wpf-parity-and-recovery-ux-02-PLAN.md - Add recovery guidance and severity-consistent mission summaries in WPF surfaces.
 
 Exit Criteria:
-- Export package validator catches structural and linkage defects before delivery.
-- eMASS-ready artifacts remain consistent with verification + manual answer inputs.
+- WPF supports scoped diff/rebase mission path without standard CLI fallback.
+- WPF and CLI classify blocking/warning/skip outcomes consistently.
+- Operators receive explicit recovery guidance for failed rebase/apply flows.
 
 ---
 
-### Phase 05: Operator Workflow Completion
+### Phase 10: Quality and Release Signal Hardening
 
-**Status:** Completed
-**Goal:** Complete mission flow from UI for import, review, apply, verify, manual checks, and export.
-**Plans:** 3 plans
-
-Plans:
-- [x] 05-operator-workflow-completion-01-PLAN.md - Create shared bundle mission summary and status normalization used by operator surfaces.
-- [x] 05-operator-workflow-completion-02-PLAN.md - Wire WPF verify/dashboard flows to shared overlap and mission-summary infrastructure.
-- [x] 05-operator-workflow-completion-03-PLAN.md - Improve manual wizard throughput and evidence ergonomics for in-app review completion.
-
-Planned Focus:
-- Remove remaining CLI-only dependencies for primary operator workflow.
-- Improve manual wizard throughput and answer/evidence ergonomics.
-- Strengthen dashboard/reporting clarity for decision support.
-
-Exit Criteria:
-- Core mission workflow executes end-to-end from WPF without operator CLI fallback.
-- Manual check progress and evidence status are visible and actionable.
-
----
-
-### Phase 06: Security and Operational Hardening
-
-**Status:** Completed (2026-02-08)
-**Goal:** Raise security posture and failure safety for enterprise/air-gapped operations.
-**Plans:** 4 plans
+**Status:** Completed (2026-02-09)
+**Goal:** Expand CI/VM/release signal quality for v1.1 workflows and make compatibility drift evidence trendable.
+**Requirements:** `QA-01`, `QA-02`, `QA-03`
+**Plans:** 2 plans
 
 Plans:
-- [x] 06-security-and-operational-hardening-01-PLAN.md - Enforce explicit break-glass guardrails and CLI/WPF parity for high-risk actions.
-- [x] 06-security-and-operational-hardening-02-PLAN.md - Harden input/file boundaries with safe archive extraction and secure XML parsing.
-- [x] 06-security-and-operational-hardening-03-PLAN.md - Make release/security gates deterministic offline with strict unresolved-finding mode.
-- [x] 06-security-and-operational-hardening-04-PLAN.md - Enforce fail-closed integrity checkpoints and mission-summary severity classification.
-
-Planned Focus:
-- Input/process/file hardening and defensive defaults.
-- Audit-trail robustness and tamper verification coverage.
-- Safe rollback rails and destructive-action guards.
+- [x] 10-quality-and-release-signal-hardening-01-PLAN.md - Add deterministic automated coverage for diff/rebase and parity-critical paths.
+- [x] 10-quality-and-release-signal-hardening-02-PLAN.md - Promote trendable stability/compatibility signal artifacts into release decision flow.
 
 Exit Criteria:
-- Security and integrity gates pass with no critical findings.
-- High-risk actions are guarded and reversible where possible.
-
----
-
-### Phase 07: Release Readiness and Compatibility
-
-**Status:** Completed (2026-02-08)
-**Goal:** Produce a release candidate with stable compatibility guarantees across content updates.
-**Plans:** 4 plans
-
-Plans:
-- [x] 07-release-readiness-and-compatibility-01-PLAN.md - Define deterministic fixture/compatibility matrix and gate compatibility contract checks in CI.
-- [x] 07-release-readiness-and-compatibility-02-PLAN.md - Implement long-run stability budget and enforce smoke/stability signals in CI and VM matrix.
-- [x] 07-release-readiness-and-compatibility-03-PLAN.md - Add quarterly regression pack runner with drift artifacts and release-gate integration.
-- [x] 07-release-readiness-and-compatibility-04-PLAN.md - Finalize RC checklist, reproducibility evidence, and upgrade/rebase validation gating.
-
-Planned Focus:
-- Fixture corpus expansion and long-run stability validation.
-- Quarterly update regression packs and drift detection.
-- Final release checklist, package reproducibility, and documentation lock.
-
-Exit Criteria:
-- Release gate and compatibility suite pass on target environments.
-- Upgrade/rebase behavior is documented and validated.
+- CI and VM gates enforce v1.1 diff/rebase and parity regressions.
+- Release evidence packages include trendable compatibility/stability signals.
+- Go/No-Go review has explicit v1.1 parity and regression coverage evidence.

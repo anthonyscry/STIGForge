@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -25,6 +26,7 @@ public partial class DiffViewerViewModel : ObservableObject
   [ObservableProperty] private int _addedCount;
   [ObservableProperty] private int _removedCount;
   [ObservableProperty] private int _modifiedCount;
+  [ObservableProperty] private int _reviewRequiredCount;
   [ObservableProperty] private int _unchangedCount;
   [ObservableProperty] private bool _hasDiff;
   [ObservableProperty] private string _statusMessage = "Loading comparison...";
@@ -45,6 +47,11 @@ public partial class DiffViewerViewModel : ObservableObject
   [ObservableProperty] private List<FieldChangeDisplay> _selectedModifiedChanges = new();
   public bool HasSelectedModifiedItem => SelectedModifiedItem != null;
 
+  // Review-required controls
+  [ObservableProperty] private List<ReviewRequiredControlDisplay> _reviewRequiredControls = new();
+  [ObservableProperty] private ReviewRequiredControlDisplay? _selectedReviewRequiredControl;
+  public bool HasSelectedReviewRequiredControl => SelectedReviewRequiredControl != null;
+
   public DiffViewerViewModel(BaselineDiff diff, string baselinePackName, string targetPackName)
   {
     _diff = diff;
@@ -59,6 +66,7 @@ public partial class DiffViewerViewModel : ObservableObject
     AddedCount = _diff.TotalAdded;
     RemovedCount = _diff.TotalRemoved;
     ModifiedCount = _diff.TotalModified;
+    ReviewRequiredCount = _diff.TotalReviewRequired;
     UnchangedCount = _diff.TotalUnchanged;
 
     AddedControls = _diff.AddedControls.Select(d => d.NewControl!).ToList();
@@ -69,10 +77,21 @@ public partial class DiffViewerViewModel : ObservableObject
     {
       ControlId = m.NewControl?.ControlId ?? m.BaselineControl?.ControlId ?? "(Unknown)",
       Title = m.NewControl?.Title ?? "(No title)",
+      Classification = m.RequiresReview ? "review-required" : "changed",
       Impact = GetHighestImpact(m.Changes).ToString(),
       ImpactColor = GetImpactBrush(GetHighestImpact(m.Changes)),
       ChangesSummary = string.Join(", ", m.Changes.Select(c => c.FieldName)),
       Changes = m.Changes
+    }).ToList();
+
+    ReviewRequiredControls = _diff.ReviewRequiredControls.Select(c => new ReviewRequiredControlDisplay
+    {
+      ControlKey = c.ControlKey,
+      Title = c.NewControl?.Title ?? c.BaselineControl?.Title ?? "(No title)",
+      ChangeType = c.ChangeType.ToString(),
+      Reason = string.IsNullOrWhiteSpace(c.ReviewReason)
+        ? "Manual review required before promotion."
+        : c.ReviewReason!
     }).ToList();
 
     HasDiff = true;
@@ -116,6 +135,11 @@ public partial class DiffViewerViewModel : ObservableObject
     OnPropertyChanged(nameof(HasSelectedModifiedItem));
   }
 
+  partial void OnSelectedReviewRequiredControlChanged(ReviewRequiredControlDisplay? value)
+  {
+    OnPropertyChanged(nameof(HasSelectedReviewRequiredControl));
+  }
+
   [RelayCommand]
   private async Task ExportReport()
   {
@@ -123,7 +147,7 @@ public partial class DiffViewerViewModel : ObservableObject
     {
       Filter = "Markdown files (*.md)|*.md|Text files (*.txt)|*.txt|All files (*.*)|*.*",
       DefaultExt = "md",
-      FileName = $"diff_{BaselinePackName}_to_{TargetPackName}_{DateTime.Now:yyyyMMdd_HHmmss}.md"
+      FileName = BuildDefaultFileName("md")
     };
 
     if (dialog.ShowDialog() == true)
@@ -140,12 +164,35 @@ public partial class DiffViewerViewModel : ObservableObject
     }
   }
 
+  [RelayCommand]
+  private async Task ExportJsonReport()
+  {
+    var dialog = new SaveFileDialog
+    {
+      Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*",
+      DefaultExt = "json",
+      FileName = BuildDefaultFileName("json")
+    };
+
+    if (dialog.ShowDialog() == true)
+    {
+      try
+      {
+        var json = JsonSerializer.Serialize(_diff, new JsonSerializerOptions { WriteIndented = true });
+        await File.WriteAllTextAsync(dialog.FileName, json, Encoding.UTF8);
+        MessageBox.Show($"JSON report exported to:\n{dialog.FileName}", "Export Successful", MessageBoxButton.OK, MessageBoxImage.Information);
+      }
+      catch (Exception ex)
+      {
+        MessageBox.Show($"Failed to export JSON report:\n{ex.Message}", "Export Failed", MessageBoxButton.OK, MessageBoxImage.Error);
+      }
+    }
+  }
+
   private string GenerateMarkdownReport()
   {
     var sb = new StringBuilder();
     sb.AppendLine($"# STIG Pack Comparison Report");
-    sb.AppendLine();
-    sb.AppendLine($"**Generated:** {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
     sb.AppendLine();
     sb.AppendLine($"**Baseline:** {BaselinePackName}");
     sb.AppendLine($"**Target:** {TargetPackName}");
@@ -154,7 +201,8 @@ public partial class DiffViewerViewModel : ObservableObject
     sb.AppendLine();
     sb.AppendLine($"- **Added:** {AddedCount} controls");
     sb.AppendLine($"- **Removed:** {RemovedCount} controls");
-    sb.AppendLine($"- **Modified:** {ModifiedCount} controls");
+    sb.AppendLine($"- **Changed:** {ModifiedCount} controls");
+    sb.AppendLine($"- **Review Required:** {ReviewRequiredCount} controls");
     sb.AppendLine($"- **Unchanged:** {UnchangedCount} controls");
     sb.AppendLine();
 
@@ -189,12 +237,13 @@ public partial class DiffViewerViewModel : ObservableObject
     // Modified controls
     if (ModifiedControls.Count > 0)
     {
-      sb.AppendLine("## Modified Controls");
+      sb.AppendLine("## Changed Controls");
       sb.AppendLine();
       foreach (var modified in ModifiedControls)
       {
         sb.AppendLine($"### {modified.ControlId}");
         sb.AppendLine($"**Title:** {modified.Title}");
+        sb.AppendLine($"**Classification:** {modified.Classification}");
         sb.AppendLine($"**Impact:** {modified.Impact}");
         sb.AppendLine($"**Changes:** {modified.ChangesSummary}");
         sb.AppendLine();
@@ -213,6 +262,15 @@ public partial class DiffViewerViewModel : ObservableObject
           sb.AppendLine();
         }
       }
+    }
+
+    if (_diff.ReviewRequiredControls.Count > 0)
+    {
+      sb.AppendLine("## Review Required Controls");
+      sb.AppendLine();
+      foreach (var control in _diff.ReviewRequiredControls)
+        sb.AppendLine($"- **{control.ControlKey}** - {control.ReviewReason}");
+      sb.AppendLine();
     }
 
     return sb.ToString();
@@ -235,6 +293,20 @@ public partial class DiffViewerViewModel : ObservableObject
     if (text.Length <= maxLength) return text;
     return text.Substring(0, maxLength) + "... (truncated)";
   }
+
+  private string BuildDefaultFileName(string extension)
+  {
+    var baseline = SanitizeFileNamePart(BaselinePackName);
+    var target = SanitizeFileNamePart(TargetPackName);
+    return $"diff_{baseline}_to_{target}.{extension}";
+  }
+
+  private static string SanitizeFileNamePart(string value)
+  {
+    var invalidChars = Path.GetInvalidFileNameChars();
+    var cleaned = new string(value.Select(ch => invalidChars.Contains(ch) ? '_' : ch).ToArray());
+    return string.IsNullOrWhiteSpace(cleaned) ? "unknown" : cleaned;
+  }
 }
 
 // Display models
@@ -242,6 +314,7 @@ public class ModifiedControlDisplay
 {
   public string ControlId { get; set; } = string.Empty;
   public string Title { get; set; } = string.Empty;
+  public string Classification { get; set; } = string.Empty;
   public string Impact { get; set; } = string.Empty;
   public Brush ImpactColor { get; set; } = Brushes.Gray;
   public string ChangesSummary { get; set; } = string.Empty;
@@ -255,4 +328,12 @@ public class FieldChangeDisplay
   public string NewValue { get; set; } = string.Empty;
   public string Impact { get; set; } = string.Empty;
   public Brush ImpactColor { get; set; } = Brushes.Gray;
+}
+
+public class ReviewRequiredControlDisplay
+{
+  public string ControlKey { get; set; } = string.Empty;
+  public string Title { get; set; } = string.Empty;
+  public string ChangeType { get; set; } = string.Empty;
+  public string Reason { get; set; } = string.Empty;
 }
