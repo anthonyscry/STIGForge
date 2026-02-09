@@ -4,6 +4,8 @@ param(
   [string]$VulnerabilityExceptionsPath = "",
   [string]$LicensePolicyPath = "",
   [string]$SecretsPolicyPath = "",
+  [string]$QuarterlyDriftSummaryPath = "",
+  [string]$QuarterlyDriftReportPath = "",
   [switch]$Strict,
   [switch]$EnableNetworkLicenseLookup,
   [switch]$SkipLicenseLookup,
@@ -39,6 +41,19 @@ function Convert-ToRelativePath {
   $targetUri = [System.Uri]::new($targetResolved, [System.UriKind]::Absolute)
 
   return [System.Uri]::UnescapeDataString($baseUri.MakeRelativeUri($targetUri).ToString().Replace('/', [IO.Path]::DirectorySeparatorChar))
+}
+
+function Resolve-FromRepositoryRoot {
+  param(
+    [Parameter(Mandatory = $true)][string]$Root,
+    [Parameter(Mandatory = $true)][string]$Candidate
+  )
+
+  if ([IO.Path]::IsPathRooted($Candidate)) {
+    return [IO.Path]::GetFullPath($Candidate)
+  }
+
+  return [IO.Path]::GetFullPath((Join-Path $Root $Candidate))
 }
 
 function New-UnresolvedFinding {
@@ -314,10 +329,10 @@ function Find-SecretFindings {
 
 $scriptRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 if ([string]::IsNullOrWhiteSpace($RepositoryRoot)) {
-  $RepositoryRoot = Resolve-Path (Join-Path $scriptRoot "..\..")
+  $RepositoryRoot = (Resolve-Path (Join-Path $scriptRoot "..\..")).Path
 }
 else {
-  $RepositoryRoot = Resolve-Path $RepositoryRoot
+  $RepositoryRoot = (Resolve-Path $RepositoryRoot).Path
 }
 
 if ([string]::IsNullOrWhiteSpace($OutputRoot)) {
@@ -333,6 +348,13 @@ if ([string]::IsNullOrWhiteSpace($LicensePolicyPath)) {
 }
 if ([string]::IsNullOrWhiteSpace($SecretsPolicyPath)) {
   $SecretsPolicyPath = Join-Path $scriptRoot "security-secrets-policy.json"
+}
+
+if (-not [string]::IsNullOrWhiteSpace($QuarterlyDriftSummaryPath)) {
+  $QuarterlyDriftSummaryPath = Resolve-FromRepositoryRoot -Root $RepositoryRoot -Candidate $QuarterlyDriftSummaryPath
+}
+if (-not [string]::IsNullOrWhiteSpace($QuarterlyDriftReportPath)) {
+  $QuarterlyDriftReportPath = Resolve-FromRepositoryRoot -Root $RepositoryRoot -Candidate $QuarterlyDriftReportPath
 }
 
 $outputRootFull = [IO.Path]::GetFullPath($OutputRoot)
@@ -614,6 +636,38 @@ try {
   $strictBlockingCount = if ($Strict) { $unresolvedCount } else { 0 }
   $blockingFindingsCount = $unresolvedVulnerabilities.Count + $licenseErrors.Count + $secretFindings.Count + $strictBlockingCount
 
+  $quarterlyCompatibility = [ordered]@{
+    configured = (-not [string]::IsNullOrWhiteSpace($QuarterlyDriftSummaryPath))
+    status = "not-configured"
+    decision = ""
+    warningCount = 0
+    failureCount = 0
+    summaryPath = $QuarterlyDriftSummaryPath
+    reportPath = $QuarterlyDriftReportPath
+    message = "Quarterly drift summary not provided"
+  }
+
+  if ($quarterlyCompatibility.configured) {
+    if (Test-Path -LiteralPath $QuarterlyDriftSummaryPath) {
+      try {
+        $quarterlySummary = Get-Content -Path $QuarterlyDriftSummaryPath -Raw | ConvertFrom-Json
+        $quarterlyCompatibility.status = if ([bool]$quarterlySummary.overallPassed) { "pass" } else { "fail" }
+        $quarterlyCompatibility.decision = [string]$quarterlySummary.decision
+        $quarterlyCompatibility.warningCount = [int]$quarterlySummary.fixtures.warnings
+        $quarterlyCompatibility.failureCount = [int]$quarterlySummary.fixtures.failed
+        $quarterlyCompatibility.message = "Quarterly compatibility drift evidence loaded"
+      }
+      catch {
+        $quarterlyCompatibility.status = "unresolved"
+        $quarterlyCompatibility.message = "Failed to parse quarterly drift summary: $($_.Exception.Message)"
+      }
+    }
+    else {
+      $quarterlyCompatibility.status = "unresolved"
+      $quarterlyCompatibility.message = "Quarterly drift summary path does not exist"
+    }
+  }
+
   foreach ($item in $licenseUnresolved) {
     $unresolvedIntelligence.Add((New-UnresolvedFinding -Category "license-compliance" -Subject ("{0} {1}" -f $item.packageId, $item.version) -Reason $item.reason -Evidence "license-compliance.json"))
   }
@@ -663,6 +717,7 @@ try {
           }
         })
     }
+    quarterlyCompatibility = $quarterlyCompatibility
     gateDecision = @{
       blockingFindings = $blockingFindingsCount
       strictBlockingCount = $strictBlockingCount
@@ -689,6 +744,18 @@ try {
   [void]$md.AppendLine("- License compliance: $($licenseErrors.Count) rejected, $($licenseUnresolved.Count) unresolved")
   [void]$md.AppendLine("- Secret findings: $($secretFindings.Count)")
   [void]$md.AppendLine("- Unresolved intelligence: $unresolvedCount $(if ($Strict) { '(blocking)' } else { '(review required)' })")
+  [void]$md.AppendLine("- Quarterly compatibility drift: $($quarterlyCompatibility.status) (decision=$($quarterlyCompatibility.decision), warnings=$($quarterlyCompatibility.warningCount), failures=$($quarterlyCompatibility.failureCount))")
+  [void]$md.AppendLine()
+
+  [void]$md.AppendLine("## Quarterly Compatibility Drift Context")
+  [void]$md.AppendLine()
+  [void]$md.AppendLine("- Status: $($quarterlyCompatibility.status)")
+  [void]$md.AppendLine("- Decision: $($quarterlyCompatibility.decision)")
+  [void]$md.AppendLine("- Warnings: $($quarterlyCompatibility.warningCount)")
+  [void]$md.AppendLine("- Failures: $($quarterlyCompatibility.failureCount)")
+  [void]$md.AppendLine("- Summary artifact: $($quarterlyCompatibility.summaryPath)")
+  [void]$md.AppendLine("- Report artifact: $($quarterlyCompatibility.reportPath)")
+  [void]$md.AppendLine("- Notes: $($quarterlyCompatibility.message)")
   [void]$md.AppendLine()
 
   if ($unresolvedVulnerabilities.Count -gt 0) {
