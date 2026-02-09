@@ -12,11 +12,11 @@ Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 $script:CommandShell = ""
-if (Get-Command powershell -ErrorAction SilentlyContinue) {
-  $script:CommandShell = "powershell"
-}
-elseif (Get-Command pwsh -ErrorAction SilentlyContinue) {
+if (Get-Command pwsh -ErrorAction SilentlyContinue) {
   $script:CommandShell = "pwsh"
+}
+elseif (Get-Command powershell -ErrorAction SilentlyContinue) {
+  $script:CommandShell = "powershell"
 }
 else {
   throw "Neither 'powershell' nor 'pwsh' was found on PATH."
