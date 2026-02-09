@@ -25,6 +25,10 @@ The landing tab showing compliance status at a glance.
 
 **Quick Actions**: Run Apply, Run Verify, Export eMASS, Launch Manual Wizard, Compare Packs.
 
+**Mission Severity + Recovery Guidance**:
+- Dashboard now surfaces mission severity using CLI-aligned counters (`blocking`, `warnings`, `optional-skips`).
+- Recovery guidance text is shown with required artifacts, next action, and rollback direction for operator decisions.
+
 ### 2. Content Packs
 
 Manage imported DISA STIG content packs.
@@ -32,6 +36,11 @@ Manage imported DISA STIG content packs.
 **Actions**:
 - **Import ZIP**: Opens file dialog to select a STIG pack ZIP. Parses XCCDF/SCAP and stores in the database.
 - **Compare Packs**: Opens pack diff dialog.
+
+**Diff Output**:
+- Comparison opens a dedicated diff viewer with Added, Removed, Changed, and Review Required tabs.
+- Use **Export Markdown** for operator-readable review output.
+- Use **Export JSON** for machine-readable artifact export.
 
 **Pack List**: GridView showing Name, PackId, ImportedAt, Source for all imported packs.
 
@@ -52,6 +61,13 @@ Create and edit hardening profiles.
 - **NA comment**: Default comment template for N/A controls
 
 **Overlay Selection**: Checkbox list of available overlays. Actions: Edit Overlays, Rebase Overlay, Refresh.
+
+**Rebase Workflow**:
+- **Rebase Overlay** opens the rebase wizard for baseline -> target pack analysis.
+- Wizard surfaces auto-rebased items, review-required actions, and blocking conflict guidance.
+- **Apply Rebase** stays disabled while blocking conflicts remain unresolved.
+- Use **Export Markdown** and **Export JSON** in the wizard to capture deterministic rebase artifacts for release evidence.
+- Wizard includes explicit recovery guidance (required artifacts, next action, rollback stance) for blocked rebase outcomes.
 
 **Actions**: Save Profile, Delete Profile.
 

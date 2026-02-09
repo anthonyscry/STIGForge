@@ -52,7 +52,41 @@ jobs:
             throw "Upgrade/rebase validation status is '$($summary.status)': $($summary.message)"
           }
 
+          $parityStep = @($summary.steps | Where-Object { $_.name -eq 'upgrade-rebase-parity-contract' })
+          if ($parityStep.Count -ne 1) {
+            throw "Upgrade/rebase parity evidence step missing for VM ${{ matrix.name }}."
+          }
+
+          if (-not [bool]$parityStep[0].succeeded) {
+            throw "Upgrade/rebase parity evidence failed for VM ${{ matrix.name }}. See $($parityStep[0].logPath)"
+          }
+
           Write-Host "Upgrade/rebase validation passed for VM ${{ matrix.name }}." -ForegroundColor Green
+
+      - name: Validate quarterly trend evidence
+        shell: pwsh
+        run: |
+          $summaryPath = '.\.artifacts\release-gate\${{ matrix.name }}\quarterly-pack\quarterly-pack-summary.json'
+          $reportPath = '.\.artifacts\release-gate\${{ matrix.name }}\quarterly-pack\quarterly-pack-report.md'
+
+          if (-not (Test-Path -LiteralPath $summaryPath)) {
+            throw "Quarterly trend summary artifact missing for VM ${{ matrix.name }} at $summaryPath"
+          }
+
+          if (-not (Test-Path -LiteralPath $reportPath)) {
+            throw "Quarterly trend report artifact missing for VM ${{ matrix.name }} at $reportPath"
+          }
+
+          $summary = Get-Content -Path $summaryPath -Raw | ConvertFrom-Json
+          if (-not [bool]$summary.overallPassed) {
+            throw "Quarterly trend summary indicates failure for VM ${{ matrix.name }}: decision=$($summary.decision)"
+          }
+
+          if ($summary.decision -ne 'pass') {
+            throw "Quarterly trend decision for VM ${{ matrix.name }} is '$($summary.decision)' (expected 'pass')."
+          }
+
+          Write-Host "Quarterly trend evidence validated for VM ${{ matrix.name }}." -ForegroundColor Green
 
       - name: Evaluate VM stability budget
         shell: pwsh
@@ -137,6 +171,27 @@ jobs:
           if (-not $overallPassed) {
             throw "VM stability budget failed on ${{ matrix.name }}: passes=$passCount required=$requiredPasses"
           }
+
+      - name: Validate VM stability trend artifacts
+        shell: pwsh
+        run: |
+          $summaryPath = '.\.artifacts\stability-budget\${{ matrix.name }}\stability-budget-summary.json'
+          $reportPath = '.\.artifacts\stability-budget\${{ matrix.name }}\stability-budget-report.md'
+
+          if (-not (Test-Path -LiteralPath $summaryPath)) {
+            throw "VM stability summary missing for ${{ matrix.name }} at $summaryPath"
+          }
+
+          if (-not (Test-Path -LiteralPath $reportPath)) {
+            throw "VM stability report missing for ${{ matrix.name }} at $reportPath"
+          }
+
+          $summary = Get-Content -Path $summaryPath -Raw | ConvertFrom-Json
+          if (-not [bool]$summary.result.overallPassed) {
+            throw "VM stability summary indicates failure for ${{ matrix.name }}."
+          }
+
+          Write-Host "VM stability trend artifacts validated for ${{ matrix.name }}." -ForegroundColor Green
 
       - name: Upload VM smoke artifacts
         if: always()

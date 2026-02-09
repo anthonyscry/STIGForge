@@ -24,6 +24,12 @@ jobs:
           dotnet test .\tests\STIGForge.UnitTests\STIGForge.UnitTests.csproj --configuration Release --framework net8.0 --filter "FullyQualifiedName~ContentPackImporterTests"
           dotnet test .\tests\STIGForge.IntegrationTests\STIGForge.IntegrationTests.csproj --configuration Release --framework net8.0 --filter "FullyQualifiedName~RoundTrip"
 
+      - name: Upgrade/rebase parity contracts
+        shell: pwsh
+        run: |
+          dotnet test .\tests\STIGForge.UnitTests\STIGForge.UnitTests.csproj --configuration Release --framework net8.0 --filter "FullyQualifiedName~BaselineDiffServiceTests|FullyQualifiedName~OverlayRebaseServiceTests|FullyQualifiedName~BundleMissionSummaryServiceTests"
+          dotnet test .\tests\STIGForge.IntegrationTests\STIGForge.IntegrationTests.csproj --configuration Release --framework net8.0 --filter "FullyQualifiedName~CliCommandTests.DiffPacks|FullyQualifiedName~CliCommandTests.RebaseOverlay"
+
       - name: Run release gate
         shell: pwsh
         run: |
@@ -41,6 +47,55 @@ jobs:
           }
 
           powershell @args
+
+      - name: Validate release parity evidence
+        shell: pwsh
+        run: |
+          $summaryPath = '.\.artifacts\release-gate\latest\upgrade-rebase\upgrade-rebase-summary.json'
+          if (-not (Test-Path -LiteralPath $summaryPath)) {
+            throw "Upgrade/rebase summary artifact missing at $summaryPath"
+          }
+
+          $summary = Get-Content -Path $summaryPath -Raw | ConvertFrom-Json
+          if ($summary.status -ne 'passed') {
+            throw "Upgrade/rebase validation status is '$($summary.status)': $($summary.message)"
+          }
+
+          $parityStep = @($summary.steps | Where-Object { $_.name -eq 'upgrade-rebase-parity-contract' })
+          if ($parityStep.Count -ne 1) {
+            throw "Parity contract evidence step not found in upgrade/rebase summary."
+          }
+
+          if (-not [bool]$parityStep[0].succeeded) {
+            throw "Parity contract step failed. See $($parityStep[0].logPath)"
+          }
+
+          Write-Host "Release parity evidence validated." -ForegroundColor Green
+
+      - name: Validate quarterly trend evidence
+        shell: pwsh
+        run: |
+          $summaryPath = '.\.artifacts\release-gate\latest\quarterly-pack\quarterly-pack-summary.json'
+          $reportPath = '.\.artifacts\release-gate\latest\quarterly-pack\quarterly-pack-report.md'
+
+          if (-not (Test-Path -LiteralPath $summaryPath)) {
+            throw "Quarterly trend summary artifact missing at $summaryPath"
+          }
+
+          if (-not (Test-Path -LiteralPath $reportPath)) {
+            throw "Quarterly trend report artifact missing at $reportPath"
+          }
+
+          $summary = Get-Content -Path $summaryPath -Raw | ConvertFrom-Json
+          if (-not [bool]$summary.overallPassed) {
+            throw "Quarterly trend signal is failing: decision=$($summary.decision)"
+          }
+
+          if ($summary.decision -ne 'pass') {
+            throw "Quarterly trend decision is '$($summary.decision)' (expected 'pass')."
+          }
+
+          Write-Host "Quarterly trend evidence validated. Fixtures: pass=$($summary.fixtures.passed) warning=$($summary.fixtures.warnings) fail=$($summary.fixtures.failed)" -ForegroundColor Green
 
       - name: Evaluate stability budget
         shell: pwsh
@@ -120,6 +175,31 @@ jobs:
           if (-not $overallPassed) {
             throw "Stability budget failed: passes=$passCount required=$requiredPasses failures=$failureCount allowed=$allowedFailures"
           }
+
+      - name: Validate stability trend artifacts
+        shell: pwsh
+        run: |
+          $summaryPath = '.\.artifacts\stability-budget\ci\stability-budget-summary.json'
+          $reportPath = '.\.artifacts\stability-budget\ci\stability-budget-report.md'
+
+          if (-not (Test-Path -LiteralPath $summaryPath)) {
+            throw "CI stability trend summary missing at $summaryPath"
+          }
+
+          if (-not (Test-Path -LiteralPath $reportPath)) {
+            throw "CI stability trend report missing at $reportPath"
+          }
+
+          $summary = Get-Content -Path $summaryPath -Raw | ConvertFrom-Json
+          if (-not [bool]$summary.result.overallPassed) {
+            throw "CI stability trend summary indicates failure."
+          }
+
+          if ([int]$summary.policy.maxAttempts -lt 1 -or [int]$summary.policy.requiredPasses -lt 1) {
+            throw "CI stability trend summary policy values are invalid."
+          }
+
+          Write-Host "CI stability trend artifacts validated. Passes=$($summary.result.passes) Failures=$($summary.result.failures)" -ForegroundColor Green
 
       - name: Upload release-gate artifacts
         if: always()

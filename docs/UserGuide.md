@@ -188,6 +188,11 @@ When DISA releases new STIG content:
    STIGForge.Cli.exe rebase-overlay --overlay <OVERLAY_ID> --baseline <OLD_PACK_ID> --target <NEW_PACK_ID> --apply
    ```
 
+**WPF equivalent**:
+- Use **Content Packs -> Compare Packs** to run baseline/target diff and export Markdown/JSON artifacts.
+- Use **Profiles -> Rebase Overlay** to run rebase analysis, review blocking conflicts, export Markdown/JSON artifacts, and apply only when conflicts are resolved.
+- Use Dashboard mission severity + recovery guidance to track `blocking`, `warnings`, and `optional-skips` before release promotion.
+
 ### Orchestration (One-Click Pipeline)
 
 Run the complete Apply -> Verify -> Export pipeline:

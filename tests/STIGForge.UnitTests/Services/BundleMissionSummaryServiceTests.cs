@@ -113,6 +113,43 @@ public sealed class BundleMissionSummaryServiceTests : IDisposable
     summary.Diagnostics.Any(d => d.Contains("Failed to parse verify report", StringComparison.OrdinalIgnoreCase)).Should().BeTrue();
   }
 
+  [Fact]
+  public void LoadSummary_UsesLegacyManifestMetadataFallback()
+  {
+    WriteLegacyManifest("Q4_2026", "Legacy Profile");
+    WriteControls();
+
+    var service = new BundleMissionSummaryService();
+    var summary = service.LoadSummary(_bundleRoot);
+
+    summary.PackName.Should().Be("Q4_2026");
+    summary.ProfileName.Should().Be("Legacy Profile");
+  }
+
+  [Fact]
+  public void LoadSummary_TracksInformationalAndWarningStatusesAsRecoverableWarnings()
+  {
+    WriteManifest("Q1_2027", "Classified Safe");
+    WriteControls();
+
+    WriteVerifyReport(
+      Path.Combine(_bundleRoot, "Verify", "ToolA", "consolidated-results.json"),
+      "informational",
+      "info",
+      "warning",
+      "error");
+
+    var service = new BundleMissionSummaryService();
+    var summary = service.LoadSummary(_bundleRoot);
+
+    summary.Verify.TotalCount.Should().Be(4);
+    summary.Verify.ClosedCount.Should().Be(0);
+    summary.Verify.OpenCount.Should().Be(4);
+    summary.Verify.BlockingFailureCount.Should().Be(4);
+    summary.Verify.RecoverableWarningCount.Should().Be(3);
+    summary.Verify.OptionalSkipCount.Should().Be(0);
+  }
+
   private void WriteManifest(string packName, string profileName)
   {
     var manifestPath = Path.Combine(_bundleRoot, "Manifest", "manifest.json");
@@ -123,6 +160,21 @@ public sealed class BundleMissionSummaryServiceTests : IDisposable
         packName,
         profileName
       }
+    };
+
+    File.WriteAllText(manifestPath, JsonSerializer.Serialize(manifest, new JsonSerializerOptions
+    {
+      WriteIndented = true
+    }), Encoding.UTF8);
+  }
+
+  private void WriteLegacyManifest(string packName, string profileName)
+  {
+    var manifestPath = Path.Combine(_bundleRoot, "Manifest", "manifest.json");
+    var manifest = new
+    {
+      packName,
+      profileName
     };
 
     File.WriteAllText(manifestPath, JsonSerializer.Serialize(manifest, new JsonSerializerOptions

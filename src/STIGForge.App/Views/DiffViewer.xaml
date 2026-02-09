@@ -17,8 +17,11 @@
     <!-- Header -->
     <DockPanel Grid.Row="0" Margin="0,0,0,16">
       <TextBlock Text="STIG Pack Comparison" FontSize="20" FontWeight="SemiBold" DockPanel.Dock="Left"/>
-      <Button Content="Export Report" Width="120" HorizontalAlignment="Right" DockPanel.Dock="Right"
-              Command="{Binding ExportReportCommand}" Visibility="{Binding HasDiff, Converter={StaticResource BoolToVis}}"/>
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" DockPanel.Dock="Right"
+                  Visibility="{Binding HasDiff, Converter={StaticResource BoolToVis}}">
+        <Button Content="Export Markdown" Width="130" Margin="0,0,8,0" Command="{Binding ExportReportCommand}"/>
+        <Button Content="Export JSON" Width="110" Command="{Binding ExportJsonReportCommand}"/>
+      </StackPanel>
     </DockPanel>
 
     <!-- Pack Selection & Summary -->
@@ -64,8 +67,13 @@
           </StackPanel>
           
           <StackPanel Orientation="Horizontal" Margin="0,0,24,0">
-            <TextBlock Text="Modified:" FontWeight="SemiBold" Margin="0,0,8,0"/>
+            <TextBlock Text="Changed:" FontWeight="SemiBold" Margin="0,0,8,0"/>
             <TextBlock Text="{Binding ModifiedCount}" Foreground="Orange"/>
+          </StackPanel>
+
+          <StackPanel Orientation="Horizontal" Margin="0,0,24,0">
+            <TextBlock Text="Review Required:" FontWeight="SemiBold" Margin="0,0,8,0"/>
+            <TextBlock Text="{Binding ReviewRequiredCount}" Foreground="Red"/>
           </StackPanel>
           
           <StackPanel Orientation="Horizontal">
@@ -192,11 +200,11 @@
         </Grid>
       </TabItem>
 
-      <!-- Modified Controls -->
+      <!-- Changed Controls -->
       <TabItem>
         <TabItem.Header>
           <StackPanel Orientation="Horizontal">
-            <TextBlock Text="Modified (" Foreground="Orange"/>
+            <TextBlock Text="Changed (" Foreground="Orange"/>
             <TextBlock Text="{Binding ModifiedCount}" Foreground="Orange"/>
             <TextBlock Text=")" Foreground="Orange"/>
           </StackPanel>
@@ -215,6 +223,7 @@
               <GridView>
                 <GridViewColumn Header="Control ID" DisplayMemberBinding="{Binding ControlId}" Width="140"/>
                 <GridViewColumn Header="Title" DisplayMemberBinding="{Binding Title}" Width="280"/>
+                <GridViewColumn Header="Classification" DisplayMemberBinding="{Binding Classification}" Width="120"/>
                 <GridViewColumn Header="Impact" Width="100">
                   <GridViewColumn.CellTemplate>
                     <DataTemplate>
@@ -266,6 +275,61 @@
               </ItemsControl>
             </StackPanel>
           </ScrollViewer>
+        </Grid>
+      </TabItem>
+
+      <!-- Review Required Controls -->
+      <TabItem>
+        <TabItem.Header>
+          <StackPanel Orientation="Horizontal">
+            <TextBlock Text="Review Required (" Foreground="Red"/>
+            <TextBlock Text="{Binding ReviewRequiredCount}" Foreground="Red"/>
+            <TextBlock Text=")" Foreground="Red"/>
+          </StackPanel>
+        </TabItem.Header>
+
+        <Grid Margin="8">
+          <Grid.RowDefinitions>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="2*"/>
+          </Grid.RowDefinitions>
+
+          <ListView Grid.Row="0" ItemsSource="{Binding ReviewRequiredControls}" SelectedItem="{Binding SelectedReviewRequiredControl}">
+            <ListView.View>
+              <GridView>
+                <GridViewColumn Header="Control Key" DisplayMemberBinding="{Binding ControlKey}" Width="210"/>
+                <GridViewColumn Header="Title" DisplayMemberBinding="{Binding Title}" Width="260"/>
+                <GridViewColumn Header="Change Type" DisplayMemberBinding="{Binding ChangeType}" Width="120"/>
+                <GridViewColumn Header="Reason" DisplayMemberBinding="{Binding Reason}" Width="320"/>
+              </GridView>
+            </ListView.View>
+          </ListView>
+
+          <GridSplitter Grid.Row="1" Height="4" HorizontalAlignment="Stretch" VerticalAlignment="Center" Background="LightGray"/>
+
+          <Border Grid.Row="2" BorderBrush="LightGray" BorderThickness="1" Padding="8" Margin="0,8,0,0" Background="White"
+                  Visibility="{Binding HasSelectedReviewRequiredControl, Converter={StaticResource BoolToVis}}">
+            <StackPanel>
+              <TextBlock Text="Review Details:" FontWeight="SemiBold" Margin="0,0,0,8"/>
+
+              <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                <TextBlock Text="Control Key: " FontWeight="SemiBold" Width="100"/>
+                <TextBlock Text="{Binding SelectedReviewRequiredControl.ControlKey}"/>
+              </StackPanel>
+
+              <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                <TextBlock Text="Change Type: " FontWeight="SemiBold" Width="100"/>
+                <TextBlock Text="{Binding SelectedReviewRequiredControl.ChangeType}"/>
+              </StackPanel>
+
+              <TextBlock Text="Title:" FontWeight="SemiBold" Margin="0,8,0,4"/>
+              <TextBlock Text="{Binding SelectedReviewRequiredControl.Title}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+
+              <TextBlock Text="Reason:" FontWeight="SemiBold" Margin="0,8,0,4"/>
+              <TextBlock Text="{Binding SelectedReviewRequiredControl.Reason}" TextWrapping="Wrap"/>
+            </StackPanel>
+          </Border>
         </Grid>
       </TabItem>
     </TabControl>

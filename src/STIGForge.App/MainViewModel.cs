@@ -71,6 +71,8 @@ public partial class MainViewModel : ObservableObject
   [ObservableProperty] private int dashManualNa;
   [ObservableProperty] private int dashManualOpen;
   [ObservableProperty] private string dashManualPercent = "—";
+  [ObservableProperty] private string dashMissionSeverity = "";
+  [ObservableProperty] private string dashRecoveryGuidance = "";
   [ObservableProperty] private bool dashHasBundle;
   [ObservableProperty] private string dashLastVerify = "";
   [ObservableProperty] private string dashLastExport = "";

@@ -89,7 +89,8 @@ internal static class DiffRebaseCommands
         Console.WriteLine($"Diff: {baseline} -> {target}");
         Console.WriteLine($"  Added:     {diff.TotalAdded}");
         Console.WriteLine($"  Removed:   {diff.TotalRemoved}");
-        Console.WriteLine($"  Modified:  {diff.TotalModified}");
+        Console.WriteLine($"  Changed:   {diff.TotalModified}");
+        Console.WriteLine($"  Review-required: {diff.TotalReviewRequired}");
         Console.WriteLine($"  Unchanged: {diff.TotalUnchanged}");
         Console.WriteLine();
 
@@ -97,12 +98,20 @@ internal static class DiffRebaseCommands
         if (diff.RemovedControls.Count > 0) { Console.WriteLine("Removed controls:"); foreach (var c in diff.RemovedControls) Console.WriteLine($"  - {c.ControlKey}  {c.BaselineControl?.Title}"); Console.WriteLine(); }
         if (diff.ModifiedControls.Count > 0)
         {
-          Console.WriteLine("Modified controls:");
+          Console.WriteLine("Changed controls:");
           foreach (var c in diff.ModifiedControls)
           {
-            var highImpact = c.Changes.Any(ch => ch.Impact == FieldChangeImpact.High);
-            Console.WriteLine($"  {(highImpact ? "!!" : "~")} {c.ControlKey}  [{string.Join(", ", c.Changes.Select(ch => ch.FieldName))}]");
+            var classification = c.RequiresReview ? "review-required" : "changed";
+            Console.WriteLine($"  {(c.RequiresReview ? "!!" : "~")} {c.ControlKey}  [{string.Join(", ", c.Changes.Select(ch => ch.FieldName))}] ({classification})");
           }
+          Console.WriteLine();
+        }
+
+        if (diff.ReviewRequiredControls.Count > 0)
+        {
+          Console.WriteLine("Review-required controls:");
+          foreach (var c in diff.ReviewRequiredControls)
+            Console.WriteLine($"  !! {c.ControlKey}  {c.ReviewReason}");
           Console.WriteLine();
         }
 
@@ -112,10 +121,13 @@ internal static class DiffRebaseCommands
           md.AppendLine($"# Pack Diff: {baseline} \u2192 {target}");
           md.AppendLine(); md.AppendLine("| Metric | Count |"); md.AppendLine("|--------|-------|");
           md.AppendLine($"| Added | {diff.TotalAdded} |"); md.AppendLine($"| Removed | {diff.TotalRemoved} |");
-          md.AppendLine($"| Modified | {diff.TotalModified} |"); md.AppendLine($"| Unchanged | {diff.TotalUnchanged} |"); md.AppendLine();
+          md.AppendLine($"| Changed | {diff.TotalModified} |");
+          md.AppendLine($"| Review required | {diff.TotalReviewRequired} |");
+          md.AppendLine($"| Unchanged | {diff.TotalUnchanged} |"); md.AppendLine();
           if (diff.AddedControls.Count > 0) { md.AppendLine("## Added Controls"); md.AppendLine(); foreach (var c in diff.AddedControls) md.AppendLine($"- **{c.ControlKey}** \u2014 {c.NewControl?.Title}"); md.AppendLine(); }
           if (diff.RemovedControls.Count > 0) { md.AppendLine("## Removed Controls"); md.AppendLine(); foreach (var c in diff.RemovedControls) md.AppendLine($"- **{c.ControlKey}** \u2014 {c.BaselineControl?.Title}"); md.AppendLine(); }
-          if (diff.ModifiedControls.Count > 0) { md.AppendLine("## Modified Controls"); md.AppendLine(); foreach (var c in diff.ModifiedControls) { md.AppendLine($"### {c.ControlKey}"); md.AppendLine(); md.AppendLine("| Field | Impact | Old | New |"); md.AppendLine("|-------|--------|-----|-----|"); foreach (var ch in c.Changes) md.AppendLine($"| {ch.FieldName} | {ch.Impact} | {Helpers.Truncate(ch.OldValue, 60)} | {Helpers.Truncate(ch.NewValue, 60)} |"); md.AppendLine(); } }
+          if (diff.ModifiedControls.Count > 0) { md.AppendLine("## Changed Controls"); md.AppendLine(); foreach (var c in diff.ModifiedControls) { md.AppendLine($"### {c.ControlKey}"); md.AppendLine(); md.AppendLine($"- Classification: **{(c.RequiresReview ? "review-required" : "changed")}**"); if (!string.IsNullOrWhiteSpace(c.ReviewReason)) md.AppendLine($"- Review reason: {c.ReviewReason}"); md.AppendLine(); md.AppendLine("| Field | Impact | Old | New |"); md.AppendLine("|-------|--------|-----|-----|"); foreach (var ch in c.Changes) md.AppendLine($"| {ch.FieldName} | {ch.Impact} | {Helpers.Truncate(ch.OldValue, 60)} | {Helpers.Truncate(ch.NewValue, 60)} |"); md.AppendLine(); } }
+          if (diff.ReviewRequiredControls.Count > 0) { md.AppendLine("## Review Required Controls"); md.AppendLine(); foreach (var c in diff.ReviewRequiredControls) md.AppendLine($"- **{c.ControlKey}** - {c.ReviewReason}"); md.AppendLine(); }
           File.WriteAllText(output, md.ToString());
           Console.WriteLine("Markdown report written to: " + output);
         }
@@ -166,22 +178,37 @@ internal static class DiffRebaseCommands
         Console.WriteLine($"  Overall confidence: {report.OverallConfidence:P0}");
         Console.WriteLine($"  Safe actions:       {report.SafeActions}");
         Console.WriteLine($"  Review needed:      {report.ReviewNeeded}");
+        Console.WriteLine($"  Blocking conflicts: {report.BlockingConflicts}");
         Console.WriteLine($"  High risk:          {report.HighRisk}");
         Console.WriteLine();
         foreach (var a in report.Actions)
         {
           var icon = a.ActionType switch { RebaseActionType.Keep => "  OK", RebaseActionType.KeepWithWarning => "  ~~", RebaseActionType.ReviewRequired => "  !!", RebaseActionType.Remove => "  --", RebaseActionType.Remap => "  =>", _ => "  ??" };
           Console.WriteLine($"{icon} {a.OriginalControlKey,-40} {a.ActionType,-20} ({a.Confidence:P0})  {a.Reason}");
+          if (a.IsBlockingConflict || a.RequiresReview)
+            Console.WriteLine($"     Action: {a.RecommendedAction}");
         }
         Console.WriteLine();
+
+        var blockingActions = report.Actions.Where(a => a.IsBlockingConflict).ToList();
+        if (blockingActions.Count > 0)
+        {
+          Console.WriteLine("Blocking conflicts:");
+          foreach (var action in blockingActions)
+            Console.WriteLine($"  !! {action.OriginalControlKey} - {action.Reason} | {action.RecommendedAction}");
+          Console.WriteLine();
+        }
+
         if (!string.IsNullOrWhiteSpace(output))
         {
           var md = new System.Text.StringBuilder();
           md.AppendLine($"# Rebase Report: {overlayId}"); md.AppendLine();
           md.AppendLine($"- **Baseline:** {baseline}"); md.AppendLine($"- **Target:** {target}");
-          md.AppendLine($"- **Overall Confidence:** {report.OverallConfidence:P0}"); md.AppendLine();
-          md.AppendLine("| Control | Action | Confidence | Reason |"); md.AppendLine("|---------|--------|------------|--------|");
-          foreach (var a in report.Actions) md.AppendLine($"| {a.OriginalControlKey} | {a.ActionType} | {a.Confidence:P0} | {a.Reason} |");
+          md.AppendLine($"- **Overall Confidence:** {report.OverallConfidence:P0}");
+          md.AppendLine($"- **Blocking conflicts:** {report.BlockingConflicts}");
+          md.AppendLine();
+          md.AppendLine("| Control | Action | Confidence | Requires Review | Blocking | Reason | Recommended Action |"); md.AppendLine("|---------|--------|------------|-----------------|----------|--------|--------------------|");
+          foreach (var a in report.Actions) md.AppendLine($"| {a.OriginalControlKey} | {a.ActionType} | {a.Confidence:P0} | {(a.RequiresReview ? "Yes" : "No")} | {(a.IsBlockingConflict ? "Yes" : "No")} | {a.Reason} | {a.RecommendedAction} |");
           File.WriteAllText(output, md.ToString());
           Console.WriteLine("Markdown report written to: " + output);
         }
@@ -189,6 +216,17 @@ internal static class DiffRebaseCommands
 
       if (apply)
       {
+        var blockingActions = report.Actions.Where(a => a.IsBlockingConflict).ToList();
+        if (blockingActions.Count > 0)
+        {
+          Console.Error.WriteLine($"Rebase apply blocked: {blockingActions.Count} unresolved blocking conflict(s) require operator review.");
+          foreach (var action in blockingActions)
+            Console.Error.WriteLine($"  {action.OriginalControlKey}: {action.RecommendedAction}");
+          Environment.ExitCode = 2;
+          await host.StopAsync();
+          return;
+        }
+
         var rebased = await svc.ApplyRebaseAsync(overlayId, report, CancellationToken.None);
         Console.WriteLine($"Rebased overlay created: {rebased.OverlayId} ({rebased.Name})");
       }

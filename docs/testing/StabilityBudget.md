@@ -37,3 +37,9 @@ Each summary must include policy settings, per-attempt outcomes, and final pass/
 - Stability budget pass: release candidate remains eligible for promotion.
 - Stability budget fail: release candidate is blocked until deterministic stability returns.
 - Stability warnings are captured in artifacts and must be reviewed before promotion.
+
+## Promotion enforcement
+
+- CI workflow (`.github/workflows/ci.yml`) validates both stability summary and report artifacts after budget execution.
+- VM workflow (`.github/workflows/vm-smoke-matrix.yml`) validates per-runner stability summary/report artifacts before upload.
+- Release decision flow must treat `stability-budget-summary.json` as required machine-readable evidence, not optional log output.

@@ -165,6 +165,61 @@ public class BaselineDiffServiceTests
 
     diff.ModifiedControls[0].Changes.Should().HaveCount(3);
     diff.ModifiedControls[0].Changes.Select(c => c.FieldName).Should().Contain("Title", "Severity", "CheckText");
+    diff.ModifiedControls[0].Changes.First().FieldName.Should().Be("CheckText");
+    diff.ModifiedControls[0].Changes.First().Impact.Should().Be(FieldChangeImpact.High);
+  }
+
+  [Fact]
+  public async Task ComparePacks_ReviewRequired_TracksRemovedAndHighImpactChanges()
+  {
+    var (svc, repo) = CreateService();
+    var baseline = new List<ControlRecord>
+    {
+      MakeControl("C1", severity: "low"),
+      MakeControl("C2")
+    };
+    var target = new List<ControlRecord>
+    {
+      MakeControl("C1", severity: "high") // high-impact change
+    };
+
+    repo.Setup(r => r.ListControlsAsync("baseline", It.IsAny<CancellationToken>())).ReturnsAsync(baseline);
+    repo.Setup(r => r.ListControlsAsync("target", It.IsAny<CancellationToken>())).ReturnsAsync(target);
+
+    var diff = await svc.ComparePacksAsync("baseline", "target");
+
+    diff.TotalReviewRequired.Should().Be(2);
+    diff.ReviewRequiredControls.Select(c => c.ControlKey)
+      .Should().Contain("RULE:SV-C1_rule", "RULE:SV-C2_rule");
+  }
+
+  [Fact]
+  public async Task ComparePacks_OutputOrdering_IsDeterministicByControlKey()
+  {
+    var (svc, repo) = CreateService();
+    var baseline = new List<ControlRecord>
+    {
+      MakeControl("C2"),
+      MakeControl("C1")
+    };
+    var target = new List<ControlRecord>
+    {
+      MakeControl("C1", title: "Changed"),
+      MakeControl("C4"),
+      MakeControl("C3")
+    };
+
+    repo.Setup(r => r.ListControlsAsync("baseline", It.IsAny<CancellationToken>())).ReturnsAsync(baseline);
+    repo.Setup(r => r.ListControlsAsync("target", It.IsAny<CancellationToken>())).ReturnsAsync(target);
+
+    var diff = await svc.ComparePacksAsync("baseline", "target");
+
+    diff.AddedControls.Select(c => c.ControlKey)
+      .Should().Equal("RULE:SV-C3_rule", "RULE:SV-C4_rule");
+    diff.ModifiedControls.Select(c => c.ControlKey)
+      .Should().Equal("RULE:SV-C1_rule");
+    diff.RemovedControls.Select(c => c.ControlKey)
+      .Should().Equal("RULE:SV-C2_rule");
   }
 
   [Fact]

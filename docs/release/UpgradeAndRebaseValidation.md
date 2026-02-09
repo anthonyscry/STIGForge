@@ -6,10 +6,11 @@ This document defines required compatibility evidence for release promotion when
 
 Release evidence must show:
 
-1. Baseline-to-target diff behavior remains deterministic.
-2. Overlay rebase behavior is stable and review semantics are preserved.
-3. CLI diff/rebase integration flows continue to work end-to-end.
-4. Rollback safety guardrails and operator-decision boundaries are enforced.
+1. Baseline-to-target diff behavior remains deterministic and classifies `added`, `changed`, `removed`, and `review-required` controls.
+2. Overlay rebase behavior is stable, conflict classifications are deterministic, and unresolved blocking conflicts are fail-closed.
+3. Mission summary severity semantics remain aligned across CLI and WPF (`blocking`, `warnings`, `optional-skips`).
+4. CLI diff/rebase integration flows continue to work end-to-end.
+5. Rollback safety guardrails and operator-decision boundaries are enforced.
 
 ## Automated gate contracts
 
@@ -19,6 +20,8 @@ Release evidence must show:
   - `tests/STIGForge.UnitTests/Services/BaselineDiffServiceTests.cs`
 - `upgrade-rebase-overlay-contract`
   - `tests/STIGForge.UnitTests/Services/OverlayRebaseServiceTests.cs`
+- `upgrade-rebase-parity-contract`
+  - `tests/STIGForge.UnitTests/Services/BundleMissionSummaryServiceTests.cs`
 - `upgrade-rebase-cli-contract`
   - `tests/STIGForge.IntegrationTests/Cli/CliCommandTests.cs` (`DiffPacks*`, `RebaseOverlay*`)
 - `upgrade-rebase-rollback-safety`
@@ -33,6 +36,8 @@ Run locally for pre-release verification:
 ```powershell
 dotnet test tests/STIGForge.UnitTests/STIGForge.UnitTests.csproj --configuration Release --framework net8.0 --filter "FullyQualifiedName~BaselineDiffServiceTests|FullyQualifiedName~OverlayRebaseServiceTests"
 
+dotnet test tests/STIGForge.UnitTests/STIGForge.UnitTests.csproj --configuration Release --framework net8.0 --filter "FullyQualifiedName~BundleMissionSummaryServiceTests"
+
 dotnet test tests/STIGForge.IntegrationTests/STIGForge.IntegrationTests.csproj --configuration Release --framework net8.0 --filter "FullyQualifiedName~CliCommandTests.DiffPacks|FullyQualifiedName~CliCommandTests.RebaseOverlay"
 
 dotnet test tests/STIGForge.UnitTests/STIGForge.UnitTests.csproj --configuration Release --framework net8.0 --filter "FullyQualifiedName~ApplyRunnerTests"
@@ -44,7 +49,7 @@ Release gate output root must contain:
 
 - `upgrade-rebase/upgrade-rebase-summary.json`
   - `status` must be `passed`
-  - `requiredEvidence` must list all four contract areas
+  - `requiredEvidence` must list all five contract areas
 - `upgrade-rebase/upgrade-rebase-report.md`
   - Must include per-step pass/fail table and log references
 
@@ -57,6 +62,7 @@ Workflow enforcement:
 
 For go/no-go review, confirm:
 
-- Rebase outputs preserve expected overlay overrides or flag review-required actions.
+- Rebase outputs preserve expected non-conflicting overlay intent and explicitly block apply when unresolved blocking conflicts remain.
 - No unintended data loss occurs for `.stigforge` overlays, profiles, or content pack metadata.
 - Rollback-related tests validate fail-closed behavior and explicit operator decision points.
+- Rebase reports contain control-level recommended actions for each blocking conflict.

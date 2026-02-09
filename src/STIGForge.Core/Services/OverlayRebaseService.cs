@@ -35,7 +35,7 @@ public sealed class OverlayRebaseService
       OverlayId = overlayId,
       BaselinePackId = baselinePackId,
       NewPackId = newPackId,
-      RebasedAt = DateTimeOffset.Now
+      RebasedAt = DateTimeOffset.UtcNow
     };
 
     // Get diff between baseline and new pack
@@ -61,10 +61,16 @@ public sealed class OverlayRebaseService
         report.OverallConfidence = action.Confidence;
     }
 
+    report.Actions = report.Actions
+      .OrderBy(a => a.OriginalControlKey, StringComparer.OrdinalIgnoreCase)
+      .ThenBy(a => a.ActionType)
+      .ToList();
+
     // Categorize actions
-    report.SafeActions = report.Actions.Count(a => a.Confidence >= 0.9);
-    report.ReviewNeeded = report.Actions.Count(a => a.Confidence < 0.9 && a.Confidence >= 0.5);
-    report.HighRisk = report.Actions.Count(a => a.Confidence < 0.5);
+    report.SafeActions = report.Actions.Count(a => !a.RequiresReview && !a.IsBlockingConflict && a.Confidence >= 0.9);
+    report.ReviewNeeded = report.Actions.Count(a => a.RequiresReview);
+    report.HighRisk = report.Actions.Count(a => a.IsBlockingConflict || a.Confidence < 0.5);
+    report.BlockingConflicts = report.Actions.Count(a => a.IsBlockingConflict);
 
     report.Success = true;
 
@@ -79,10 +85,10 @@ public sealed class OverlayRebaseService
             Action = "rebase-overlay",
             Target = overlayId,
             Result = "success",
-            Detail = $"Baseline={baselinePackId}, New={newPackId}, Safe={report.SafeActions}, Review={report.ReviewNeeded}, HighRisk={report.HighRisk}",
+            Detail = $"Baseline={baselinePackId}, New={newPackId}, Safe={report.SafeActions}, Review={report.ReviewNeeded}, Blocking={report.BlockingConflicts}, HighRisk={report.HighRisk}",
             User = Environment.UserName,
             Machine = Environment.MachineName,
-            Timestamp = DateTimeOffset.Now
+            Timestamp = DateTimeOffset.UtcNow
           }, CancellationToken.None).ConfigureAwait(false);
         }
         catch { /* fire-and-forget audit */ }
@@ -100,6 +106,17 @@ public sealed class OverlayRebaseService
     RebaseReport report,
     CancellationToken cancellationToken = default)
   {
+    var blockingActions = report.Actions
+      .Where(a => a.IsBlockingConflict)
+      .OrderBy(a => a.OriginalControlKey, StringComparer.OrdinalIgnoreCase)
+      .ToList();
+
+    if (blockingActions.Count > 0)
+    {
+      var controls = string.Join(", ", blockingActions.Select(a => a.OriginalControlKey));
+      throw new InvalidOperationException($"Cannot apply rebase while blocking conflicts remain unresolved. Controls: {controls}");
+    }
+
     var overlay = await _overlays.GetAsync(overlayId, cancellationToken);
     if (overlay == null)
       throw new InvalidOperationException($"Overlay {overlayId} not found");
@@ -108,7 +125,7 @@ public sealed class OverlayRebaseService
     {
       OverlayId = Guid.NewGuid().ToString(),
       Name = overlay.Name + " (Rebased)",
-      UpdatedAt = DateTimeOffset.Now,
+      UpdatedAt = DateTimeOffset.UtcNow,
       Overrides = new List<ControlOverride>(),
       PowerStigOverrides = overlay.PowerStigOverrides.ToList()
     };
@@ -116,7 +133,7 @@ public sealed class OverlayRebaseService
     var rebasedOverrides = new List<ControlOverride>();
 
     // Apply each action
-    foreach (var action in report.Actions.Where(a => a.ActionType != RebaseActionType.Remove))
+    foreach (var action in report.Actions.Where(a => !a.IsBlockingConflict && a.ActionType != RebaseActionType.Remove))
     {
       var existingOverride = overlay.Overrides.FirstOrDefault(o => GetOverrideKey(o) == action.OriginalControlKey);
       if (existingOverride == null) continue;
@@ -166,7 +183,9 @@ public sealed class OverlayRebaseService
         ActionType = RebaseActionType.Remove,
         Reason = "Control removed from new STIG baseline",
         Confidence = 1.0, // High confidence - control is gone
-        RequiresReview = true
+        RequiresReview = true,
+        IsBlockingConflict = true,
+        RecommendedAction = "Review this control and decide whether to remove the override or remap it before applying rebase."
       };
     }
 
@@ -186,6 +205,8 @@ public sealed class OverlayRebaseService
           Reason = $"High-impact changes: {string.Join(", ", highImpactChanges.Select(c => c.FieldName))}",
           Confidence = 0.5, // Medium confidence - needs review
           RequiresReview = true,
+          IsBlockingConflict = true,
+          RecommendedAction = "Review the high-impact fields and update the override decision before applying rebase.",
           FieldChanges = highImpactChanges
         };
       }
@@ -198,6 +219,8 @@ public sealed class OverlayRebaseService
         Reason = $"Low-impact changes: {string.Join(", ", modified.Changes.Select(c => c.FieldName))}",
         Confidence = 0.8, // Good confidence - minor changes
         RequiresReview = false,
+        IsBlockingConflict = false,
+        RecommendedAction = "Proceed with apply and validate this control during post-rebase verification.",
         FieldChanges = modified.Changes
       };
     }
@@ -210,7 +233,9 @@ public sealed class OverlayRebaseService
       ActionType = RebaseActionType.Keep,
       Reason = "Control unchanged in new baseline",
       Confidence = 1.0, // Perfect confidence
-      RequiresReview = false
+      RequiresReview = false,
+      IsBlockingConflict = false,
+      RecommendedAction = "No manual action required."
     };
   }
 
@@ -243,6 +268,8 @@ public sealed class RebaseReport
   public int SafeActions { get; set; }
   public int ReviewNeeded { get; set; }
   public int HighRisk { get; set; }
+  public int BlockingConflicts { get; set; }
+  public bool HasBlockingConflicts => BlockingConflicts > 0;
 }
 
 /// <summary>
@@ -254,8 +281,10 @@ public sealed class RebaseAction
   public string? NewControlKey { get; set; }
   public RebaseActionType ActionType { get; set; }
   public string Reason { get; set; } = string.Empty;
+  public string RecommendedAction { get; set; } = string.Empty;
   public double Confidence { get; set; }
   public bool RequiresReview { get; set; }
+  public bool IsBlockingConflict { get; set; }
   public List<ControlFieldChange> FieldChanges { get; set; } = new();
 }
 

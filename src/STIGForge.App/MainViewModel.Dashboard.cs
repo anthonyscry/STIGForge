@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using System.IO;
 using System.Text.Json;
+using STIGForge.Core.Abstractions;
 
 namespace STIGForge.App;
 
@@ -85,7 +86,8 @@ public partial class MainViewModel
         _controls, 
         _overlays,
         overlayList.ToList(),
-        ContentPacks.ToList());
+        ContentPacks.ToList(),
+        _audit);
 
       var wizard = new Views.RebaseWizard(viewModel);
       wizard.ShowDialog();
@@ -119,6 +121,8 @@ public partial class MainViewModel
       DashManualNa = 0;
       DashManualOpen = 0;
       DashManualPercent = "—";
+      DashMissionSeverity = string.Empty;
+      DashRecoveryGuidance = string.Empty;
       DashLastVerify = "";
       DashLastExport = "";
       return;
@@ -149,6 +153,8 @@ public partial class MainViewModel
       DashManualPercent = summary.Manual.TotalCount > 0
         ? $"{(double)summary.Manual.AnsweredCount / summary.Manual.TotalCount:P0}"
         : "—";
+      DashMissionSeverity = BuildMissionSeverityLine(summary);
+      DashRecoveryGuidance = BuildMissionRecoveryGuidance(summary, BundleRoot);
     }
     catch (Exception ex)
     {
@@ -167,6 +173,8 @@ public partial class MainViewModel
       DashManualNa = 0;
       DashManualOpen = 0;
       DashManualPercent = "—";
+      DashMissionSeverity = "Mission severity unavailable";
+      DashRecoveryGuidance = "Load verify artifacts to compute mission recovery guidance.";
     }
 
     DashLastVerify = "";
@@ -207,6 +215,46 @@ public partial class MainViewModel
     {
       DashLastExport = "";
     }
+  }
+
+  private static string BuildMissionSeverityLine(BundleMissionSummary summary)
+  {
+    return $"Mission severity: blocking={summary.Verify.BlockingFailureCount} warnings={summary.Verify.RecoverableWarningCount} optional-skips={summary.Verify.OptionalSkipCount}";
+  }
+
+  private static string BuildMissionRecoveryGuidance(BundleMissionSummary summary, string bundleRoot)
+  {
+    if (summary.Verify.BlockingFailureCount > 0)
+    {
+      var verifyRoot = Path.Combine(bundleRoot, "Verify");
+      var rollbackHint = GetRollbackGuidance(bundleRoot);
+      return "Blocking findings detected. Required artifacts: consolidated verify reports and coverage overlap artifacts. "
+        + "Next action: resolve failing/open controls, rerun Verify, and regenerate mission summary. "
+        + $"Recovery paths: {verifyRoot}. {rollbackHint}";
+    }
+
+    if (summary.Verify.RecoverableWarningCount > 0 || summary.Verify.OptionalSkipCount > 0)
+    {
+      return "Warnings or optional skips detected. Required artifacts: verify reports and optional-skip rationale. "
+        + "Next action: review warning diagnostics and confirm skip intent before release promotion.";
+    }
+
+    return "No blocking mission findings. Next action: proceed with export and release evidence collection.";
+  }
+
+  private static string GetRollbackGuidance(string bundleRoot)
+  {
+    var snapshotsDir = Path.Combine(bundleRoot, "Apply", "Snapshots");
+    if (!Directory.Exists(snapshotsDir))
+      return "Rollback guidance: use the latest rollback script from Apply/Snapshots if rollback is required.";
+
+    var latestRollback = Directory.GetFiles(snapshotsDir, "rollback_*.ps1", SearchOption.TopDirectoryOnly)
+      .OrderByDescending(File.GetLastWriteTimeUtc)
+      .FirstOrDefault();
+
+    return latestRollback == null
+      ? "Rollback guidance: use the latest rollback script from Apply/Snapshots if rollback is required."
+      : $"Rollback guidance: run '{latestRollback}' if operator-approved rollback is required.";
   }
 
   [RelayCommand]

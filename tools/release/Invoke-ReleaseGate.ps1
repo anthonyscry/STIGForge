@@ -170,11 +170,13 @@ try {
 
   $upgradeRebaseDiffCommand = "dotnet test tests/STIGForge.UnitTests/STIGForge.UnitTests.csproj --configuration $Configuration --framework net8.0 --nologo --no-build --filter 'FullyQualifiedName~BaselineDiffServiceTests' --logger `"trx;LogFileName=upgrade-rebase-diff-contract.trx`" --results-directory '$upgradeRebaseResultsRoot'"
   $upgradeRebaseOverlayCommand = "dotnet test tests/STIGForge.UnitTests/STIGForge.UnitTests.csproj --configuration $Configuration --framework net8.0 --nologo --no-build --filter 'FullyQualifiedName~OverlayRebaseServiceTests' --logger `"trx;LogFileName=upgrade-rebase-overlay-contract.trx`" --results-directory '$upgradeRebaseResultsRoot'"
+  $upgradeRebaseParityCommand = "dotnet test tests/STIGForge.UnitTests/STIGForge.UnitTests.csproj --configuration $Configuration --framework net8.0 --nologo --no-build --filter 'FullyQualifiedName~BundleMissionSummaryServiceTests' --logger `"trx;LogFileName=upgrade-rebase-parity-contract.trx`" --results-directory '$upgradeRebaseResultsRoot'"
   $upgradeRebaseCliCommand = "dotnet test tests/STIGForge.IntegrationTests/STIGForge.IntegrationTests.csproj --configuration $Configuration --framework net8.0 --nologo --no-build --filter 'FullyQualifiedName~CliCommandTests.DiffPacks|FullyQualifiedName~CliCommandTests.RebaseOverlay' --logger `"trx;LogFileName=upgrade-rebase-cli-contract.trx`" --results-directory '$upgradeRebaseResultsRoot'"
   $upgradeRebaseRollbackCommand = "dotnet test tests/STIGForge.UnitTests/STIGForge.UnitTests.csproj --configuration $Configuration --framework net8.0 --nologo --no-build --filter 'FullyQualifiedName~ApplyRunnerTests' --logger `"trx;LogFileName=upgrade-rebase-rollback-safety.trx`" --results-directory '$upgradeRebaseResultsRoot'"
 
   $steps += New-Step -Name "upgrade-rebase-diff-contract" -Command $upgradeRebaseDiffCommand -LogPath (Join-Path $logRoot "upgrade-rebase-diff-contract.log")
   $steps += New-Step -Name "upgrade-rebase-overlay-contract" -Command $upgradeRebaseOverlayCommand -LogPath (Join-Path $logRoot "upgrade-rebase-overlay-contract.log")
+  $steps += New-Step -Name "upgrade-rebase-parity-contract" -Command $upgradeRebaseParityCommand -LogPath (Join-Path $logRoot "upgrade-rebase-parity-contract.log")
   $steps += New-Step -Name "upgrade-rebase-cli-contract" -Command $upgradeRebaseCliCommand -LogPath (Join-Path $logRoot "upgrade-rebase-cli-contract.log")
   $steps += New-Step -Name "upgrade-rebase-rollback-safety" -Command $upgradeRebaseRollbackCommand -LogPath (Join-Path $logRoot "upgrade-rebase-rollback-safety.log")
 
@@ -250,6 +252,7 @@ try {
   [void]$upgradeRebaseReport.AppendLine()
   [void]$upgradeRebaseReport.AppendLine("- Baseline to target diff contract")
   [void]$upgradeRebaseReport.AppendLine("- Overlay rebase behavior contract")
+  [void]$upgradeRebaseReport.AppendLine("- Mission summary parity contract (CLI/WPF severity semantics)")
   [void]$upgradeRebaseReport.AppendLine("- CLI diff/rebase integration contract")
   [void]$upgradeRebaseReport.AppendLine("- Rollback safety and operator-decision guardrails")
   [void]$upgradeRebaseReport.AppendLine()
@@ -274,6 +277,7 @@ try {
     requiredEvidence = @(
       "baseline-to-target diff contract",
       "overlay rebase behavior contract",
+      "mission summary parity contract (cli/wpf severity semantics)",
       "cli diff/rebase integration contract",
       "rollback safety and operator decision guardrails"
     )
@@ -360,6 +364,7 @@ try {
       requiredEvidence = @(
         "baseline-to-target diff contract",
         "overlay rebase behavior contract",
+        "mission summary parity contract (cli/wpf severity semantics)",
         "cli diff/rebase integration contract",
         "rollback safety and operator decision guardrails"
       )
