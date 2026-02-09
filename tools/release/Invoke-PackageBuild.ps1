@@ -203,7 +203,13 @@ try {
   Compress-Archive -Path (Join-Path $cliPublishDir "*") -DestinationPath $cliZipPath
   Compress-Archive -Path (Join-Path $appPublishDir "*") -DestinationPath $appZipPath
 
-  $sbomTarget = if ($IsWindows) { "STIGForge.sln" } else { "src/STIGForge.Cli/STIGForge.Cli.csproj" }
+  $isWindowsHost = if (Get-Variable -Name IsWindows -ErrorAction SilentlyContinue) {
+    [bool]$IsWindows
+  }
+  else {
+    $env:OS -eq "Windows_NT"
+  }
+  $sbomTarget = if ($isWindowsHost) { "STIGForge.sln" } else { "src/STIGForge.Cli/STIGForge.Cli.csproj" }
   $dependencyInventoryStatus = "skipped"
   $dependencyInventoryMessage = "Dependency inventory skipped by configuration"
   $dependencyInventoryPath = Join-Path $sbomRoot "dotnet-packages.json"

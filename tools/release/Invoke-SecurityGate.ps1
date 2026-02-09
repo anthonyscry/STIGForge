@@ -369,7 +369,13 @@ Write-Host "[security-gate] repository: $RepositoryRoot"
 Write-Host "[security-gate] output:     $outputRootFull"
 
 $scanTarget = "STIGForge.sln"
-if (-not $IsWindows) {
+$isWindowsHost = if (Get-Variable -Name IsWindows -ErrorAction SilentlyContinue) {
+  [bool]$IsWindows
+}
+else {
+  $env:OS -eq "Windows_NT"
+}
+if (-not $isWindowsHost) {
   $scanTarget = "src/STIGForge.Cli/STIGForge.Cli.csproj"
   Write-Host "[security-gate] scan target: $scanTarget (non-Windows host)"
 }
