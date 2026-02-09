@@ -17,6 +17,7 @@ public class SmokeTests
     var b = pb.GetEmassExportRoot("SYS1", "Win11", "Workstation", "Prof A", "Q1_2026", ts);
 
     a.Should().Be(b);
+    Path.GetFileName(a).Should().Be("EMASS_SYS1Win11WorkstationProfAQ1_2026_20260202-2130");
   }
 
   [Fact]

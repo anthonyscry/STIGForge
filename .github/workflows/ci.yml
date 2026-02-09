@@ -42,10 +42,97 @@ jobs:
 
           powershell @args
 
+      - name: Evaluate stability budget
+        shell: pwsh
+        run: |
+          $outputRoot = '.\.artifacts\stability-budget\ci'
+          New-Item -ItemType Directory -Force -Path $outputRoot | Out-Null
+
+          $maxAttempts = 3
+          $requiredPasses = 2
+          $allowedFailures = $maxAttempts - $requiredPasses
+          $attempts = @()
+
+          for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
+            $logPath = Join-Path $outputRoot ("stability-attempt-{0}.log" -f $attempt)
+            Write-Host "[stability-budget] CI attempt $attempt/$maxAttempts" -ForegroundColor Cyan
+
+            $runOutput = & dotnet test .\tests\STIGForge.IntegrationTests\STIGForge.IntegrationTests.csproj --configuration Release --framework net8.0 --nologo --filter 'FullyQualifiedName~E2E|FullyQualifiedName~SnapshotIntegrationTests' 2>&1
+            $exitCode = $LASTEXITCODE
+            $runOutput | Out-File -FilePath $logPath -Encoding UTF8
+
+            $attempts += [pscustomobject]@{
+              attempt = $attempt
+              exitCode = $exitCode
+              succeeded = ($exitCode -eq 0)
+              logPath = $logPath
+            }
+          }
+
+          $passCount = @($attempts | Where-Object { $_.succeeded }).Count
+          $failureCount = $maxAttempts - $passCount
+          $overallPassed = ($passCount -ge $requiredPasses -and $failureCount -le $allowedFailures)
+          $releaseGateSummaryPath = '.\.artifacts\release-gate\latest\report\release-gate-summary.json'
+
+          $summaryPath = Join-Path $outputRoot 'stability-budget-summary.json'
+          $reportPath = Join-Path $outputRoot 'stability-budget-report.md'
+
+          $summary = [ordered]@{
+            generatedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
+            suite = 'E2E|SnapshotIntegrationTests'
+            releaseGateSummaryPath = $releaseGateSummaryPath
+            policy = [ordered]@{
+              maxAttempts = $maxAttempts
+              requiredPasses = $requiredPasses
+              allowedFailures = $allowedFailures
+            }
+            result = [ordered]@{
+              passes = $passCount
+              failures = $failureCount
+              overallPassed = $overallPassed
+            }
+            attempts = @($attempts)
+          }
+          $summary | ConvertTo-Json -Depth 6 | Set-Content -Path $summaryPath -Encoding UTF8
+
+          $report = New-Object System.Text.StringBuilder
+          [void]$report.AppendLine('# Stability Budget Report (CI)')
+          [void]$report.AppendLine()
+          [void]$report.AppendLine("- Suite: E2E + SnapshotIntegrationTests")
+          [void]$report.AppendLine("- Attempts: $maxAttempts")
+          [void]$report.AppendLine("- Required passes: $requiredPasses")
+          [void]$report.AppendLine("- Allowed failures: $allowedFailures")
+          [void]$report.AppendLine("- Result: $(if ($overallPassed) { 'PASS' } else { 'FAIL' })")
+          [void]$report.AppendLine("- Passes: $passCount")
+          [void]$report.AppendLine("- Failures: $failureCount")
+          [void]$report.AppendLine("- Release gate summary: $releaseGateSummaryPath")
+          [void]$report.AppendLine()
+          [void]$report.AppendLine('## Attempts')
+          [void]$report.AppendLine()
+          [void]$report.AppendLine('| Attempt | Status | Exit Code | Log |')
+          [void]$report.AppendLine('|---------|--------|-----------|-----|')
+          foreach ($attempt in $attempts) {
+            $status = if ($attempt.succeeded) { 'PASS' } else { 'FAIL' }
+            [void]$report.AppendLine("| $($attempt.attempt) | $status | $($attempt.exitCode) | $($attempt.logPath) |")
+          }
+          Set-Content -Path $reportPath -Value $report.ToString() -Encoding UTF8
+
+          if (-not $overallPassed) {
+            throw "Stability budget failed: passes=$passCount required=$requiredPasses failures=$failureCount allowed=$allowedFailures"
+          }
+
       - name: Upload release-gate artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: release-gate-${{ github.run_id }}
           path: ./.artifacts/release-gate/latest
+          if-no-files-found: warn
+
+      - name: Upload stability-budget artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stability-budget-ci-${{ github.run_id }}
+          path: ./.artifacts/stability-budget/ci
           if-no-files-found: warn

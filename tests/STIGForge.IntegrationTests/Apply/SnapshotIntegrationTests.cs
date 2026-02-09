@@ -19,6 +19,7 @@ namespace STIGForge.IntegrationTests.Apply;
 /// </summary>
 public class SnapshotIntegrationTests
 {
+    private static readonly DateTimeOffset DeterministicSnapshotCreatedAt = new(2026, 1, 15, 12, 0, 0, TimeSpan.Zero);
     private readonly ITestOutputHelper _output;
     private readonly IServiceProvider _serviceProvider;
 
@@ -252,7 +253,7 @@ public class SnapshotIntegrationTests
             snapshot = new SnapshotResult
             {
                 SnapshotId = snapshotName,
-                CreatedAt = DateTimeOffset.Now,
+                CreatedAt = DeterministicSnapshotCreatedAt,
                 SecurityPolicyPath = Path.Combine(tempDir, "security_policy.inf"),
                 AuditPolicyPath = Path.Combine(tempDir, "audit_policy.csv"),
                 LgpoStatePath = Path.Combine(tempDir, "lgpo_state.pol")
