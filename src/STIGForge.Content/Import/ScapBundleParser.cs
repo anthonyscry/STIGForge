@@ -43,7 +43,7 @@ public static class ScapBundleParser
   private static void ExtractZipSafely(string zipPath, string destinationRoot)
   {
     var destinationRootFullPath = Path.GetFullPath(destinationRoot);
-    var destinationRootPrefix = destinationRootFullPath.EndsWith(Path.DirectorySeparatorChar)
+    var destinationRootPrefix = destinationRootFullPath.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal)
       ? destinationRootFullPath
       : destinationRootFullPath + Path.DirectorySeparatorChar;
 
@@ -62,7 +62,8 @@ public static class ScapBundleParser
       if (!isWithinRoot)
         throw new ParsingException($"[SCAP-ARCHIVE-002] Archive entry '{entry.FullName}' resolves outside extraction root and was rejected.");
 
-      var isDirectory = entry.FullName.EndsWith('/') || entry.FullName.EndsWith('\\');
+      var isDirectory = entry.FullName.EndsWith("/", StringComparison.Ordinal)
+        || entry.FullName.EndsWith("\\", StringComparison.Ordinal);
       if (isDirectory)
       {
         Directory.CreateDirectory(destinationPath);
