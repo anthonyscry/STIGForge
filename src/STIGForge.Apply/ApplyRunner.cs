@@ -558,7 +558,7 @@ public sealed class ApplyRunner
     if (context.CurrentStepIndex >= plannedSteps.Count)
       throw new InvalidOperationException("Resume marker is exhausted (no remaining steps). Operator decision required before continuation.");
 
-    foreach (var completedStep in context.CompletedSteps ?? Array.Empty<string>())
+    foreach (var completedStep in context.CompletedSteps ?? new List<string>())
     {
       if (!plannedSteps.Contains(completedStep, StringComparer.OrdinalIgnoreCase))
       {

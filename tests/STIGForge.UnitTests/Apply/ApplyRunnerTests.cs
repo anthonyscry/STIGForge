@@ -42,8 +42,8 @@ public sealed class ApplyRunnerTests : IDisposable
         }, CancellationToken.None));
 
         exception.Should().BeOfType<InvalidOperationException>()
-            .Which.Message.Should().Contain("Mission completion blocked", StringComparison.OrdinalIgnoreCase)
-            .And.Contain("Rollback remains operator-initiated", StringComparison.OrdinalIgnoreCase);
+            .Which.Message.Should().ContainEquivalentOf("Mission completion blocked")
+            .And.ContainEquivalentOf("Rollback remains operator-initiated");
     }
 
     [Fact]
@@ -76,7 +76,7 @@ public sealed class ApplyRunnerTests : IDisposable
         }, CancellationToken.None));
 
         exception.Should().BeOfType<InvalidOperationException>()
-            .Which.Message.Should().Contain("operator decision", StringComparison.OrdinalIgnoreCase);
+            .Which.Message.Should().ContainEquivalentOf("operator decision");
     }
 
     private static ApplyRunner CreateRunner(IAuditTrailService audit)
