@@ -41,16 +41,28 @@ function Get-FileProfile {
     [Parameter(Mandatory = $true)][string]$Path
   )
 
-  $item = Get-Item -LiteralPath $Path -ErrorAction Stop
-  $hash = Get-FileHash -Algorithm SHA256 -Path $Path
+  $rawContent = Get-Content -LiteralPath $Path -Raw -ErrorAction Stop
+  $canonicalContent = $rawContent -replace "`r`n", "`n" -replace "`r", "`n"
   $content = @(Get-Content -LiteralPath $Path -ErrorAction Stop)
+
+  $sha = [System.Security.Cryptography.SHA256]::Create()
+  try {
+    $canonicalBytes = [System.Text.Encoding]::UTF8.GetBytes($canonicalContent)
+    $hashBytes = $sha.ComputeHash($canonicalBytes)
+  }
+  finally {
+    $sha.Dispose()
+  }
+
+  $hash = ([System.BitConverter]::ToString($hashBytes)).Replace("-", "").ToLowerInvariant()
+  $sizeBytes = [int64]$canonicalBytes.Length
 
   $rootElement = ""
   $rootElementError = ""
   $rawXml = ""
 
   try {
-    $rawXml = Get-Content -LiteralPath $Path -Raw -ErrorAction Stop
+    $rawXml = $rawContent
     [xml]$xml = $rawXml
     if ($null -ne $xml.DocumentElement) {
       $rootElement = $xml.DocumentElement.LocalName
@@ -61,8 +73,8 @@ function Get-FileProfile {
   }
 
   return [pscustomobject]@{
-    sha256 = $hash.Hash.ToLowerInvariant()
-    sizeBytes = [int64]$item.Length
+    sha256 = $hash
+    sizeBytes = $sizeBytes
     lineCount = @($content).Count
     rootElement = $rootElement
     rootElementError = $rootElementError
