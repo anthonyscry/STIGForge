@@ -621,7 +621,7 @@ public sealed class ContentPackImporter
     private static void ExtractZipSafely(string zipPath, string destinationRoot, CancellationToken ct)
     {
         var destinationRootFullPath = Path.GetFullPath(destinationRoot);
-        var destinationRootPrefix = destinationRootFullPath.EndsWith(Path.DirectorySeparatorChar)
+        var destinationRootPrefix = destinationRootFullPath.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal)
             ? destinationRootFullPath
             : destinationRootFullPath + Path.DirectorySeparatorChar;
 
@@ -642,7 +642,8 @@ public sealed class ContentPackImporter
             if (!isWithinRoot)
                 throw new ParsingException($"[IMPORT-ARCHIVE-002] Archive entry '{entry.FullName}' resolves outside extraction root and was rejected.");
 
-            var isDirectory = entry.FullName.EndsWith('/') || entry.FullName.EndsWith('\\');
+            var isDirectory = entry.FullName.EndsWith("/", StringComparison.Ordinal)
+                || entry.FullName.EndsWith("\\", StringComparison.Ordinal);
             if (isDirectory)
             {
                 Directory.CreateDirectory(destinationPath);

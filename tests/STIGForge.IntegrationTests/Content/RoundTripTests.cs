@@ -131,19 +131,19 @@ public sealed class RoundTripTests : IDisposable
     yield return new object[]
     {
       "integration-stig-baseline.zip",
-      new[] { "stig-baseline-xccdf.xml" },
+      new[] { "compat-stig-baseline-xccdf.xml" },
       "Stig"
     };
     yield return new object[]
     {
       "integration-scap-baseline.zip",
-      new[] { "scap-baseline-xccdf.xml", "scap-baseline-oval.xml" },
+      new[] { "compat-scap-baseline-xccdf.xml", "compat-scap-baseline-oval.xml" },
       "Scap"
     };
     yield return new object[]
     {
       "integration-gpo-baseline.zip",
-      new[] { "gpo-baseline.admx" },
+      new[] { "compat-gpo-baseline.admx" },
       "Gpo"
     };
   }
@@ -154,10 +154,10 @@ public sealed class RoundTripTests : IDisposable
     var importer = CreateImporter();
     var firstArchive = await CreateArchiveFromFixtureEntriesAsync(
       "compat-deterministic-1.zip",
-      new[] { "stig-quarterly-delta-xccdf.xml" });
+      new[] { "compat-stig-quarterly-delta-xccdf.xml" });
     var secondArchive = await CreateArchiveFromFixtureEntriesAsync(
       "compat-deterministic-2.zip",
-      new[] { "stig-quarterly-delta-xccdf.xml" });
+      new[] { "compat-stig-quarterly-delta-xccdf.xml" });
 
     var firstResult = await importer.ImportZipAsync(firstArchive, "compat-deterministic-1", "integration", CancellationToken.None);
     var secondResult = await importer.ImportZipAsync(secondArchive, "compat-deterministic-2", "integration", CancellationToken.None);
@@ -183,7 +183,7 @@ public sealed class RoundTripTests : IDisposable
     var importer = CreateImporter();
     var malformedArchive = await CreateArchiveFromFixtureEntriesAsync(
       "compat-malformed.zip",
-      new[] { "stig-malformed-xccdf.xml" });
+      new[] { "compat-stig-malformed-xccdf.xml" });
 
     var result = await importer.ImportZipAsync(malformedArchive, "compat-malformed", "integration", CancellationToken.None);
     var compatibilityPath = Path.Combine(_testRoot, ".stigforge-integration", "contentpacks", result.PackId, "compatibility_matrix.json");
@@ -206,7 +206,7 @@ public sealed class RoundTripTests : IDisposable
     var importer = CreateImporter();
     var mixedArchive = await CreateArchiveFromFixtureEntriesAsync(
       "compat-mixed-adversarial.zip",
-      new[] { "mixed-adversarial-xccdf.xml", "mixed-adversarial-oval.xml", "gpo-baseline.admx" });
+      new[] { "compat-scap-baseline-oval.xml", "compat-gpo-baseline.admx" });
 
     var result = await importer.ImportZipAsync(mixedArchive, "compat-mixed", "integration", CancellationToken.None);
     var compatibilityPath = Path.Combine(_testRoot, ".stigforge-integration", "contentpacks", result.PackId, "compatibility_matrix.json");
@@ -255,7 +255,7 @@ public sealed class RoundTripTests : IDisposable
   private static string GetFixturePath(string fixtureName)
   {
     var baseDir = AppDomain.CurrentDomain.BaseDirectory;
-    return Path.Combine(baseDir, "..", "..", "..", "fixtures", "compatibility", fixtureName);
+    return Path.Combine(baseDir, "..", "..", "..", "fixtures", fixtureName);
   }
 
   private static string CreateMinimalXccdf(string controlId, string vulnId, string ruleId, string title, string severity, string description, string checkText, string fixText)
