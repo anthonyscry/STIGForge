@@ -18,6 +18,7 @@ namespace STIGForge.IntegrationTests.E2E;
 /// </summary>
 public sealed class FullPipelineTests : IDisposable
 {
+    private static readonly DateTimeOffset DeterministicResultTime = new(2026, 1, 15, 12, 0, 0, TimeSpan.Zero);
     private readonly string _testRoot;
 
     public FullPipelineTests()
@@ -303,8 +304,8 @@ public sealed class FullPipelineTests : IDisposable
         var testResult = new XElement(ns + "TestResult",
             new XAttribute("id", "test-result-1"),
             new XAttribute("version", "1.0"),
-            new XElement(ns + "start-time", DateTimeOffset.Now.AddHours(-1).ToString("o")),
-            new XElement(ns + "end-time", DateTimeOffset.Now.ToString("o"))
+            new XElement(ns + "start-time", DeterministicResultTime.AddHours(-1).ToString("o")),
+            new XElement(ns + "end-time", DeterministicResultTime.ToString("o"))
         );
 
         for (int i = 1; i <= controlCount; i++)
@@ -314,7 +315,7 @@ public sealed class FullPipelineTests : IDisposable
             
             var ruleResult = new XElement(ns + "rule-result",
                 new XAttribute("idref", $"SV-{100000 + i}r1_rule"),
-                new XAttribute("time", DateTimeOffset.Now.ToString("o")),
+                new XAttribute("time", DeterministicResultTime.ToString("o")),
                 new XElement(ns + "result", status),
                 new XElement(ns + "ident",
                     new XAttribute("system", "http://cyber.mil/legacy"),
