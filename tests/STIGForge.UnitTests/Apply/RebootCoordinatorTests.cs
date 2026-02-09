@@ -261,6 +261,6 @@ public sealed class RebootCoordinatorTests : IDisposable
         var exception = await Record.ExceptionAsync(() => _coordinator.ResumeAfterReboot(_testRoot, CancellationToken.None));
 
         exception.Should().BeOfType<RebootException>()
-            .Which.Message.Should().Contain("does not match requested bundle", StringComparison.OrdinalIgnoreCase);
+            .Which.Message.Should().ContainEquivalentOf("does not match requested bundle");
     }
 }
