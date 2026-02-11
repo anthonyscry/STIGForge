@@ -1,0 +1,92 @@
+<UserControl x:Class="STIGForge.App.Views.VerifyView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <StackPanel Margin="10">
+
+      <TextBlock Text="Verification" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,4"/>
+      <TextBlock Text="Run Evaluate-STIG and/or SCAP scans to check whether hardening was applied correctly. Review overlap between scanner results."
+                 Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,0,0,12"/>
+
+      <!-- Scanner Settings -->
+      <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="12" Margin="0,0,0,10" Background="{DynamicResource SurfaceMutedBrush}">
+        <StackPanel>
+          <WrapPanel Margin="0,0,0,8">
+            <TextBlock Text="Bundle:" Width="120" VerticalAlignment="Center"/>
+            <TextBox Width="520" Text="{Binding BundleRoot}"
+                     AutomationProperties.Name="Bundle root path"/>
+            <Button Content="Browse" MinWidth="80" Height="28" Padding="14,0" Margin="6,0,0,0"
+                    Command="{Binding BrowseBundleCommand}" AutomationProperties.Name="Browse for bundle"/>
+            <Button Content="Open" MinWidth="80" Height="28" Padding="14,0" Margin="6,0,0,0"
+                    Command="{Binding OpenBundleFolderCommand}" AutomationProperties.Name="Open bundle folder"/>
+          </WrapPanel>
+          <WrapPanel Margin="0,0,0,8">
+            <TextBlock Text="Eval-STIG root:" Width="120" VerticalAlignment="Center"/>
+            <TextBox Width="520" Text="{Binding EvaluateStigRoot}" AutomationProperties.Name="Evaluate-STIG root"/>
+            <Button Content="Browse" MinWidth="80" Height="28" Padding="14,0" Margin="6,0,0,0"
+                    Command="{Binding BrowseEvaluateStigCommand}" AutomationProperties.Name="Browse for Evaluate-STIG"/>
+          </WrapPanel>
+          <WrapPanel Margin="0,0,0,8">
+            <TextBlock Text="Eval-STIG args:" Width="120" VerticalAlignment="Center"/>
+            <TextBox Width="520" Text="{Binding EvaluateStigArgs}" AutomationProperties.Name="Evaluate-STIG arguments"/>
+          </WrapPanel>
+          <WrapPanel Margin="0,0,0,8">
+            <TextBlock Text="SCAP command:" Width="120" VerticalAlignment="Center"/>
+            <TextBox Width="520" Text="{Binding ScapCommandPath}" AutomationProperties.Name="SCAP command path"/>
+            <Button Content="Browse" MinWidth="80" Height="28" Padding="14,0" Margin="6,0,0,0"
+                    Command="{Binding BrowseScapCommandCommand}" AutomationProperties.Name="Browse for SCAP command"/>
+          </WrapPanel>
+          <WrapPanel Margin="0,0,0,8">
+            <TextBlock Text="SCAP args:" Width="120" VerticalAlignment="Center"/>
+            <TextBox Width="520" Text="{Binding ScapArgs}" AutomationProperties.Name="SCAP arguments"/>
+          </WrapPanel>
+          <WrapPanel Margin="0,0,0,8">
+            <TextBlock Text="SCAP label:" Width="120" VerticalAlignment="Center"/>
+            <TextBox Width="200" Text="{Binding ScapLabel}" AutomationProperties.Name="SCAP label"/>
+          </WrapPanel>
+        </StackPanel>
+      </Border>
+
+      <!-- Run + Status -->
+      <WrapPanel Margin="0,0,0,8">
+        <Button Content="Run Verify" MinWidth="160" Height="36" Padding="14,0" FontWeight="SemiBold"
+                Command="{Binding VerifyRunCommand}" IsEnabled="{Binding ActionsEnabled}"
+                AutomationProperties.Name="Run verify"
+                ToolTipService.ToolTip="Execute Evaluate-STIG and/or SCAP verification against the active bundle."/>
+        <TextBlock Text="{Binding VerifyStatus}" Margin="12,10,0,0" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+      </WrapPanel>
+      <TextBlock Text="{Binding VerifySummary}" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+      <WrapPanel Margin="0,0,0,12">
+        <TextBlock Text="Last output:" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,8,0"/>
+        <TextBlock Text="{Binding LastOutputPath}" Foreground="{DynamicResource TextMutedBrush}"/>
+        <Button Content="Open" MinWidth="80" Height="28" Padding="14,0" Margin="8,0,0,0"
+                Command="{Binding OpenLastOutputCommand}" AutomationProperties.Name="Open last output"/>
+      </WrapPanel>
+
+      <!-- Overlap Analysis -->
+      <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="12" Background="{DynamicResource SurfaceBrush}">
+        <StackPanel>
+          <WrapPanel Margin="0,0,0,8">
+            <TextBlock Text="Scanner Overlap Analysis" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
+            <Button Content="Refresh Overlap" MinWidth="140" Height="28" Padding="14,0" Margin="12,0,0,0"
+                    Command="{Binding RefreshOverlapCommand}"
+                    AutomationProperties.Name="Refresh overlap analysis"
+                    ToolTipService.ToolTip="Recalculate source overlap between verify results from different scanners."/>
+          </WrapPanel>
+          <ListView ItemsSource="{Binding OverlapItems}" MaxHeight="220">
+            <ListView.View>
+              <GridView>
+                <GridViewColumn Header="Sources" DisplayMemberBinding="{Binding SourcesKey}" Width="220"/>
+                <GridViewColumn Header="#" DisplayMemberBinding="{Binding SourceCount}" Width="40"/>
+                <GridViewColumn Header="Controls" DisplayMemberBinding="{Binding ControlsCount}" Width="80"/>
+                <GridViewColumn Header="Closed" DisplayMemberBinding="{Binding ClosedCount}" Width="70"/>
+                <GridViewColumn Header="Open" DisplayMemberBinding="{Binding OpenCount}" Width="70"/>
+              </GridView>
+            </ListView.View>
+          </ListView>
+        </StackPanel>
+      </Border>
+
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

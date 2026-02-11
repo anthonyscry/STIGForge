@@ -3,7 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Select Content for Mission" Height="560" Width="700"
         WindowStartupLocation="CenterOwner" FontFamily="Bahnschrift" FontSize="13"
-        Background="{StaticResource WindowBackgroundBrush}">
+        Background="{DynamicResource WindowBackgroundBrush}">
   <Grid Margin="16">
     <Grid.RowDefinitions>
       <RowDefinition Height="Auto"/>
@@ -13,7 +13,7 @@
     </Grid.RowDefinitions>
 
     <TextBlock Grid.Row="0" Text="Select the content packs to include in this mission. Check one or more from each applicable category."
-               Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,12" TextWrapping="Wrap"/>
+               Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,12" TextWrapping="Wrap"/>
 
     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
       <StackPanel x:Name="GroupedPanel"/>
@@ -22,7 +22,10 @@
     <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,10,0,0">
       <Button Content="Select All" Width="90" Height="28" Click="SelectAll_Click"/>
       <Button Content="Select None" Width="90" Height="28" Margin="8,0,0,0" Click="SelectNone_Click"/>
-      <TextBlock x:Name="SelectionCount" Margin="12,6,0,0" Foreground="{StaticResource TextMutedBrush}"/>
+      <Button x:Name="SelectRecommendedBtn" Content="Select Recommended" MinWidth="150" Height="28"
+              Margin="8,0,0,0" Click="SelectRecommended_Click" Visibility="Collapsed"
+              ToolTipService.ToolTip="Select only the packs that match this machine (from Scan Machine results)."/>
+      <TextBlock x:Name="SelectionCount" Margin="12,6,0,0" Foreground="{DynamicResource TextMutedBrush}"/>
     </StackPanel>
 
     <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">

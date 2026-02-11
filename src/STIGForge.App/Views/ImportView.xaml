@@ -1,0 +1,129 @@
+<UserControl x:Class="STIGForge.App.Views.ImportView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+  <ScrollViewer VerticalScrollBarVisibility="Auto">
+    <Grid Margin="10">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="Auto"/>
+        <RowDefinition Height="*"/>
+      </Grid.RowDefinitions>
+
+      <!-- Import Buttons + Status -->
+      <StackPanel Grid.Row="0" Margin="0,0,0,10">
+        <WrapPanel Margin="0,0,0,8">
+          <Button Content="Import STIG..." MinWidth="150" Height="32" Padding="16,0" Margin="0,0,12,4"
+                  Command="{Binding ImportContentPackCommand}"
+                  AutomationProperties.Name="Import STIG content"
+                  ToolTipService.ToolTip="Import STIG content — single pack from Cyber.mil or full DISA SRG-STIG Library. Auto-detects bundles."/>
+          <Button Content="Import SCAP..." MinWidth="150" Height="32" Padding="16,0" Margin="0,0,12,4"
+                  Command="{Binding ImportScapBenchmarkCommand}"
+                  AutomationProperties.Name="Import SCAP benchmarks"
+                  ToolTipService.ToolTip="Import SCAP benchmarks — single or NIWC Atlantic bundle. Auto-detects bundles."/>
+          <Button Content="Import GPO / LGPO..." MinWidth="170" Height="32" Padding="16,0" Margin="0,0,12,4"
+                  Command="{Binding ImportGpoPackageCommand}"
+                  AutomationProperties.Name="Import GPO packages"
+                  ToolTipService.ToolTip="Import GPO/LGPO packages — ADMX templates, local and domain controller group policy."/>
+          <Button Content="Compare Packs..." MinWidth="150" Height="32" Padding="16,0" Margin="0,0,12,4"
+                  Command="{Binding ComparePacksCommand}"
+                  AutomationProperties.Name="Compare content packs"
+                  ToolTipService.ToolTip="Compare two content packs to see added, removed, or changed controls."/>
+          <Button Content="Scan Machine..." MinWidth="150" Height="32" Padding="16,0" Margin="0,0,12,4"
+                  Command="{Binding ScanMachineApplicabilityCommand}"
+                  AutomationProperties.Name="Scan machine applicability"
+                  ToolTipService.ToolTip="Detect OS version, server roles, and installed features to recommend which STIGs apply."/>
+          <Button Content="Select Content..." MinWidth="150" Height="32" Padding="16,0" Margin="0,0,0,4"
+                  Command="{Binding OpenContentPickerCommand}"
+                  AutomationProperties.Name="Select content for mission"
+                  ToolTipService.ToolTip="Pick from imported packs for this mission. Multi-select supported."/>
+        </WrapPanel>
+        <TextBlock Text="{Binding ImportHint}" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,2"/>
+        <TextBlock Text="{Binding MachineApplicabilityStatus}" Foreground="{DynamicResource TextMutedBrush}" FontSize="11"/>
+        <TextBlock Text="{Binding SelectedContentSummary}" Foreground="{DynamicResource TextMutedBrush}" FontSize="11" Margin="0,2,0,0"/>
+      </StackPanel>
+
+      <!-- Content Library with Filter Tabs + Pack Details -->
+      <Grid Grid.Row="1">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="2*"/>
+          <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+
+        <!-- Left: Filter + Search + ListView + Actions -->
+        <StackPanel Grid.Column="0">
+          <DockPanel Margin="0,0,0,8">
+            <TextBox DockPanel.Dock="Right" Width="180" Text="{Binding ContentSearchText, UpdateSourceTrigger=PropertyChanged}"
+                     AutomationProperties.Name="Search content library"
+                     ToolTipService.ToolTip="Filter by name or pack ID"/>
+            <TextBlock DockPanel.Dock="Right" Text="Search:" VerticalAlignment="Center" Margin="0,0,6,0"
+                       Foreground="{DynamicResource TextMutedBrush}"/>
+            <StackPanel Orientation="Horizontal">
+              <RadioButton Content="All" GroupName="ContentFilter" IsChecked="{Binding IsFilterAll}" Padding="10,4" Margin="0,0,6,0"/>
+              <RadioButton Content="STIG" GroupName="ContentFilter" IsChecked="{Binding IsFilterStig}" Padding="10,4" Margin="0,0,6,0"/>
+              <RadioButton Content="SCAP" GroupName="ContentFilter" IsChecked="{Binding IsFilterScap}" Padding="10,4" Margin="0,0,6,0"/>
+              <RadioButton Content="GPO / ADMX" GroupName="ContentFilter" IsChecked="{Binding IsFilterGpo}" Padding="10,4"/>
+            </StackPanel>
+          </DockPanel>
+
+          <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Margin="0,0,0,8">
+            <ListView ItemsSource="{Binding FilteredContentLibrary}" SelectedItem="{Binding SelectedLibraryItem}" MaxHeight="320">
+              <ListView.View>
+                <GridView>
+                  <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}" Width="200"/>
+                  <GridViewColumn Header="Format" DisplayMemberBinding="{Binding Format}" Width="80"/>
+                  <GridViewColumn Header="PackId" DisplayMemberBinding="{Binding PackId}" Width="150"/>
+                  <GridViewColumn Header="Imported" DisplayMemberBinding="{Binding ImportedAtLabel}" Width="140"/>
+                  <GridViewColumn Header="Source" DisplayMemberBinding="{Binding SourceLabel}" Width="120"/>
+                </GridView>
+              </ListView.View>
+            </ListView>
+          </Border>
+
+          <WrapPanel>
+            <Button Content="Refresh Library" MinWidth="140" Height="30" Padding="14,0" Margin="0,0,10,4"
+                    Command="{Binding RefreshImportLibraryCommand}"
+                    AutomationProperties.Name="Refresh import library"
+                    ToolTipService.ToolTip="Re-scan the import library for new or changed items."/>
+            <Button Content="Open Pack" MinWidth="130" Height="30" Padding="14,0" Margin="0,0,10,4"
+                    Command="{Binding OpenPackFolderCommand}"
+                    AutomationProperties.Name="Open pack folder"
+                    ToolTipService.ToolTip="Open the selected content pack folder in Windows Explorer."/>
+            <Button Content="Export Map" MinWidth="130" Height="30" Padding="14,0" Margin="0,0,10,4"
+                    Command="{Binding ExportPowerStigMapCommand}"
+                    AutomationProperties.Name="Export PowerSTIG map"
+                    ToolTipService.ToolTip="Export a PowerSTIG control-to-rule mapping file for the selected pack."/>
+            <Button Content="Delete Pack" MinWidth="130" Height="30" Padding="14,0" Margin="0,0,0,4"
+                    Command="{Binding DeleteSelectedPackCommand}" Foreground="{DynamicResource DangerBrush}"
+                    AutomationProperties.Name="Delete selected pack"
+                    ToolTipService.ToolTip="Permanently remove the selected content pack from local storage."/>
+          </WrapPanel>
+        </StackPanel>
+
+        <!-- Right: Pack Details -->
+        <ScrollViewer Grid.Column="1" Margin="12,0,0,0" VerticalScrollBarVisibility="Auto">
+          <StackPanel>
+            <TextBlock Text="Pack Details" FontWeight="SemiBold"/>
+            <TextBlock Text="Name:" Margin="0,6,0,0"/>
+            <TextBlock Text="{Binding PackDetailName}" Foreground="{DynamicResource TextMutedBrush}"/>
+            <TextBlock Text="PackId:" Margin="0,6,0,0"/>
+            <TextBlock Text="{Binding PackDetailId}" Foreground="{DynamicResource TextMutedBrush}"/>
+            <TextBlock Text="Format:" Margin="0,6,0,0"/>
+            <TextBlock Text="{Binding PackDetailFormat}" Foreground="{DynamicResource TextMutedBrush}"/>
+            <TextBlock Text="Release date:" Margin="0,6,0,0"/>
+            <TextBlock Text="{Binding PackDetailReleaseDate}" Foreground="{DynamicResource TextMutedBrush}"/>
+            <TextBlock Text="Imported:" Margin="0,6,0,0"/>
+            <TextBlock Text="{Binding PackDetailImportedAt}" Foreground="{DynamicResource TextMutedBrush}"/>
+            <TextBlock Text="Source:" Margin="0,6,0,0"/>
+            <TextBlock Text="{Binding PackDetailSource}" Foreground="{DynamicResource TextMutedBrush}"/>
+            <TextBlock Text="Hash:" Margin="0,6,0,0"/>
+            <TextBlock Text="{Binding PackDetailHash}" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+            <TextBlock Text="Controls:" Margin="0,6,0,0"/>
+            <TextBlock Text="{Binding PackDetailControls}" Foreground="{DynamicResource TextMutedBrush}"/>
+            <TextBlock Text="Root:" Margin="0,6,0,0"/>
+            <TextBlock Text="{Binding PackDetailRoot}" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+            <TextBlock Text="{Binding ImportLibraryStatus}" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,10,0,0" FontSize="11"/>
+          </StackPanel>
+        </ScrollViewer>
+      </Grid>
+    </Grid>
+  </ScrollViewer>
+</UserControl>

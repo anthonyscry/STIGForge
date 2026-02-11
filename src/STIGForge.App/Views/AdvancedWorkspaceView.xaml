@@ -403,7 +403,9 @@
 
           <WrapPanel Grid.Row="0" Margin="0,0,0,8">
             <Button Content="Launch Review Wizard" Width="160" Command="{Binding LaunchManualWizardCommand}" 
-                    IsEnabled="{Binding ActionsEnabled}"/>
+                    IsEnabled="{Binding ActionsEnabled}"
+                    AutomationProperties.Name="Launch manual review wizard"
+                    ToolTipService.ToolTip="Open the guided wizard for step-by-step manual control review and disposition."/>
             <TextBlock Text="Step-by-step wizard for reviewing manual controls with guided workflow" 
                        Margin="12,8,0,0" Foreground="{StaticResource TextMutedBrush}"/>
           </WrapPanel>
@@ -451,13 +453,21 @@
             <TextBlock Text="Comment" Margin="0,8,0,0" />
             <TextBox Text="{Binding ManualComment}" Height="80" TextWrapping="Wrap" />
 
-            <Button Content="Save Answer" Width="120" Margin="0,8,0,0" Command="{Binding SaveManualAnswerCommand}" />
+            <Button Content="Save Answer" Width="120" Margin="0,8,0,0" Command="{Binding SaveManualAnswerCommand}"
+                    AutomationProperties.Name="Save manual answer"
+                    ToolTipService.ToolTip="Save the status, reason, and comment for the selected manual control."/>
             <TextBlock Text="Fail and NotApplicable require a reason." Foreground="{StaticResource TextMutedBrush}" Margin="0,4,0,0" />
 
             <WrapPanel Margin="0,8,0,0">
-              <Button Content="Use for Evidence" Width="130" Command="{Binding UseSelectedControlForEvidenceCommand}" />
-              <Button Content="Collect Evidence" Width="130" Margin="8,0,0,0" Command="{Binding CollectSelectedControlEvidenceCommand}" />
-              <Button Content="Open Evidence Folder" Width="150" Margin="8,0,0,0" Command="{Binding OpenSelectedControlEvidenceFolderCommand}" />
+              <Button Content="Use for Evidence" Width="130" Command="{Binding UseSelectedControlForEvidenceCommand}"
+                      AutomationProperties.Name="Use control for evidence"
+                      ToolTipService.ToolTip="Copy the selected control's RuleId to the Evidence tab for evidence capture."/>
+              <Button Content="Collect Evidence" Width="130" Margin="8,0,0,0" Command="{Binding CollectSelectedControlEvidenceCommand}"
+                      AutomationProperties.Name="Collect evidence for control"
+                      ToolTipService.ToolTip="Auto-collect evidence artifacts for the selected control."/>
+              <Button Content="Open Evidence Folder" Width="150" Margin="8,0,0,0" Command="{Binding OpenSelectedControlEvidenceFolderCommand}"
+                      AutomationProperties.Name="Open evidence folder"
+                      ToolTipService.ToolTip="Open the evidence folder for the selected control in Windows Explorer."/>
             </WrapPanel>
             </StackPanel>
           </Grid>
@@ -490,7 +500,9 @@
               <Button Content="Browse" Width="80" Margin="6,0,0,0" Command="{Binding BrowseEvidenceFileCommand}" />
             </WrapPanel>
 
-            <Button Content="Save Evidence" Width="140" Margin="0,8,0,0" Command="{Binding SaveEvidenceCommand}" />
+            <Button Content="Save Evidence" Width="140" Margin="0,8,0,0" Command="{Binding SaveEvidenceCommand}"
+                    AutomationProperties.Name="Save evidence record"
+                    ToolTipService.ToolTip="Save the evidence text, file attachment, and type for the specified RuleId."/>
             <TextBlock Text="{Binding EvidenceStatus}" Margin="0,6,0,0" Foreground="{StaticResource TextMutedBrush}" />
           </StackPanel>
         </Grid>
@@ -620,9 +632,15 @@
                 <TextBox Width="80" Text="{Binding SchedTime}"/>
               </WrapPanel>
               <WrapPanel Margin="0,0,0,8">
-                <Button Content="Register Task" Width="120" Command="{Binding ScheduleRegisterCommand}" IsEnabled="{Binding ActionsEnabled}"/>
-                <Button Content="Remove Task" Width="120" Margin="8,0,0,0" Command="{Binding ScheduleRemoveCommand}" IsEnabled="{Binding ActionsEnabled}"/>
-                <Button Content="Refresh" Width="80" Margin="8,0,0,0" Command="{Binding ScheduleRefreshCommand}"/>
+                <Button Content="Register Task" Width="120" Command="{Binding ScheduleRegisterCommand}" IsEnabled="{Binding ActionsEnabled}"
+                        AutomationProperties.Name="Register scheduled task"
+                        ToolTipService.ToolTip="Create a Windows scheduled task for recurring re-verification."/>
+                <Button Content="Remove Task" Width="120" Margin="8,0,0,0" Command="{Binding ScheduleRemoveCommand}" IsEnabled="{Binding ActionsEnabled}"
+                        AutomationProperties.Name="Remove scheduled task"
+                        ToolTipService.ToolTip="Remove the named Windows scheduled task."/>
+                <Button Content="Refresh" Width="80" Margin="8,0,0,0" Command="{Binding ScheduleRefreshCommand}"
+                        AutomationProperties.Name="Refresh schedule list"
+                        ToolTipService.ToolTip="Reload the list of registered STIGForge scheduled tasks."/>
               </WrapPanel>
               <TextBlock Text="{Binding SchedStatus}" Foreground="{StaticResource TextMutedBrush}"/>
             </StackPanel>
@@ -660,9 +678,13 @@
               </WrapPanel>
               <WrapPanel Margin="0,0,0,8">
                 <Button Content="Execute" Width="100" Height="32" FontWeight="SemiBold"
-                        Command="{Binding FleetExecuteCommand}" IsEnabled="{Binding ActionsEnabled}"/>
+                        Command="{Binding FleetExecuteCommand}" IsEnabled="{Binding ActionsEnabled}"
+                        AutomationProperties.Name="Execute fleet operation"
+                        ToolTipService.ToolTip="Run the selected operation across all target machines via WinRM."/>
                 <Button Content="Check Status" Width="120" Height="32" Margin="8,0,0,0"
-                        Command="{Binding FleetCheckStatusCommand}" IsEnabled="{Binding ActionsEnabled}"/>
+                        Command="{Binding FleetCheckStatusCommand}" IsEnabled="{Binding ActionsEnabled}"
+                        AutomationProperties.Name="Check fleet status"
+                        ToolTipService.ToolTip="Test WinRM connectivity to all target machines."/>
                 <TextBlock Text="{Binding FleetStatus}" Margin="12,8,0,0" Foreground="{StaticResource TextMutedBrush}"/>
               </WrapPanel>
             </StackPanel>

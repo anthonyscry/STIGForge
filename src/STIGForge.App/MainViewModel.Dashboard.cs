@@ -285,6 +285,13 @@ public partial class MainViewModel
   }
 
   [RelayCommand]
+  private void ToggleTheme()
+  {
+    IsDarkTheme = !IsDarkTheme;
+    SaveUiState();
+  }
+
+  [RelayCommand]
   private void BrowseBundle()
   {
     var ofd = new OpenFileDialog
@@ -648,9 +655,12 @@ public partial class MainViewModel
       BreakGlassAcknowledged = state.BreakGlassAcknowledged;
       BreakGlassReason = state.BreakGlassReason ?? BreakGlassReason;
       SimpleBuildBeforeRun = state.SimpleBuildBeforeRun;
+      SelectedEvalStigPreset = state.EvaluateStigPreset ?? SelectedEvalStigPreset;
+      IsDarkTheme = state.IsDarkTheme;
 
       System.Windows.Application.Current.Dispatcher.Invoke(() =>
       {
+        ApplyTheme(IsDarkTheme);
         RecentBundles.Clear();
         if (state.RecentBundles != null)
         {
@@ -706,7 +716,9 @@ public partial class MainViewModel
         BreakGlassReason = BreakGlassReason,
         SelectedMissionPreset = SelectedMissionPreset,
         SimpleBuildBeforeRun = SimpleBuildBeforeRun,
-        RecentBundles = RecentBundles.ToList()
+        EvaluateStigPreset = SelectedEvalStigPreset,
+        RecentBundles = RecentBundles.ToList(),
+        IsDarkTheme = IsDarkTheme
       };
 
       var json = JsonSerializer.Serialize(state, new JsonSerializerOptions { WriteIndented = true });
