@@ -27,8 +27,8 @@
                  ToolTipService.ToolTip="Type to filter controls by rule ID, title, or check text."/>
         <TextBlock Text="Status:" VerticalAlignment="Center" Margin="16,0,6,0"/>
         <ComboBox Width="140" ItemsSource="{Binding ManualStatusFilters}" SelectedItem="{Binding ManualStatusFilter}"
-                  AutomationProperties.Name="Status filter"
-                  ToolTipService.ToolTip="Filter controls by disposition status."/>
+                   AutomationProperties.Name="Status filter"
+                   ToolTipService.ToolTip="Show only controls with a specific status (Pass, Fail, Not Applicable, or unanswered)."/>
       </WrapPanel>
 
       <!-- Summary -->
@@ -72,7 +72,8 @@
                 <WrapPanel Margin="0,0,0,10">
                   <TextBlock Text="Status:" Width="80" VerticalAlignment="Center"/>
                   <ComboBox Width="160" ItemsSource="{Binding ManualStatuses}" SelectedItem="{Binding ManualStatus}"
-                            AutomationProperties.Name="Manual control status"/>
+                             AutomationProperties.Name="Manual control status"
+                             ToolTipService.ToolTip="Set the result for this control: Pass (it's fine), Fail (there's a problem), Not Applicable (doesn't apply to this system)."/>
                 </WrapPanel>
 
                 <TextBlock Text="Reason:" Margin="0,0,0,4"/>
@@ -82,7 +83,8 @@
 
                 <TextBlock Text="Comment:" Margin="0,12,0,4"/>
                 <TextBox Text="{Binding ManualComment}" Height="80" TextWrapping="Wrap"
-                         AutomationProperties.Name="Manual control comment"/>
+                          AutomationProperties.Name="Manual control comment"
+                          ToolTipService.ToolTip="Optional notes about this control. Anything extra you want recorded in the report."/>
 
                 <WrapPanel Margin="0,12,0,0">
                   <Button Content="Save Answer" MinWidth="130" Height="30" Padding="14,0" Margin="0,0,10,4"
@@ -122,18 +124,23 @@
                     <TextBlock Text="Evidence Capture" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
                     <WrapPanel Margin="0,0,0,6">
                       <TextBlock Text="RuleId:" Width="80" VerticalAlignment="Center"/>
-                      <TextBox Width="260" Text="{Binding EvidenceRuleId}" AutomationProperties.Name="Evidence rule ID"/>
+                      <TextBox Width="260" Text="{Binding EvidenceRuleId}" AutomationProperties.Name="Evidence rule ID"
+                               ToolTipService.ToolTip="The rule ID this evidence applies to. Auto-filled when you click 'Use for Evidence' above."/>
                       <TextBlock Text="Type:" Width="60" Margin="12,0,0,0" VerticalAlignment="Center"/>
                       <ComboBox Width="160" ItemsSource="{Binding EvidenceTypes}" SelectedItem="{Binding EvidenceType}"
-                                AutomationProperties.Name="Evidence type"/>
+                                 AutomationProperties.Name="Evidence type"
+                                 ToolTipService.ToolTip="What kind of evidence: screenshot, log file, configuration dump, or manual note."/>
                     </WrapPanel>
                     <TextBlock Text="Evidence text:" Margin="0,0,0,2"/>
-                    <TextBox Height="60" TextWrapping="Wrap" Text="{Binding EvidenceText}" AutomationProperties.Name="Evidence text"/>
+                    <TextBox Height="60" TextWrapping="Wrap" Text="{Binding EvidenceText}" AutomationProperties.Name="Evidence text"
+                             ToolTipService.ToolTip="Paste or type the evidence details here — command output, configuration values, or a written explanation."/>
                     <WrapPanel Margin="0,6,0,0">
                       <TextBlock Text="File:" Width="80" VerticalAlignment="Center"/>
-                      <TextBox Width="420" Text="{Binding EvidenceFilePath}" AutomationProperties.Name="Evidence file path"/>
+                      <TextBox Width="420" Text="{Binding EvidenceFilePath}" AutomationProperties.Name="Evidence file path"
+                               ToolTipService.ToolTip="Path to a file you want to attach as evidence (screenshot, log, etc.)."/>
                       <Button Content="Browse" MinWidth="80" Height="28" Padding="14,0" Margin="6,0,0,0"
-                              Command="{Binding BrowseEvidenceFileCommand}" AutomationProperties.Name="Browse for evidence file"/>
+                              Command="{Binding BrowseEvidenceFileCommand}" AutomationProperties.Name="Browse for evidence file"
+                              ToolTipService.ToolTip="Open a file picker to find an evidence file to attach."/>
                     </WrapPanel>
                     <WrapPanel Margin="0,8,0,0">
                       <Button Content="Save Evidence" MinWidth="140" Height="30" Padding="14,0"

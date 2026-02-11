@@ -32,17 +32,21 @@
         
         <TextBlock Text="Select Overlay:" FontWeight="SemiBold" Margin="0,0,0,8"/>
         <ComboBox ItemsSource="{Binding AvailableOverlays}" DisplayMemberPath="Name" 
-                  SelectedItem="{Binding SelectedOverlay}" Margin="0,0,0,16"/>
+                  SelectedItem="{Binding SelectedOverlay}" Margin="0,0,0,16"
+                  ToolTipService.ToolTip="Pick the overlay (set of exceptions or custom rules) you want to update to a newer STIG version."/>
         
         <TextBlock Text="Select Baseline Pack (current):" FontWeight="SemiBold" Margin="0,0,0,8"/>
         <ComboBox ItemsSource="{Binding AvailablePacks}" DisplayMemberPath="Name" 
-                  SelectedItem="{Binding SelectedBaselinePack}" Margin="0,0,0,16"/>
+                  SelectedItem="{Binding SelectedBaselinePack}" Margin="0,0,0,16"
+                  ToolTipService.ToolTip="The STIG version your overlay was originally built for (the old version)."/>
         
         <TextBlock Text="Select Target Pack (new DISA release):" FontWeight="SemiBold" Margin="0,0,0,8"/>
         <ComboBox ItemsSource="{Binding AvailablePacks}" DisplayMemberPath="Name" 
-                  SelectedItem="{Binding SelectedTargetPack}" Margin="0,0,0,16"/>
+                  SelectedItem="{Binding SelectedTargetPack}" Margin="0,0,0,16"
+                  ToolTipService.ToolTip="The newer STIG version you want to update your overlay to match (the new version)."/>
 
-        <Button Content="Analyze Rebase" Width="140" Height="32" Command="{Binding AnalyzeRebaseCommand}" Margin="0,16,0,0"/>
+        <Button Content="Analyze Rebase" Width="140" Height="32" Command="{Binding AnalyzeRebaseCommand}" Margin="0,16,0,0"
+                ToolTipService.ToolTip="Compare old and new STIG versions and show what overlay rules need updating."/>
       </StackPanel>
 
       <!-- Analysis Screen -->
@@ -235,10 +239,14 @@
     <!-- Action Buttons -->
     <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0"
                 Visibility="{Binding ShowAnalysis, Converter={StaticResource BoolToVis}}">
-      <Button Content="Cancel" Width="100" Height="32" Command="{Binding CancelCommand}" Margin="0,0,8,0"/>
-      <Button Content="Export Markdown" Width="130" Height="32" Command="{Binding ExportMarkdownReportCommand}" IsEnabled="{Binding CanExportReport}" Margin="0,0,8,0"/>
-      <Button Content="Export JSON" Width="110" Height="32" Command="{Binding ExportJsonReportCommand}" IsEnabled="{Binding CanExportReport}" Margin="0,0,8,0"/>
-      <Button Content="Apply Rebase" Width="120" Height="32" Command="{Binding ApplyRebaseCommand}" IsEnabled="{Binding CanApplyRebase}"/>
+      <Button Content="Cancel" Width="100" Height="32" Command="{Binding CancelCommand}" Margin="0,0,8,0"
+              ToolTipService.ToolTip="Discard changes and close the wizard."/>
+      <Button Content="Export Markdown" Width="130" Height="32" Command="{Binding ExportMarkdownReportCommand}" IsEnabled="{Binding CanExportReport}" Margin="0,0,8,0"
+              ToolTipService.ToolTip="Save the rebase analysis as a readable Markdown report file."/>
+      <Button Content="Export JSON" Width="110" Height="32" Command="{Binding ExportJsonReportCommand}" IsEnabled="{Binding CanExportReport}" Margin="0,0,8,0"
+              ToolTipService.ToolTip="Save the rebase analysis as a machine-readable JSON file."/>
+      <Button Content="Apply Rebase" Width="120" Height="32" Command="{Binding ApplyRebaseCommand}" IsEnabled="{Binding CanApplyRebase}"
+              ToolTipService.ToolTip="Create a new overlay updated for the target STIG version. The original overlay is not modified."/>
     </StackPanel>
   </Grid>
 </Window>

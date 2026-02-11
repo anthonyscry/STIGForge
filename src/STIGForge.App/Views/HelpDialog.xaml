@@ -216,6 +216,89 @@
           </StackPanel>
         </Border>
 
+        <!-- Machine Scan & Content Selection -->
+        <Border BorderBrush="{DynamicResource HelpBorderBrush}" BorderThickness="1" Padding="14" Margin="0,0,0,10" Background="{DynamicResource HelpSectionBrush}">
+          <StackPanel>
+            <TextBlock Text="Machine Scan &amp; Smart Content Selection" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8" Foreground="{DynamicResource AccentBrush}"/>
+            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4"
+                       Text="The fastest way to get started is to let STIGForge scan your computer and tell you which security checklists (STIGs) apply."/>
+            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4"
+                       Text="1. On the Import tab, click 'Scan Machine'. STIGForge looks at your OS version, installed server roles, and software to build a list of matching STIGs."/>
+            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4"
+                       Text="2. Click the arrow next to 'Machine Scan Results' to expand or collapse the scan output. This keeps the screen tidy."/>
+            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4"
+                       Text="3. Click 'Select Content' to open the content picker. Click 'Select Recommended' at the top — it auto-checks only the packs that match your machine scan. Then click OK."/>
+            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}"
+                       Text="You can always manually check or uncheck packs in the picker. The recommended button is just a shortcut."/>
+          </StackPanel>
+        </Border>
+
+        <!-- SCAP Bundles -->
+        <Border BorderBrush="{DynamicResource HelpBorderBrush}" BorderThickness="1" Padding="14" Margin="0,0,0,10" Background="{DynamicResource HelpSectionAltBrush}">
+          <StackPanel>
+            <TextBlock Text="SCAP Bundles (NIWC Atlantic)" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8" Foreground="{DynamicResource AccentBrush}"/>
+            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4"
+                       Text="SCAP stands for Security Content Automation Protocol — it's a machine-readable format for security checks, similar to STIGs but designed for automated scanners."/>
+            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4"
+                       Text="NIWC Atlantic (Naval Information Warfare Center) publishes large SCAP bundles that contain many benchmarks in one download. These are NOT nested ZIP files — they contain folders with XCCDF and OVAL XML files directly."/>
+            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}"
+                       Text="When you import an NIWC bundle, STIGForge automatically splits it into individual benchmark packs so you can select only the ones you need. You don't have to do anything extra."/>
+          </StackPanel>
+        </Border>
+
+        <!-- Snapshots & Recovery -->
+        <Border BorderBrush="{DynamicResource HelpBorderBrush}" BorderThickness="1" Padding="14" Margin="0,0,0,10" Background="{DynamicResource HelpSectionBrush}">
+          <StackPanel>
+            <TextBlock Text="Snapshots &amp; Recovery" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8" Foreground="{DynamicResource AccentBrush}"/>
+            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4"
+                       Text="Before STIGForge applies security changes, it takes a snapshot of your computer's current settings. This is your safety net — if something breaks, you can undo the changes."/>
+            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4"
+                       Text="What the snapshot captures:"/>
+            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="12,0,0,4"
+                       Text="• Security policy (secedit) — password rules, account lockout, user rights, etc."/>
+            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="12,0,0,4"
+                       Text="• Audit policy (auditpol) — what Windows logs to the security event log."/>
+            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="12,0,0,4"
+                       Text="• Local Group Policy (LGPO) — registry-based policy settings."/>
+            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,8,0,4"
+                       Text="Where snapshot files live: Inside your bundle folder under Apply\Snapshots\. Each snapshot is timestamped."/>
+            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4"
+                       Text="How to recover: Open the snapshot folder and run the generated rollback PowerShell script (Rollback-*.ps1). It restores all three areas to their pre-apply state. You must run it as Administrator."/>
+            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4"
+                       Text="Physical machines vs. virtual machines: Snapshots work on physical hosts. If you're using a virtual machine (Hyper-V, VMware, etc.), use your hypervisor's built-in snapshot/checkpoint feature instead — it's faster and captures more state. The 'Skip snapshot' option on the Orchestrate tab is meant for VM workflows where the hypervisor handles rollback."/>
+            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}"
+                       Text="Important: You need to run STIGForge as Administrator for snapshots to work, because secedit and auditpol require elevated privileges."/>
+          </StackPanel>
+        </Border>
+
+        <!-- Deleting Bundles -->
+        <Border BorderBrush="{DynamicResource HelpBorderBrush}" BorderThickness="1" Padding="14" Margin="0,0,0,10" Background="{DynamicResource HelpSectionAltBrush}">
+          <StackPanel>
+            <TextBlock Text="Deleting Bundles" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8" Foreground="{DynamicResource AccentBrush}"/>
+            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4"
+                       Text="Bundles can get big. When you're done with one, you can delete it to free up disk space."/>
+            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4"
+                       Text="Go to the Export tab. In the Active Bundle bar at the top, click the red 'Delete Bundle' button. You'll be asked to confirm — once deleted, the entire bundle folder and all its contents (scripts, reports, snapshots) are permanently removed."/>
+            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}"
+                       Text="Tip: Export your reports first (eMASS, POA&amp;M, CKL) before deleting the bundle, because those reports live inside the bundle folder."/>
+          </StackPanel>
+        </Border>
+
+        <!-- Subtabs Guide -->
+        <Border BorderBrush="{DynamicResource HelpBorderBrush}" BorderThickness="1" Padding="14" Margin="0,0,0,10" Background="{DynamicResource HelpSectionBrush}">
+          <StackPanel>
+            <TextBlock Text="Subtabs — Where to Find Things" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8" Foreground="{DynamicResource AccentBrush}"/>
+            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4"
+                       Text="Several tabs have subtabs inside them to keep things organized:"/>
+            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="12,0,0,4"
+                       Text="• Manual tab — Details (read the check instructions), Disposition (set pass/fail/NA and write your reason), Evidence (attach proof like screenshots or log files)."/>
+            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="12,0,0,4"
+                       Text="• Export tab — Dashboard (see compliance numbers at a glance), eMASS (export for the eMASS compliance system), POA&amp;M / CKL (generate Plan of Action or checklist files), Audit Log (tamper-proof record of what STIGForge did)."/>
+            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="12,0,0,0"
+                       Text="• Fleet tab — Operations (run apply/verify across remote machines), Inventory (manage your list of computers), Schedule (set up automatic re-checks on a timer)."/>
+          </StackPanel>
+        </Border>
+
         <!-- Troubleshooting -->
         <Border BorderBrush="{DynamicResource HelpBorderBrush}" BorderThickness="1" Padding="14" Background="{DynamicResource HelpSectionAltBrush}">
           <StackPanel>

@@ -46,49 +46,49 @@
     <TabControl x:Name="MainTabControl" Grid.Row="1" TabIndex="0">
       <TabItem Header="Import" TabIndex="1"
                AutomationProperties.Name="Import tab"
-               ToolTipService.ToolTip="Import STIG, SCAP, and GPO content packs; manage the content library.">
+               ToolTipService.ToolTip="Step 1: Bring in security rules (STIGs, SCAP benchmarks, Group Policy templates) and manage what you've imported.">
         <views:ImportView />
       </TabItem>
 
       <TabItem Header="Profile" TabIndex="2"
                AutomationProperties.Name="Profile tab"
-               ToolTipService.ToolTip="Configure hardening profiles, overlays, and classification settings.">
+               ToolTipService.ToolTip="Step 2: Set your preferences — how strict to be, which exceptions to allow, and what classification level applies.">
         <views:ProfileView />
       </TabItem>
 
       <TabItem Header="Build" TabIndex="3"
                AutomationProperties.Name="Build tab"
-               ToolTipService.ToolTip="Generate an offline bundle from a content pack and profile.">
+               ToolTipService.ToolTip="Step 3: Combine your imported rules and profile into a ready-to-run bundle folder.">
         <views:BuildView />
       </TabItem>
 
       <TabItem Header="Orchestrate" TabIndex="4"
                AutomationProperties.Name="Orchestrate tab"
-               ToolTipService.ToolTip="Run the full Apply, Verify, and Export pipeline with all settings.">
+               ToolTipService.ToolTip="Step 4: Run everything — apply security fixes, verify they worked, and export reports. The big 'Go' button.">
         <views:OrchestrateView />
       </TabItem>
 
       <TabItem Header="Verify" TabIndex="5"
                AutomationProperties.Name="Verify tab"
-               ToolTipService.ToolTip="Run Evaluate-STIG and SCAP verification scans; view overlap analysis.">
+               ToolTipService.ToolTip="Step 5: Run scanners to check whether the security fixes actually stuck. Compare results from different tools.">
         <views:VerifyView />
       </TabItem>
 
       <TabItem Header="Manual" TabIndex="6"
                AutomationProperties.Name="Manual tab"
-               ToolTipService.ToolTip="Review manual controls, set pass/fail/NA, and capture evidence.">
+               ToolTipService.ToolTip="Step 6: Review controls that need a human decision. Mark each as pass, fail, or not applicable, and attach evidence.">
         <views:ManualView />
       </TabItem>
 
       <TabItem Header="Export" TabIndex="7"
                AutomationProperties.Name="Export tab"
-               ToolTipService.ToolTip="Dashboard metrics, eMASS export, POA&amp;M/CKL generation, and audit log.">
+               ToolTipService.ToolTip="Step 7: See your compliance dashboard and export reports — eMASS packages, Plan of Action documents, STIG checklists, and audit logs.">
         <views:ExportView />
       </TabItem>
 
       <TabItem Header="Fleet" TabIndex="8"
                AutomationProperties.Name="Fleet tab"
-               ToolTipService.ToolTip="Manage fleet inventory, run remote operations, and schedule recurring tasks.">
+               ToolTipService.ToolTip="Manage multiple computers at once — run apply/verify remotely, track your inventory, and schedule automatic re-checks.">
         <views:FleetView />
       </TabItem>
     </TabControl>

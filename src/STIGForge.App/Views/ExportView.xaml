@@ -138,18 +138,23 @@
               <TextBlock Text="eMASS Export" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
               <WrapPanel Margin="0,0,0,8">
                 <TextBlock Text="Bundle:" Width="80" VerticalAlignment="Center"/>
-                <TextBox Width="520" Text="{Binding BundleRoot}" AutomationProperties.Name="Bundle root path"/>
+                <TextBox Width="520" Text="{Binding BundleRoot}" AutomationProperties.Name="Bundle root path"
+                         ToolTipService.ToolTip="Folder path to the bundle you built. This is where reports and scan results live."/>
                 <Button Content="Browse" MinWidth="80" Height="28" Padding="14,0" Margin="6,0,0,0"
-                        Command="{Binding BrowseBundleCommand}" AutomationProperties.Name="Browse for bundle"/>
+                        Command="{Binding BrowseBundleCommand}" AutomationProperties.Name="Browse for bundle"
+                        ToolTipService.ToolTip="Open a folder picker to find your bundle folder."/>
                 <Button Content="Open" MinWidth="80" Height="28" Padding="14,0" Margin="6,0,0,0"
-                        Command="{Binding OpenBundleFolderCommand}" AutomationProperties.Name="Open bundle folder"/>
+                        Command="{Binding OpenBundleFolderCommand}" AutomationProperties.Name="Open bundle folder"
+                        ToolTipService.ToolTip="Open the bundle folder in Windows Explorer."/>
               </WrapPanel>
               <TextBlock Text="Recent Bundles" Margin="0,0,0,4"/>
               <WrapPanel Margin="0,0,0,8">
                 <ComboBox Width="520" ItemsSource="{Binding RecentBundles}" SelectedItem="{Binding SelectedRecentBundle}"
-                          AutomationProperties.Name="Recent bundles"/>
+                          AutomationProperties.Name="Recent bundles"
+                          ToolTipService.ToolTip="Pick a bundle you built earlier without having to rebuild it."/>
                 <Button Content="Use" MinWidth="80" Height="28" Padding="14,0" Margin="6,0,0,0"
-                        Command="{Binding UseRecentBundleCommand}" AutomationProperties.Name="Use recent bundle"/>
+                        Command="{Binding UseRecentBundleCommand}" AutomationProperties.Name="Use recent bundle"
+                        ToolTipService.ToolTip="Load the selected recent bundle as the active bundle."/>
               </WrapPanel>
               <WrapPanel Margin="0,0,0,8">
                 <Button Content="Export eMASS" MinWidth="140" Height="32" Padding="14,0" FontWeight="SemiBold"
@@ -187,7 +192,7 @@
                     <WrapPanel Margin="0,0,0,8">
                       <TextBlock Text="System Name:" Width="100" VerticalAlignment="Center"/>
                       <TextBox Width="260" Text="{Binding PoamSystemName}" AutomationProperties.Name="POA&amp;M system name"
-                               ToolTipService.ToolTip="System name for the POA&amp;M export. Auto-filled with machine name."/>
+                               ToolTipService.ToolTip="System name that appears in the POA&amp;M (Plan of Action and Milestones) document. Auto-filled with your computer name."/>
                     </WrapPanel>
                     <Button Content="Export POA&amp;M" MinWidth="140" Height="32" Padding="14,0"
                             Command="{Binding ExportPoamCommand}" IsEnabled="{Binding ActionsEnabled}"
@@ -202,9 +207,10 @@
                     <WrapPanel Margin="0,0,0,8">
                       <TextBlock Text="Host Name:" Width="80" VerticalAlignment="Center"/>
                       <TextBox Width="160" Text="{Binding CklHostName}" AutomationProperties.Name="CKL host name"
-                               ToolTipService.ToolTip="Host name for the CKL file. Auto-filled with machine name."/>
+                         ToolTipService.ToolTip="Computer name for the CKL (Checklist) file used by STIG Viewer and eMASS. Auto-filled with your machine name."/>
                       <TextBlock Text="STIG ID:" Width="70" Margin="12,0,0,0" VerticalAlignment="Center"/>
-                      <TextBox Width="160" Text="{Binding CklStigId}" AutomationProperties.Name="CKL STIG ID"/>
+                       <TextBox Width="160" Text="{Binding CklStigId}" AutomationProperties.Name="CKL STIG ID"
+                                ToolTipService.ToolTip="STIG identifier for the checklist file. Auto-filled from your bundle if available."/>
                     </WrapPanel>
                     <Button Content="Export CKL" MinWidth="140" Height="32" Padding="14,0"
                             Command="{Binding ExportCklCommand}" IsEnabled="{Binding ActionsEnabled}"
@@ -224,18 +230,22 @@
               <TextBlock Text="Audit Log" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
               <WrapPanel Margin="0,0,0,8">
                 <TextBlock Text="Action:" Width="60" VerticalAlignment="Center"/>
-                <TextBox Width="160" Text="{Binding AuditActionFilter}" AutomationProperties.Name="Audit action filter"/>
+                <TextBox Width="160" Text="{Binding AuditActionFilter}" AutomationProperties.Name="Audit action filter"
+                         ToolTipService.ToolTip="Filter by what was done (e.g., 'Apply', 'Verify', 'Export'). Leave blank to see all."/>
                 <TextBlock Text="Target:" Width="60" Margin="12,0,0,0" VerticalAlignment="Center"/>
-                <TextBox Width="200" Text="{Binding AuditTargetFilter}" AutomationProperties.Name="Audit target filter"/>
+                <TextBox Width="200" Text="{Binding AuditTargetFilter}" AutomationProperties.Name="Audit target filter"
+                         ToolTipService.ToolTip="Filter by what was affected (e.g., a bundle name or control ID). Leave blank to see all."/>
                 <TextBlock Text="Limit:" Width="50" Margin="12,0,0,0" VerticalAlignment="Center"/>
-                <TextBox Width="60" Text="{Binding AuditLimit}" AutomationProperties.Name="Audit result limit"/>
+                <TextBox Width="60" Text="{Binding AuditLimit}" AutomationProperties.Name="Audit result limit"
+                         ToolTipService.ToolTip="Maximum number of log entries to show. Increase for longer history."/>
                 <Button Content="Query" MinWidth="80" Height="28" Padding="14,0" Margin="12,0,0,0"
                         Command="{Binding AuditQueryCommand}" IsEnabled="{Binding ActionsEnabled}"
-                        AutomationProperties.Name="Query audit log"/>
+                        AutomationProperties.Name="Query audit log"
+                        ToolTipService.ToolTip="Search the audit log with the filters you set above."/>
                 <Button Content="Verify Integrity" MinWidth="120" Height="28" Padding="14,0" Margin="8,0,0,0"
                         Command="{Binding AuditVerifyCommand}" IsEnabled="{Binding ActionsEnabled}"
                         AutomationProperties.Name="Verify audit integrity"
-                        ToolTipService.ToolTip="Check the cryptographic chain integrity of the audit trail."/>
+                        ToolTipService.ToolTip="Verify that the audit log hasn't been tampered with. Each entry is chained so any edits would be detected."/>
               </WrapPanel>
               <TextBlock Text="{Binding AuditVerifyResult}" FontWeight="SemiBold" Margin="0,0,0,8"/>
               <ListView ItemsSource="{Binding AuditEntries}" MaxHeight="260" MinHeight="80">

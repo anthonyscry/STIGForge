@@ -23,7 +23,7 @@
               <TextBlock Text="Mission preset:" Width="130" VerticalAlignment="Center"/>
               <ComboBox Width="300" ItemsSource="{Binding MissionPresets}" SelectedItem="{Binding SelectedMissionPreset}"
                         AutomationProperties.Name="Mission preset"
-                        ToolTipService.ToolTip="Template workflow: endpoint hardening, golden image bake, or SCCM PXE image bake."/>
+                         ToolTipService.ToolTip="Pick a workflow template: regular workstation hardening, building a reference VM image, or preparing a network boot image for deployment."/>
             </WrapPanel>
             <TextBlock Text="{Binding MissionPresetGuidance}" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
           </StackPanel>
@@ -39,26 +39,28 @@
                        ToolTipService.ToolTip="Path to the bundle root folder containing manifest.json."/>
               <Button Content="Browse" MinWidth="80" Height="28" Padding="14,0" Margin="6,0,0,0"
                       Command="{Binding BrowseBundleCommand}"
-                      AutomationProperties.Name="Browse for bundle"/>
+                      AutomationProperties.Name="Browse for bundle"
+                      ToolTipService.ToolTip="Open a folder picker to find your bundle folder."/>
               <Button Content="Open" MinWidth="80" Height="28" Padding="14,0" Margin="6,0,0,0"
                       Command="{Binding OpenBundleFolderCommand}"
-                      AutomationProperties.Name="Open bundle folder"/>
+                      AutomationProperties.Name="Open bundle folder"
+                      ToolTipService.ToolTip="Open the bundle folder in Windows Explorer."/>
             </WrapPanel>
             <WrapPanel Margin="0,0,0,8">
               <CheckBox Content="Run Apply" IsChecked="{Binding OrchRunApply}" Margin="0,0,16,0"
                         AutomationProperties.Name="Run apply phase"
-                        ToolTipService.ToolTip="Run apply stage (snapshot, PowerSTIG compile if configured, RunApply.ps1, optional DSC)."/>
+                         ToolTipService.ToolTip="Apply security fixes to this computer. Takes a safety snapshot first, then runs the hardening scripts from your bundle."/>
               <CheckBox Content="Run Verify" IsChecked="{Binding OrchRunVerify}" Margin="0,0,16,0"
                         AutomationProperties.Name="Run verify phase"
-                        ToolTipService.ToolTip="Run Evaluate-STIG and/or SCAP consolidation to produce mission findings."/>
+                         ToolTipService.ToolTip="Run scanners after applying fixes to check whether the hardening changes actually stuck."/>
               <CheckBox Content="Export eMASS" IsChecked="{Binding OrchRunExport}"
                         AutomationProperties.Name="Export eMASS package"
-                        ToolTipService.ToolTip="Generate eMASS package after successful apply/verify."/>
+                         ToolTipService.ToolTip="Generate a report package for the eMASS compliance tracking system after apply and verify finish."/>
             </WrapPanel>
             <WrapPanel Margin="0,0,0,8">
               <CheckBox Content="Skip snapshot (high risk)" IsChecked="{Binding ApplySkipSnapshot}" Margin="0,0,16,0"
                         AutomationProperties.Name="Skip snapshot"
-                        ToolTipService.ToolTip="Bypass pre-apply security/audit snapshot capture. Use only in controlled image-bake pipelines."/>
+                         ToolTipService.ToolTip="Skip the safety backup before applying changes. Only use this if you have another way to undo (like a VM checkpoint). High risk."/>
               <CheckBox Content="Break-glass acknowledged" IsChecked="{Binding BreakGlassAcknowledged}"
                         AutomationProperties.Name="Break-glass acknowledged"
                         ToolTipService.ToolTip="Required when skip snapshot is enabled."/>
@@ -80,19 +82,21 @@
               <TextBlock Text="Module:" Width="130" VerticalAlignment="Center"/>
               <TextBox Width="520" Text="{Binding PowerStigModulePath}"
                        AutomationProperties.Name="PowerSTIG module path"
-                       ToolTipService.ToolTip="Path to PowerSTIG module file (.psd1/.psm1). Enables PowerSTIG compile step."/>
+                         ToolTipService.ToolTip="Path to the PowerSTIG module file. PowerSTIG is a Microsoft tool that compiles STIG rules into automated configuration scripts. Optional."/>
               <Button Content="Browse" MinWidth="80" Height="28" Padding="14,0" Margin="6,0,0,0"
                       Command="{Binding BrowsePowerStigModuleCommand}"
-                      AutomationProperties.Name="Browse for PowerSTIG module"/>
+                      AutomationProperties.Name="Browse for PowerSTIG module"
+                      ToolTipService.ToolTip="Open a file picker to find the PowerSTIG module file."/>
             </WrapPanel>
             <WrapPanel Margin="0,0,0,2">
               <TextBlock Text="Data file:" Width="130" VerticalAlignment="Center"/>
               <TextBox Width="520" Text="{Binding PowerStigDataFile}"
                        AutomationProperties.Name="PowerSTIG data file"
-                       ToolTipService.ToolTip="Optional .psd1 data file. Leave empty to auto-generate from bundle controls/overrides."/>
+                         ToolTipService.ToolTip="Optional data file for PowerSTIG. Leave blank and STIGForge will auto-generate one from your bundle."/>
               <Button Content="Browse" MinWidth="80" Height="28" Padding="14,0" Margin="6,0,0,0"
                       Command="{Binding BrowsePowerStigDataCommand}"
-                      AutomationProperties.Name="Browse for PowerSTIG data"/>
+                      AutomationProperties.Name="Browse for PowerSTIG data"
+                      ToolTipService.ToolTip="Open a file picker to find a custom PowerSTIG data file."/>
             </WrapPanel>
             <TextBlock Text="Leave empty to auto-generate from bundle controls and profile overrides. Only set this if you have a custom .psd1 file."
                        Foreground="{DynamicResource TextMutedBrush}" FontSize="11" Margin="130,0,0,6"/>
@@ -100,7 +104,7 @@
               <TextBlock Text="Output path:" Width="130" VerticalAlignment="Center"/>
               <TextBox Width="420" Text="{Binding PowerStigOutputPath}"
                        AutomationProperties.Name="PowerSTIG output path"
-                       ToolTipService.ToolTip="Optional output folder. Default is bundle Apply/Dsc."/>
+                         ToolTipService.ToolTip="Where PowerSTIG saves its output. Leave blank to use the default location inside your bundle."/>
               <CheckBox Content="Verbose" IsChecked="{Binding PowerStigVerbose}" Margin="12,0,0,0" VerticalAlignment="Center"
                         AutomationProperties.Name="PowerSTIG verbose logging"
                         ToolTipService.ToolTip="Enable verbose PowerSTIG compile output in apply logs."/>
@@ -116,7 +120,7 @@
               <TextBlock Text="Toolkit root:" Width="130" VerticalAlignment="Center"/>
               <TextBox Width="520" Text="{Binding LocalToolkitRoot}"
                        AutomationProperties.Name="Toolkit root path"
-                       ToolTipService.ToolTip="Folder containing STIG_SCAP tooling archives or extracted tool folders."/>
+                         ToolTipService.ToolTip="Folder where you extracted the DISA STIG/SCAP toolkit download. Contains scanner tools and utilities."/>
               <Button Content="Activate" MinWidth="80" Height="28" Padding="14,0" Margin="6,0,0,0"
                       Command="{Binding ActivateToolkitCommand}"
                       AutomationProperties.Name="Activate toolkit"
@@ -128,36 +132,39 @@
               <TextBlock Text="Eval-STIG preset:" Width="130" VerticalAlignment="Center"/>
               <ComboBox Width="300" ItemsSource="{Binding EvaluateStigPresets}" SelectedItem="{Binding SelectedEvalStigPreset}"
                         AutomationProperties.Name="Evaluate-STIG preset"
-                        ToolTipService.ToolTip="Select a pre-configured Evaluate-STIG argument set."/>
+                         ToolTipService.ToolTip="Pick from common scanner settings. Choose 'Custom' to type your own options in the args field below."/>
             </WrapPanel>
             <WrapPanel Margin="0,0,0,6">
               <TextBlock Text="Evaluate-STIG:" Width="130" VerticalAlignment="Center"/>
               <TextBox Width="520" Text="{Binding EvaluateStigRoot}"
                        AutomationProperties.Name="Evaluate-STIG root"
-                       ToolTipService.ToolTip="Folder containing Evaluate-STIG.ps1."/>
+                         ToolTipService.ToolTip="Folder containing the Evaluate-STIG scanner script (Evaluate-STIG.ps1) from DISA."/>
               <Button Content="Browse" MinWidth="80" Height="28" Padding="14,0" Margin="6,0,0,0"
                       Command="{Binding BrowseEvaluateStigCommand}"
-                      AutomationProperties.Name="Browse for Evaluate-STIG"/>
+                      AutomationProperties.Name="Browse for Evaluate-STIG"
+                      ToolTipService.ToolTip="Open a folder picker to find your Evaluate-STIG installation."/>
             </WrapPanel>
             <WrapPanel Margin="0,0,0,6">
               <TextBlock Text="Eval-STIG args:" Width="130" VerticalAlignment="Center"/>
               <TextBox Width="520" Text="{Binding EvaluateStigArgs}" IsEnabled="{Binding IsEvalStigCustomArgs}"
                        AutomationProperties.Name="Evaluate-STIG arguments"
-                       ToolTipService.ToolTip="Custom Evaluate-STIG arguments. Enabled when preset is set to Custom."/>
+                       ToolTipService.ToolTip="Custom scanner options. Only editable when the preset above is set to 'Custom'."/>
             </WrapPanel>
             <WrapPanel Margin="0,0,0,6">
               <TextBlock Text="SCAP command:" Width="130" VerticalAlignment="Center"/>
               <TextBox Width="520" Text="{Binding ScapCommandPath}"
                        AutomationProperties.Name="SCAP command path"
-                       ToolTipService.ToolTip="Path to SCC/SCAP executable."/>
+                         ToolTipService.ToolTip="Path to the SCC (SCAP Compliance Checker) scanner program from DISA."/>
               <Button Content="Browse" MinWidth="80" Height="28" Padding="14,0" Margin="6,0,0,0"
                       Command="{Binding BrowseScapCommandCommand}"
-                      AutomationProperties.Name="Browse for SCAP command"/>
+                      AutomationProperties.Name="Browse for SCAP command"
+                      ToolTipService.ToolTip="Open a file picker to find the SCAP scanner executable."/>
             </WrapPanel>
             <WrapPanel Margin="0,0,0,6">
               <TextBlock Text="SCAP args:" Width="130" VerticalAlignment="Center"/>
               <TextBox Width="520" Text="{Binding ScapArgs}"
-                       AutomationProperties.Name="SCAP arguments"/>
+                       AutomationProperties.Name="SCAP arguments"
+                       ToolTipService.ToolTip="Extra command-line options for the SCAP scanner. Leave blank for defaults."/>
             </WrapPanel>
           </StackPanel>
         </Border>

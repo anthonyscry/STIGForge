@@ -14,35 +14,45 @@
           <WrapPanel Margin="0,0,0,8">
             <TextBlock Text="Bundle:" Width="120" VerticalAlignment="Center"/>
             <TextBox Width="520" Text="{Binding BundleRoot}"
-                     AutomationProperties.Name="Bundle root path"/>
+                     AutomationProperties.Name="Bundle root path"
+                     ToolTipService.ToolTip="Folder path to the bundle you built. This is where STIGForge looks for scripts and results."/>
             <Button Content="Browse" MinWidth="80" Height="28" Padding="14,0" Margin="6,0,0,0"
-                    Command="{Binding BrowseBundleCommand}" AutomationProperties.Name="Browse for bundle"/>
+                    Command="{Binding BrowseBundleCommand}" AutomationProperties.Name="Browse for bundle"
+                    ToolTipService.ToolTip="Open a folder picker to find your bundle folder."/>
             <Button Content="Open" MinWidth="80" Height="28" Padding="14,0" Margin="6,0,0,0"
-                    Command="{Binding OpenBundleFolderCommand}" AutomationProperties.Name="Open bundle folder"/>
+                    Command="{Binding OpenBundleFolderCommand}" AutomationProperties.Name="Open bundle folder"
+                    ToolTipService.ToolTip="Open the bundle folder in Windows Explorer."/>
           </WrapPanel>
           <WrapPanel Margin="0,0,0,8">
             <TextBlock Text="Eval-STIG root:" Width="120" VerticalAlignment="Center"/>
-            <TextBox Width="520" Text="{Binding EvaluateStigRoot}" AutomationProperties.Name="Evaluate-STIG root"/>
+            <TextBox Width="520" Text="{Binding EvaluateStigRoot}" AutomationProperties.Name="Evaluate-STIG root"
+                     ToolTipService.ToolTip="Folder containing the Evaluate-STIG.ps1 scanner script from DISA."/>
             <Button Content="Browse" MinWidth="80" Height="28" Padding="14,0" Margin="6,0,0,0"
-                    Command="{Binding BrowseEvaluateStigCommand}" AutomationProperties.Name="Browse for Evaluate-STIG"/>
+                    Command="{Binding BrowseEvaluateStigCommand}" AutomationProperties.Name="Browse for Evaluate-STIG"
+                    ToolTipService.ToolTip="Open a folder picker to find your Evaluate-STIG installation."/>
           </WrapPanel>
           <WrapPanel Margin="0,0,0,8">
             <TextBlock Text="Eval-STIG args:" Width="120" VerticalAlignment="Center"/>
-            <TextBox Width="520" Text="{Binding EvaluateStigArgs}" AutomationProperties.Name="Evaluate-STIG arguments"/>
+            <TextBox Width="520" Text="{Binding EvaluateStigArgs}" AutomationProperties.Name="Evaluate-STIG arguments"
+                     ToolTipService.ToolTip="Extra command-line options passed to Evaluate-STIG. Leave blank for defaults."/>
           </WrapPanel>
           <WrapPanel Margin="0,0,0,8">
             <TextBlock Text="SCAP command:" Width="120" VerticalAlignment="Center"/>
-            <TextBox Width="520" Text="{Binding ScapCommandPath}" AutomationProperties.Name="SCAP command path"/>
+            <TextBox Width="520" Text="{Binding ScapCommandPath}" AutomationProperties.Name="SCAP command path"
+                     ToolTipService.ToolTip="Path to SCC (SCAP Compliance Checker) executable. This is the DISA scanner for SCAP benchmarks."/>
             <Button Content="Browse" MinWidth="80" Height="28" Padding="14,0" Margin="6,0,0,0"
-                    Command="{Binding BrowseScapCommandCommand}" AutomationProperties.Name="Browse for SCAP command"/>
+                    Command="{Binding BrowseScapCommandCommand}" AutomationProperties.Name="Browse for SCAP command"
+                    ToolTipService.ToolTip="Open a file picker to find the SCC/SCAP scanner executable."/>
           </WrapPanel>
           <WrapPanel Margin="0,0,0,8">
             <TextBlock Text="SCAP args:" Width="120" VerticalAlignment="Center"/>
-            <TextBox Width="520" Text="{Binding ScapArgs}" AutomationProperties.Name="SCAP arguments"/>
+            <TextBox Width="520" Text="{Binding ScapArgs}" AutomationProperties.Name="SCAP arguments"
+                     ToolTipService.ToolTip="Extra command-line options for the SCAP scanner. Leave blank for defaults."/>
           </WrapPanel>
           <WrapPanel Margin="0,0,0,8">
             <TextBlock Text="SCAP label:" Width="120" VerticalAlignment="Center"/>
-            <TextBox Width="200" Text="{Binding ScapLabel}" AutomationProperties.Name="SCAP label"/>
+            <TextBox Width="200" Text="{Binding ScapLabel}" AutomationProperties.Name="SCAP label"
+                     ToolTipService.ToolTip="A short name for this SCAP scan run. Shows up in reports and overlap analysis."/>
           </WrapPanel>
         </StackPanel>
       </Border>
@@ -52,7 +62,7 @@
         <Button Content="Run Verify" MinWidth="160" Height="36" Padding="14,0" FontWeight="SemiBold"
                 Command="{Binding VerifyRunCommand}" IsEnabled="{Binding ActionsEnabled}"
                 AutomationProperties.Name="Run verify"
-                ToolTipService.ToolTip="Execute Evaluate-STIG and/or SCAP verification against the active bundle."/>
+                    ToolTipService.ToolTip="Run the Evaluate-STIG and/or SCAP (Security Content Automation Protocol) scanners to check whether hardening changes were applied correctly."/>
         <TextBlock Text="{Binding VerifyStatus}" Margin="12,10,0,0" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
       </WrapPanel>
       <TextBlock Text="{Binding VerifySummary}" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,0,0,8"/>
@@ -60,7 +70,8 @@
         <TextBlock Text="Last output:" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,8,0"/>
         <TextBlock Text="{Binding LastOutputPath}" Foreground="{DynamicResource TextMutedBrush}"/>
         <Button Content="Open" MinWidth="80" Height="28" Padding="14,0" Margin="8,0,0,0"
-                Command="{Binding OpenLastOutputCommand}" AutomationProperties.Name="Open last output"/>
+                Command="{Binding OpenLastOutputCommand}" AutomationProperties.Name="Open last output"
+                ToolTipService.ToolTip="Open the folder containing the most recent scan results."/>
       </WrapPanel>
 
       <!-- Overlap Analysis -->
@@ -71,7 +82,7 @@
             <Button Content="Refresh Overlap" MinWidth="140" Height="28" Padding="14,0" Margin="12,0,0,0"
                     Command="{Binding RefreshOverlapCommand}"
                     AutomationProperties.Name="Refresh overlap analysis"
-                    ToolTipService.ToolTip="Recalculate source overlap between verify results from different scanners."/>
+                    ToolTipService.ToolTip="Compare results from different scanners to see where they agree or disagree on the same controls."/>
           </WrapPanel>
           <ListView ItemsSource="{Binding OverlapItems}" MaxHeight="220">
             <ListView.View>

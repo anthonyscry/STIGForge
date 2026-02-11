@@ -19,21 +19,21 @@
             <TextBlock Text="Targets:" Width="80" VerticalAlignment="Center"/>
             <TextBox Width="620" Text="{Binding FleetTargets}"
                      AutomationProperties.Name="Fleet targets"
-                     ToolTipService.ToolTip="Comma-separated: host1,host2:ip,host3. Or use inventory below."/>
+                         ToolTipService.ToolTip="Type computer names separated by commas (e.g., server1,server2). You can also add IP addresses with a colon (e.g., server1:10.0.0.5). Or just use the Inventory tab."/>
           </WrapPanel>
           <WrapPanel Margin="0,0,0,8">
             <TextBlock Text="Operation:" Width="80" VerticalAlignment="Center"/>
             <ComboBox Width="140" ItemsSource="{Binding FleetOperations}" SelectedItem="{Binding FleetOperation}"
                       AutomationProperties.Name="Fleet operation"
-                      ToolTipService.ToolTip="Select apply, verify, or orchestrate to run across all targets."/>
+                      ToolTipService.ToolTip="What to do on the remote machines: Apply (fix settings), Verify (scan and check), or Orchestrate (do everything in sequence)."/>
             <TextBlock Text="Concurrency:" Width="90" Margin="12,0,0,0" VerticalAlignment="Center"/>
             <TextBox Width="60" Text="{Binding FleetConcurrency}"
                      AutomationProperties.Name="Fleet concurrency"
-                     ToolTipService.ToolTip="Maximum number of machines to run in parallel."/>
+                      ToolTipService.ToolTip="How many machines to work on at the same time. Higher = faster but uses more resources."/>
             <TextBlock Text="Timeout:" Width="70" Margin="12,0,0,0" VerticalAlignment="Center"/>
             <TextBox Width="60" Text="{Binding FleetTimeout}"
                      AutomationProperties.Name="Fleet timeout seconds"
-                     ToolTipService.ToolTip="Timeout in seconds per machine."/>
+                      ToolTipService.ToolTip="How long to wait (in seconds) for each machine before giving up. Increase for slow networks."/>
           </WrapPanel>
 
           <!-- Remote Settings -->
@@ -43,21 +43,23 @@
             <TextBlock Text="Profile:" Width="80" VerticalAlignment="Center"/>
             <ComboBox Width="280" ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}" DisplayMemberPath="Name"
                       AutomationProperties.Name="Fleet profile"
-                      ToolTipService.ToolTip="Profile to use for remote compliance operations."/>
+                      ToolTipService.ToolTip="Hardening profile to use on remote machines. Same profiles you set up on the Profile tab."/>
             <TextBlock Text="Pack:" Width="60" Margin="12,0,0,0" VerticalAlignment="Center"/>
             <ComboBox Width="280" ItemsSource="{Binding ContentPacks}" SelectedItem="{Binding SelectedPack}" DisplayMemberPath="Name"
                       AutomationProperties.Name="Fleet content pack"
-                      ToolTipService.ToolTip="Content pack to use for remote compliance operations."/>
+                      ToolTipService.ToolTip="Content pack (security rules) to use on remote machines. Same packs you imported on the Import tab."/>
           </WrapPanel>
           <WrapPanel Margin="0,0,0,6">
             <TextBlock Text="Bundle:" Width="80" VerticalAlignment="Center"/>
-            <TextBox Width="520" Text="{Binding BundleRoot}" AutomationProperties.Name="Fleet bundle root"/>
+            <TextBox Width="520" Text="{Binding BundleRoot}" AutomationProperties.Name="Fleet bundle root"
+                     ToolTipService.ToolTip="Bundle folder to use for remote operations. Same bundle from the Build tab."/>
             <Button Content="Browse" MinWidth="80" Height="28" Padding="14,0" Margin="6,0,0,0"
                     Command="{Binding BrowseBundleCommand}" AutomationProperties.Name="Browse for bundle"/>
           </WrapPanel>
           <WrapPanel Margin="0,0,0,6">
             <TextBlock Text="Eval-STIG:" Width="80" VerticalAlignment="Center"/>
-            <TextBox Width="520" Text="{Binding EvaluateStigRoot}" AutomationProperties.Name="Fleet Evaluate-STIG root"/>
+            <TextBox Width="520" Text="{Binding EvaluateStigRoot}" AutomationProperties.Name="Fleet Evaluate-STIG root"
+                     ToolTipService.ToolTip="Folder containing the Evaluate-STIG scanner. Used for remote verify operations."/>
             <Button Content="Browse" MinWidth="80" Height="28" Padding="14,0" Margin="6,0,0,0"
                     Command="{Binding BrowseEvaluateStigCommand}" AutomationProperties.Name="Browse for Evaluate-STIG"/>
           </WrapPanel>
@@ -100,7 +102,8 @@
                     ToolTipService.ToolTip="Parse the Targets field above and add hosts to the inventory."/>
             <Button Content="Remove Selected" MinWidth="130" Height="30" Padding="14,0" Margin="0,0,10,4"
                     Command="{Binding RemoveFleetHostCommand}"
-                    AutomationProperties.Name="Remove selected fleet host"/>
+                    AutomationProperties.Name="Remove selected fleet host"
+                    ToolTipService.ToolTip="Remove the highlighted host from the fleet inventory."/>
             <Button Content="Ping All" MinWidth="90" Height="30" Padding="14,0" Margin="0,0,10,4"
                     Command="{Binding PingAllFleetCommand}"
                     AutomationProperties.Name="Ping all fleet hosts"
@@ -116,7 +119,7 @@
             <Button Content="Discover from AD" MinWidth="140" Height="30" Padding="14,0" Margin="0,0,0,4"
                     Command="{Binding DiscoverAdHostsCommand}" IsEnabled="{Binding ActionsEnabled}"
                     AutomationProperties.Name="Discover hosts from Active Directory"
-                    ToolTipService.ToolTip="Query Active Directory for computer objects and add them to the fleet inventory."/>
+                    ToolTipService.ToolTip="Search your Active Directory domain for computers and automatically add them to the fleet list."/>
           </WrapPanel>
         </StackPanel>
       </TabItem>
@@ -127,12 +130,15 @@
           <TextBlock Text="Scheduled Re-Verification" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
           <WrapPanel Margin="0,0,0,8">
             <TextBlock Text="Task Name:" Width="90" VerticalAlignment="Center"/>
-            <TextBox Width="240" Text="{Binding SchedTaskName}" AutomationProperties.Name="Scheduled task name"/>
+            <TextBox Width="240" Text="{Binding SchedTaskName}" AutomationProperties.Name="Scheduled task name"
+                     ToolTipService.ToolTip="Name for the Windows scheduled task. Shows up in Task Scheduler."/>
             <TextBlock Text="Frequency:" Width="80" Margin="12,0,0,0" VerticalAlignment="Center"/>
             <ComboBox Width="120" ItemsSource="{Binding ScheduleFrequencies}" SelectedItem="{Binding SchedFrequency}"
-                      AutomationProperties.Name="Schedule frequency"/>
+                      AutomationProperties.Name="Schedule frequency"
+                      ToolTipService.ToolTip="How often to run the re-verification: daily, weekly, or monthly."/>
             <TextBlock Text="Time:" Width="50" Margin="12,0,0,0" VerticalAlignment="Center"/>
-            <TextBox Width="80" Text="{Binding SchedTime}" AutomationProperties.Name="Schedule time"/>
+            <TextBox Width="80" Text="{Binding SchedTime}" AutomationProperties.Name="Schedule time"
+                     ToolTipService.ToolTip="Time of day to run the task (e.g., 02:00 for 2 AM)."/>
           </WrapPanel>
           <WrapPanel Margin="0,0,0,8">
             <Button Content="Register Task" MinWidth="130" Height="30" Padding="14,0" Margin="0,0,10,4"
@@ -141,7 +147,8 @@
                     ToolTipService.ToolTip="Create a Windows scheduled task for recurring re-verification."/>
             <Button Content="Remove Task" MinWidth="130" Height="30" Padding="14,0" Margin="0,0,10,4"
                     Command="{Binding ScheduleRemoveCommand}" IsEnabled="{Binding ActionsEnabled}"
-                    AutomationProperties.Name="Remove scheduled task"/>
+                    AutomationProperties.Name="Remove scheduled task"
+                    ToolTipService.ToolTip="Delete the scheduled task from Windows Task Scheduler."/>
             <Button Content="Refresh" MinWidth="90" Height="30" Padding="14,0" Margin="0,0,0,4"
                     Command="{Binding ScheduleRefreshCommand}"
                     AutomationProperties.Name="Refresh schedule list"/>

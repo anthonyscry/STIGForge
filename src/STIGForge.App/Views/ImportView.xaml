@@ -37,7 +37,8 @@
                   ToolTipService.ToolTip="Pick from imported packs for this mission. Multi-select supported."/>
         </WrapPanel>
         <TextBlock Text="{Binding ImportHint}" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,2"/>
-        <Expander Header="Machine Scan Results" IsExpanded="{Binding IsScanExpanded}" Margin="0,0,0,2">
+        <Expander Header="Machine Scan Results" IsExpanded="{Binding IsScanExpanded}" Margin="0,0,0,2"
+                  ToolTipService.ToolTip="Click to expand or collapse the machine scan output. Shows what OS, roles, and features were detected.">
           <TextBlock Text="{Binding MachineApplicabilityStatus}" Foreground="{DynamicResource TextMutedBrush}" FontSize="11"
                      TextWrapping="Wrap" Margin="4,4,0,0"/>
         </Expander>
@@ -60,10 +61,14 @@
             <TextBlock DockPanel.Dock="Right" Text="Search:" VerticalAlignment="Center" Margin="0,0,6,0"
                        Foreground="{DynamicResource TextMutedBrush}"/>
             <StackPanel Orientation="Horizontal">
-              <RadioButton Content="All" GroupName="ContentFilter" IsChecked="{Binding IsFilterAll}" Padding="10,4" Margin="0,0,6,0"/>
-              <RadioButton Content="STIG" GroupName="ContentFilter" IsChecked="{Binding IsFilterStig}" Padding="10,4" Margin="0,0,6,0"/>
-              <RadioButton Content="SCAP" GroupName="ContentFilter" IsChecked="{Binding IsFilterScap}" Padding="10,4" Margin="0,0,6,0"/>
-              <RadioButton Content="GPO / ADMX" GroupName="ContentFilter" IsChecked="{Binding IsFilterGpo}" Padding="10,4"/>
+              <RadioButton Content="All" GroupName="ContentFilter" IsChecked="{Binding IsFilterAll}" Padding="10,4" Margin="0,0,6,0"
+                           ToolTipService.ToolTip="Show all imported content packs regardless of format."/>
+              <RadioButton Content="STIG" GroupName="ContentFilter" IsChecked="{Binding IsFilterStig}" Padding="10,4" Margin="0,0,6,0"
+                           ToolTipService.ToolTip="Show only STIG (Security Technical Implementation Guide) packs — the main security checklists from DISA."/>
+              <RadioButton Content="SCAP" GroupName="ContentFilter" IsChecked="{Binding IsFilterScap}" Padding="10,4" Margin="0,0,6,0"
+                           ToolTipService.ToolTip="Show only SCAP (Security Content Automation Protocol) benchmarks — machine-readable security checks for automated scanners."/>
+              <RadioButton Content="GPO / ADMX" GroupName="ContentFilter" IsChecked="{Binding IsFilterGpo}" Padding="10,4"
+                           ToolTipService.ToolTip="Show only Group Policy and ADMX template packs — Windows-specific configuration rules."/>
             </StackPanel>
           </DockPanel>
 

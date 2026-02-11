@@ -64,7 +64,8 @@
         </Grid>
 
         <Button Content="Start Review" Width="140" Height="32" Command="{Binding StartWizardCommand}" 
-                Visibility="{Binding HasUnansweredControls, Converter={StaticResource BoolToVis}}" Margin="0,16,0,0"/>
+                Visibility="{Binding HasUnansweredControls, Converter={StaticResource BoolToVis}}" Margin="0,16,0,0"
+                ToolTipService.ToolTip="Begin walking through each unanswered control one at a time."/>
         <TextBlock Text="All controls have been answered!" FontWeight="SemiBold" Foreground="{DynamicResource SuccessBrush}"
                    Visibility="{Binding AllControlsAnswered, Converter={StaticResource BoolToVis}}" Margin="0,16,0,0"/>
       </StackPanel>
@@ -128,7 +129,8 @@
                    Height="60" TextWrapping="Wrap" AcceptsReturn="True"/>
 
           <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
-            <Button Content="Collect Evidence" Width="140" Command="{Binding CollectEvidenceCommand}" />
+            <Button Content="Collect Evidence" Width="140" Command="{Binding CollectEvidenceCommand}"
+                    ToolTipService.ToolTip="Auto-gather supporting evidence (logs, screenshots, config snapshots) for this control."/>
             <TextBlock Text="{Binding EvidenceStatus}" Margin="12,8,0,0" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" />
           </StackPanel>
         </StackPanel>
@@ -166,16 +168,20 @@
 
         <TextBlock Text="Your answers have been saved to the bundle." Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,16"/>
         
-        <Button Content="Return to Main App" Width="160" Height="32" Command="{Binding CloseWizardCommand}"/>
+        <Button Content="Return to Main App" Width="160" Height="32" Command="{Binding CloseWizardCommand}"
+                ToolTipService.ToolTip="Close the wizard and go back to the Manual tab. Your answers are already saved."/>
       </StackPanel>
     </Grid>
 
     <!-- Navigation Buttons -->
     <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0"
                 Visibility="{Binding ShowReview, Converter={StaticResource BoolToVis}}">
-      <Button Content="Previous" Width="100" Command="{Binding PreviousControlCommand}" Margin="0,0,8,0"/>
-      <Button Content="Skip" Width="100" Command="{Binding SkipControlCommand}" Margin="0,0,8,0"/>
-      <Button Content="Save &amp; Next" Width="120" Command="{Binding SaveAndNextCommand}" IsDefault="True"/>
+      <Button Content="Previous" Width="100" Command="{Binding PreviousControlCommand}" Margin="0,0,8,0"
+              ToolTipService.ToolTip="Go back to the previous control you just reviewed."/>
+      <Button Content="Skip" Width="100" Command="{Binding SkipControlCommand}" Margin="0,0,8,0"
+              ToolTipService.ToolTip="Skip this control for now and come back to it later."/>
+      <Button Content="Save &amp; Next" Width="120" Command="{Binding SaveAndNextCommand}" IsDefault="True"
+              ToolTipService.ToolTip="Save your answer for this control and move to the next one."/>
     </StackPanel>
   </Grid>
 </Window>
