@@ -249,7 +249,7 @@ public sealed class BundleMissionSummaryService : IBundleMissionSummaryService
     if (string.IsNullOrWhiteSpace(status))
       return string.Empty;
 
-    var source = status.Trim().ToLowerInvariant();
+    var source = (status ?? string.Empty).Trim().ToLowerInvariant();
     var sb = new StringBuilder(source.Length);
 
     foreach (var ch in source)

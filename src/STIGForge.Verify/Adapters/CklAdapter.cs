@@ -130,7 +130,7 @@ public sealed class CklAdapter : IVerifyResultAdapter
     if (string.IsNullOrWhiteSpace(cklStatus))
       return VerifyStatus.NotReviewed;
 
-    var normalized = cklStatus
+    var normalized = (cklStatus ?? string.Empty)
       .Trim()
       .Replace("_", string.Empty)
       .Replace("-", string.Empty)

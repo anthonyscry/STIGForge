@@ -39,6 +39,11 @@ static IHost BuildHost()
       lc.MinimumLevel.Information()
         .WriteTo.File(Path.Combine(root, "stigforge-cli.log"), rollingInterval: RollingInterval.Day);
     })
+    .UseDefaultServiceProvider((_, options) =>
+    {
+      options.ValidateScopes = true;
+      options.ValidateOnBuild = true;
+    })
     .ConfigureServices(services =>
     {
       services.AddSingleton<IClock, SystemClock>();
@@ -68,6 +73,8 @@ static IHost BuildHost()
       services.AddSingleton<BundleBuilder>();
       services.AddSingleton<SnapshotService>();
       services.AddSingleton<RollbackScriptGenerator>();
+      services.AddSingleton<STIGForge.Apply.Dsc.LcmService>();
+      services.AddSingleton<STIGForge.Apply.Reboot.RebootCoordinator>();
       services.AddSingleton<STIGForge.Apply.ApplyRunner>();
       services.AddSingleton<EvaluateStigRunner>();
       services.AddSingleton<ScapRunner>();

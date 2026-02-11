@@ -112,18 +112,20 @@ public partial class MainViewModel
       var item = raw.Trim();
       if (item.Length == 0) continue;
       var colonIdx = item.IndexOf(':');
-      if (colonIdx > 0)
-      {
-        list.Add(new FleetTarget
-        {
-          HostName = item.Substring(0, colonIdx).Trim(),
-          IpAddress = item.Substring(colonIdx + 1).Trim()
-        });
-      }
-      else
+      if (colonIdx < 0)
       {
         list.Add(new FleetTarget { HostName = item });
+        continue;
       }
+
+      if (colonIdx == 0)
+        continue;
+
+      list.Add(new FleetTarget
+      {
+        HostName = item.Substring(0, colonIdx).Trim(),
+        IpAddress = item.Substring(colonIdx + 1).Trim()
+      });
     }
     return list;
   }

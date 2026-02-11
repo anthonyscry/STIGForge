@@ -1,0 +1,34 @@
+<Window x:Class="STIGForge.App.Views.ContentPickerDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Select Content for Mission" Height="560" Width="700"
+        WindowStartupLocation="CenterOwner" FontFamily="Bahnschrift" FontSize="13"
+        Background="{StaticResource WindowBackgroundBrush}">
+  <Grid Margin="16">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
+
+    <TextBlock Grid.Row="0" Text="Select the content packs to include in this mission. Check one or more from each applicable category."
+               Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,12" TextWrapping="Wrap"/>
+
+    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+      <StackPanel x:Name="GroupedPanel"/>
+    </ScrollViewer>
+
+    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,10,0,0">
+      <Button Content="Select All" Width="90" Height="28" Click="SelectAll_Click"/>
+      <Button Content="Select None" Width="90" Height="28" Margin="8,0,0,0" Click="SelectNone_Click"/>
+      <TextBlock x:Name="SelectionCount" Margin="12,6,0,0" Foreground="{StaticResource TextMutedBrush}"/>
+    </StackPanel>
+
+    <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">
+      <Button Content="Use Selected" Width="120" Height="32" Margin="0,0,8,0" Click="Confirm_Click" IsDefault="True"
+              ToolTipService.ToolTip="Use the selected packs for build, orchestration, and export."/>
+      <Button Content="Cancel" Width="100" Height="32" Click="Cancel_Click" IsCancel="True"/>
+    </StackPanel>
+  </Grid>
+</Window>

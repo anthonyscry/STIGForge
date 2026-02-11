@@ -2,6 +2,8 @@
 
 Use this checklist to make the final RC go/no-go decision.
 
+For `v1.1-rc1`, capture manual section 3 and 4 evidence in `docs/release/ManualValidationSignoff-v1.1-rc1.md`.
+
 ## 1) Release gate must pass with complete evidence
 
 Run `tools/release/Invoke-ReleaseGate.ps1` on the exact RC commit and confirm:
@@ -34,6 +36,7 @@ Run `tools/release/Invoke-PackageBuild.ps1` for the same RC commit and confirm:
 - Validate at least one manual-control flow (answer + evidence + summary).
 - Validate `export-emass` package passes validator without errors.
 - Validate `support-bundle` output contains expected manifest and redacted artifacts.
+- Record operator evidence paths and PASS/FAIL outcomes in the manual signoff worksheet.
 
 ## 4) Upgrade, rebase, and rollback assurance
 
@@ -41,6 +44,7 @@ Run `tools/release/Invoke-PackageBuild.ps1` for the same RC commit and confirm:
 - Validate overlay rebase workflow against quarterly content update.
 - Validate rollback/uninstall path and post-rollback operability.
 - Validate data retention for `.stigforge` packs, overlays, and profile state.
+- Record operator evidence paths and PASS/FAIL outcomes in the manual signoff worksheet.
 
 ## 5) Workflow promotion checks
 

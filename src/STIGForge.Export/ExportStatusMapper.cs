@@ -9,7 +9,7 @@ public static class ExportStatusMapper
     if (string.IsNullOrWhiteSpace(status))
       return VerifyStatus.NotReviewed;
 
-    var normalized = Normalize(status);
+    var normalized = Normalize(status!);
 
     return normalized switch
     {

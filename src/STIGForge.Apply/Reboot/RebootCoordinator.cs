@@ -199,10 +199,10 @@ public sealed class RebootCoordinator
 
             var outputTask = process.StandardOutput.ReadToEndAsync();
             var errorTask = process.StandardError.ReadToEndAsync();
-            await Task.WhenAll(outputTask, errorTask);
+            await Task.WhenAll(outputTask, errorTask).ConfigureAwait(false);
             process.WaitForExit();
 
-            var output = outputTask.Result.Trim();
+            var output = (await outputTask.ConfigureAwait(false)).Trim();
             if (!string.IsNullOrEmpty(output) && output.Equals("True", StringComparison.OrdinalIgnoreCase))
             {
                 _logger.LogDebug("DSC reports reboot required");

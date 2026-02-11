@@ -1,6 +1,6 @@
 # STIGForge CLI Reference
 
-37 commands organized by workflow phase.
+38 commands organized by workflow phase.
 
 **Usage**: `dotnet run --project src\STIGForge.Cli\STIGForge.Cli.csproj -- <command> [options]`
 
@@ -89,6 +89,51 @@ orchestrate --bundle <path> [options]
 | `--scap-cmd` | No | SCAP/SCC command path |
 | `--scap-args` | No | SCAP arguments |
 | `--scap-label` | No | Label for SCAP tool |
+
+### `mission-autopilot`
+Run low-intervention import -> build -> apply -> verify with optional NIWC enhanced SCAP ingestion.
+
+```
+mission-autopilot [--niwc-enhanced-zip <zip> | --pack-id <id>] [options]
+```
+
+Remote downloads are automatically cached under `.stigforge/airgap-transfer` so they can be moved to air-gapped systems.
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--niwc-enhanced-zip` | One of | NIWC enhanced SCAP ZIP to import before build |
+| `--niwc-source-url` | No | NIWC source URL (default: `https://github.com/niwc-atlantic/scap-content-library`) |
+| `--disa-stig-url` | No | DISA STIG source URL (direct ZIP or downloads page) |
+| `--allow-remote-downloads` | No | Auto-download remote source ZIPs when local pack input is not provided (default: true) |
+| `--pack-id` | One of | Existing pack ID (skip import) |
+| `--source-label` | No | Source label for NIWC import (default: `niwc_atlantic_enhanced_scap`) |
+| `--profile-id` | No | Existing profile ID |
+| `--profile-json` | No | Profile JSON path |
+| `--save-profile` | No | Save generated/JSON profile (default: true) |
+| `--profile-name` | No | Generated profile name |
+| `--mode` | No | Generated profile mode: AuditOnly, Safe, Full |
+| `--classification` | No | Generated profile classification: Classified, Unclassified, Mixed |
+| `--os-target` | No | Generated profile OS target: Win11, Server2019 |
+| `--role-template` | No | Generated profile role template |
+| `--auto-na` | No | Enable generated-profile auto-NA out-of-scope controls |
+| `--na-confidence` | No | Auto-NA threshold: High, Medium, Low |
+| `--na-comment` | No | Default generated-profile NA comment |
+| `--bundle-id` | No | Bundle ID override |
+| `--output` | No | Bundle output root override |
+| `--auto-detect-tools` | No | Auto-detect Evaluate-STIG/SCC/PowerSTIG paths (default: true) |
+| `--powerstig-module` | No | PowerSTIG module path |
+| `--powerstig-source-url` | No | PowerStig source URL (default: `https://github.com/microsoft/PowerStig`) |
+| `--powerstig-data` | No | PowerSTIG data file |
+| `--powerstig-out` | No | PowerSTIG output folder |
+| `--powerstig-verbose` | No | Verbose PowerSTIG compile |
+| `--evaluate-stig` | No | Evaluate-STIG root |
+| `--evaluate-args` | No | Evaluate-STIG arguments |
+| `--scap-cmd` | No | SCC/SCAP executable path |
+| `--scap-args` | No | SCC/SCAP arguments (default: `-u -s -r -f`) |
+| `--scap-label` | No | SCAP label (default: `DISA SCAP`) |
+| `--skip-snapshot` | No | Skip snapshot generation (requires break-glass flags) |
+| `--break-glass-ack` | With skip-snapshot | Acknowledge high-risk bypass |
+| `--break-glass-reason` | With skip-snapshot | Specific bypass reason |
 
 ### `apply-run`
 Run apply phase using a bundle and optional script.

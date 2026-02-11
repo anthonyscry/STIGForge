@@ -132,7 +132,14 @@ internal static class VerifyCommands
         if (item.Length == 0) continue;
         string label = string.Empty, path = item;
         var pipeIdx = item.IndexOf('|');
-        if (pipeIdx > 0) { label = item.Substring(0, pipeIdx).Trim(); path = item.Substring(pipeIdx + 1).Trim(); }
+        if (pipeIdx >= 0)
+        {
+          if (pipeIdx == 0)
+            continue;
+
+          label = item.Substring(0, pipeIdx).Trim();
+          path = item.Substring(pipeIdx + 1).Trim();
+        }
 
         var resolved = Helpers.ResolveReportPath(path);
         var report = VerifyReportReader.LoadFromJson(resolved);

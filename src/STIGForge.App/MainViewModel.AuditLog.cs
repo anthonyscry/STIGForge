@@ -31,8 +31,11 @@ public partial class MainViewModel
       };
 
       var entries = await _audit.QueryAsync(query, CancellationToken.None);
-      AuditEntries.Clear();
-      foreach (var e in entries) AuditEntries.Add(e);
+      System.Windows.Application.Current.Dispatcher.Invoke(() =>
+      {
+        AuditEntries.Clear();
+        foreach (var entry in entries) AuditEntries.Add(entry);
+      });
 
       StatusText = $"Loaded {entries.Count} audit entries.";
     }

@@ -12,7 +12,8 @@ public static class GpoParser
 
     var settings = new XmlReaderSettings
     {
-      DtdProcessing = DtdProcessing.Ignore,
+      DtdProcessing = DtdProcessing.Prohibit,
+      XmlResolver = null,
       IgnoreWhitespace = true,
       Async = false
     };
@@ -65,7 +66,7 @@ public static class GpoParser
         RuleId = policyName,
         BenchmarkId = policyNamespace
       },
-      Title = title,
+      Title = title!,
       Severity = "medium",
       Discussion = $"Registry Key: {keyText}",
       CheckText = $"Verify registry value '{valueText}' under '{keyText}'",
@@ -90,7 +91,7 @@ public static class GpoParser
     if (string.IsNullOrWhiteSpace(displayName))
       return null;
 
-    var value = displayName.Trim();
+    var value = (displayName ?? string.Empty).Trim();
     if (value.StartsWith("$(string.", StringComparison.OrdinalIgnoreCase) && value.EndsWith(")", StringComparison.Ordinal))
       return value;
 

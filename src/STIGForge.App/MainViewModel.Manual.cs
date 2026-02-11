@@ -235,7 +235,10 @@ public partial class MainViewModel
 
   private void LoadManualControls()
   {
-    ManualControls.Clear();
+    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+    {
+      ManualControls.Clear();
+    });
     if (string.IsNullOrWhiteSpace(BundleRoot)) return;
 
     var controlsPath = Path.Combine(BundleRoot, "Manifest", "pack_controls.json");
@@ -247,6 +250,7 @@ public partial class MainViewModel
 
     var answers = LoadAnswerFile();
 
+    var manualItems = new List<ManualControlItem>();
     foreach (var c in controls.Where(c => c.IsManual))
     {
       var item = new ManualControlItem(c);
@@ -257,8 +261,14 @@ public partial class MainViewModel
         item.Reason = ans.Reason;
         item.Comment = ans.Comment;
       }
-      ManualControls.Add(item);
+      manualItems.Add(item);
     }
+
+    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+    {
+      foreach (var item in manualItems)
+        ManualControls.Add(item);
+    });
 
     UpdateManualSummary();
     ManualControlsView.Refresh();

@@ -1,0 +1,178 @@
+using System.Collections.Generic;
+using System.Linq;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
+
+namespace STIGForge.App.Views;
+
+public partial class ContentPickerDialog : Window
+{
+  public List<ContentPickerItem> Items { get; }
+  public List<string> SelectedPackIds { get; private set; } = new();
+  private readonly List<CheckBox> _checkBoxes = new();
+
+  private static readonly (string Key, string Label)[] SectionOrder = new[]
+  {
+    ("STIG", "STIG Content  —  controls and rules"),
+    ("SCAP", "SCAP Benchmarks  —  XCCDF + OVAL"),
+    ("GPO", "GPO / LGPO  —  ADMX templates, group policy"),
+  };
+
+  public ContentPickerDialog(List<ContentPickerItem> items)
+  {
+    InitializeComponent();
+    Items = items;
+    BuildGroupedUI();
+    UpdateCount();
+  }
+
+  private void BuildGroupedUI()
+  {
+    var grouped = Items
+      .GroupBy(i => i.Format)
+      .ToDictionary(g => g.Key, g => g.ToList());
+
+    foreach (var (key, label) in SectionOrder)
+    {
+      if (!grouped.TryGetValue(key, out var group) || group.Count == 0)
+        continue;
+
+      AddSection(label, group);
+    }
+
+    var otherKeys = grouped.Keys
+      .Where(k => !SectionOrder.Any(s => s.Key == k))
+      .OrderBy(k => k)
+      .ToList();
+
+    foreach (var key in otherKeys)
+    {
+      AddSection(key + " Content", grouped[key]);
+    }
+  }
+
+  private void AddSection(string header, List<ContentPickerItem> items)
+  {
+    var headerBlock = new TextBlock
+    {
+      Text = header,
+      FontSize = 13,
+      FontWeight = FontWeights.SemiBold,
+      Margin = new Thickness(0, _checkBoxes.Count > 0 ? 14 : 0, 0, 6),
+      Foreground = (Brush)FindResource("AccentBrush")
+    };
+    GroupedPanel.Children.Add(headerBlock);
+
+    var border = new Border
+    {
+      BorderBrush = (Brush)FindResource("BorderBrush"),
+      BorderThickness = new Thickness(1),
+      CornerRadius = new CornerRadius(6),
+      Background = (Brush)FindResource("SurfaceBrush"),
+      Padding = new Thickness(8),
+      Margin = new Thickness(0, 0, 0, 4)
+    };
+
+    var stack = new StackPanel();
+
+    foreach (var item in items)
+    {
+      var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 2, 0, 2) };
+
+      var cb = new CheckBox
+      {
+        IsChecked = item.IsSelected,
+        VerticalAlignment = VerticalAlignment.Center,
+        Tag = item
+      };
+      cb.Checked += (_, _) => { item.IsSelected = true; UpdateCount(); };
+      cb.Unchecked += (_, _) => { item.IsSelected = false; UpdateCount(); };
+      _checkBoxes.Add(cb);
+
+      var name = new TextBlock
+      {
+        Text = item.Name,
+        Width = 340,
+        VerticalAlignment = VerticalAlignment.Center,
+        Margin = new Thickness(6, 0, 0, 0),
+        TextTrimming = TextTrimming.CharacterEllipsis
+      };
+
+      var imported = new TextBlock
+      {
+        Text = item.ImportedAtLabel,
+        Width = 130,
+        VerticalAlignment = VerticalAlignment.Center,
+        Foreground = (Brush)FindResource("TextMutedBrush")
+      };
+
+      var source = new TextBlock
+      {
+        Text = item.SourceLabel,
+        Width = 120,
+        VerticalAlignment = VerticalAlignment.Center,
+        Foreground = (Brush)FindResource("TextMutedBrush")
+      };
+
+      row.Children.Add(cb);
+      row.Children.Add(name);
+      row.Children.Add(imported);
+      row.Children.Add(source);
+      stack.Children.Add(row);
+    }
+
+    border.Child = stack;
+    GroupedPanel.Children.Add(border);
+  }
+
+  private void SelectAll_Click(object sender, RoutedEventArgs e)
+  {
+    foreach (var item in Items) item.IsSelected = true;
+    foreach (var cb in _checkBoxes) cb.IsChecked = true;
+    UpdateCount();
+  }
+
+  private void SelectNone_Click(object sender, RoutedEventArgs e)
+  {
+    foreach (var item in Items) item.IsSelected = false;
+    foreach (var cb in _checkBoxes) cb.IsChecked = false;
+    UpdateCount();
+  }
+
+  private void Confirm_Click(object sender, RoutedEventArgs e)
+  {
+    SelectedPackIds = Items.Where(i => i.IsSelected).Select(i => i.PackId).ToList();
+    if (SelectedPackIds.Count == 0)
+    {
+      MessageBox.Show("Select at least one content pack.", "Selection Required",
+        MessageBoxButton.OK, MessageBoxImage.Warning);
+      return;
+    }
+
+    DialogResult = true;
+    Close();
+  }
+
+  private void Cancel_Click(object sender, RoutedEventArgs e)
+  {
+    DialogResult = false;
+    Close();
+  }
+
+  private void UpdateCount()
+  {
+    var count = Items.Count(i => i.IsSelected);
+    SelectionCount.Text = count + " of " + Items.Count + " selected";
+  }
+}
+
+public class ContentPickerItem
+{
+  public string PackId { get; set; } = "";
+  public string Name { get; set; } = "";
+  public string Format { get; set; } = "";
+  public string SourceLabel { get; set; } = "";
+  public string ImportedAtLabel { get; set; } = "";
+  public bool IsSelected { get; set; }
+}

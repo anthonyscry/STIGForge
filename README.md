@@ -32,6 +32,11 @@ dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- verify-scap --c
 ```powershell
 dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- orchestrate --bundle C:\path\to\bundle --powerstig-module C:\path\to\PowerStig --powerstig-data C:\path\to\your.psd1 --evaluate-stig C:\path\to\Evaluate-STIG --evaluate-args "-AnswerFile .\AnswerFile.xml" --scap-cmd "C:\path\to\scc.exe" --scap-args "-u -s -r -f" --scap-label "DISA SCAP"
 ```
+8b) Seamless autopilot mission (optional NIWC enhanced SCAP import + build + apply + verify):
+```powershell
+dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- mission-autopilot --niwc-source-url https://github.com/niwc-atlantic/scap-content-library --disa-stig-url https://www.cyber.mil/stigs/downloads --powerstig-source-url https://github.com/microsoft/PowerStig --evaluate-stig C:\path\to\Evaluate-STIG --scap-cmd "C:\path\to\scc.exe"
+```
+   Remote source archives downloaded by this command are cached in `.stigforge/airgap-transfer` for air-gap transfer.
 9) eMASS export (CLI):
 ```powershell
 dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- export-emass --bundle C:\path\to\bundle

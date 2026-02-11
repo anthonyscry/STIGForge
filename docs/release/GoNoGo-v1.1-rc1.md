@@ -30,4 +30,4 @@ Date (UTC): 2026-02-09
 
 Decision: NO-GO (temporary)
 
-Reason: Automated gates and artifacts are passing, but required manual RC checklist validations and promotion workflow evidence are not yet complete for a pinned immutable release commit.
+Reason: Automated gates and artifacts are passing, but required manual RC checklist validations for functional mission and upgrade/rollback assurance are not yet complete for signoff.

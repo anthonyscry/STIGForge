@@ -243,13 +243,13 @@ public sealed class EmassPackageValidator
     foreach (var poam in poamItems)
     {
       var matched = false;
-      if (!string.IsNullOrWhiteSpace(poam.RuleId) && indexRuleIds.Contains(poam.RuleId))
+      if (!string.IsNullOrWhiteSpace(poam.RuleId) && indexRuleIds.Contains(poam.RuleId!))
       {
         matched = true;
         poamMatchedKeys.Add("RULE:" + poam.RuleId);
       }
 
-      if (!matched && !string.IsNullOrWhiteSpace(poam.VulnId) && indexVulnIds.Contains(poam.VulnId))
+      if (!matched && !string.IsNullOrWhiteSpace(poam.VulnId) && indexVulnIds.Contains(poam.VulnId!))
       {
         matched = true;
         poamMatchedKeys.Add("VULN:" + poam.VulnId);
@@ -362,7 +362,7 @@ public sealed class EmassPackageValidator
     if (string.IsNullOrWhiteSpace(value))
       return null;
 
-    return value.Trim();
+    return value!.Trim();
   }
 
   private static Dictionary<string, string> ParseHashManifest(string path)

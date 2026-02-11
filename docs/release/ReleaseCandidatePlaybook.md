@@ -15,7 +15,7 @@ Generate release, security, quarterly, and upgrade/rebase evidence:
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\release\Invoke-ReleaseGate.ps1 `
   -Configuration Release `
-  -OutputRoot .\.artifacts\release-gate\phase07-rc
+  -OutputRoot .\.artifacts\release-gate\v1.1-rc1
 ```
 
 Required pass conditions:
@@ -35,8 +35,8 @@ Build package artifacts and cross-link release evidence:
 powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\release\Invoke-PackageBuild.ps1 `
   -Configuration Release `
   -Runtime win-x64 `
-  -OutputRoot .\.artifacts\release-package\phase07-rc `
-  -ReleaseGateRoot .\.artifacts\release-gate\phase07-rc
+  -OutputRoot .\.artifacts\release-package\v1.1-rc1 `
+  -ReleaseGateRoot .\.artifacts\release-gate\v1.1-rc1
 ```
 
 Required outputs:
@@ -51,6 +51,8 @@ Required outputs:
 ## 4) Review ship checklist
 
 Use `docs/release/ShipReadinessChecklist.md` and confirm every item for the same commit hash.
+
+Complete operator-only checklist sections in `docs/release/ManualValidationSignoff-v1.1-rc1.md`.
 
 The release owner and approver must review:
 

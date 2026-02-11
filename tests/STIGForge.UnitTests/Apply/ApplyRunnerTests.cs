@@ -6,6 +6,7 @@ using STIGForge.Apply.Dsc;
 using STIGForge.Apply.Reboot;
 using STIGForge.Apply.Snapshot;
 using STIGForge.Core.Abstractions;
+using STIGForge.Core.Models;
 
 namespace STIGForge.UnitTests.Apply;
 
@@ -24,6 +25,41 @@ public sealed class ApplyRunnerTests : IDisposable
     public void Dispose()
     {
         try { Directory.Delete(_bundleRoot, true); } catch { }
+    }
+
+    [Fact]
+    public async Task RunAsync_WhenManifestHardeningModeIsNumeric_ParsesAndCompletes()
+    {
+        var manifestPath = Path.Combine(_bundleRoot, "Manifest", "manifest.json");
+        await File.WriteAllTextAsync(manifestPath, "{\"Profile\":{\"HardeningMode\":1}}");
+
+        var runner = CreateRunner(CreatePassingAudit());
+
+        var result = await runner.RunAsync(new ApplyRequest
+        {
+            BundleRoot = _bundleRoot,
+            SkipSnapshot = true
+        }, CancellationToken.None);
+
+        result.Mode.Should().Be(HardeningMode.Safe);
+        File.Exists(Path.Combine(_bundleRoot, "Apply", "apply_run.json")).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task RunAsync_WhenManifestHardeningModeIsString_ParsesAndCompletes()
+    {
+        var manifestPath = Path.Combine(_bundleRoot, "Manifest", "manifest.json");
+        await File.WriteAllTextAsync(manifestPath, "{\"Profile\":{\"HardeningMode\":\"Full\"}}");
+
+        var runner = CreateRunner(CreatePassingAudit());
+
+        var result = await runner.RunAsync(new ApplyRequest
+        {
+            BundleRoot = _bundleRoot,
+            SkipSnapshot = true
+        }, CancellationToken.None);
+
+        result.Mode.Should().Be(HardeningMode.Full);
     }
 
     [Fact]
@@ -96,5 +132,13 @@ public sealed class ApplyRunnerTests : IDisposable
             lcmService,
             rebootCoordinator,
             audit);
+    }
+
+    private static IAuditTrailService CreatePassingAudit()
+    {
+        var audit = new Mock<IAuditTrailService>();
+        audit.Setup(x => x.RecordAsync(It.IsAny<AuditEntry>(), It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        audit.Setup(x => x.VerifyIntegrityAsync(It.IsAny<CancellationToken>())).ReturnsAsync(true);
+        return audit.Object;
     }
 }
