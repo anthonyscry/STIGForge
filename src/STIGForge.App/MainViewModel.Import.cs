@@ -395,31 +395,44 @@ public partial class MainViewModel
   }
 
   [RelayCommand]
-  private async Task DeleteSelectedPack()
+  private async Task DeleteSelectedPacks()
   {
-    if (SelectedPack == null)
+    var targets = SelectedLibraryItems.Count > 0
+      ? SelectedLibraryItems.ToList()
+      : SelectedLibraryItem != null ? new List<ImportedLibraryItem> { SelectedLibraryItem } : new List<ImportedLibraryItem>();
+
+    if (targets.Count == 0)
     {
-      StatusText = "No pack selected.";
+      StatusText = "No packs selected.";
       return;
     }
 
-    var result = System.Windows.MessageBox.Show(
-      $"Delete pack \"{SelectedPack.Name}\"?\n\nThis will remove the pack and all its controls from the database.",
-      "Confirm Delete",
-      System.Windows.MessageBoxButton.YesNo,
-      System.Windows.MessageBoxImage.Warning);
+    var msg = targets.Count == 1
+      ? $"Delete \"{targets[0].Name}\"?\n\nThis removes the pack and all its controls."
+      : $"Delete {targets.Count} selected packs?\n\nThis removes them and all their controls.";
 
+    var result = System.Windows.MessageBox.Show(msg, "Confirm Delete",
+      System.Windows.MessageBoxButton.YesNo, System.Windows.MessageBoxImage.Warning);
     if (result != System.Windows.MessageBoxResult.Yes) return;
 
     try
     {
       IsBusy = true;
-      await _packs.DeleteAsync(SelectedPack.PackId, CancellationToken.None);
-      ContentPacks.Remove(SelectedPack);
+      var deleted = 0;
+      foreach (var item in targets)
+      {
+        var pack = ContentPacks.FirstOrDefault(p => p.PackId == item.PackId);
+        if (pack == null) continue;
+
+        await _packs.DeleteAsync(pack.PackId, CancellationToken.None);
+        ContentPacks.Remove(pack);
+        deleted++;
+      }
+
       SelectedPack = ContentPacks.Count > 0 ? ContentPacks[0] : null;
       OnPropertyChanged(nameof(ContentPacks));
       RefreshImportLibrary();
-      StatusText = "Pack deleted.";
+      StatusText = deleted == 1 ? "Pack deleted." : $"{deleted} packs deleted.";
     }
     catch (Exception ex)
     {

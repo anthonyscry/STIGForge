@@ -65,7 +65,9 @@
           </DockPanel>
 
           <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Margin="0,0,0,8">
-            <ListView ItemsSource="{Binding FilteredContentLibrary}" SelectedItem="{Binding SelectedLibraryItem}" MaxHeight="320">
+            <ListView x:Name="ContentLibraryList" ItemsSource="{Binding FilteredContentLibrary}" SelectedItem="{Binding SelectedLibraryItem}"
+                      SelectionMode="Extended" MaxHeight="320"
+                      SelectionChanged="ContentLibraryList_SelectionChanged">
               <ListView.View>
                 <GridView>
                   <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}" Width="200"/>
@@ -79,6 +81,10 @@
           </Border>
 
           <WrapPanel>
+            <Button Content="Select All" MinWidth="100" Height="30" Padding="14,0" Margin="0,0,10,4"
+                    Click="SelectAllLibraryItems_Click"
+                    AutomationProperties.Name="Select all library items"
+                    ToolTipService.ToolTip="Select all packs in the filtered list (Ctrl+A also works)."/>
             <Button Content="Refresh Library" MinWidth="140" Height="30" Padding="14,0" Margin="0,0,10,4"
                     Command="{Binding RefreshImportLibraryCommand}"
                     AutomationProperties.Name="Refresh import library"
@@ -91,10 +97,10 @@
                     Command="{Binding ExportPowerStigMapCommand}"
                     AutomationProperties.Name="Export PowerSTIG map"
                     ToolTipService.ToolTip="Export a PowerSTIG control-to-rule mapping file for the selected pack."/>
-            <Button Content="Delete Pack" MinWidth="130" Height="30" Padding="14,0" Margin="0,0,0,4"
-                    Command="{Binding DeleteSelectedPackCommand}" Foreground="{DynamicResource DangerBrush}"
-                    AutomationProperties.Name="Delete selected pack"
-                    ToolTipService.ToolTip="Permanently remove the selected content pack from local storage."/>
+            <Button Content="Delete Selected" MinWidth="130" Height="30" Padding="14,0" Margin="0,0,0,4"
+                    Command="{Binding DeleteSelectedPacksCommand}" Foreground="{DynamicResource DangerBrush}"
+                    AutomationProperties.Name="Delete selected packs"
+                    ToolTipService.ToolTip="Permanently remove selected content packs from local storage. Shift/Ctrl+click to multi-select."/>
           </WrapPanel>
         </StackPanel>
 

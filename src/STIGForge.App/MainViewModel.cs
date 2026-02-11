@@ -194,6 +194,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
    [ObservableProperty] private string contentLibraryFilter = "All";
    [ObservableProperty] private string contentSearchText = "";
    [ObservableProperty] private ImportedLibraryItem? selectedLibraryItem;
+   public List<ImportedLibraryItem> SelectedLibraryItems { get; } = new();
    [ObservableProperty] private string evidenceRuleId = "";
   [ObservableProperty] private string evidenceType = "Command";
   [ObservableProperty] private string evidenceText = "";
