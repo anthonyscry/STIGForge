@@ -206,7 +206,10 @@ public sealed class ManualAnswerService
             Timestamp = DateTimeOffset.Now
           }, CancellationToken.None).ConfigureAwait(false);
         }
-        catch { /* fire-and-forget audit */ }
+        catch (Exception ex)
+        {
+          System.Diagnostics.Trace.TraceWarning("Audit write failed in ManualAnswerService: " + ex.Message);
+        }
       });
     }
   }

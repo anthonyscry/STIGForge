@@ -42,7 +42,7 @@ public sealed class EvidenceAutopilot
     {
       try
       {
-        var files = await CollectEvidenceByTypeAsync(evidenceType, controlDir, control, cancellationToken);
+        var files = await CollectEvidenceByTypeAsync(evidenceType, controlDir, control, cancellationToken).ConfigureAwait(false);
         result.EvidenceFiles.AddRange(files);
       }
       catch (Exception ex)
@@ -53,7 +53,7 @@ public sealed class EvidenceAutopilot
 
     // Write collection summary
     var summaryPath = Path.Combine(controlDir, "_collection_summary.txt");
-    await WriteSummaryAsync(summaryPath, result);
+    await WriteSummaryAsync(summaryPath, result).ConfigureAwait(false);
 
     return result;
   }
@@ -86,10 +86,10 @@ public sealed class EvidenceAutopilot
       using var process = Process.Start(psi);
       if (process == null) return files;
 
-      var output = await process.StandardOutput.ReadToEndAsync(cancellationToken);
-      var error = await process.StandardError.ReadToEndAsync(cancellationToken);
+      var output = await process.StandardOutput.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
+      var error = await process.StandardError.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
 
-      await process.WaitForExitAsync(cancellationToken);
+      await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
 
       var sb = new StringBuilder();
       sb.AppendLine($"Registry Query: {registryPath}\\{valueName}");
@@ -105,7 +105,7 @@ public sealed class EvidenceAutopilot
         sb.AppendLine(error);
       }
 
-      await File.WriteAllTextAsync(outputPath, sb.ToString(), Encoding.UTF8, cancellationToken);
+      await File.WriteAllTextAsync(outputPath, sb.ToString(), Encoding.UTF8, cancellationToken).ConfigureAwait(false);
       files.Add(outputPath);
     }
     catch (Exception ex)
@@ -114,7 +114,7 @@ public sealed class EvidenceAutopilot
       await File.WriteAllTextAsync(errorPath, 
         $"Failed to collect registry evidence: {ex.Message}\nPath: {registryPath}\\{valueName}", 
         Encoding.UTF8, 
-        cancellationToken);
+        cancellationToken).ConfigureAwait(false);
       files.Add(errorPath);
     }
 
@@ -139,7 +139,7 @@ public sealed class EvidenceAutopilot
         await File.WriteAllTextAsync(notFoundPath, 
           $"File not found: {sourceFile}\nChecked at: {DateTimeOffset.Now:o}", 
           Encoding.UTF8, 
-          cancellationToken);
+          cancellationToken).ConfigureAwait(false);
         files.Add(notFoundPath);
         return files;
       }
@@ -160,7 +160,7 @@ public sealed class EvidenceAutopilot
       sb.AppendLine($"Size: {fi.Length} bytes");
       sb.AppendLine($"Last Modified: {fi.LastWriteTime:o}");
 
-      await File.WriteAllTextAsync(metaPath, sb.ToString(), Encoding.UTF8, cancellationToken);
+      await File.WriteAllTextAsync(metaPath, sb.ToString(), Encoding.UTF8, cancellationToken).ConfigureAwait(false);
       files.Add(metaPath);
     }
     catch (Exception ex)
@@ -169,7 +169,7 @@ public sealed class EvidenceAutopilot
       await File.WriteAllTextAsync(errorPath, 
         $"Failed to collect file evidence: {ex.Message}\nSource: {sourceFile}", 
         Encoding.UTF8, 
-        cancellationToken);
+        cancellationToken).ConfigureAwait(false);
       files.Add(errorPath);
     }
 
@@ -203,10 +203,10 @@ public sealed class EvidenceAutopilot
       using var process = Process.Start(psi);
       if (process == null) return files;
 
-      var output = await process.StandardOutput.ReadToEndAsync(cancellationToken);
-      var error = await process.StandardError.ReadToEndAsync(cancellationToken);
+      var output = await process.StandardOutput.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
+      var error = await process.StandardError.ReadToEndAsync(cancellationToken).ConfigureAwait(false);
 
-      await process.WaitForExitAsync(cancellationToken);
+      await process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
 
       var sb = new StringBuilder();
       sb.AppendLine($"Command: {command} {arguments}");
@@ -223,7 +223,7 @@ public sealed class EvidenceAutopilot
         sb.AppendLine(error);
       }
 
-      await File.WriteAllTextAsync(outputPath, sb.ToString(), Encoding.UTF8, cancellationToken);
+      await File.WriteAllTextAsync(outputPath, sb.ToString(), Encoding.UTF8, cancellationToken).ConfigureAwait(false);
       files.Add(outputPath);
     }
     catch (Exception ex)
@@ -232,7 +232,7 @@ public sealed class EvidenceAutopilot
       await File.WriteAllTextAsync(errorPath, 
         $"Failed to execute command: {ex.Message}\nCommand: {command} {arguments}", 
         Encoding.UTF8, 
-        cancellationToken);
+        cancellationToken).ConfigureAwait(false);
       files.Add(errorPath);
     }
 
@@ -247,11 +247,11 @@ public sealed class EvidenceAutopilot
   {
     return type switch
     {
-      EvidenceType.RegistryValue => await CollectRegistryEvidenceFromControlAsync(outputDir, control, cancellationToken),
-      EvidenceType.ConfigurationFile => await CollectFileEvidenceFromControlAsync(outputDir, control, cancellationToken),
-      EvidenceType.CommandOutput => await CollectCommandEvidenceFromControlAsync(outputDir, control, cancellationToken),
-      EvidenceType.ServiceStatus => await CollectServiceStatusAsync(outputDir, control, cancellationToken),
-      EvidenceType.UserRights => await CollectUserRightsAsync(outputDir, cancellationToken),
+      EvidenceType.RegistryValue => await CollectRegistryEvidenceFromControlAsync(outputDir, control, cancellationToken).ConfigureAwait(false),
+      EvidenceType.ConfigurationFile => await CollectFileEvidenceFromControlAsync(outputDir, control, cancellationToken).ConfigureAwait(false),
+      EvidenceType.CommandOutput => await CollectCommandEvidenceFromControlAsync(outputDir, control, cancellationToken).ConfigureAwait(false),
+      EvidenceType.ServiceStatus => await CollectServiceStatusAsync(outputDir, control, cancellationToken).ConfigureAwait(false),
+      EvidenceType.UserRights => await CollectUserRightsAsync(outputDir, cancellationToken).ConfigureAwait(false),
       _ => new List<string>()
     };
   }
@@ -307,7 +307,7 @@ public sealed class EvidenceAutopilot
         @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System",
         "EnableLUA",
         outputDir,
-        cancellationToken);
+        cancellationToken).ConfigureAwait(false);
     }
 
     return new List<string>();
@@ -328,7 +328,7 @@ public sealed class EvidenceAutopilot
     var files = new List<string>();
     foreach (var file in commonFiles.Where(File.Exists))
     {
-      var collected = await CollectFileEvidenceAsync(file, outputDir, cancellationToken);
+      var collected = await CollectFileEvidenceAsync(file, outputDir, cancellationToken).ConfigureAwait(false);
       files.AddRange(collected);
     }
 
@@ -341,7 +341,7 @@ public sealed class EvidenceAutopilot
     CancellationToken cancellationToken)
   {
     // Collect system information
-    return await CollectCommandEvidenceAsync("systeminfo", "", outputDir, cancellationToken);
+    return await CollectCommandEvidenceAsync("systeminfo", "", outputDir, cancellationToken).ConfigureAwait(false);
   }
 
   private async Task<List<string>> CollectServiceStatusAsync(
@@ -349,14 +349,14 @@ public sealed class EvidenceAutopilot
     ControlRecord control,
     CancellationToken cancellationToken)
   {
-    return await CollectCommandEvidenceAsync("sc.exe", "query type= service state= all", outputDir, cancellationToken);
+    return await CollectCommandEvidenceAsync("sc.exe", "query type= service state= all", outputDir, cancellationToken).ConfigureAwait(false);
   }
 
   private async Task<List<string>> CollectUserRightsAsync(
     string outputDir,
     CancellationToken cancellationToken)
   {
-    return await CollectCommandEvidenceAsync("secedit", "/export /cfg usrrights_temp.inf", outputDir, cancellationToken);
+    return await CollectCommandEvidenceAsync("secedit", "/export /cfg usrrights_temp.inf", outputDir, cancellationToken).ConfigureAwait(false);
   }
 
   private string GetControlEvidenceDirectory(ControlRecord control)
@@ -385,7 +385,7 @@ public sealed class EvidenceAutopilot
         sb.AppendLine($"  - {error}");
     }
 
-    await File.WriteAllTextAsync(path, sb.ToString(), Encoding.UTF8);
+    await File.WriteAllTextAsync(path, sb.ToString(), Encoding.UTF8).ConfigureAwait(false);
   }
 }
 

@@ -23,7 +23,7 @@ source_label=excluded.source_label,
 hash_algorithm=excluded.hash_algorithm,
 manifest_sha256=excluded.manifest_sha256;";
     using var conn = new SqliteConnection(_cs);
-    await conn.ExecuteAsync(new CommandDefinition(sql, pack, cancellationToken: ct));
+    await conn.ExecuteAsync(new CommandDefinition(sql, pack, cancellationToken: ct)).ConfigureAwait(false);
   }
 
   public async Task<ContentPack?> GetAsync(string packId, CancellationToken ct)
@@ -31,7 +31,7 @@ manifest_sha256=excluded.manifest_sha256;";
     using var conn = new SqliteConnection(_cs);
     return await conn.QuerySingleOrDefaultAsync<ContentPack>(new CommandDefinition(
       "SELECT pack_id PackId, name Name, imported_at ImportedAt, release_date ReleaseDate, source_label SourceLabel, hash_algorithm HashAlgorithm, manifest_sha256 ManifestSha256 FROM content_packs WHERE pack_id=@packId",
-      new { packId }, cancellationToken: ct));
+      new { packId }, cancellationToken: ct)).ConfigureAwait(false);
   }
 
   public async Task<IReadOnlyList<ContentPack>> ListAsync(CancellationToken ct)
@@ -39,17 +39,17 @@ manifest_sha256=excluded.manifest_sha256;";
     using var conn = new SqliteConnection(_cs);
     var rows = await conn.QueryAsync<ContentPack>(new CommandDefinition(
       "SELECT pack_id PackId, name Name, imported_at ImportedAt, release_date ReleaseDate, source_label SourceLabel, hash_algorithm HashAlgorithm, manifest_sha256 ManifestSha256 FROM content_packs ORDER BY imported_at DESC",
-      cancellationToken: ct));
+      cancellationToken: ct)).ConfigureAwait(false);
     return rows.ToList();
   }
 
   public async Task DeleteAsync(string packId, CancellationToken ct)
   {
     using var conn = new SqliteConnection(_cs);
-    await conn.OpenAsync(ct);
+    await conn.OpenAsync(ct).ConfigureAwait(false);
     using var tx = conn.BeginTransaction();
-    await conn.ExecuteAsync(new CommandDefinition("DELETE FROM controls WHERE pack_id=@packId", new { packId }, transaction: tx, cancellationToken: ct));
-    await conn.ExecuteAsync(new CommandDefinition("DELETE FROM content_packs WHERE pack_id=@packId", new { packId }, transaction: tx, cancellationToken: ct));
+    await conn.ExecuteAsync(new CommandDefinition("DELETE FROM controls WHERE pack_id=@packId", new { packId }, transaction: tx, cancellationToken: ct)).ConfigureAwait(false);
+    await conn.ExecuteAsync(new CommandDefinition("DELETE FROM content_packs WHERE pack_id=@packId", new { packId }, transaction: tx, cancellationToken: ct)).ConfigureAwait(false);
     tx.Commit();
   }
 }
@@ -67,14 +67,14 @@ public sealed class SqliteJsonProfileRepository : IProfileRepository
     const string sql = @"INSERT INTO profiles(profile_id,json) VALUES(@id,@json)
 ON CONFLICT(profile_id) DO UPDATE SET json=excluded.json;";
     using var conn = new SqliteConnection(_cs);
-    await conn.ExecuteAsync(new CommandDefinition(sql, new { id = profile.ProfileId, json }, cancellationToken: ct));
+    await conn.ExecuteAsync(new CommandDefinition(sql, new { id = profile.ProfileId, json }, cancellationToken: ct)).ConfigureAwait(false);
   }
 
   public async Task<Profile?> GetAsync(string profileId, CancellationToken ct)
   {
     using var conn = new SqliteConnection(_cs);
     var json = await conn.QuerySingleOrDefaultAsync<string>(new CommandDefinition(
-      "SELECT json FROM profiles WHERE profile_id=@profileId", new { profileId }, cancellationToken: ct));
+      "SELECT json FROM profiles WHERE profile_id=@profileId", new { profileId }, cancellationToken: ct)).ConfigureAwait(false);
     return json is null ? null : JsonSerializer.Deserialize<Profile>(json, J);
   }
 
@@ -82,14 +82,14 @@ ON CONFLICT(profile_id) DO UPDATE SET json=excluded.json;";
   {
     using var conn = new SqliteConnection(_cs);
     var jsons = await conn.QueryAsync<string>(new CommandDefinition(
-      "SELECT json FROM profiles", cancellationToken: ct));
+      "SELECT json FROM profiles", cancellationToken: ct)).ConfigureAwait(false);
     return jsons.Select(j => JsonSerializer.Deserialize<Profile>(j, J)!).ToList();
   }
 
   public async Task DeleteAsync(string profileId, CancellationToken ct)
   {
     using var conn = new SqliteConnection(_cs);
-    await conn.ExecuteAsync(new CommandDefinition("DELETE FROM profiles WHERE profile_id=@profileId", new { profileId }, cancellationToken: ct));
+    await conn.ExecuteAsync(new CommandDefinition("DELETE FROM profiles WHERE profile_id=@profileId", new { profileId }, cancellationToken: ct)).ConfigureAwait(false);
   }
 }
 
@@ -106,14 +106,14 @@ public sealed class SqliteJsonOverlayRepository : IOverlayRepository
     const string sql = @"INSERT INTO overlays(overlay_id,json) VALUES(@id,@json)
 ON CONFLICT(overlay_id) DO UPDATE SET json=excluded.json;";
     using var conn = new SqliteConnection(_cs);
-    await conn.ExecuteAsync(new CommandDefinition(sql, new { id = overlay.OverlayId, json }, cancellationToken: ct));
+    await conn.ExecuteAsync(new CommandDefinition(sql, new { id = overlay.OverlayId, json }, cancellationToken: ct)).ConfigureAwait(false);
   }
 
   public async Task<Overlay?> GetAsync(string overlayId, CancellationToken ct)
   {
     using var conn = new SqliteConnection(_cs);
     var json = await conn.QuerySingleOrDefaultAsync<string>(new CommandDefinition(
-      "SELECT json FROM overlays WHERE overlay_id=@overlayId", new { overlayId }, cancellationToken: ct));
+      "SELECT json FROM overlays WHERE overlay_id=@overlayId", new { overlayId }, cancellationToken: ct)).ConfigureAwait(false);
     return json is null ? null : JsonSerializer.Deserialize<Overlay>(json, J);
   }
 
@@ -121,7 +121,7 @@ ON CONFLICT(overlay_id) DO UPDATE SET json=excluded.json;";
   {
     using var conn = new SqliteConnection(_cs);
     var jsons = await conn.QueryAsync<string>(new CommandDefinition(
-      "SELECT json FROM overlays", cancellationToken: ct));
+      "SELECT json FROM overlays", cancellationToken: ct)).ConfigureAwait(false);
     return jsons.Select(j => JsonSerializer.Deserialize<Overlay>(j, J)!).ToList();
   }
 }
@@ -145,7 +145,7 @@ ON CONFLICT(pack_id,control_id) DO UPDATE SET json=excluded.json;";
       var json = JsonSerializer.Serialize(c, J);
       await conn.ExecuteAsync(new CommandDefinition(sql,
         new { packId, controlId = c.ControlId, json },
-        transaction: tx, cancellationToken: ct));
+        transaction: tx, cancellationToken: ct)).ConfigureAwait(false);
     }
     tx.Commit();
   }
@@ -154,18 +154,18 @@ ON CONFLICT(pack_id,control_id) DO UPDATE SET json=excluded.json;";
   {
     using var conn = new SqliteConnection(_cs);
     var jsons = await conn.QueryAsync<string>(new CommandDefinition(
-      "SELECT json FROM controls WHERE pack_id=@packId", new { packId }, cancellationToken: ct));
+      "SELECT json FROM controls WHERE pack_id=@packId", new { packId }, cancellationToken: ct)).ConfigureAwait(false);
     return jsons.Select(j => JsonSerializer.Deserialize<ControlRecord>(j, J)!).ToList();
   }
 
   public async Task<bool> VerifySchemaAsync(CancellationToken ct)
   {
     using var conn = new SqliteConnection(_cs);
-    await conn.OpenAsync(ct);
+    await conn.OpenAsync(ct).ConfigureAwait(false);
     
     // Verify controls table exists with required columns
     var tableInfo = await conn.QueryAsync<(string name, string type)>(new CommandDefinition(
-      "PRAGMA table_info(controls)", cancellationToken: ct));
+      "PRAGMA table_info(controls)", cancellationToken: ct)).ConfigureAwait(false);
     
     var columns = tableInfo.Select(c => c.name).ToHashSet(StringComparer.OrdinalIgnoreCase);
     

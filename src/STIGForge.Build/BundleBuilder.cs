@@ -110,7 +110,7 @@ public sealed class BundleBuilder
     var runLogPath = Path.Combine(manifestDir, "run_log.txt");
     File.WriteAllText(runLogPath, "Bundle created: " + BuildTime.Now.ToString("o"), Encoding.UTF8);
 
-    await WriteHashManifestAsync(root, Path.Combine(manifestDir, "file_hashes.sha256"), ct);
+    await WriteHashManifestAsync(root, Path.Combine(manifestDir, "file_hashes.sha256"), ct).ConfigureAwait(false);
 
     return new BundleBuildResult
     {
@@ -228,7 +228,7 @@ public sealed class BundleBuilder
     var sb = new StringBuilder(files.Count * 80);
     foreach (var file in files)
     {
-      var hash = await _hash.Sha256FileAsync(file, ct);
+      var hash = await _hash.Sha256FileAsync(file, ct).ConfigureAwait(false);
       var rel = GetRelativePath(root, file);
       sb.AppendLine(hash + "  " + rel);
     }

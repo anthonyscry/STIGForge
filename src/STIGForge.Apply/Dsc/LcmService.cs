@@ -45,7 +45,7 @@ public sealed class LcmService
             _logger.LogDebug("Executing LCM configuration command: {Command}", command);
 
             // Execute PowerShell command
-            var (exitCode, stdout, stderr) = await ExecutePowerShellCommand(command, ct);
+            var (exitCode, stdout, stderr) = await ExecutePowerShellCommand(command, ct).ConfigureAwait(false);
 
             if (exitCode != 0)
             {
@@ -97,7 +97,7 @@ public sealed class LcmService
 
             _logger.LogDebug("Executing LCM query command: {Command}", command);
 
-            var (exitCode, stdout, stderr) = await ExecutePowerShellCommand(command, ct);
+            var (exitCode, stdout, stderr) = await ExecutePowerShellCommand(command, ct).ConfigureAwait(false);
 
             if (exitCode != 0)
             {
@@ -165,7 +165,7 @@ public sealed class LcmService
                 AllowModuleOverwrite = true
             };
 
-            await ConfigureLcm(config, ct);
+            await ConfigureLcm(config, ct).ConfigureAwait(false);
 
             _logger.LogInformation("LCM reset successfully.");
         }

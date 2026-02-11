@@ -84,7 +84,11 @@ public static class StandalonePoamExporter
       using var doc = JsonDocument.Parse(File.ReadAllText(manifestPath));
       return doc.RootElement.GetProperty("run").GetProperty("systemName").GetString();
     }
-    catch { return null; }
+    catch (Exception ex)
+    {
+      System.Diagnostics.Trace.TraceWarning("POAM export failed: " + ex.Message);
+      return null;
+    }
   }
 
   private static string? ReadBundleId(string bundleRoot)
@@ -96,7 +100,11 @@ public static class StandalonePoamExporter
       using var doc = JsonDocument.Parse(File.ReadAllText(manifestPath));
       return doc.RootElement.GetProperty("bundleId").GetString();
     }
-    catch { return null; }
+    catch (Exception ex)
+    {
+      System.Diagnostics.Trace.TraceWarning("POAM export failed: " + ex.Message);
+      return null;
+    }
   }
 }
 

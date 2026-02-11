@@ -105,7 +105,7 @@ public sealed class EmassExporter
     File.WriteAllText(logPath, "Exported: " + DateTimeOffset.Now.ToString("o"), Encoding.UTF8);
 
     var hashPath = Path.Combine(manifestDir, "file_hashes.sha256");
-    await WriteHashManifestAsync(exportRoot, hashPath, ct);
+    await WriteHashManifestAsync(exportRoot, hashPath, ct).ConfigureAwait(false);
 
     var readmePath = Path.Combine(exportRoot, "README_Submission.txt");
     WriteReadme(readmePath);
@@ -418,7 +418,7 @@ public sealed class EmassExporter
     var sb = new StringBuilder(files.Count * 80);
     foreach (var file in files)
     {
-      var hash = await _hash.Sha256FileAsync(file, ct);
+      var hash = await _hash.Sha256FileAsync(file, ct).ConfigureAwait(false);
       var rel = GetRelativePath(root, file);
       sb.AppendLine(hash + "  " + rel);
     }

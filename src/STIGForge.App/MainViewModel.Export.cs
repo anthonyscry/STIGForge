@@ -36,7 +36,7 @@ public partial class MainViewModel
 
         var result = StandalonePoamExporter.ExportPoam(request);
         PoamStatus = result.Message;
-      });
+      }, _cts.Token);
 
       StatusText = "POA&M export complete.";
     }
@@ -76,7 +76,7 @@ public partial class MainViewModel
 
         var result = CklExporter.ExportCkl(request);
         CklStatus = result.Message + (string.IsNullOrWhiteSpace(result.OutputPath) ? "" : $" ({result.OutputPath})");
-      });
+      }, _cts.Token);
 
       StatusText = "CKL export complete.";
     }

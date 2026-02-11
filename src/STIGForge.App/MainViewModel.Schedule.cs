@@ -51,7 +51,7 @@ public partial class MainViewModel
         BundleRoot = bundleRoot,
         Frequency = frequency,
         StartTime = time
-      }));
+      }), _cts.Token);
 
       SchedStatus = result.Success ? $"Task '{result.TaskName}' registered." : result.Message;
       StatusText = result.Success ? "Schedule registered." : "Schedule register failed.";
@@ -84,7 +84,7 @@ public partial class MainViewModel
       var taskName = SchedTaskName;
       var svc = _scheduledTaskService;
 
-      var result = await Task.Run(() => svc.Unregister(taskName));
+      var result = await Task.Run(() => svc.Unregister(taskName), _cts.Token);
       SchedStatus = result.Success ? $"Task '{taskName}' removed." : result.Message;
       StatusText = result.Success ? "Schedule removed." : "Schedule remove failed.";
       ScheduleRefreshList();

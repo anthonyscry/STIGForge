@@ -39,16 +39,20 @@ public sealed class ProcessRunner : IProcessRunner
         {
             using (ct.Register(() => 
             {
-                try { process.Kill(); } catch { /* Best-effort kill on cancellation */ }
+                try { process.Kill(); }
+                catch (Exception ex)
+                {
+                    Trace.TraceWarning("Process kill failed: " + ex.Message);
+                }
                 tcs.TrySetCanceled(ct);
             }))
             {
-                await tcs.Task;
+                await tcs.Task.ConfigureAwait(false);
             }
         }
         else
         {
-            await tcs.Task;
+            await tcs.Task.ConfigureAwait(false);
         }
 
         // Wait for output streams to finish

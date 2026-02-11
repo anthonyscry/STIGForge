@@ -107,7 +107,7 @@ public sealed class ContentPackImporter
             if (nestedZipPaths.Count == 0)
             {
                 var singlePackName = BuildImportedPackName(consolidatedZipPath, "Imported");
-                var importedSingle = await ImportZipAsync(consolidatedZipPath, singlePackName, sourceLabel, ct);
+                var importedSingle = await ImportZipAsync(consolidatedZipPath, singlePackName, sourceLabel, ct).ConfigureAwait(false);
                 return new[] { importedSingle };
             }
 
@@ -116,14 +116,18 @@ public sealed class ContentPackImporter
             {
                 ct.ThrowIfCancellationRequested();
                 var packName = BuildImportedPackName(nestedZipPath, "Imported");
-                imported.Add(await ImportZipAsync(nestedZipPath, packName, sourceLabel, ct));
+                imported.Add(await ImportZipAsync(nestedZipPath, packName, sourceLabel, ct).ConfigureAwait(false));
             }
 
             return imported;
         }
         finally
         {
-            try { Directory.Delete(extractionRoot, true); } catch { }
+            try { Directory.Delete(extractionRoot, true); }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Trace.TraceWarning("Temp cleanup failed: " + ex.Message);
+            }
         }
     }
 
@@ -152,7 +156,7 @@ public sealed class ContentPackImporter
             checkpoint.Stage = ImportStage.Parsing;
             checkpoint.Save(packRoot);
 
-            var zipHash = await _hash.Sha256FileAsync(zipPath, ct);
+            var zipHash = await _hash.Sha256FileAsync(zipPath, ct).ConfigureAwait(false);
 
         var pack = new ContentPack
         {
@@ -199,7 +203,7 @@ public sealed class ContentPackImporter
 
             // Detect conflicts before saving
             var conflictDetector = new ConflictDetector(_packs, _controls);
-            var conflicts = await conflictDetector.DetectConflictsAsync(pack.PackId, parsed, ct);
+            var conflicts = await conflictDetector.DetectConflictsAsync(pack.PackId, parsed, ct).ConfigureAwait(false);
             
             // Block import if any ERROR-level conflicts exist
             var errorConflicts = conflicts.Where(c => c.Severity == ConflictSeverity.Error).ToList();
@@ -219,9 +223,9 @@ public sealed class ContentPackImporter
             checkpoint.Save(packRoot);
 
             // Atomic save: both pack and controls in a logical transaction
-            await _packs.SaveAsync(pack, ct);
+            await _packs.SaveAsync(pack, ct).ConfigureAwait(false);
             if (parsed.Count > 0)
-                await _controls.SaveControlsAsync(pack.PackId, parsed, ct);
+                await _controls.SaveControlsAsync(pack.PackId, parsed, ct).ConfigureAwait(false);
 
             var note = new
             {
@@ -260,7 +264,10 @@ public sealed class ContentPackImporter
                   Timestamp = DateTimeOffset.Now
                 }, ct).ConfigureAwait(false);
               }
-              catch { /* audit failure should not block import */ }
+              catch (Exception ex)
+              {
+                System.Diagnostics.Trace.TraceWarning("Audit write failed during import: " + ex.Message);
+              }
             }
 
             return pack;

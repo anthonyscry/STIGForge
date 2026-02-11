@@ -80,7 +80,7 @@ public partial class MainViewModel
       }
 
       if (string.IsNullOrWhiteSpace(EvaluateStigRoot) && string.IsNullOrWhiteSpace(ScapCommandPath))
-        await TryActivateToolkitAsync(userInitiated: false, CancellationToken.None);
+        await TryActivateToolkitAsync(userInitiated: false, _cts.Token);
 
       if (string.IsNullOrWhiteSpace(EvaluateStigRoot) && string.IsNullOrWhiteSpace(ScapCommandPath))
       {
@@ -203,7 +203,7 @@ public partial class MainViewModel
     }
 
     if (string.IsNullOrWhiteSpace(EvaluateStigRoot) && string.IsNullOrWhiteSpace(ScapCommandPath))
-      await TryActivateToolkitAsync(userInitiated: false, CancellationToken.None);
+      await TryActivateToolkitAsync(userInitiated: false, _cts.Token);
 
     if (string.IsNullOrWhiteSpace(EvaluateStigRoot) && string.IsNullOrWhiteSpace(ScapCommandPath))
     {
@@ -335,7 +335,7 @@ public partial class MainViewModel
       // Step 2: Verify
       var coverageInputs = new List<VerificationCoverageInput>();
       if (OrchRunVerify && string.IsNullOrWhiteSpace(EvaluateStigRoot) && string.IsNullOrWhiteSpace(ScapCommandPath))
-        await TryActivateToolkitAsync(userInitiated: false, CancellationToken.None);
+        await TryActivateToolkitAsync(userInitiated: false, _cts.Token);
 
       if (OrchRunVerify)
       {

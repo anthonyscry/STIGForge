@@ -689,7 +689,7 @@ public partial class MainViewModel
       IsBusy = true;
       MachineApplicabilityStatus = "Scanning machine...";
 
-      var info = await Task.Run(() => DetectMachineInfo());
+      var info = await Task.Run(() => DetectMachineInfo(), _cts.Token);
 
       var lines = new List<string>
       {
@@ -775,7 +775,10 @@ public partial class MainViewModel
         info.DisplayVersion = ntKey.GetValue("DisplayVersion") as string ?? "";
       }
     }
-    catch { /* Registry access may be restricted */ }
+    catch (Exception ex)
+    {
+      System.Diagnostics.Trace.TraceWarning("Registry/feature detection failed: " + ex.Message);
+    }
 
     // Detect product type (Workstation / Server / DC)
     try
@@ -833,11 +836,17 @@ public partial class MainViewModel
               if (installState is int state && state == 1)
                 info.InstalledFeatures.Add(subName);
             }
-            catch { /* skip inaccessible feature keys */ }
+            catch (Exception ex)
+            {
+              System.Diagnostics.Trace.TraceWarning("Registry/feature detection failed: " + ex.Message);
+            }
           }
         }
       }
-      catch { /* ServerManager registry not available */ }
+      catch (Exception ex)
+      {
+        System.Diagnostics.Trace.TraceWarning("Registry/feature detection failed: " + ex.Message);
+      }
     }
 
     // Detect IIS on workstation
@@ -853,7 +862,10 @@ public partial class MainViewModel
             info.InstalledFeatures.Add("IIS " + majorVersion);
         }
       }
-      catch { /* no IIS */ }
+      catch (Exception ex)
+      {
+        System.Diagnostics.Trace.TraceWarning("Registry/feature detection failed: " + ex.Message);
+      }
     }
 
     // Detect SQL Server instances
@@ -863,7 +875,10 @@ public partial class MainViewModel
       if (sqlKey != null && sqlKey.GetValueNames().Length > 0)
         info.InstalledFeatures.Add("SQL Server");
     }
-    catch { /* no SQL */ }
+    catch (Exception ex)
+    {
+      System.Diagnostics.Trace.TraceWarning("Registry/feature detection failed: " + ex.Message);
+    }
 
     // Detect .NET Framework version
     try
@@ -873,7 +888,10 @@ public partial class MainViewModel
       if (release != null)
         info.InstalledFeatures.Add(".NET Framework 4.x");
     }
-    catch { /* no .NET 4.x */ }
+    catch (Exception ex)
+    {
+      System.Diagnostics.Trace.TraceWarning("Registry/feature detection failed: " + ex.Message);
+    }
 
     return info;
   }
@@ -921,7 +939,10 @@ public partial class MainViewModel
           return false;
       }
     }
-    catch { /* fall through to name heuristic */ }
+    catch (Exception ex)
+    {
+      System.Diagnostics.Trace.TraceWarning("Registry/feature detection failed: " + ex.Message);
+    }
 
     var name = (pack.Name + " " + pack.SourceLabel);
 

@@ -31,7 +31,7 @@ public sealed class RebootCoordinator
         _logger.LogDebug("Checking if reboot is required...");
 
         // Check 1: DSC reboot status
-        if (await IsDscRebootRequired(cancellationToken))
+        if (await IsDscRebootRequired(cancellationToken).ConfigureAwait(false))
         {
             _logger.LogInformation("Reboot required: DSC configuration requests reboot");
             return true;
@@ -75,7 +75,7 @@ public sealed class RebootCoordinator
         try
         {
             // Write resume marker BEFORE scheduling reboot (critical for recovery)
-            await WriteResumeMarker(context, cancellationToken);
+            await WriteResumeMarker(context, cancellationToken).ConfigureAwait(false);
             _logger.LogInformation("Resume marker created at {MarkerPath}", GetMarkerPath(context.BundleRoot));
 
             // Schedule system reboot

@@ -39,10 +39,10 @@ public sealed class OverlayRebaseService
     };
 
     // Get diff between baseline and new pack
-    var diff = await _diffService.ComparePacksAsync(baselinePackId, newPackId, cancellationToken);
+    var diff = await _diffService.ComparePacksAsync(baselinePackId, newPackId, cancellationToken).ConfigureAwait(false);
 
     // Load overlay
-    var overlay = await _overlays.GetAsync(overlayId, cancellationToken);
+    var overlay = await _overlays.GetAsync(overlayId, cancellationToken).ConfigureAwait(false);
     if (overlay == null)
     {
       report.Success = false;
@@ -120,7 +120,7 @@ public sealed class OverlayRebaseService
       throw new InvalidOperationException($"Cannot apply rebase while blocking conflicts remain unresolved. Controls: {controls}");
     }
 
-    var overlay = await _overlays.GetAsync(overlayId, cancellationToken);
+    var overlay = await _overlays.GetAsync(overlayId, cancellationToken).ConfigureAwait(false);
     if (overlay == null)
       throw new InvalidOperationException($"Overlay {overlayId} not found");
 
@@ -165,7 +165,7 @@ public sealed class OverlayRebaseService
       PowerStigOverrides = rebasedOverlay.PowerStigOverrides
     };
 
-    await _overlays.SaveAsync(finalOverlay, cancellationToken);
+    await _overlays.SaveAsync(finalOverlay, cancellationToken).ConfigureAwait(false);
     return finalOverlay;
   }
 

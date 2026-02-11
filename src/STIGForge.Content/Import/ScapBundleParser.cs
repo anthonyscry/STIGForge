@@ -36,7 +36,11 @@ public static class ScapBundleParser
     }
     finally
     {
-      try { Directory.Delete(tempRoot, true); } catch { }
+      try { Directory.Delete(tempRoot, true); }
+      catch (Exception ex)
+      {
+        System.Diagnostics.Trace.TraceWarning("Cleanup failed: " + ex.Message);
+      }
     }
   }
 

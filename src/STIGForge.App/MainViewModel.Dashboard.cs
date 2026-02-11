@@ -159,7 +159,7 @@ public partial class MainViewModel
     }
     catch (Exception ex)
     {
-      System.Diagnostics.Debug.WriteLine("Dashboard summary load failed: " + ex.Message);
+      System.Diagnostics.Trace.TraceWarning("Dashboard summary load failed: " + ex.Message);
       DashPackLabel = "";
       DashProfileLabel = "";
       DashTotalControls = 0;
@@ -197,7 +197,7 @@ public partial class MainViewModel
       }
       catch (Exception ex)
       {
-        System.Diagnostics.Debug.WriteLine("Dashboard verify timestamp load failed: " + ex.Message);
+        System.Diagnostics.Trace.TraceWarning("Dashboard verify timestamp load failed: " + ex.Message);
       }
     }
 
@@ -210,7 +210,7 @@ public partial class MainViewModel
         var latest = Directory.GetDirectories(emassDir).OrderByDescending(d => d).FirstOrDefault();
         DashLastExport = latest != null ? Path.GetFileName(latest) : "";
       }
-      catch (Exception ex) { System.Diagnostics.Debug.WriteLine("Dashboard export load failed: " + ex.Message); DashLastExport = ""; }
+      catch (Exception ex) { System.Diagnostics.Trace.TraceWarning("Dashboard export load failed: " + ex.Message); DashLastExport = ""; }
     }
     else
     {
@@ -363,7 +363,7 @@ public partial class MainViewModel
     try
     {
       IsBusy = true;
-      var activated = await TryActivateToolkitAsync(userInitiated: true, CancellationToken.None);
+    var activated = await TryActivateToolkitAsync(userInitiated: true, _cts.Token);
       if (!activated)
       {
         GuidedNextAction = "Toolkit activation incomplete. Confirm STIG_SCAP path and archives, then retry activation.";

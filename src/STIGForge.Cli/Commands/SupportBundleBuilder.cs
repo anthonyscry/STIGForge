@@ -88,7 +88,10 @@ public sealed class SupportBundleBuilder
       if (Directory.Exists(stagingRoot))
       {
         try { Directory.Delete(stagingRoot, true); }
-        catch { }
+        catch (Exception ex)
+        {
+          System.Diagnostics.Trace.TraceWarning("Temp cleanup failed: " + ex.Message);
+        }
       }
     }
   }

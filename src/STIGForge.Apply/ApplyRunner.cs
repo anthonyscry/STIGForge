@@ -62,7 +62,7 @@ public sealed class ApplyRunner
       RebootContext? resumeContext;
       try
       {
-        resumeContext = await _rebootCoordinator.ResumeAfterReboot(root, ct);
+        resumeContext = await _rebootCoordinator.ResumeAfterReboot(root, ct).ConfigureAwait(false);
       }
       catch (RebootException ex)
       {
@@ -104,7 +104,7 @@ public sealed class ApplyRunner
         {
           // Capture original LCM state
           _logger.LogInformation("Capturing original LCM state...");
-          originalLcm = await _lcmService.GetLcmState(ct);
+          originalLcm = await _lcmService.GetLcmState(ct).ConfigureAwait(false);
 
           // Configure LCM for apply
           var lcmConfig = new LcmConfig
@@ -115,7 +115,7 @@ public sealed class ApplyRunner
             AllowModuleOverwrite = true
           };
           _logger.LogInformation("Configuring LCM for DSC application (Mode: {ConfigurationMode})...", lcmConfig.ConfigurationMode);
-          await _lcmService.ConfigureLcm(lcmConfig, ct);
+          await _lcmService.ConfigureLcm(lcmConfig, ct).ConfigureAwait(false);
         }
         catch (LcmException ex)
         {
@@ -129,7 +129,7 @@ public sealed class ApplyRunner
         try
         {
           _logger.LogInformation("Creating pre-apply snapshot...");
-          snapshot = await _snapshotService.CreateSnapshot(snapshotsDir, ct);
+          snapshot = await _snapshotService.CreateSnapshot(snapshotsDir, ct).ConfigureAwait(false);
           snapshot.RollbackScriptPath = _rollbackScriptGenerator.GenerateScript(snapshot);
           _logger.LogInformation("Snapshot {SnapshotId} created. Rollback script: {RollbackScript}",
             snapshot.SnapshotId, snapshot.RollbackScriptPath);
@@ -160,12 +160,12 @@ public sealed class ApplyRunner
            snapshotsDir,
            mode,
            request.PowerStigVerbose,
-           ct);
+           ct).ConfigureAwait(false);
         steps.Add(outcome);
       }
 
       // Check for reboot after PowerSTIG compile
-      if (await _rebootCoordinator.DetectRebootRequired(ct))
+      if (await _rebootCoordinator.DetectRebootRequired(ct).ConfigureAwait(false))
       {
          _logger.LogInformation("Reboot required after PowerSTIG compile");
          var context = new RebootContext
@@ -175,7 +175,7 @@ public sealed class ApplyRunner
             CompletedSteps = steps.Select(s => s.StepName).ToList(),
             RebootScheduledAt = DateTimeOffset.UtcNow
          };
-         await _rebootCoordinator.ScheduleReboot(context, ct);
+          await _rebootCoordinator.ScheduleReboot(context, ct).ConfigureAwait(false);
           return new ApplyResult
           {
              BundleRoot = root,
@@ -199,12 +199,12 @@ public sealed class ApplyRunner
       }
       else
       {
-        var outcome = await RunScriptAsync(request.ScriptPath!, request.ScriptArgs, root, logsDir, snapshotsDir, mode, ct);
+        var outcome = await RunScriptAsync(request.ScriptPath!, request.ScriptArgs, root, logsDir, snapshotsDir, mode, ct).ConfigureAwait(false);
         steps.Add(outcome);
       }
 
       // Check for reboot after script execution
-      if (await _rebootCoordinator.DetectRebootRequired(ct))
+      if (await _rebootCoordinator.DetectRebootRequired(ct).ConfigureAwait(false))
       {
          _logger.LogInformation("Reboot required after script execution");
          var context = new RebootContext
@@ -214,7 +214,7 @@ public sealed class ApplyRunner
             CompletedSteps = steps.Select(s => s.StepName).ToList(),
             RebootScheduledAt = DateTimeOffset.UtcNow
          };
-         await _rebootCoordinator.ScheduleReboot(context, ct);
+          await _rebootCoordinator.ScheduleReboot(context, ct).ConfigureAwait(false);
           return new ApplyResult
           {
              BundleRoot = root,
@@ -238,7 +238,7 @@ public sealed class ApplyRunner
         }
         else
         {
-          var outcome = await RunDscAsync(request.DscMofPath!, root, logsDir, snapshotsDir, mode, request.DscVerbose, ct);
+          var outcome = await RunDscAsync(request.DscMofPath!, root, logsDir, snapshotsDir, mode, request.DscVerbose, ct).ConfigureAwait(false);
           steps.Add(outcome);
         }
 
@@ -248,7 +248,7 @@ public sealed class ApplyRunner
          try
          {
           _logger.LogInformation("Resetting LCM to original state...");
-            await _lcmService.ResetLcm(originalLcm, ct);
+            await _lcmService.ResetLcm(originalLcm, ct).ConfigureAwait(false);
           _logger.LogInformation("LCM reset successfully.");
          }
          catch (LcmException ex)
