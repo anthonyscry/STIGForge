@@ -171,7 +171,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
   [ObservableProperty] private string profileClassification = "Classified";
   [ObservableProperty] private int profileGraceDays = 30;
   [ObservableProperty] private bool profileAutoNa = true;
-  [ObservableProperty] private string profileNaComment = "Not applicable: unclassified-only control; system is classified.";
+  [ObservableProperty] private string profileNaComment = "Not applicable: control is out of scope for the current classification.";
 
   partial void OnProfileClassificationChanged(string value)
   {
