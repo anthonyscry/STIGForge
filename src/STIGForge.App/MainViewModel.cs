@@ -2,6 +2,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
+using System.Threading;
 using System.Windows.Data;
 using STIGForge.Build;
 using STIGForge.Content.Import;
@@ -13,7 +14,7 @@ using STIGForge.Verify;
 
 namespace STIGForge.App;
 
-public partial class MainViewModel : ObservableObject
+public partial class MainViewModel : ObservableObject, IDisposable
 {
   private readonly ContentPackImporter _importer;
   private readonly IContentPackRepository _packs;
@@ -32,6 +33,8 @@ public partial class MainViewModel : ObservableObject
   private readonly IAuditTrailService? _audit;
   private readonly STIGForge.Infrastructure.System.ScheduledTaskService? _scheduledTaskService;
   private readonly STIGForge.Infrastructure.System.FleetService? _fleetService;
+  private readonly CancellationTokenSource _cts = new();
+  private bool _disposed;
   private ICollectionView? _manualView;
 
   [ObservableProperty] private string statusText = "Ready.";
@@ -252,7 +255,7 @@ public partial class MainViewModel : ObservableObject
 
       LoadUiState();
       if (string.IsNullOrWhiteSpace(EvaluateStigRoot) && string.IsNullOrWhiteSpace(ScapCommandPath))
-        await TryActivateToolkitAsync(userInitiated: false, CancellationToken.None);
+        await TryActivateToolkitAsync(userInitiated: false, _cts.Token);
       LoadCoverageOverlap();
       LoadManualControls();
       ConfigureManualView();
@@ -358,5 +361,15 @@ public partial class MainViewModel : ObservableObject
     public string? SelectedMissionPreset { get; set; }
     public bool SimpleBuildBeforeRun { get; set; }
     public List<string>? RecentBundles { get; set; }
+  }
+
+  public void Dispose()
+  {
+    if (_disposed)
+      return;
+
+    _disposed = true;
+    _cts.Cancel();
+    _cts.Dispose();
   }
 }

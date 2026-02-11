@@ -25,8 +25,8 @@ public sealed class BaselineDiffService
     CancellationToken cancellationToken = default)
   {
     // Load controls from both packs
-    var baselineControls = await _controls.ListControlsAsync(baselinePackId, cancellationToken);
-    var newControls = await _controls.ListControlsAsync(newPackId, cancellationToken);
+    var baselineControls = await _controls.ListControlsAsync(baselinePackId, cancellationToken).ConfigureAwait(false);
+    var newControls = await _controls.ListControlsAsync(newPackId, cancellationToken).ConfigureAwait(false);
 
     var diff = new BaselineDiff
     {

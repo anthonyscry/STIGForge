@@ -251,7 +251,11 @@ internal static class VerifyCommands
 
     if (!string.IsNullOrWhiteSpace(tempRoot))
     {
-      try { Directory.Delete(tempRoot, true); } catch { }
+      try { Directory.Delete(tempRoot, true); }
+      catch (Exception ex)
+      {
+        System.Diagnostics.Trace.TraceWarning("Temp cleanup failed: " + ex.Message);
+      }
     }
 
     await host.StopAsync();

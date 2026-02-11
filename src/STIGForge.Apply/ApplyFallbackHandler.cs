@@ -31,7 +31,7 @@ public sealed class ApplyFallbackHandler
         try
         {
             _logger.LogDebug("Attempting primary apply for control {ControlId}", controlId);
-            var success = await primaryApply(ct);
+            var success = await primaryApply(ct).ConfigureAwait(false);
             
             if (success)
             {
@@ -76,7 +76,7 @@ public sealed class ApplyFallbackHandler
             try
             {
                 _logger.LogDebug("Attempting secondary fallback for control {ControlId}", controlId);
-                var success = await secondaryApply(ct);
+                var success = await secondaryApply(ct).ConfigureAwait(false);
 
                 if (success)
                 {

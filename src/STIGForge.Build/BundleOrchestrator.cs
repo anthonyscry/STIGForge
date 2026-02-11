@@ -26,7 +26,7 @@ public sealed class BundleOrchestrator
 
   public async Task<BundleBuildResult> BuildBundleAsync(BundleBuildRequest request, CancellationToken ct)
   {
-    return await _builder.BuildAsync(request, ct);
+    return await _builder.BuildAsync(request, ct).ConfigureAwait(false);
   }
 
   public async Task OrchestrateAsync(OrchestrateRequest request, CancellationToken ct)
@@ -78,7 +78,7 @@ public sealed class BundleOrchestrator
       PowerStigOutputPath = request.PowerStigOutputPath,
       PowerStigVerbose = request.PowerStigVerbose,
       PowerStigDataGeneratedPath = psd1Path
-    }, ct);
+    }, ct).ConfigureAwait(false);
 
     WritePhaseMarker(Path.Combine(root, "Apply", "apply.complete"), applyResult.LogPath);
 
@@ -98,7 +98,7 @@ public sealed class BundleOrchestrator
           Arguments = request.EvaluateStigArgs ?? string.Empty,
           WorkingDirectory = request.EvaluateStigRoot
         }
-      }, ct);
+      }, ct).ConfigureAwait(false);
 
       var evalRun = evalWorkflow.ToolRuns.FirstOrDefault(r => r.Tool.IndexOf("Evaluate", StringComparison.OrdinalIgnoreCase) >= 0);
       if (evalRun == null || !evalRun.Executed)
@@ -126,7 +126,7 @@ public sealed class BundleOrchestrator
           Arguments = request.ScapArgs ?? string.Empty,
           ToolLabel = toolName
         }
-      }, ct);
+      }, ct).ConfigureAwait(false);
 
       var scapRun = scapWorkflow.ToolRuns.FirstOrDefault(r => string.Equals(r.Tool, toolName, StringComparison.OrdinalIgnoreCase) || r.Tool.IndexOf("SCAP", StringComparison.OrdinalIgnoreCase) >= 0);
       if (scapRun == null || !scapRun.Executed)
@@ -157,7 +157,10 @@ public sealed class BundleOrchestrator
           Timestamp = DateTimeOffset.Now
         }, ct).ConfigureAwait(false);
       }
-      catch { /* audit failure should not block orchestration */ }
+      catch (Exception ex)
+      {
+        System.Diagnostics.Trace.TraceWarning("Audit write failed during orchestration: " + ex.Message);
+      }
     }
   }
 

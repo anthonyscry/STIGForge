@@ -37,7 +37,7 @@ public sealed class SnapshotService
         {
             // Export security policy
             _logger.LogInformation("Exporting security policy using secedit...");
-            await RunProcessAsync("secedit.exe", $"/export /cfg \"{securityPolicyPath}\"", snapshotPath, ct);
+            await RunProcessAsync("secedit.exe", $"/export /cfg \"{securityPolicyPath}\"", snapshotPath, ct).ConfigureAwait(false);
             
             if (!File.Exists(securityPolicyPath))
                 throw new SnapshotException($"Security policy export failed: {securityPolicyPath} not created");
@@ -46,7 +46,7 @@ public sealed class SnapshotService
 
             // Export audit policy
             _logger.LogInformation("Exporting audit policy using auditpol...");
-            await RunProcessAsync("auditpol.exe", $"/backup /file:\"{auditPolicyPath}\"", snapshotPath, ct);
+            await RunProcessAsync("auditpol.exe", $"/backup /file:\"{auditPolicyPath}\"", snapshotPath, ct).ConfigureAwait(false);
             
             if (!File.Exists(auditPolicyPath))
                 throw new SnapshotException($"Audit policy export failed: {auditPolicyPath} not created");
@@ -60,7 +60,7 @@ public sealed class SnapshotService
                 lgpoStatePath = Path.Combine(snapshotPath, "lgpo_state");
                 try
                 {
-                    await RunProcessAsync("LGPO.exe", $"/backup \"{lgpoStatePath}\"", snapshotPath, ct);
+                    await RunProcessAsync("LGPO.exe", $"/backup \"{lgpoStatePath}\"", snapshotPath, ct).ConfigureAwait(false);
                     _logger.LogInformation("LGPO state exported to {Path}", lgpoStatePath);
                 }
                 catch (SnapshotException ex)
@@ -113,7 +113,7 @@ public sealed class SnapshotService
             _logger.LogInformation("Restoring security policy using secedit...");
             await RunProcessAsync("secedit.exe", 
                 $"/configure /cfg \"{snapshot.SecurityPolicyPath}\" /db secedit.sdb /overwrite /quiet",
-                Path.GetDirectoryName(snapshot.SecurityPolicyPath) ?? string.Empty, ct);
+                Path.GetDirectoryName(snapshot.SecurityPolicyPath) ?? string.Empty, ct).ConfigureAwait(false);
             
             _logger.LogInformation("Security policy restored from {Path}", snapshot.SecurityPolicyPath);
 
@@ -121,7 +121,7 @@ public sealed class SnapshotService
             _logger.LogInformation("Restoring audit policy using auditpol...");
             await RunProcessAsync("auditpol.exe", 
                 $"/restore /file:\"{snapshot.AuditPolicyPath}\"",
-                Path.GetDirectoryName(snapshot.AuditPolicyPath) ?? string.Empty, ct);
+                Path.GetDirectoryName(snapshot.AuditPolicyPath) ?? string.Empty, ct).ConfigureAwait(false);
             
             _logger.LogInformation("Audit policy restored from {Path}", snapshot.AuditPolicyPath);
 
@@ -133,7 +133,7 @@ public sealed class SnapshotService
                 {
                     await RunProcessAsync("LGPO.exe", 
                         $"/restore \"{snapshot.LgpoStatePath}\"",
-                        Path.GetDirectoryName(snapshot.LgpoStatePath) ?? string.Empty, ct);
+                        Path.GetDirectoryName(snapshot.LgpoStatePath) ?? string.Empty, ct).ConfigureAwait(false);
                     _logger.LogInformation("LGPO state restored from {Path}", snapshot.LgpoStatePath);
                 }
                 catch (SnapshotException ex)
@@ -159,7 +159,7 @@ public sealed class SnapshotService
             WorkingDirectory = workingDirectory
         };
 
-        var result = await _processRunner.RunAsync(psi, ct);
+        var result = await _processRunner.RunAsync(psi, ct).ConfigureAwait(false);
 
         // Log process output
         if (!string.IsNullOrWhiteSpace(result.StandardOutput))
