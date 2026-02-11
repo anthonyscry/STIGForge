@@ -19,7 +19,7 @@
             </StackPanel>
             <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
               <TextBlock Text="Pack:" FontWeight="SemiBold" Width="80"/>
-              <TextBlock Text="{Binding DashPackLabel}" Foreground="{DynamicResource TextMutedBrush}"/>
+              <TextBlock Text="{Binding SelectedContentSummary}" Foreground="{DynamicResource TextMutedBrush}"/>
             </StackPanel>
             <StackPanel Orientation="Horizontal">
               <TextBlock Text="Profile:" FontWeight="SemiBold" Width="80"/>
@@ -33,199 +33,223 @@
         </Grid>
       </Border>
 
-      <!-- Dashboard Cards -->
-      <Grid Margin="0,0,0,8" Visibility="{Binding DashHasBundle, Converter={StaticResource BoolToVisibility}}">
-        <Grid.ColumnDefinitions>
-          <ColumnDefinition Width="*"/>
-          <ColumnDefinition Width="16"/>
-          <ColumnDefinition Width="*"/>
-          <ColumnDefinition Width="16"/>
-          <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
+      <!-- Tabbed Content -->
+      <TabControl>
 
-        <!-- Controls Card -->
-        <Border Grid.Column="0" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="12" Background="{DynamicResource SurfaceBrush}">
-          <StackPanel>
-            <TextBlock Text="Controls" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
-            <TextBlock Text="{Binding DashTotalControls}" FontSize="36" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"/>
-            <TextBlock Text="Total Controls" Foreground="{DynamicResource TextMutedBrush}" Margin="0,4,0,12"/>
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-              <TextBlock Text="Automated:" FontWeight="SemiBold" Width="90"/>
-              <TextBlock Text="{Binding DashAutoControls}"/>
-            </StackPanel>
-            <StackPanel Orientation="Horizontal">
-              <TextBlock Text="Manual:" FontWeight="SemiBold" Width="90"/>
-              <TextBlock Text="{Binding DashManualControls}"/>
-            </StackPanel>
-          </StackPanel>
-        </Border>
+        <!-- Dashboard Tab -->
+        <TabItem Header="Dashboard">
+          <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="12">
 
-        <!-- Verification Card -->
-        <Border Grid.Column="2" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="12" Background="{DynamicResource SurfaceBrush}">
-          <StackPanel>
-            <TextBlock Text="Automated Verification" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
-            <TextBlock Text="{Binding DashVerifyPercent}" FontSize="36" FontWeight="Bold" Foreground="{DynamicResource SuccessBrush}"/>
-            <TextBlock Text="Compliance Rate" Foreground="{DynamicResource TextMutedBrush}" Margin="0,4,0,12"/>
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-              <TextBlock Text="Closed:" FontWeight="SemiBold" Width="90"/>
-              <TextBlock Text="{Binding DashVerifyClosed}" Foreground="{DynamicResource SuccessBrush}"/>
-            </StackPanel>
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-              <TextBlock Text="Open:" FontWeight="SemiBold" Width="90"/>
-              <TextBlock Text="{Binding DashVerifyOpen}" Foreground="{DynamicResource DangerBrush}"/>
-            </StackPanel>
-            <StackPanel Orientation="Horizontal">
-              <TextBlock Text="Last run:" FontWeight="SemiBold" Width="90"/>
-              <TextBlock Text="{Binding DashLastVerify}" Foreground="{DynamicResource TextMutedBrush}"/>
-            </StackPanel>
-          </StackPanel>
-        </Border>
+              <!-- Dashboard Cards -->
+              <Grid Margin="0,0,0,8" Visibility="{Binding DashHasBundle, Converter={StaticResource BoolToVisibility}}">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*"/>
+                  <ColumnDefinition Width="16"/>
+                  <ColumnDefinition Width="*"/>
+                  <ColumnDefinition Width="16"/>
+                  <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
 
-        <!-- Manual Review Card -->
-        <Border Grid.Column="4" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="12" Background="{DynamicResource SurfaceBrush}">
-          <StackPanel>
-            <TextBlock Text="Manual Review" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
-            <TextBlock Text="{Binding DashManualPercent}" FontSize="36" FontWeight="Bold" Foreground="{DynamicResource WarningBrush}"/>
-            <TextBlock Text="Answered Rate" Foreground="{DynamicResource TextMutedBrush}" Margin="0,4,0,12"/>
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-              <TextBlock Text="Pass:" FontWeight="SemiBold" Width="90"/>
-              <TextBlock Text="{Binding DashManualPass}" Foreground="{DynamicResource SuccessBrush}"/>
+                <!-- Controls Card -->
+                <Border Grid.Column="0" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="12" Background="{DynamicResource SurfaceBrush}">
+                  <StackPanel>
+                    <TextBlock Text="Controls" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <TextBlock Text="{Binding DashTotalControls}" FontSize="36" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"/>
+                    <TextBlock Text="Total Controls" Foreground="{DynamicResource TextMutedBrush}" Margin="0,4,0,12"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                      <TextBlock Text="Automated:" FontWeight="SemiBold" Width="90"/>
+                      <TextBlock Text="{Binding DashAutoControls}"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                      <TextBlock Text="Manual:" FontWeight="SemiBold" Width="90"/>
+                      <TextBlock Text="{Binding DashManualControls}"/>
+                    </StackPanel>
+                  </StackPanel>
+                </Border>
+
+                <!-- Verification Card -->
+                <Border Grid.Column="2" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="12" Background="{DynamicResource SurfaceBrush}">
+                  <StackPanel>
+                    <TextBlock Text="Automated Verification" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <TextBlock Text="{Binding DashVerifyPercent}" FontSize="36" FontWeight="Bold" Foreground="{DynamicResource SuccessBrush}"/>
+                    <TextBlock Text="Compliance Rate" Foreground="{DynamicResource TextMutedBrush}" Margin="0,4,0,12"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                      <TextBlock Text="Closed:" FontWeight="SemiBold" Width="90"/>
+                      <TextBlock Text="{Binding DashVerifyClosed}" Foreground="{DynamicResource SuccessBrush}"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                      <TextBlock Text="Open:" FontWeight="SemiBold" Width="90"/>
+                      <TextBlock Text="{Binding DashVerifyOpen}" Foreground="{DynamicResource DangerBrush}"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                      <TextBlock Text="Last run:" FontWeight="SemiBold" Width="90"/>
+                      <TextBlock Text="{Binding DashLastVerify}" Foreground="{DynamicResource TextMutedBrush}"/>
+                    </StackPanel>
+                  </StackPanel>
+                </Border>
+
+                <!-- Manual Review Card -->
+                <Border Grid.Column="4" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="12" Background="{DynamicResource SurfaceBrush}">
+                  <StackPanel>
+                    <TextBlock Text="Manual Review" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <TextBlock Text="{Binding DashManualPercent}" FontSize="36" FontWeight="Bold" Foreground="{DynamicResource WarningBrush}"/>
+                    <TextBlock Text="Answered Rate" Foreground="{DynamicResource TextMutedBrush}" Margin="0,4,0,12"/>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                      <TextBlock Text="Pass:" FontWeight="SemiBold" Width="90"/>
+                      <TextBlock Text="{Binding DashManualPass}" Foreground="{DynamicResource SuccessBrush}"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                      <TextBlock Text="Fail:" FontWeight="SemiBold" Width="90"/>
+                      <TextBlock Text="{Binding DashManualFail}" Foreground="{DynamicResource DangerBrush}"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                      <TextBlock Text="N/A:" FontWeight="SemiBold" Width="90"/>
+                      <TextBlock Text="{Binding DashManualNa}" Foreground="{DynamicResource TextMutedBrush}"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal">
+                      <TextBlock Text="Open:" FontWeight="SemiBold" Width="90"/>
+                      <TextBlock Text="{Binding DashManualOpen}" Foreground="{DynamicResource WarningBrush}"/>
+                    </StackPanel>
+                  </StackPanel>
+                </Border>
+              </Grid>
+
+              <!-- Mission Severity & Recovery -->
+              <StackPanel Margin="0,0,0,8" Visibility="{Binding DashHasBundle, Converter={StaticResource BoolToVisibility}}">
+                <TextBlock Text="{Binding DashMissionSeverity}" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+                <TextBlock Text="{Binding DashRecoveryGuidance}" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,4,0,0"/>
+              </StackPanel>
+
             </StackPanel>
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-              <TextBlock Text="Fail:" FontWeight="SemiBold" Width="90"/>
-              <TextBlock Text="{Binding DashManualFail}" Foreground="{DynamicResource DangerBrush}"/>
+          </ScrollViewer>
+        </TabItem>
+
+        <!-- eMASS Tab -->
+        <TabItem Header="eMASS">
+          <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="12">
+              <TextBlock Text="eMASS Export" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
+              <WrapPanel Margin="0,0,0,8">
+                <TextBlock Text="Bundle:" Width="80" VerticalAlignment="Center"/>
+                <TextBox Width="520" Text="{Binding BundleRoot}" AutomationProperties.Name="Bundle root path"/>
+                <Button Content="Browse" MinWidth="80" Height="28" Padding="14,0" Margin="6,0,0,0"
+                        Command="{Binding BrowseBundleCommand}" AutomationProperties.Name="Browse for bundle"/>
+                <Button Content="Open" MinWidth="80" Height="28" Padding="14,0" Margin="6,0,0,0"
+                        Command="{Binding OpenBundleFolderCommand}" AutomationProperties.Name="Open bundle folder"/>
+              </WrapPanel>
+              <TextBlock Text="Recent Bundles" Margin="0,0,0,4"/>
+              <WrapPanel Margin="0,0,0,8">
+                <ComboBox Width="520" ItemsSource="{Binding RecentBundles}" SelectedItem="{Binding SelectedRecentBundle}"
+                          AutomationProperties.Name="Recent bundles"/>
+                <Button Content="Use" MinWidth="80" Height="28" Padding="14,0" Margin="6,0,0,0"
+                        Command="{Binding UseRecentBundleCommand}" AutomationProperties.Name="Use recent bundle"/>
+              </WrapPanel>
+              <WrapPanel Margin="0,0,0,8">
+                <Button Content="Export eMASS" MinWidth="140" Height="32" Padding="14,0" FontWeight="SemiBold"
+                        Command="{Binding ExportEmassCommand}" IsEnabled="{Binding ActionsEnabled}"
+                        AutomationProperties.Name="Export eMASS package"
+                        ToolTipService.ToolTip="Generate an eMASS-ready export package from current bundle findings."/>
+                <Button Content="Open Last Output" MinWidth="140" Height="32" Padding="14,0" Margin="10,0,0,0"
+                        Command="{Binding OpenLastOutputCommand}" AutomationProperties.Name="Open last output"
+                        ToolTipService.ToolTip="Open latest export output location."/>
+              </WrapPanel>
+              <TextBlock Text="{Binding ExportStatus}" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,4"/>
+              <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                <TextBlock Text="Last eMASS export:" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,8,0"/>
+                <TextBlock Text="{Binding DashLastExport}" Foreground="{DynamicResource TextMutedBrush}"/>
+              </StackPanel>
+              <TextBlock Text="{Binding ReportSummary}" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
             </StackPanel>
-            <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-              <TextBlock Text="N/A:" FontWeight="SemiBold" Width="90"/>
-              <TextBlock Text="{Binding DashManualNa}" Foreground="{DynamicResource TextMutedBrush}"/>
+          </ScrollViewer>
+        </TabItem>
+
+        <!-- POA&M / CKL Tab -->
+        <TabItem Header="POA&amp;M / CKL">
+          <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="12">
+              <Grid Margin="0,0,0,8">
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*"/>
+                  <ColumnDefinition Width="16"/>
+                  <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Border Grid.Column="0" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="12" Background="{DynamicResource SurfaceMutedBrush}">
+                  <StackPanel>
+                    <TextBlock Text="POA&amp;M Export" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <WrapPanel Margin="0,0,0,8">
+                      <TextBlock Text="System Name:" Width="100" VerticalAlignment="Center"/>
+                      <TextBox Width="300" Text="{Binding PoamSystemName}" AutomationProperties.Name="POA&amp;M system name"
+                               ToolTipService.ToolTip="System name for the POA&amp;M export. Auto-filled with machine name."/>
+                    </WrapPanel>
+                    <Button Content="Export POA&amp;M" MinWidth="140" Height="32" Padding="14,0"
+                            Command="{Binding ExportPoamCommand}" IsEnabled="{Binding ActionsEnabled}"
+                            AutomationProperties.Name="Export POA&amp;M"/>
+                    <TextBlock Text="{Binding PoamStatus}" Margin="0,8,0,0" Foreground="{DynamicResource TextMutedBrush}"/>
+                  </StackPanel>
+                </Border>
+
+                <Border Grid.Column="2" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="12" Background="{DynamicResource SurfaceMutedBrush}">
+                  <StackPanel>
+                    <TextBlock Text="CKL (Checklist) Export" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                    <WrapPanel Margin="0,0,0,8">
+                      <TextBlock Text="Host Name:" Width="80" VerticalAlignment="Center"/>
+                      <TextBox Width="180" Text="{Binding CklHostName}" AutomationProperties.Name="CKL host name"
+                               ToolTipService.ToolTip="Host name for the CKL file. Auto-filled with machine name."/>
+                      <TextBlock Text="STIG ID:" Width="70" Margin="12,0,0,0" VerticalAlignment="Center"/>
+                      <TextBox Width="180" Text="{Binding CklStigId}" AutomationProperties.Name="CKL STIG ID"/>
+                    </WrapPanel>
+                    <Button Content="Export CKL" MinWidth="140" Height="32" Padding="14,0"
+                            Command="{Binding ExportCklCommand}" IsEnabled="{Binding ActionsEnabled}"
+                            AutomationProperties.Name="Export CKL"/>
+                    <TextBlock Text="{Binding CklStatus}" Margin="0,8,0,0" Foreground="{DynamicResource TextMutedBrush}"/>
+                  </StackPanel>
+                </Border>
+              </Grid>
             </StackPanel>
-            <StackPanel Orientation="Horizontal">
-              <TextBlock Text="Open:" FontWeight="SemiBold" Width="90"/>
-              <TextBlock Text="{Binding DashManualOpen}" Foreground="{DynamicResource WarningBrush}"/>
+          </ScrollViewer>
+        </TabItem>
+
+        <!-- Audit Log Tab -->
+        <TabItem Header="Audit Log">
+          <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="12">
+              <TextBlock Text="Audit Log" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
+              <WrapPanel Margin="0,0,0,8">
+                <TextBlock Text="Action:" Width="60" VerticalAlignment="Center"/>
+                <TextBox Width="160" Text="{Binding AuditActionFilter}" AutomationProperties.Name="Audit action filter"/>
+                <TextBlock Text="Target:" Width="60" Margin="12,0,0,0" VerticalAlignment="Center"/>
+                <TextBox Width="200" Text="{Binding AuditTargetFilter}" AutomationProperties.Name="Audit target filter"/>
+                <TextBlock Text="Limit:" Width="50" Margin="12,0,0,0" VerticalAlignment="Center"/>
+                <TextBox Width="60" Text="{Binding AuditLimit}" AutomationProperties.Name="Audit result limit"/>
+                <Button Content="Query" MinWidth="80" Height="28" Padding="14,0" Margin="12,0,0,0"
+                        Command="{Binding AuditQueryCommand}" IsEnabled="{Binding ActionsEnabled}"
+                        AutomationProperties.Name="Query audit log"/>
+                <Button Content="Verify Integrity" MinWidth="120" Height="28" Padding="14,0" Margin="8,0,0,0"
+                        Command="{Binding AuditVerifyCommand}" IsEnabled="{Binding ActionsEnabled}"
+                        AutomationProperties.Name="Verify audit integrity"
+                        ToolTipService.ToolTip="Check the cryptographic chain integrity of the audit trail."/>
+              </WrapPanel>
+              <TextBlock Text="{Binding AuditVerifyResult}" FontWeight="SemiBold" Margin="0,0,0,8"/>
+              <ListView ItemsSource="{Binding AuditEntries}" MaxHeight="260">
+                <ListView.View>
+                  <GridView>
+                    <GridViewColumn Header="Id" DisplayMemberBinding="{Binding Id}"/>
+                    <GridViewColumn Header="Time" DisplayMemberBinding="{Binding Timestamp}" Width="140"/>
+                    <GridViewColumn Header="Act" DisplayMemberBinding="{Binding Action}"/>
+                    <GridViewColumn Header="Target" DisplayMemberBinding="{Binding Target}" Width="180"/>
+                    <GridViewColumn Header="Res" DisplayMemberBinding="{Binding Result}"/>
+                    <GridViewColumn Header="User" DisplayMemberBinding="{Binding User}"/>
+                    <GridViewColumn Header="Detail" DisplayMemberBinding="{Binding Detail}" Width="260"/>
+                  </GridView>
+                </ListView.View>
+              </ListView>
             </StackPanel>
-          </StackPanel>
-        </Border>
-      </Grid>
+          </ScrollViewer>
+        </TabItem>
 
-      <!-- Mission Severity & Recovery -->
-      <StackPanel Margin="0,0,0,8" Visibility="{Binding DashHasBundle, Converter={StaticResource BoolToVisibility}}">
-        <TextBlock Text="{Binding DashMissionSeverity}" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
-        <TextBlock Text="{Binding DashRecoveryGuidance}" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,4,0,0"/>
-      </StackPanel>
-
-      <!-- eMASS Export -->
-      <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="12" Margin="0,0,0,8" Background="{DynamicResource SurfaceBrush}">
-        <StackPanel>
-          <TextBlock Text="eMASS Export" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
-          <WrapPanel Margin="0,0,0,8">
-            <TextBlock Text="Bundle:" Width="80" VerticalAlignment="Center"/>
-            <TextBox Width="520" Text="{Binding BundleRoot}" AutomationProperties.Name="Bundle root path"/>
-            <Button Content="Browse" MinWidth="80" Height="28" Padding="14,0" Margin="6,0,0,0"
-                    Command="{Binding BrowseBundleCommand}" AutomationProperties.Name="Browse for bundle"/>
-            <Button Content="Open" MinWidth="80" Height="28" Padding="14,0" Margin="6,0,0,0"
-                    Command="{Binding OpenBundleFolderCommand}" AutomationProperties.Name="Open bundle folder"/>
-          </WrapPanel>
-          <TextBlock Text="Recent Bundles" Margin="0,0,0,4"/>
-          <WrapPanel Margin="0,0,0,8">
-            <ComboBox Width="520" ItemsSource="{Binding RecentBundles}" SelectedItem="{Binding SelectedRecentBundle}"
-                      AutomationProperties.Name="Recent bundles"/>
-            <Button Content="Use" MinWidth="80" Height="28" Padding="14,0" Margin="6,0,0,0"
-                    Command="{Binding UseRecentBundleCommand}" AutomationProperties.Name="Use recent bundle"/>
-          </WrapPanel>
-          <WrapPanel Margin="0,0,0,8">
-            <Button Content="Export eMASS" MinWidth="140" Height="32" Padding="14,0" FontWeight="SemiBold"
-                    Command="{Binding ExportEmassCommand}" IsEnabled="{Binding ActionsEnabled}"
-                    AutomationProperties.Name="Export eMASS package"
-                    ToolTipService.ToolTip="Generate an eMASS-ready export package from current bundle findings."/>
-            <Button Content="Open Last Output" MinWidth="140" Height="32" Padding="14,0" Margin="10,0,0,0"
-                    Command="{Binding OpenLastOutputCommand}" AutomationProperties.Name="Open last output"
-                    ToolTipService.ToolTip="Open latest export output location."/>
-          </WrapPanel>
-          <TextBlock Text="{Binding ExportStatus}" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,4"/>
-          <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
-            <TextBlock Text="Last eMASS export:" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,8,0"/>
-            <TextBlock Text="{Binding DashLastExport}" Foreground="{DynamicResource TextMutedBrush}"/>
-          </StackPanel>
-          <TextBlock Text="{Binding ReportSummary}" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
-        </StackPanel>
-      </Border>
-
-      <!-- POA&M / CKL -->
-      <Grid Margin="0,0,0,8">
-        <Grid.ColumnDefinitions>
-          <ColumnDefinition Width="*"/>
-          <ColumnDefinition Width="16"/>
-          <ColumnDefinition Width="*"/>
-        </Grid.ColumnDefinitions>
-
-        <Border Grid.Column="0" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="12" Background="{DynamicResource SurfaceMutedBrush}">
-          <StackPanel>
-            <TextBlock Text="POA&amp;M Export" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
-            <WrapPanel Margin="0,0,0,8">
-              <TextBlock Text="System Name:" Width="100" VerticalAlignment="Center"/>
-              <TextBox Width="300" Text="{Binding PoamSystemName}" AutomationProperties.Name="POA&amp;M system name"
-                       ToolTipService.ToolTip="System name for the POA&amp;M export. Auto-filled with machine name."/>
-            </WrapPanel>
-            <Button Content="Export POA&amp;M" MinWidth="140" Height="32" Padding="14,0"
-                    Command="{Binding ExportPoamCommand}" IsEnabled="{Binding ActionsEnabled}"
-                    AutomationProperties.Name="Export POA&amp;M"/>
-            <TextBlock Text="{Binding PoamStatus}" Margin="0,8,0,0" Foreground="{DynamicResource TextMutedBrush}"/>
-          </StackPanel>
-        </Border>
-
-        <Border Grid.Column="2" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="12" Background="{DynamicResource SurfaceMutedBrush}">
-          <StackPanel>
-            <TextBlock Text="CKL (Checklist) Export" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
-            <WrapPanel Margin="0,0,0,8">
-              <TextBlock Text="Host Name:" Width="80" VerticalAlignment="Center"/>
-              <TextBox Width="180" Text="{Binding CklHostName}" AutomationProperties.Name="CKL host name"
-                       ToolTipService.ToolTip="Host name for the CKL file. Auto-filled with machine name."/>
-              <TextBlock Text="STIG ID:" Width="70" Margin="12,0,0,0" VerticalAlignment="Center"/>
-              <TextBox Width="180" Text="{Binding CklStigId}" AutomationProperties.Name="CKL STIG ID"/>
-            </WrapPanel>
-            <Button Content="Export CKL" MinWidth="140" Height="32" Padding="14,0"
-                    Command="{Binding ExportCklCommand}" IsEnabled="{Binding ActionsEnabled}"
-                    AutomationProperties.Name="Export CKL"/>
-            <TextBlock Text="{Binding CklStatus}" Margin="0,8,0,0" Foreground="{DynamicResource TextMutedBrush}"/>
-          </StackPanel>
-        </Border>
-      </Grid>
-
-      <!-- Audit Log -->
-      <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="12" Background="{DynamicResource SurfaceBrush}">
-        <StackPanel>
-          <TextBlock Text="Audit Log" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
-          <WrapPanel Margin="0,0,0,8">
-            <TextBlock Text="Action:" Width="60" VerticalAlignment="Center"/>
-            <TextBox Width="160" Text="{Binding AuditActionFilter}" AutomationProperties.Name="Audit action filter"/>
-            <TextBlock Text="Target:" Width="60" Margin="12,0,0,0" VerticalAlignment="Center"/>
-            <TextBox Width="200" Text="{Binding AuditTargetFilter}" AutomationProperties.Name="Audit target filter"/>
-            <TextBlock Text="Limit:" Width="50" Margin="12,0,0,0" VerticalAlignment="Center"/>
-            <TextBox Width="60" Text="{Binding AuditLimit}" AutomationProperties.Name="Audit result limit"/>
-            <Button Content="Query" MinWidth="80" Height="28" Padding="14,0" Margin="12,0,0,0"
-                    Command="{Binding AuditQueryCommand}" IsEnabled="{Binding ActionsEnabled}"
-                    AutomationProperties.Name="Query audit log"/>
-            <Button Content="Verify Integrity" MinWidth="120" Height="28" Padding="14,0" Margin="8,0,0,0"
-                    Command="{Binding AuditVerifyCommand}" IsEnabled="{Binding ActionsEnabled}"
-                    AutomationProperties.Name="Verify audit integrity"
-                    ToolTipService.ToolTip="Check the cryptographic chain integrity of the audit trail."/>
-          </WrapPanel>
-          <TextBlock Text="{Binding AuditVerifyResult}" FontWeight="SemiBold" Margin="0,0,0,8"/>
-          <ListView ItemsSource="{Binding AuditEntries}" MaxHeight="260">
-            <ListView.View>
-              <GridView>
-                <GridViewColumn Header="Id" DisplayMemberBinding="{Binding Id}"/>
-                <GridViewColumn Header="Time" DisplayMemberBinding="{Binding Timestamp}" Width="140"/>
-                <GridViewColumn Header="Act" DisplayMemberBinding="{Binding Action}"/>
-                <GridViewColumn Header="Target" DisplayMemberBinding="{Binding Target}" Width="180"/>
-                <GridViewColumn Header="Res" DisplayMemberBinding="{Binding Result}"/>
-                <GridViewColumn Header="User" DisplayMemberBinding="{Binding User}"/>
-                <GridViewColumn Header="Detail" DisplayMemberBinding="{Binding Detail}" Width="260"/>
-              </GridView>
-            </ListView.View>
-          </ListView>
-        </StackPanel>
-      </Border>
+      </TabControl>
 
     </StackPanel>
   </ScrollViewer>
