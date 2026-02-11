@@ -406,7 +406,11 @@ public sealed class ApplyRunner
     var outputTask = process.StandardOutput.ReadToEndAsync();
     var errorTask = process.StandardError.ReadToEndAsync();
     await Task.WhenAll(outputTask, errorTask).ConfigureAwait(false);
-    process.WaitForExit();
+    if (!process.WaitForExit(30000))
+    {
+      process.Kill();
+      throw new TimeoutException("Process did not exit within 30 seconds.");
+    }
 
     File.WriteAllText(stdout, await outputTask.ConfigureAwait(false));
     File.WriteAllText(stderr, await errorTask.ConfigureAwait(false));
@@ -466,7 +470,11 @@ public sealed class ApplyRunner
     var outputTask = process.StandardOutput.ReadToEndAsync();
     var errorTask = process.StandardError.ReadToEndAsync();
     await Task.WhenAll(outputTask, errorTask).ConfigureAwait(false);
-    process.WaitForExit();
+    if (!process.WaitForExit(30000))
+    {
+      process.Kill();
+      throw new TimeoutException("Process did not exit within 30 seconds.");
+    }
 
     File.WriteAllText(stdout, await outputTask.ConfigureAwait(false));
     File.WriteAllText(stderr, await errorTask.ConfigureAwait(false));
@@ -534,7 +542,11 @@ public sealed class ApplyRunner
     var outputTask = process.StandardOutput.ReadToEndAsync();
     var errorTask = process.StandardError.ReadToEndAsync();
     await Task.WhenAll(outputTask, errorTask).ConfigureAwait(false);
-    process.WaitForExit();
+    if (!process.WaitForExit(30000))
+    {
+      process.Kill();
+      throw new TimeoutException("Process did not exit within 30 seconds.");
+    }
 
     File.WriteAllText(stdout, await outputTask.ConfigureAwait(false));
     File.WriteAllText(stderr, await errorTask.ConfigureAwait(false));

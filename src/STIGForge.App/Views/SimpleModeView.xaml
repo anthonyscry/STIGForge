@@ -15,7 +15,8 @@
               <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="12" Margin="0,0,0,8" Background="{StaticResource SurfaceBrush}">
                 <StackPanel>
                   <TextBlock Text="Question 1: What mission are you running?" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
-                  <ComboBox Width="320" ItemsSource="{Binding MissionPresets}" SelectedItem="{Binding SelectedMissionPreset}"
+                  <ComboBox Width="320" TabIndex="10" ItemsSource="{Binding MissionPresets}" SelectedItem="{Binding SelectedMissionPreset}"
+                            AutomationProperties.Name="Mission preset"
                             ToolTipService.ToolTip="Select endpoint hardening, golden image bake, or SCCM PXE image bake preset."/>
                   <TextBlock Text="{Binding MissionPresetGuidance}" Margin="0,8,0,0" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap"/>
                 </StackPanel>
@@ -25,15 +26,18 @@
                 <StackPanel>
                   <TextBlock Text="Question 2: What content and profile?" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
                   <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                    <Button Content="Select Content..." Width="150" Height="30" Command="{Binding OpenContentPickerCommand}"
+                    <Button Content="Select Content..." Width="150" Height="30" TabIndex="20" Command="{Binding OpenContentPickerCommand}"
+                            AutomationProperties.Name="Select content packs"
                             ToolTipService.ToolTip="Pick which imported STIG/SCAP/GPO packs to include in this mission."/>
                     <TextBlock Text="{Binding SelectedContentSummary}" Margin="10,7,0,0" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap"/>
                   </StackPanel>
                   <StackPanel Orientation="Horizontal">
                     <TextBlock Text="Profile:" Width="60" VerticalAlignment="Center"/>
-                    <ComboBox Width="420" ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}" DisplayMemberPath="Name"
+                    <ComboBox Width="420" TabIndex="21" ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}" DisplayMemberPath="Name"
+                              AutomationProperties.Name="Hardening profile"
                               ToolTipService.ToolTip="Profile controls hardening mode, classification scope, and overlay selections."/>
-                    <Button Content="Save Profile" Width="120" Margin="8,0,0,0" Command="{Binding SaveProfileCommand}"
+                    <Button Content="Save Profile" Width="120" Margin="8,0,0,0" TabIndex="22" Command="{Binding SaveProfileCommand}"
+                            AutomationProperties.Name="Save profile"
                             ToolTipService.ToolTip="Persist current profile values before running."/>
                   </StackPanel>
                 </StackPanel>
@@ -44,29 +48,46 @@
                   <TextBlock Text="Question 3: Which scanner(s) will validate results?" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
                   <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                     <TextBlock Text="Toolkit root:" Width="140" VerticalAlignment="Center"/>
-                    <TextBox Width="520" Text="{Binding LocalToolkitRoot}" ToolTipService.ToolTip="Folder containing STIG_SCAP tooling archives or extracted tool folders."/>
-                    <Button Content="Activate" Width="80" Margin="6,0,0,0" Command="{Binding ActivateToolkitCommand}"
+                    <TextBox Width="520" TabIndex="30" Text="{Binding LocalToolkitRoot}"
+                             AutomationProperties.Name="Toolkit root folder"
+                             ToolTipService.ToolTip="Folder containing STIG_SCAP tooling archives or extracted tool folders."/>
+                    <Button Content="Activate" Width="80" Margin="6,0,0,0" TabIndex="31" Command="{Binding ActivateToolkitCommand}"
+                            AutomationProperties.Name="Activate toolkit"
                             ToolTipService.ToolTip="Auto-configure Evaluate-STIG, SCC, and PowerSTIG from the toolkit folder."/>
-                    <Button Content="Open" Width="80" Margin="6,0,0,0" Command="{Binding OpenToolkitRootCommand}"/>
+                    <Button Content="Open" Width="80" Margin="6,0,0,0" TabIndex="32" Command="{Binding OpenToolkitRootCommand}"
+                            AutomationProperties.Name="Open toolkit folder"
+                            ToolTipService.ToolTip="Open the toolkit root folder in Windows Explorer."/>
                   </StackPanel>
                   <TextBlock Text="{Binding ToolkitActivationStatus}" Margin="0,0,0,8" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap"/>
                   <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                     <TextBlock Text="Evaluate-STIG root:" Width="140" VerticalAlignment="Center"/>
-                    <TextBox Width="540" Text="{Binding EvaluateStigRoot}" ToolTipService.ToolTip="Folder containing Evaluate-STIG.ps1."/>
-                    <Button Content="Browse" Width="80" Margin="6,0,0,0" Command="{Binding BrowseEvaluateStigCommand}"/>
+                    <TextBox Width="540" TabIndex="33" Text="{Binding EvaluateStigRoot}"
+                             AutomationProperties.Name="Evaluate-STIG root path"
+                             ToolTipService.ToolTip="Folder containing Evaluate-STIG.ps1."/>
+                    <Button Content="Browse" Width="80" Margin="6,0,0,0" TabIndex="34" Command="{Binding BrowseEvaluateStigCommand}"
+                            AutomationProperties.Name="Browse for Evaluate-STIG"
+                            ToolTipService.ToolTip="Select the folder containing Evaluate-STIG.ps1."/>
                   </StackPanel>
                   <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                     <TextBlock Text="Evaluate args:" Width="140" VerticalAlignment="Center"/>
-                    <TextBox Width="626" Text="{Binding EvaluateStigArgs}" ToolTipService.ToolTip="Optional Evaluate-STIG arguments, including answer-file switches."/>
+                    <TextBox Width="626" TabIndex="35" Text="{Binding EvaluateStigArgs}"
+                             AutomationProperties.Name="Evaluate-STIG arguments"
+                             ToolTipService.ToolTip="Optional Evaluate-STIG arguments, including answer-file switches."/>
                   </StackPanel>
                   <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                     <TextBlock Text="SCAP command:" Width="140" VerticalAlignment="Center"/>
-                    <TextBox Width="540" Text="{Binding ScapCommandPath}" ToolTipService.ToolTip="Path to SCAP/SCC executable."/>
-                    <Button Content="Browse" Width="80" Margin="6,0,0,0" Command="{Binding BrowseScapCommandCommand}"/>
+                    <TextBox Width="540" TabIndex="36" Text="{Binding ScapCommandPath}"
+                             AutomationProperties.Name="SCAP command path"
+                             ToolTipService.ToolTip="Path to SCAP/SCC executable."/>
+                    <Button Content="Browse" Width="80" Margin="6,0,0,0" TabIndex="37" Command="{Binding BrowseScapCommandCommand}"
+                            AutomationProperties.Name="Browse for SCAP command"
+                            ToolTipService.ToolTip="Select the SCAP/SCC executable."/>
                   </StackPanel>
                   <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                     <TextBlock Text="SCAP args:" Width="140" VerticalAlignment="Center"/>
-                    <TextBox Width="626" Text="{Binding ScapArgs}" ToolTipService.ToolTip="Arguments that make the tool emit CKL output into the verify folder."/>
+                    <TextBox Width="626" TabIndex="38" Text="{Binding ScapArgs}"
+                             AutomationProperties.Name="SCAP arguments"
+                             ToolTipService.ToolTip="Arguments that make the tool emit CKL output into the verify folder."/>
                   </StackPanel>
                 </StackPanel>
               </Border>
@@ -75,14 +96,17 @@
                 <StackPanel>
                   <TextBlock Text="Question 4: What is your safety posture?" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
                   <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                    <CheckBox Content="Skip snapshot (high risk)" IsChecked="{Binding ApplySkipSnapshot}" Margin="0,0,16,0"
+                    <CheckBox Content="Skip snapshot (high risk)" IsChecked="{Binding ApplySkipSnapshot}" Margin="0,0,16,0" TabIndex="40"
+                              AutomationProperties.Name="Skip snapshot"
                               ToolTipService.ToolTip="Use only for controlled image bake workflows with external rollback controls."/>
-                    <CheckBox Content="Break-glass acknowledged" IsChecked="{Binding BreakGlassAcknowledged}"
+                    <CheckBox Content="Break-glass acknowledged" IsChecked="{Binding BreakGlassAcknowledged}" TabIndex="41"
+                              AutomationProperties.Name="Break-glass acknowledged"
                               ToolTipService.ToolTip="Required when snapshot is skipped."/>
                   </StackPanel>
                   <StackPanel Orientation="Horizontal">
                     <TextBlock Text="Break-glass reason:" Width="140" VerticalAlignment="Center"/>
-                    <TextBox Width="626" Text="{Binding BreakGlassReason}" IsEnabled="{Binding BreakGlassAcknowledged}"
+                    <TextBox Width="626" TabIndex="42" Text="{Binding BreakGlassReason}" IsEnabled="{Binding BreakGlassAcknowledged}"
+                             AutomationProperties.Name="Break-glass reason"
                              ToolTipService.ToolTip="Specific operator justification recorded in audit log."/>
                   </StackPanel>
                 </StackPanel>
@@ -91,16 +115,25 @@
               <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="12" Background="{StaticResource SurfaceBrush}">
                 <StackPanel>
                   <TextBlock Text="Question 5: Ready to run end-to-end?" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
-                  <CheckBox Content="Build a new bundle before running" IsChecked="{Binding SimpleBuildBeforeRun}" Margin="0,0,0,8"
+                  <CheckBox Content="Build a new bundle before running" IsChecked="{Binding SimpleBuildBeforeRun}" Margin="0,0,0,8" TabIndex="50"
+                            AutomationProperties.Name="Build bundle before run"
                             ToolTipService.ToolTip="Recommended for fresh runs. Uncheck only when reusing an existing bundle path."/>
                   <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                    <Button Content="Run Simple Mission" Width="180" Height="36" FontWeight="SemiBold" Command="{Binding RunSimpleMissionCommand}" IsEnabled="{Binding ActionsEnabled}"
+                    <Button Content="Run Simple Mission" Width="180" Height="36" FontWeight="SemiBold" TabIndex="51"
+                            Command="{Binding RunSimpleMissionCommand}" IsEnabled="{Binding ActionsEnabled}"
+                            AutomationProperties.Name="Run simple mission"
                             ToolTipService.ToolTip="Runs build (optional), apply, verify, and export with safe defaults."/>
-                    <Button Content="Open Help" Width="110" Margin="8,0,0,0" Command="{Binding ShowHelpCommand}"/>
-                    <Button Content="Open Bundle" Width="110" Margin="8,0,0,0" Command="{Binding OpenBundleFolderCommand}"/>
+                    <Button Content="Open Help" Width="110" Margin="8,0,0,0" TabIndex="52" Command="{Binding ShowHelpCommand}"
+                            AutomationProperties.Name="Open help"
+                            ToolTipService.ToolTip="Open the full SOP and workflow guide."/>
+                    <Button Content="Open Bundle" Width="110" Margin="8,0,0,0" TabIndex="53" Command="{Binding OpenBundleFolderCommand}"
+                            AutomationProperties.Name="Open bundle folder"
+                            ToolTipService.ToolTip="Open the active bundle folder in Windows Explorer."/>
                   </StackPanel>
-                  <TextBlock Text="{Binding StatusText}" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap"/>
-                  <TextBlock Text="{Binding OrchStatus}" Margin="0,4,0,0" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap"/>
+                  <TextBlock Text="{Binding StatusText}" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap"
+                             ToolTipService.ToolTip="{Binding StatusText}"/>
+                  <TextBlock Text="{Binding OrchStatus}" Margin="0,4,0,0" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap"
+                             ToolTipService.ToolTip="{Binding OrchStatus}"/>
                 </StackPanel>
               </Border>
             </StackPanel>

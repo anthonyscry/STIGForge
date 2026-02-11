@@ -30,5 +30,26 @@
     "Microsoft.NET.Test.Sdk",
     "Microsoft.NETFramework.ReferenceAssemblies"
   ],
-  "localPackageIntelligence": []
+  "localPackageIntelligence": [
+    { "packageId": "CommunityToolkit.Mvvm", "version": "8.4.0", "licenseExpression": "MIT", "licenseUrl": "https://licenses.nuget.org/MIT" },
+    { "packageId": "coverlet.collector", "version": "6.0.4", "licenseExpression": "MIT", "licenseUrl": "https://licenses.nuget.org/MIT" },
+    { "packageId": "Dapper", "version": "2.1.66", "licenseExpression": "Apache-2.0", "licenseUrl": "https://licenses.nuget.org/Apache-2.0" },
+    { "packageId": "Microsoft.Data.Sqlite", "version": "10.0.2", "licenseExpression": "MIT", "licenseUrl": "https://licenses.nuget.org/MIT" },
+    { "packageId": "Microsoft.Extensions.Configuration.Json", "version": "10.0.2", "licenseExpression": "MIT", "licenseUrl": "https://licenses.nuget.org/MIT" },
+    { "packageId": "Microsoft.Extensions.Hosting", "version": "10.0.2", "licenseExpression": "MIT", "licenseUrl": "https://licenses.nuget.org/MIT" },
+    { "packageId": "Microsoft.Extensions.Logging", "version": "10.0.0", "licenseExpression": "MIT", "licenseUrl": "https://licenses.nuget.org/MIT" },
+    { "packageId": "Microsoft.Extensions.Logging.Abstractions", "version": "10.0.0", "licenseExpression": "MIT", "licenseUrl": "https://licenses.nuget.org/MIT" },
+    { "packageId": "Microsoft.Extensions.Logging.Abstractions", "version": "10.0.3", "licenseExpression": "MIT", "licenseUrl": "https://licenses.nuget.org/MIT" },
+    { "packageId": "Microsoft.Extensions.Logging.Console", "version": "10.0.3", "licenseExpression": "MIT", "licenseUrl": "https://licenses.nuget.org/MIT" },
+    { "packageId": "Moq", "version": "4.20.72", "licenseExpression": "BSD-3-Clause", "licenseUrl": "https://licenses.nuget.org/BSD-3-Clause" },
+    { "packageId": "Serilog", "version": "4.3.0", "licenseExpression": "Apache-2.0", "licenseUrl": "https://licenses.nuget.org/Apache-2.0" },
+    { "packageId": "Serilog.Extensions.Hosting", "version": "10.0.0", "licenseExpression": "Apache-2.0", "licenseUrl": "https://licenses.nuget.org/Apache-2.0" },
+    { "packageId": "Serilog.Sinks.File", "version": "7.0.0", "licenseExpression": "Apache-2.0", "licenseUrl": "https://licenses.nuget.org/Apache-2.0" },
+    { "packageId": "System.CommandLine", "version": "2.0.0-beta4.22272.1", "licenseExpression": "MIT", "licenseUrl": "https://licenses.nuget.org/MIT" },
+    { "packageId": "System.Security.Cryptography.ProtectedData", "version": "9.0.5", "licenseExpression": "MIT", "licenseUrl": "https://licenses.nuget.org/MIT" },
+    { "packageId": "System.Text.Json", "version": "10.0.2", "licenseExpression": "MIT", "licenseUrl": "https://licenses.nuget.org/MIT" },
+    { "packageId": "System.Text.Json", "version": "8.0.5", "licenseExpression": "MIT", "licenseUrl": "https://licenses.nuget.org/MIT" },
+    { "packageId": "xunit", "version": "2.9.3", "licenseExpression": "Apache-2.0", "licenseUrl": "https://licenses.nuget.org/Apache-2.0" },
+    { "packageId": "xunit.runner.visualstudio", "version": "3.1.5", "licenseExpression": "Apache-2.0", "licenseUrl": "https://licenses.nuget.org/Apache-2.0" }
+  ]
 }

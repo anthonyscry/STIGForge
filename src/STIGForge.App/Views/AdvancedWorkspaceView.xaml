@@ -19,7 +19,9 @@
                       ToolTipService.ToolTip="Import SCAP benchmarks — single or NIWC Atlantic bundle. Auto-detects bundles."/>
               <Button Content="Import GPO/LGPO..." Width="160" Height="30" Margin="0,0,8,0" Command="{Binding ImportGpoPackageCommand}"
                       ToolTipService.ToolTip="Import GPO/LGPO packages — ADMX templates, local and domain controller group policy."/>
-              <Button Content="Compare Packs..." Width="150" Height="30" Command="{Binding ComparePacksCommand}" />
+              <Button Content="Compare Packs..." Width="150" Height="30" Command="{Binding ComparePacksCommand}"
+                      AutomationProperties.Name="Compare content packs"
+                      ToolTipService.ToolTip="Compare two content packs to see added, removed, or changed controls."/>
             </WrapPanel>
             <TextBlock Text="{Binding ImportHint}" Foreground="{StaticResource TextMutedBrush}"/>
           </StackPanel>
@@ -68,17 +70,27 @@
               <TextBlock Text="{Binding PackDetailRoot}" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap" />
 
               <WrapPanel Margin="0,8,0,0">
-                <Button Content="Open Pack" Width="120" Command="{Binding OpenPackFolderCommand}" />
-                <Button Content="Export Map" Width="120" Margin="6,0,0,0" Command="{Binding ExportPowerStigMapCommand}" />
-                <Button Content="Delete Pack" Width="100" Margin="6,0,0,0" Command="{Binding DeleteSelectedPackCommand}" Foreground="{StaticResource DangerBrush}"/>
+                <Button Content="Open Pack" Width="120" Command="{Binding OpenPackFolderCommand}"
+                        AutomationProperties.Name="Open pack folder"
+                        ToolTipService.ToolTip="Open the selected content pack folder in Windows Explorer."/>
+                <Button Content="Export Map" Width="120" Margin="6,0,0,0" Command="{Binding ExportPowerStigMapCommand}"
+                        AutomationProperties.Name="Export PowerSTIG map"
+                        ToolTipService.ToolTip="Export a PowerSTIG control-to-rule mapping file for the selected pack."/>
+                <Button Content="Delete Pack" Width="100" Margin="6,0,0,0" Command="{Binding DeleteSelectedPackCommand}" Foreground="{StaticResource DangerBrush}"
+                        AutomationProperties.Name="Delete selected pack"
+                        ToolTipService.ToolTip="Permanently remove the selected content pack from local storage."/>
               </WrapPanel>
 
               <Separator Margin="0,12,0,8"/>
               <TextBlock Text="Managed Import Library" FontWeight="SemiBold"/>
               <TextBlock Text="{Binding ImportLibraryStatus}" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,4,0,0"/>
               <WrapPanel Margin="0,8,0,0">
-                <Button Content="Refresh Library" Width="120" Command="{Binding RefreshImportLibraryCommand}"/>
-                <Button Content="Open Selected" Width="120" Margin="6,0,0,0" Command="{Binding OpenSelectedLibraryItemCommand}"/>
+                <Button Content="Refresh Library" Width="120" Command="{Binding RefreshImportLibraryCommand}"
+                        AutomationProperties.Name="Refresh import library"
+                        ToolTipService.ToolTip="Re-scan the import library for new or changed items."/>
+                <Button Content="Open Selected" Width="120" Margin="6,0,0,0" Command="{Binding OpenSelectedLibraryItemCommand}"
+                        AutomationProperties.Name="Open selected library item"
+                        ToolTipService.ToolTip="Open the selected library item folder in Windows Explorer."/>
               </WrapPanel>
 
               <TabControl Margin="0,8,0,0" Height="280">
@@ -174,14 +186,24 @@
               </ItemsControl.ItemTemplate>
             </ItemsControl>
             <WrapPanel Margin="0,8,0,0">
-              <Button Content="Edit Overlays" Width="120" Command="{Binding OpenOverlayEditorCommand}" />
-              <Button Content="Rebase Overlay" Width="120" Margin="6,0,0,0" Command="{Binding RebaseOverlayCommand}" />
-              <Button Content="Refresh" Width="90" Margin="6,0,0,0" Command="{Binding RefreshOverlaysCommand}" />
+              <Button Content="Edit Overlays" Width="120" Command="{Binding OpenOverlayEditorCommand}"
+                      AutomationProperties.Name="Edit overlays"
+                      ToolTipService.ToolTip="Open the overlay editor to adjust rule-level overrides."/>
+              <Button Content="Rebase Overlay" Width="120" Margin="6,0,0,0" Command="{Binding RebaseOverlayCommand}"
+                      AutomationProperties.Name="Rebase overlay"
+                      ToolTipService.ToolTip="Rebase an overlay onto a newer content pack version."/>
+              <Button Content="Refresh" Width="90" Margin="6,0,0,0" Command="{Binding RefreshOverlaysCommand}"
+                      AutomationProperties.Name="Refresh overlays"
+                      ToolTipService.ToolTip="Reload the overlay list from disk."/>
             </WrapPanel>
 
             <WrapPanel Margin="0,10,0,0">
-              <Button Content="Save Profile" Width="120" Command="{Binding SaveProfileCommand}" />
-              <Button Content="Delete Profile" Width="110" Margin="6,0,0,0" Command="{Binding DeleteSelectedProfileCommand}" Foreground="{StaticResource DangerBrush}"/>
+              <Button Content="Save Profile" Width="120" Command="{Binding SaveProfileCommand}"
+                      AutomationProperties.Name="Save profile"
+                      ToolTipService.ToolTip="Save the current profile settings to disk."/>
+              <Button Content="Delete Profile" Width="110" Margin="6,0,0,0" Command="{Binding DeleteSelectedProfileCommand}" Foreground="{StaticResource DangerBrush}"
+                      AutomationProperties.Name="Delete selected profile"
+                      ToolTipService.ToolTip="Permanently remove the selected profile."/>
             </WrapPanel>
           </StackPanel>
         </Grid>
@@ -198,19 +220,27 @@
               <ComboBox Width="260" Margin="6,0,0,0" ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}"
                         DisplayMemberPath="Name" />
             </WrapPanel>
-            <Button Content="Build Bundle" Width="140" Command="{Binding BuildBundleCommand}" IsEnabled="{Binding ActionsEnabled}" />
+            <Button Content="Build Bundle" Width="140" Command="{Binding BuildBundleCommand}" IsEnabled="{Binding ActionsEnabled}"
+                    AutomationProperties.Name="Build bundle"
+                    ToolTipService.ToolTip="Generate offline Apply/Verify/Manual/Evidence/Reports artifacts for this pack/profile pair."/>
             <TextBlock Text="Build uses release-age automation gate; see Reports/automation_gate.json in the bundle."
                        Margin="0,8,0,0" TextWrapping="Wrap" />
             <TextBlock Text="{Binding BuildGateStatus}" Margin="0,6,0,0" Foreground="{StaticResource TextMutedBrush}" />
             <WrapPanel Margin="0,6,0,0">
-              <Button Content="Open Gate" Width="100" Command="{Binding OpenAutomationGateCommand}" IsEnabled="{Binding ActionsEnabled}" />
+              <Button Content="Open Gate" Width="100" Command="{Binding OpenAutomationGateCommand}" IsEnabled="{Binding ActionsEnabled}"
+                      AutomationProperties.Name="Open automation gate report"
+                      ToolTipService.ToolTip="Open the automation gate JSON report from the bundle."/>
               <TextBlock Text="{Binding AutomationGatePath}" Foreground="{StaticResource TextMutedBrush}" Margin="6,0,0,0" />
             </WrapPanel>
 
             <TextBlock Text="Recent Bundles" Margin="0,10,0,0" />
             <WrapPanel>
-              <ComboBox Width="520" ItemsSource="{Binding RecentBundles}" SelectedItem="{Binding SelectedRecentBundle}" />
-              <Button Content="Use" Width="80" Margin="6,0,0,0" Command="{Binding UseRecentBundleCommand}" />
+              <ComboBox Width="520" ItemsSource="{Binding RecentBundles}" SelectedItem="{Binding SelectedRecentBundle}"
+                        AutomationProperties.Name="Recent bundles"
+                        ToolTipService.ToolTip="Select a previously built bundle to reuse."/>
+              <Button Content="Use" Width="80" Margin="6,0,0,0" Command="{Binding UseRecentBundleCommand}"
+                      AutomationProperties.Name="Use selected bundle"
+                      ToolTipService.ToolTip="Set the selected recent bundle as the active bundle path."/>
             </WrapPanel>
           </StackPanel>
         </Grid>
@@ -290,7 +320,9 @@
               <Button Content="Browse" Width="80" Command="{Binding BrowseBundleCommand}" />
               <Button Content="Open" Width="80" Margin="6,0,0,0" Command="{Binding OpenBundleFolderCommand}" />
             </WrapPanel>
-            <Button Content="Run Apply" Width="140" Command="{Binding ApplyRunCommand}" />
+            <Button Content="Run Apply" Width="140" Command="{Binding ApplyRunCommand}" IsEnabled="{Binding ActionsEnabled}"
+                    AutomationProperties.Name="Run apply phase"
+                    ToolTipService.ToolTip="Execute RunApply.ps1 from the bundle Apply folder."/>
             <TextBlock Text="Applies using bundle Apply/RunApply.ps1" Margin="0,8,0,0" />
             <TextBlock Text="{Binding ApplyStatus}" Margin="0,6,0,0" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap" />
             <WrapPanel Margin="0,6,0,0">
@@ -342,7 +374,9 @@
               <TextBlock Text="{Binding LastOutputPath}" Foreground="{StaticResource TextMutedBrush}" />
               <Button Content="Open" Width="80" Margin="6,0,0,0" Command="{Binding OpenLastOutputCommand}" />
             </WrapPanel>
-            <Button Content="Refresh Overlap" Width="140" Margin="0,8,0,0" Command="{Binding RefreshOverlapCommand}" />
+            <Button Content="Refresh Overlap" Width="140" Margin="0,8,0,0" Command="{Binding RefreshOverlapCommand}"
+                    AutomationProperties.Name="Refresh overlap analysis"
+                    ToolTipService.ToolTip="Recalculate source overlap between verify results from different scanners."/>
             <ListView ItemsSource="{Binding OverlapItems}" Height="160" Margin="0,6,0,0">
               <ListView.View>
                 <GridView>

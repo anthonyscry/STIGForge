@@ -55,13 +55,11 @@ public sealed class ProcessRunner : IProcessRunner
             await tcs.Task.ConfigureAwait(false);
         }
 
-        // Wait for output streams to finish
-        // In strictly correct implementation, we should wait for output streams too, 
-        // but Process.WaitForExit() (or Exited event) usually implies they are flushing.
-        // Actually, WaitForExit() without args waits for streams. The Exited event might happen before streams are closed?
-        // Let's rely on the fact that we await the process exit. 
-        // For robustness, usually one calls WaitForExit() after the task completes to ensure buffers are flushed.
-        process.WaitForExit();
+        if (!process.WaitForExit(30000))
+        {
+            process.Kill();
+            throw new TimeoutException("Process did not exit within 30 seconds.");
+        }
 
         return new ProcessResult
         {
