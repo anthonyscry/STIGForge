@@ -670,9 +670,42 @@ public sealed class ContentPackImporter
     {
         var baseName = Path.GetFileNameWithoutExtension(zipPath);
         if (string.IsNullOrWhiteSpace(baseName))
-            baseName = "Pack";
+            return prefix + "_Pack_" + DateTimeOffset.Now.ToString("yyyyMMdd_HHmmss");
 
-        return prefix + "_" + baseName + "_" + DateTimeOffset.Now.ToString("yyyyMMdd_HHmmss");
+        baseName = CleanDisaPackName(baseName);
+        return string.IsNullOrWhiteSpace(baseName)
+            ? prefix + "_Pack_" + DateTimeOffset.Now.ToString("yyyyMMdd_HHmmss")
+            : baseName;
+    }
+
+    private static string CleanDisaPackName(string raw)
+    {
+        var name = raw
+            .Replace("_", " ")
+            .Replace("-", " ");
+
+        foreach (var strip in new[] { "U MS ", "U ", "Imported " })
+        {
+            if (name.StartsWith(strip, StringComparison.OrdinalIgnoreCase))
+                name = name.Substring(strip.Length);
+        }
+
+        var trimSuffixes = new[] { " STIG", " Benchmark", " Manual" };
+        var suffixFound = "";
+        foreach (var s in trimSuffixes)
+        {
+            var idx = name.LastIndexOf(s, StringComparison.OrdinalIgnoreCase);
+            if (idx > 0) { suffixFound = s.Trim(); name = name.Substring(0, idx); break; }
+        }
+
+        name = System.Text.RegularExpressions.Regex.Replace(name, @"\s*V\d+R\d+\s*", " ").Trim();
+        name = System.Text.RegularExpressions.Regex.Replace(name, @"\s*\d{8} \d{6}\s*$", "").Trim();
+        name = System.Text.RegularExpressions.Regex.Replace(name, @"\s+", " ");
+
+        if (!string.IsNullOrWhiteSpace(suffixFound))
+            name = name + " " + suffixFound;
+
+        return name.Trim();
     }
 
     private static void ExtractZipSafely(string zipPath, string destinationRoot, CancellationToken ct)

@@ -1063,7 +1063,8 @@ public partial class MainViewModel
 
   private static readonly string[] UniversalPackKeywords = new[]
   {
-    "Defender", "Firewall", "Microsoft Edge", ".NET Framework", "DotNet"
+    "Defender", "Windows Firewall", "Firewall with Advanced Security",
+    "Microsoft Edge", ".NET Framework", "DotNet"
   };
 
   private async Task<bool> IsPackApplicableAsync(ContentPack pack, MachineInfo info)

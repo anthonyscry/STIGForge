@@ -85,7 +85,7 @@
                       Command="{Binding BrowsePowerStigModuleCommand}"
                       AutomationProperties.Name="Browse for PowerSTIG module"/>
             </WrapPanel>
-            <WrapPanel Margin="0,0,0,6">
+            <WrapPanel Margin="0,0,0,2">
               <TextBlock Text="Data file:" Width="130" VerticalAlignment="Center"/>
               <TextBox Width="520" Text="{Binding PowerStigDataFile}"
                        AutomationProperties.Name="PowerSTIG data file"
@@ -94,6 +94,8 @@
                       Command="{Binding BrowsePowerStigDataCommand}"
                       AutomationProperties.Name="Browse for PowerSTIG data"/>
             </WrapPanel>
+            <TextBlock Text="Leave empty to auto-generate from bundle controls and profile overrides. Only set this if you have a custom .psd1 file."
+                       Foreground="{DynamicResource TextMutedBrush}" FontSize="11" Margin="130,0,0,6"/>
             <WrapPanel Margin="0,0,0,6">
               <TextBlock Text="Output path:" Width="130" VerticalAlignment="Center"/>
               <TextBox Width="420" Text="{Binding PowerStigOutputPath}"
