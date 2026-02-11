@@ -200,7 +200,11 @@ public sealed class RebootCoordinator
             var outputTask = process.StandardOutput.ReadToEndAsync();
             var errorTask = process.StandardError.ReadToEndAsync();
             await Task.WhenAll(outputTask, errorTask).ConfigureAwait(false);
-            process.WaitForExit();
+            if (!process.WaitForExit(30000))
+            {
+                process.Kill();
+                throw new TimeoutException("Process did not exit within 30 seconds.");
+            }
 
             var output = (await outputTask.ConfigureAwait(false)).Trim();
             if (!string.IsNullOrEmpty(output) && output.Equals("True", StringComparison.OrdinalIgnoreCase))
@@ -303,12 +307,19 @@ public sealed class RebootCoordinator
         {
             var message = "STIGForge apply requires reboot. Resuming after restart...";
             var arguments = $"/r /t {delaySeconds} /c \"{message}\"";
+            var shutdownPath = Path.Combine(Environment.SystemDirectory, "shutdown.exe");
+
+            if (!File.Exists(shutdownPath))
+            {
+                _logger.LogError("shutdown.exe not found at {Path}", shutdownPath);
+                return false;
+            }
 
             _logger.LogDebug("Executing: shutdown.exe {Arguments}", arguments);
 
             var psi = new ProcessStartInfo
             {
-                FileName = "shutdown.exe",
+                FileName = shutdownPath,
                 Arguments = arguments,
                 UseShellExecute = true,
                 CreateNoWindow = true

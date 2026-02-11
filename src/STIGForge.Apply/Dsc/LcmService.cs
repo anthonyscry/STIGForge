@@ -215,7 +215,11 @@ public sealed class LcmService
         var outputTask = process.StandardOutput.ReadToEndAsync();
         var errorTask = process.StandardError.ReadToEndAsync();
         await Task.WhenAll(outputTask, errorTask).ConfigureAwait(false);
-        process.WaitForExit();
+        if (!process.WaitForExit(30000))
+        {
+            process.Kill();
+            throw new TimeoutException("Process did not exit within 30 seconds.");
+        }
 
         var output = await outputTask.ConfigureAwait(false);
         var error = await errorTask.ConfigureAwait(false);

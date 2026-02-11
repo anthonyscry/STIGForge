@@ -104,7 +104,8 @@ public partial class MainViewModel
 
   private void RefreshDashboard()
   {
-    DashHasBundle = !string.IsNullOrWhiteSpace(BundleRoot) && Directory.Exists(BundleRoot);
+    var bundleRoot = BundleRoot;
+    DashHasBundle = !string.IsNullOrWhiteSpace(bundleRoot) && Directory.Exists(bundleRoot);
     if (!DashHasBundle)
     {
       DashBundleLabel = "(no bundle selected)";
@@ -129,10 +130,11 @@ public partial class MainViewModel
       return;
     }
 
-    DashBundleLabel = Path.GetFileName(BundleRoot);
+    var bundlePath = bundleRoot!;
+    DashBundleLabel = Path.GetFileName(bundlePath);
     try
     {
-      var summary = _bundleMissionSummary.LoadSummary(BundleRoot);
+      var summary = _bundleMissionSummary.LoadSummary(bundlePath);
       DashPackLabel = summary.PackName;
       DashProfileLabel = summary.ProfileName;
 
@@ -155,7 +157,7 @@ public partial class MainViewModel
         ? $"{(double)summary.Manual.AnsweredCount / summary.Manual.TotalCount:P0}"
         : "—";
       DashMissionSeverity = BuildMissionSeverityLine(summary);
-      DashRecoveryGuidance = BuildMissionRecoveryGuidance(summary, BundleRoot);
+      DashRecoveryGuidance = BuildMissionRecoveryGuidance(summary, bundlePath);
     }
     catch (Exception ex)
     {
@@ -179,7 +181,7 @@ public partial class MainViewModel
     }
 
     DashLastVerify = "";
-    var verifyDir = Path.Combine(BundleRoot, "Verify");
+    var verifyDir = Path.Combine(bundlePath, "Verify");
     if (Directory.Exists(verifyDir))
     {
       try
@@ -202,7 +204,7 @@ public partial class MainViewModel
     }
 
     // Check for eMASS export
-    var emassDir = Path.Combine(BundleRoot, "Export");
+    var emassDir = Path.Combine(bundlePath, "Export");
     if (Directory.Exists(emassDir))
     {
       try
@@ -389,11 +391,19 @@ public partial class MainViewModel
       return;
     }
 
-    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+    try
     {
-      FileName = root,
-      UseShellExecute = true
-    });
+      System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+      {
+        FileName = root,
+        UseShellExecute = true
+      });
+    }
+    catch (Exception ex)
+    {
+      StatusText = "Failed to open toolkit root: " + ex.Message;
+      ToolkitActivationStatus = StatusText;
+    }
   }
 
   [RelayCommand]
@@ -402,11 +412,24 @@ public partial class MainViewModel
     if (string.IsNullOrWhiteSpace(BundleRoot)) return;
     var path = Directory.Exists(BundleRoot) ? BundleRoot : Path.GetDirectoryName(BundleRoot);
     if (string.IsNullOrWhiteSpace(path)) return;
-    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+    if (!Directory.Exists(path))
     {
-      FileName = path,
-      UseShellExecute = true
-    });
+      StatusText = "Bundle folder does not exist: " + path;
+      return;
+    }
+
+    try
+    {
+      System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+      {
+        FileName = path,
+        UseShellExecute = true
+      });
+    }
+    catch (Exception ex)
+    {
+      StatusText = "Failed to open bundle folder: " + ex.Message;
+    }
   }
 
   [RelayCommand]
@@ -418,11 +441,18 @@ public partial class MainViewModel
       path = Path.GetDirectoryName(path) ?? path;
     if (Directory.Exists(path))
     {
-      System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+      try
       {
-        FileName = path,
-        UseShellExecute = true
-      });
+        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+        {
+          FileName = path,
+          UseShellExecute = true
+        });
+      }
+      catch (Exception ex)
+      {
+        StatusText = "Failed to open output folder: " + ex.Message;
+      }
     }
   }
 
@@ -435,11 +465,18 @@ public partial class MainViewModel
       path = Path.GetDirectoryName(path) ?? path;
     if (Directory.Exists(path))
     {
-      System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+      try
       {
-        FileName = path,
-        UseShellExecute = true
-      });
+        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+        {
+          FileName = path,
+          UseShellExecute = true
+        });
+      }
+      catch (Exception ex)
+      {
+        StatusText = "Failed to open automation gate folder: " + ex.Message;
+      }
     }
   }
 

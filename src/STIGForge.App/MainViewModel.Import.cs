@@ -184,11 +184,18 @@ public partial class MainViewModel
       return;
     }
 
-    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+    try
     {
-      FileName = selected.RootPath,
-      UseShellExecute = true
-    });
+      System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+      {
+        FileName = selected.RootPath,
+        UseShellExecute = true
+      });
+    }
+    catch (Exception ex)
+    {
+      StatusText = "Failed to open library path: " + ex.Message;
+    }
   }
 
   private string ResolvePackFormat(ContentPack pack)
@@ -547,11 +554,18 @@ public partial class MainViewModel
   {
     if (string.IsNullOrWhiteSpace(PackDetailRoot)) return;
     if (!Directory.Exists(PackDetailRoot)) return;
-    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+    try
     {
-      FileName = PackDetailRoot,
-      UseShellExecute = true
-    });
+      System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+      {
+        FileName = PackDetailRoot,
+        UseShellExecute = true
+      });
+    }
+    catch (Exception ex)
+    {
+      StatusText = "Failed to open pack folder: " + ex.Message;
+    }
   }
 
   private void ApplyOverlaySelection(Profile profile)

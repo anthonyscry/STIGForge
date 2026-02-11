@@ -179,11 +179,18 @@ public partial class MainViewModel
       return;
     }
 
-    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+    try
     {
-      FileName = folder,
-      UseShellExecute = true
-    });
+      System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+      {
+        FileName = folder,
+        UseShellExecute = true
+      });
+    }
+    catch (Exception ex)
+    {
+      EvidenceStatus = "Failed to open evidence folder: " + ex.Message;
+    }
   }
 
   [RelayCommand]

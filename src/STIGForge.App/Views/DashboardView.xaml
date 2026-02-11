@@ -30,8 +30,10 @@
                   <TextBlock Text="{Binding DashProfileLabel}" Foreground="{StaticResource TextMutedBrush}"/>
                 </StackPanel>
               </StackPanel>
-              <Button Grid.Column="1" Content="Refresh" Width="80" Height="28" VerticalAlignment="Top"
-                      Command="{Binding DashRefreshCommand}"/>
+              <Button Grid.Column="1" Content="Refresh" Width="80" Height="28" VerticalAlignment="Top" TabIndex="10"
+                      Command="{Binding DashRefreshCommand}"
+                      AutomationProperties.Name="Refresh dashboard"
+                      ToolTipService.ToolTip="Reload bundle status, control totals, and compliance metrics."/>
             </Grid>
           </Border>
 
@@ -111,11 +113,21 @@
             <StackPanel>
               <TextBlock Text="Quick Actions" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
               <StackPanel Orientation="Horizontal">
-                <Button Content="Run Apply" Width="120" Height="32" Command="{Binding ApplyRunCommand}" IsEnabled="{Binding ActionsEnabled}" Margin="0,0,8,0"/>
-                <Button Content="Run Verify" Width="120" Height="32" Command="{Binding VerifyRunCommand}" IsEnabled="{Binding ActionsEnabled}" Margin="0,0,8,0"/>
-                <Button Content="Export eMASS" Width="120" Height="32" Command="{Binding ExportEmassCommand}" IsEnabled="{Binding ActionsEnabled}" Margin="0,0,8,0"/>
-                <Button Content="Launch Wizard" Width="120" Height="32" Command="{Binding LaunchManualWizardCommand}" IsEnabled="{Binding ActionsEnabled}" Margin="0,0,8,0"/>
-                <Button Content="Compare Packs" Width="120" Height="32" Command="{Binding ComparePacksCommand}" Margin="0,0,8,0"/>
+                <Button Content="Run Apply" Width="120" Height="32" TabIndex="20" Command="{Binding ApplyRunCommand}" IsEnabled="{Binding ActionsEnabled}" Margin="0,0,8,0"
+                        AutomationProperties.Name="Run apply"
+                        ToolTipService.ToolTip="Execute the apply phase on the active bundle (snapshot + hardening scripts)."/>
+                <Button Content="Run Verify" Width="120" Height="32" TabIndex="21" Command="{Binding VerifyRunCommand}" IsEnabled="{Binding ActionsEnabled}" Margin="0,0,8,0"
+                        AutomationProperties.Name="Run verify"
+                        ToolTipService.ToolTip="Run Evaluate-STIG and/or SCAP verification against the active bundle."/>
+                <Button Content="Export eMASS" Width="120" Height="32" TabIndex="22" Command="{Binding ExportEmassCommand}" IsEnabled="{Binding ActionsEnabled}" Margin="0,0,8,0"
+                        AutomationProperties.Name="Export eMASS package"
+                        ToolTipService.ToolTip="Generate an eMASS-ready export package from current bundle findings."/>
+                <Button Content="Launch Wizard" Width="120" Height="32" TabIndex="23" Command="{Binding LaunchManualWizardCommand}" IsEnabled="{Binding ActionsEnabled}" Margin="0,0,8,0"
+                        AutomationProperties.Name="Launch manual review wizard"
+                        ToolTipService.ToolTip="Open the guided manual control review wizard for unanswered controls."/>
+                <Button Content="Compare Packs" Width="120" Height="32" TabIndex="24" Command="{Binding ComparePacksCommand}" Margin="0,0,8,0"
+                        AutomationProperties.Name="Compare content packs"
+                        ToolTipService.ToolTip="Compare two content packs to see added, removed, or changed controls."/>
               </StackPanel>
               <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
                 <TextBlock Text="Last eMASS export:" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,8,0"/>

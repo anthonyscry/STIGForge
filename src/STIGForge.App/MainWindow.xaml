@@ -4,7 +4,8 @@
         xmlns:views="clr-namespace:STIGForge.App.Views"
         Title="STIGForge" Height="720" Width="1200" MinHeight="680" MinWidth="980"
         WindowStartupLocation="CenterScreen" FontFamily="Bahnschrift" FontSize="13"
-        Background="{StaticResource WindowBackgroundBrush}">
+        Background="{StaticResource WindowBackgroundBrush}"
+        FocusManager.FocusedElement="{Binding ElementName=MainTabControl}">
   <!-- Resources moved to App.xaml Application.Resources -->
 
   <Grid Margin="12">
@@ -14,34 +15,52 @@
     </Grid.RowDefinitions>
 
     <DockPanel Grid.Row="0" LastChildFill="True" Margin="0,0,0,8">
-      <TextBlock Text="STIGForge" FontSize="22" FontWeight="SemiBold" DockPanel.Dock="Left" VerticalAlignment="Center"/>
+      <TextBlock Text="STIGForge" FontSize="22" FontWeight="SemiBold" DockPanel.Dock="Left" VerticalAlignment="Center"
+                 AutomationProperties.Name="STIGForge Application Title"/>
       <Button Content="About" Width="70" Height="28" Margin="8,0,0,0" Command="{Binding ShowAboutCommand}" DockPanel.Dock="Right"
+              TabIndex="92"
+              AutomationProperties.Name="About"
               ToolTipService.ToolTip="Application version, runtime, and local data root details."/>
       <Button Content="Help" Width="70" Height="28" Margin="0,0,8,0" Command="{Binding ShowHelpCommand}" DockPanel.Dock="Right"
+              TabIndex="91"
+              AutomationProperties.Name="Help"
               ToolTipService.ToolTip="Open full SOP and workflow guide for all STIGForge features."/>
       <ProgressBar Width="120" Height="12" Margin="0,0,12,0" IsIndeterminate="True" DockPanel.Dock="Right"
-                   Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}" VerticalAlignment="Center"/>
+                   Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}" VerticalAlignment="Center"
+                   AutomationProperties.Name="Operation in progress"
+                   ToolTipService.ToolTip="An operation is running. Please wait."/>
       <StackPanel VerticalAlignment="Center" Margin="14,0,0,0">
         <TextBlock Text="Import > Profile > Build > Orchestrate > Verify > Manual > Export"
                    FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
-        <TextBlock Text="{Binding StatusText}" FontSize="11" Foreground="{StaticResource TextMutedBrush}" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"/>
+        <TextBlock Text="{Binding StatusText}" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+                   TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"
+                   ToolTipService.ToolTip="{Binding StatusText}"
+                   AutomationProperties.LiveSetting="Assertive"/>
       </StackPanel>
     </DockPanel>
 
-    <TabControl Grid.Row="1">
-      <TabItem Header="Simple Mode" ToolTipService.ToolTip="Five-question wizard for the fastest end-to-end mission run.">
+    <TabControl x:Name="MainTabControl" Grid.Row="1" TabIndex="0">
+      <TabItem Header="Simple Mode" TabIndex="1"
+               AutomationProperties.Name="Simple Mode tab"
+               ToolTipService.ToolTip="Five-question wizard for the fastest end-to-end mission run.">
         <views:SimpleModeView />
       </TabItem>
 
-      <TabItem Header="Guided Run" ToolTipService.ToolTip="Step-by-step workflow for most missions.">
+      <TabItem Header="Guided Run" TabIndex="2"
+               AutomationProperties.Name="Guided Run tab"
+               ToolTipService.ToolTip="Step-by-step workflow for most missions.">
         <views:GuidedRunView />
       </TabItem>
 
-      <TabItem Header="Dashboard" ToolTipService.ToolTip="Mission status, control totals, and recovery guidance.">
+      <TabItem Header="Dashboard" TabIndex="3"
+               AutomationProperties.Name="Dashboard tab"
+               ToolTipService.ToolTip="Mission status, control totals, and recovery guidance.">
         <views:DashboardView />
       </TabItem>
 
-      <TabItem Header="Advanced" ToolTipService.ToolTip="All specialized workflows and operational tools.">
+      <TabItem Header="Advanced" TabIndex="4"
+               AutomationProperties.Name="Advanced tab"
+               ToolTipService.ToolTip="All specialized workflows and operational tools.">
         <views:AdvancedWorkspaceView />
       </TabItem>
     </TabControl>
