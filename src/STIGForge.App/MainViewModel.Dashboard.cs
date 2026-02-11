@@ -1,6 +1,7 @@
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using System.IO;
+using System.IO.Compression;
 using System.Text.Json;
 using STIGForge.Core.Abstractions;
 
@@ -275,6 +276,13 @@ public partial class MainViewModel
   }
 
   [RelayCommand]
+  private void ShowHelp()
+  {
+    var dialog = new Views.HelpDialog();
+    dialog.ShowDialog();
+  }
+
+  [RelayCommand]
   private void BrowseBundle()
   {
     var ofd = new OpenFileDialog
@@ -316,6 +324,76 @@ public partial class MainViewModel
     if (ofd.ShowDialog() != true) return;
 
     ScapCommandPath = ofd.FileName;
+  }
+
+  [RelayCommand]
+  private void BrowsePowerStigModule()
+  {
+    var ofd = new OpenFileDialog
+    {
+      Filter = "PowerSTIG module files (*.psd1;*.psm1)|*.psd1;*.psm1|All Files (*.*)|*.*",
+      Title = "Select PowerSTIG module file"
+    };
+
+    if (ofd.ShowDialog() != true) return;
+
+    PowerStigModulePath = ofd.FileName;
+  }
+
+  [RelayCommand]
+  private void BrowsePowerStigData()
+  {
+    var ofd = new OpenFileDialog
+    {
+      Filter = "PowerSTIG data file (*.psd1)|*.psd1|All Files (*.*)|*.*",
+      Title = "Select PowerSTIG data file"
+    };
+
+    if (ofd.ShowDialog() != true) return;
+
+    PowerStigDataFile = ofd.FileName;
+  }
+
+  [RelayCommand]
+  private async Task ActivateToolkitAsync()
+  {
+    if (IsBusy)
+      return;
+
+    try
+    {
+      IsBusy = true;
+      var activated = await TryActivateToolkitAsync(userInitiated: true, CancellationToken.None);
+      if (!activated)
+      {
+        GuidedNextAction = "Toolkit activation incomplete. Confirm STIG_SCAP path and archives, then retry activation.";
+      }
+    }
+    finally
+    {
+      IsBusy = false;
+    }
+  }
+
+  [RelayCommand]
+  private void OpenToolkitRoot()
+  {
+    var root = string.IsNullOrWhiteSpace(LocalToolkitRoot)
+      ? ResolveDefaultToolkitRoot()
+      : LocalToolkitRoot.Trim();
+
+    if (!Directory.Exists(root))
+    {
+      StatusText = "Toolkit root does not exist: " + root;
+      ToolkitActivationStatus = StatusText;
+      return;
+    }
+
+    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+    {
+      FileName = root,
+      UseShellExecute = true
+    });
   }
 
   [RelayCommand]
@@ -417,8 +495,92 @@ public partial class MainViewModel
     SaveUiState();
   }
 
+  partial void OnLocalToolkitRootChanged(string value)
+  {
+    SaveUiState();
+  }
+
+  partial void OnPowerStigModulePathChanged(string value)
+  {
+    SaveUiState();
+  }
+
+  partial void OnPowerStigDataFileChanged(string value)
+  {
+    SaveUiState();
+  }
+
+  partial void OnPowerStigOutputPathChanged(string value)
+  {
+    SaveUiState();
+  }
+
+  partial void OnPowerStigVerboseChanged(bool value)
+  {
+    SaveUiState();
+  }
+
+  partial void OnApplySkipSnapshotChanged(bool value)
+  {
+    SaveUiState();
+  }
+
+  partial void OnSimpleBuildBeforeRunChanged(bool value)
+  {
+    SaveUiState();
+  }
+
+  partial void OnSelectedMissionPresetChanged(string value)
+  {
+    ApplyMissionPreset(value);
+  }
+
+  private void ApplyMissionPreset(string preset)
+  {
+    if (string.Equals(preset, "Golden VM Image", StringComparison.Ordinal))
+    {
+      OrchRunApply = true;
+      OrchRunVerify = true;
+      OrchRunExport = true;
+      ApplySkipSnapshot = true;
+      BreakGlassAcknowledged = false;
+      if (string.IsNullOrWhiteSpace(BreakGlassReason))
+        BreakGlassReason = "Golden image bake pipeline. Hypervisor snapshot managed externally.";
+      MissionPresetGuidance = "Use for reference image baking. Snapshot skip is high risk; capture a hypervisor snapshot before apply.";
+      GuidedNextAction = "Set PowerSTIG inputs if used, acknowledge break-glass, then run orchestration.";
+      SaveUiState();
+      return;
+    }
+
+    if (string.Equals(preset, "SCCM PXE Image", StringComparison.Ordinal))
+    {
+      OrchRunApply = true;
+      OrchRunVerify = true;
+      OrchRunExport = true;
+      ApplySkipSnapshot = true;
+      BreakGlassAcknowledged = false;
+      if (string.IsNullOrWhiteSpace(BreakGlassReason))
+        BreakGlassReason = "SCCM PXE image bake. Snapshot handled by image lifecycle tooling.";
+      MissionPresetGuidance = "Use for task-sequence image baking. Configure PowerSTIG module path, verify, then export evidence for release gates.";
+      GuidedNextAction = "Provide PowerSTIG module path and run orchestration in your image bake workflow.";
+      SaveUiState();
+      return;
+    }
+
+    OrchRunApply = true;
+    OrchRunVerify = true;
+    OrchRunExport = true;
+    ApplySkipSnapshot = false;
+    BreakGlassAcknowledged = false;
+    BreakGlassReason = string.Empty;
+    MissionPresetGuidance = "Use for endpoint hardening on physical workstations or long-lived VMs with rollback snapshot protection.";
+    GuidedNextAction = "Build bundle, run orchestration, then review blocking findings before export.";
+    SaveUiState();
+  }
+
   private void LoadUiState()
   {
+    LocalToolkitRoot = ResolveDefaultToolkitRoot();
     var path = GetUiStatePath();
     if (!File.Exists(path)) return;
 
@@ -431,19 +593,34 @@ public partial class MainViewModel
       });
 
       if (state == null) return;
+      SelectedMissionPreset = state.SelectedMissionPreset ?? SelectedMissionPreset;
+      LocalToolkitRoot = string.IsNullOrWhiteSpace(state.LocalToolkitRoot)
+        ? LocalToolkitRoot
+        : state.LocalToolkitRoot;
       BundleRoot = state.BundleRoot ?? BundleRoot;
       EvaluateStigRoot = state.EvaluateStigRoot ?? EvaluateStigRoot;
       EvaluateStigArgs = state.EvaluateStigArgs ?? EvaluateStigArgs;
       ScapCommandPath = state.ScapCommandPath ?? ScapCommandPath;
       ScapArgs = state.ScapArgs ?? ScapArgs;
       ScapLabel = state.ScapLabel ?? ScapLabel;
+      PowerStigModulePath = state.PowerStigModulePath ?? PowerStigModulePath;
+      PowerStigDataFile = state.PowerStigDataFile ?? PowerStigDataFile;
+      PowerStigOutputPath = state.PowerStigOutputPath ?? PowerStigOutputPath;
+      PowerStigVerbose = state.PowerStigVerbose;
+      ApplySkipSnapshot = state.ApplySkipSnapshot;
+      BreakGlassAcknowledged = state.BreakGlassAcknowledged;
+      BreakGlassReason = state.BreakGlassReason ?? BreakGlassReason;
+      SimpleBuildBeforeRun = state.SimpleBuildBeforeRun;
 
-      RecentBundles.Clear();
-      if (state.RecentBundles != null)
+      System.Windows.Application.Current.Dispatcher.Invoke(() =>
       {
-        foreach (var b in state.RecentBundles)
-          RecentBundles.Add(b);
-      }
+        RecentBundles.Clear();
+        if (state.RecentBundles != null)
+        {
+          foreach (var b in state.RecentBundles)
+            RecentBundles.Add(b);
+        }
+      });
     }
     catch
     {
@@ -454,12 +631,15 @@ public partial class MainViewModel
   {
     if (string.IsNullOrWhiteSpace(bundlePath)) return;
 
-    var existing = RecentBundles.FirstOrDefault(b =>
-      string.Equals(b, bundlePath, StringComparison.OrdinalIgnoreCase));
-    if (existing != null) RecentBundles.Remove(existing);
+    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+    {
+      var existing = RecentBundles.FirstOrDefault(b =>
+        string.Equals(b, bundlePath, StringComparison.OrdinalIgnoreCase));
+      if (existing != null) RecentBundles.Remove(existing);
 
-    RecentBundles.Insert(0, bundlePath);
-    while (RecentBundles.Count > 5) RecentBundles.RemoveAt(RecentBundles.Count - 1);
+      RecentBundles.Insert(0, bundlePath);
+      while (RecentBundles.Count > 5) RecentBundles.RemoveAt(RecentBundles.Count - 1);
+    });
 
     SaveUiState();
   }
@@ -473,12 +653,22 @@ public partial class MainViewModel
 
       var state = new UiState
       {
+        LocalToolkitRoot = LocalToolkitRoot,
         BundleRoot = BundleRoot,
         EvaluateStigRoot = EvaluateStigRoot,
         EvaluateStigArgs = EvaluateStigArgs,
         ScapCommandPath = ScapCommandPath,
         ScapArgs = ScapArgs,
         ScapLabel = ScapLabel,
+        PowerStigModulePath = PowerStigModulePath,
+        PowerStigDataFile = PowerStigDataFile,
+        PowerStigOutputPath = PowerStigOutputPath,
+        PowerStigVerbose = PowerStigVerbose,
+        ApplySkipSnapshot = ApplySkipSnapshot,
+        BreakGlassAcknowledged = BreakGlassAcknowledged,
+        BreakGlassReason = BreakGlassReason,
+        SelectedMissionPreset = SelectedMissionPreset,
+        SimpleBuildBeforeRun = SimpleBuildBeforeRun,
         RecentBundles = RecentBundles.ToList()
       };
 
@@ -490,6 +680,381 @@ public partial class MainViewModel
     }
   }
 
+  private async Task<bool> TryActivateToolkitAsync(bool userInitiated, CancellationToken ct)
+  {
+    var sourceRoot = string.IsNullOrWhiteSpace(LocalToolkitRoot)
+      ? ResolveDefaultToolkitRoot()
+      : LocalToolkitRoot.Trim();
+    LocalToolkitRoot = sourceRoot;
+
+    if (!Directory.Exists(sourceRoot))
+    {
+      ToolkitActivationStatus = "Toolkit root not found: " + sourceRoot;
+      if (userInitiated)
+        StatusText = ToolkitActivationStatus;
+      return false;
+    }
+
+    ToolkitActivationStatus = "Activating toolkit from " + sourceRoot + "...";
+
+    ToolkitActivationResult result;
+    try
+    {
+      result = await Task.Run(() => ActivateToolkitFromSource(sourceRoot), ct);
+    }
+    catch (Exception ex)
+    {
+      ToolkitActivationStatus = "Toolkit activation failed: " + ex.Message;
+      if (userInitiated)
+        StatusText = ToolkitActivationStatus;
+      return false;
+    }
+
+    if (!string.IsNullOrWhiteSpace(result.EvaluateStigRoot))
+      EvaluateStigRoot = result.EvaluateStigRoot;
+
+    if (!string.IsNullOrWhiteSpace(result.ScapCommandPath))
+      ScapCommandPath = result.ScapCommandPath;
+
+    if (!string.IsNullOrWhiteSpace(result.PowerStigModulePath))
+      PowerStigModulePath = result.PowerStigModulePath;
+
+    if (string.IsNullOrWhiteSpace(ScapArgs))
+      ScapArgs = "-u -s -r -f";
+
+    if (string.IsNullOrWhiteSpace(ScapLabel))
+      ScapLabel = "DISA SCAP";
+
+    var scannerReady = !string.IsNullOrWhiteSpace(EvaluateStigRoot) || !string.IsNullOrWhiteSpace(ScapCommandPath);
+    var notes = result.Notes.Count == 0
+      ? string.Empty
+      : " " + string.Join(" | ", result.Notes.Take(3));
+
+    ToolkitActivationStatus = scannerReady
+      ? "Toolkit activation complete." + notes
+      : "Toolkit activation completed with missing scanners." + notes;
+
+    if (userInitiated || !scannerReady)
+      StatusText = ToolkitActivationStatus;
+
+    if (scannerReady)
+      GuidedNextAction = "Scanner tooling configured. Continue with Verify or full orchestration.";
+
+    return scannerReady;
+  }
+
+  private ToolkitActivationResult ActivateToolkitFromSource(string sourceRoot)
+  {
+    var result = new ToolkitActivationResult
+    {
+      SourceRoot = sourceRoot,
+      InstallRoot = Path.Combine(_paths.GetAppDataRoot(), "tools")
+    };
+
+    Directory.CreateDirectory(result.InstallRoot);
+
+    result.EvaluateStigRoot = ResolveEvaluateStigRoot(sourceRoot, result.InstallRoot, result.Notes);
+    result.ScapCommandPath = ResolveScapCommandPath(sourceRoot, result.InstallRoot, result.Notes);
+    result.PowerStigModulePath = ResolvePowerStigModulePath(sourceRoot, result.InstallRoot, result.Notes);
+
+    return result;
+  }
+
+  private static string ResolveDefaultToolkitRoot()
+  {
+    foreach (var start in new[] { Environment.CurrentDirectory, AppContext.BaseDirectory })
+    {
+      var dir = new DirectoryInfo(start);
+      while (dir != null)
+      {
+        var candidate = Path.Combine(dir.FullName, "STIG_SCAP");
+        if (Directory.Exists(candidate))
+          return candidate;
+
+        dir = dir.Parent;
+      }
+    }
+
+    return Path.GetFullPath(Path.Combine(Environment.CurrentDirectory, "STIG_SCAP"));
+  }
+
+  private static string? ResolveEvaluateStigRoot(string sourceRoot, string installRoot, List<string> notes)
+  {
+    var scriptPath = FindFirstFileByName(sourceRoot, "Evaluate-STIG.ps1");
+    if (!string.IsNullOrWhiteSpace(scriptPath))
+    {
+      notes.Add("Evaluate-STIG script located in source root.");
+      return Path.GetDirectoryName(scriptPath);
+    }
+
+    var cachedRoot = Path.Combine(installRoot, "Evaluate-STIG");
+    scriptPath = FindFirstFileByName(cachedRoot, "Evaluate-STIG.ps1");
+    if (!string.IsNullOrWhiteSpace(scriptPath))
+    {
+      notes.Add("Evaluate-STIG resolved from managed tools cache.");
+      return Path.GetDirectoryName(scriptPath);
+    }
+
+    var archive = FindArchiveCandidate(sourceRoot, "evaluate-stig");
+    if (archive == null)
+    {
+      notes.Add("Evaluate-STIG archive not found.");
+      return null;
+    }
+
+    var extractRoot = Path.Combine(installRoot, "Evaluate-STIG");
+    try
+    {
+      ExtractArchiveWithNestedZips(archive, extractRoot, nestedPasses: 1, notes);
+    }
+    catch (Exception ex)
+    {
+      notes.Add("Evaluate-STIG extraction failed: " + ex.Message);
+      return null;
+    }
+
+    scriptPath = FindFirstFileByName(extractRoot, "Evaluate-STIG.ps1");
+    if (!string.IsNullOrWhiteSpace(scriptPath))
+    {
+      notes.Add("Evaluate-STIG extracted from " + Path.GetFileName(archive) + ".");
+      return Path.GetDirectoryName(scriptPath);
+    }
+
+    notes.Add("Evaluate-STIG.ps1 not found after extraction.");
+    return null;
+  }
+
+  private static string? ResolveScapCommandPath(string sourceRoot, string installRoot, List<string> notes)
+  {
+    var commandPath = FindFirstFileByName(sourceRoot, "scc.exe");
+    if (!string.IsNullOrWhiteSpace(commandPath))
+    {
+      notes.Add("SCC executable located in source root.");
+      return commandPath;
+    }
+
+    var cachedRoot = Path.Combine(installRoot, "SCC");
+    commandPath = FindFirstFileByName(cachedRoot, "scc.exe");
+    if (!string.IsNullOrWhiteSpace(commandPath))
+    {
+      notes.Add("SCC resolved from managed tools cache.");
+      return commandPath;
+    }
+
+    var archive = FindArchiveCandidate(sourceRoot, "scc");
+    if (archive == null)
+    {
+      notes.Add("SCC archive not found.");
+      return null;
+    }
+
+    var extractRoot = Path.Combine(installRoot, "SCC");
+    try
+    {
+      ExtractArchiveWithNestedZips(archive, extractRoot, nestedPasses: 2, notes);
+    }
+    catch (Exception ex)
+    {
+      notes.Add("SCC extraction failed: " + ex.Message);
+      return null;
+    }
+
+    commandPath = FindFirstFileByName(extractRoot, "scc.exe");
+    if (!string.IsNullOrWhiteSpace(commandPath))
+    {
+      notes.Add("SCC extracted from " + Path.GetFileName(archive) + ".");
+      return commandPath;
+    }
+
+    notes.Add("scc.exe not found after extraction.");
+    return null;
+  }
+
+  private static string? ResolvePowerStigModulePath(string sourceRoot, string installRoot, List<string> notes)
+  {
+    var modulePath = FindFirstFileByName(sourceRoot, "PowerSTIG.psd1")
+      ?? FindFirstFileByName(sourceRoot, "PowerStig.psd1");
+    if (!string.IsNullOrWhiteSpace(modulePath))
+    {
+      notes.Add("PowerSTIG module located in source root.");
+      return modulePath;
+    }
+
+    var cachedRoot = Path.Combine(installRoot, "PowerSTIG");
+    modulePath = FindFirstFileByName(cachedRoot, "PowerSTIG.psd1")
+      ?? FindFirstFileByName(cachedRoot, "PowerStig.psd1");
+    if (!string.IsNullOrWhiteSpace(modulePath))
+    {
+      notes.Add("PowerSTIG resolved from managed tools cache.");
+      return modulePath;
+    }
+
+    var archive = FindArchiveCandidate(sourceRoot, "powerstig");
+    if (archive == null)
+      return null;
+
+    var extractRoot = Path.Combine(installRoot, "PowerSTIG");
+    try
+    {
+      ExtractArchiveWithNestedZips(archive, extractRoot, nestedPasses: 1, notes);
+    }
+    catch (Exception ex)
+    {
+      notes.Add("PowerSTIG extraction failed: " + ex.Message);
+      return null;
+    }
+
+    modulePath = FindFirstFileByName(extractRoot, "PowerSTIG.psd1")
+      ?? FindFirstFileByName(extractRoot, "PowerStig.psd1");
+    if (!string.IsNullOrWhiteSpace(modulePath))
+    {
+      notes.Add("PowerSTIG extracted from " + Path.GetFileName(archive) + ".");
+      return modulePath;
+    }
+
+    return null;
+  }
+
+  private static void ExtractArchiveWithNestedZips(string archivePath, string destinationRoot, int nestedPasses, List<string> notes)
+  {
+    if (Directory.Exists(destinationRoot))
+      Directory.Delete(destinationRoot, recursive: true);
+
+    Directory.CreateDirectory(destinationRoot);
+    ExtractZipSafely(archivePath, destinationRoot);
+
+    for (var pass = 0; pass < nestedPasses; pass++)
+    {
+      var nestedArchives = EnumerateFilesSafe(destinationRoot, "*.zip", SearchOption.AllDirectories).ToList();
+      if (nestedArchives.Count == 0)
+        break;
+
+      foreach (var nestedArchive in nestedArchives)
+      {
+        var nestedExtractRoot = Path.Combine(
+          Path.GetDirectoryName(nestedArchive) ?? destinationRoot,
+          Path.GetFileNameWithoutExtension(nestedArchive));
+
+        try
+        {
+          if (!Directory.Exists(nestedExtractRoot) || !Directory.EnumerateFileSystemEntries(nestedExtractRoot).Any())
+          {
+            Directory.CreateDirectory(nestedExtractRoot);
+            ExtractZipSafely(nestedArchive, nestedExtractRoot);
+          }
+        }
+        catch (Exception ex)
+        {
+          notes.Add("Skipped nested archive " + Path.GetFileName(nestedArchive) + ": " + ex.Message);
+        }
+      }
+    }
+  }
+
+  private static void ExtractZipSafely(string zipPath, string destinationRoot)
+  {
+    var destinationFullPath = Path.GetFullPath(destinationRoot);
+    var destinationPrefix = destinationFullPath.EndsWith(Path.DirectorySeparatorChar)
+      ? destinationFullPath
+      : destinationFullPath + Path.DirectorySeparatorChar;
+
+    using var archive = ZipFile.OpenRead(zipPath);
+    foreach (var entry in archive.Entries)
+    {
+      var destinationPath = Path.GetFullPath(Path.Combine(destinationFullPath, entry.FullName));
+      if (!destinationPath.StartsWith(destinationPrefix, StringComparison.OrdinalIgnoreCase)
+        && !string.Equals(destinationPath, destinationFullPath, StringComparison.OrdinalIgnoreCase))
+      {
+        throw new InvalidDataException("Blocked archive path traversal entry: " + entry.FullName);
+      }
+
+      if (string.IsNullOrEmpty(entry.Name))
+      {
+        Directory.CreateDirectory(destinationPath);
+        continue;
+      }
+
+      var entryDirectory = Path.GetDirectoryName(destinationPath);
+      if (!string.IsNullOrWhiteSpace(entryDirectory))
+        Directory.CreateDirectory(entryDirectory);
+
+      entry.ExtractToFile(destinationPath, overwrite: true);
+    }
+  }
+
+  private static string? FindArchiveCandidate(string sourceRoot, string token)
+  {
+    var topLevel = EnumerateFilesSafe(sourceRoot, "*.zip", SearchOption.TopDirectoryOnly)
+      .Where(path => Path.GetFileName(path).IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0)
+      .OrderByDescending(File.GetLastWriteTimeUtc)
+      .FirstOrDefault();
+    if (!string.IsNullOrWhiteSpace(topLevel))
+      return topLevel;
+
+    return EnumerateFilesSafe(sourceRoot, "*.zip", SearchOption.AllDirectories)
+      .Where(path => Path.GetFileName(path).IndexOf(token, StringComparison.OrdinalIgnoreCase) >= 0)
+      .OrderByDescending(File.GetLastWriteTimeUtc)
+      .FirstOrDefault();
+  }
+
+  private static string? FindFirstFileByName(string root, string fileName)
+  {
+    return EnumerateFilesSafe(root, "*", SearchOption.AllDirectories)
+      .FirstOrDefault(path => string.Equals(Path.GetFileName(path), fileName, StringComparison.OrdinalIgnoreCase));
+  }
+
+  private static IEnumerable<string> EnumerateFilesSafe(string root, string pattern, SearchOption option)
+  {
+    if (string.IsNullOrWhiteSpace(root) || !Directory.Exists(root))
+      yield break;
+
+    var pending = new Stack<string>();
+    pending.Push(root);
+    while (pending.Count > 0)
+    {
+      var current = pending.Pop();
+
+      string[] files;
+      try
+      {
+        files = Directory.GetFiles(current, pattern, SearchOption.TopDirectoryOnly);
+      }
+      catch
+      {
+        files = Array.Empty<string>();
+      }
+
+      foreach (var file in files)
+        yield return file;
+
+      if (option != SearchOption.AllDirectories)
+        continue;
+
+      string[] children;
+      try
+      {
+        children = Directory.GetDirectories(current);
+      }
+      catch
+      {
+        children = Array.Empty<string>();
+      }
+
+      foreach (var child in children)
+        pending.Push(child);
+    }
+  }
+
+  private sealed class ToolkitActivationResult
+  {
+    public string SourceRoot { get; set; } = string.Empty;
+    public string InstallRoot { get; set; } = string.Empty;
+    public string? EvaluateStigRoot { get; set; }
+    public string? ScapCommandPath { get; set; }
+    public string? PowerStigModulePath { get; set; }
+    public List<string> Notes { get; } = new();
+  }
+
   private string GetUiStatePath()
   {
     var root = _paths.GetAppDataRoot();
@@ -498,7 +1063,11 @@ public partial class MainViewModel
 
   private void LoadCoverageOverlap()
   {
-    OverlapItems.Clear();
+    var overlapItems = new List<OverlapItem>();
+    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+    {
+      OverlapItems.Clear();
+    });
     if (string.IsNullOrWhiteSpace(BundleRoot)) return;
     var path = Path.Combine(BundleRoot, "Reports", "coverage_overlap.csv");
     if (!File.Exists(path)) return;
@@ -510,7 +1079,7 @@ public partial class MainViewModel
       var parts = ParseCsvLine(line);
       if (parts.Length < 5) continue;
 
-      OverlapItems.Add(new OverlapItem
+      overlapItems.Add(new OverlapItem
       {
         SourcesKey = parts[0],
         SourceCount = SafeInt(parts[1]),
@@ -519,6 +1088,12 @@ public partial class MainViewModel
         OpenCount = SafeInt(parts[4])
       });
     }
+
+    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+    {
+      foreach (var item in overlapItems)
+        OverlapItems.Add(item);
+    });
   }
 
   private static int SafeInt(string value)

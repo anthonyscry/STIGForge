@@ -91,7 +91,10 @@ public sealed class OverlayRebaseService
             Timestamp = DateTimeOffset.UtcNow
           }, CancellationToken.None).ConfigureAwait(false);
         }
-        catch { /* fire-and-forget audit */ }
+        catch (Exception ex)
+        {
+          System.Diagnostics.Trace.TraceError("Overlay rebase audit logging failed: " + ex.Message);
+        }
       });
     }
 

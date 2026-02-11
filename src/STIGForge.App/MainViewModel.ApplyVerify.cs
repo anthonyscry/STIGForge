@@ -37,19 +37,28 @@ public partial class MainViewModel
         BundleRoot = BundleRoot,
         ScriptPath = script,
         ScriptArgs = "-BundleRoot \"" + BundleRoot + "\"",
-        SkipSnapshot = ApplySkipSnapshot
+        SkipSnapshot = ApplySkipSnapshot,
+        PowerStigModulePath = string.IsNullOrWhiteSpace(PowerStigModulePath) ? null : PowerStigModulePath.Trim(),
+        PowerStigDataFile = string.IsNullOrWhiteSpace(PowerStigDataFile) ? null : PowerStigDataFile.Trim(),
+        PowerStigOutputPath = string.IsNullOrWhiteSpace(PowerStigOutputPath) ? null : PowerStigOutputPath.Trim(),
+        PowerStigVerbose = PowerStigVerbose
       }, CancellationToken.None);
 
       ApplyStatus = "Apply complete: " + result.LogPath;
       LastOutputPath = result.LogPath;
       ReportSummary = BuildReportSummary(BundleRoot);
+      GuidedNextAction = "Apply complete. Next action: run Verify and review mission summary.";
       RefreshDashboard();
     }
     catch (Exception ex)
     {
       ApplyStatus = "Apply failed: " + ex.Message;
       if (!string.IsNullOrWhiteSpace(BundleRoot))
-        ApplyStatus += " " + BuildApplyRecoveryGuidance(BundleRoot);
+      {
+        var guidance = BuildApplyRecoveryGuidance(BundleRoot);
+        ApplyStatus += " " + guidance;
+        GuidedNextAction = "Apply blocked. " + guidance;
+      }
     }
     finally
     {
@@ -69,6 +78,9 @@ public partial class MainViewModel
         VerifyStatus = "Select a bundle first.";
         return;
       }
+
+      if (string.IsNullOrWhiteSpace(EvaluateStigRoot) && string.IsNullOrWhiteSpace(ScapCommandPath))
+        await TryActivateToolkitAsync(userInitiated: false, CancellationToken.None);
 
       if (string.IsNullOrWhiteSpace(EvaluateStigRoot) && string.IsNullOrWhiteSpace(ScapCommandPath))
       {
@@ -136,7 +148,6 @@ public partial class MainViewModel
       VerifySummary = ReportSummary;
       LoadCoverageOverlap();
       RefreshDashboard();
-      await Task.CompletedTask;
     }
     catch (Exception ex)
     {
@@ -146,6 +157,66 @@ public partial class MainViewModel
     {
       IsBusy = false;
     }
+  }
+
+  [RelayCommand]
+  private async Task RunSimpleMissionAsync()
+  {
+    if (IsBusy) return;
+
+    if (SimpleBuildBeforeRun)
+    {
+      if (SelectedPack == null)
+      {
+        StatusText = "Simple Mode: choose a content pack first.";
+        GuidedNextAction = "Question 2: select a content pack.";
+        return;
+      }
+
+      if (SelectedProfile == null)
+      {
+        StatusText = "Simple Mode: choose a profile first.";
+        GuidedNextAction = "Question 3: select or save a profile.";
+        return;
+      }
+
+      await BuildBundleAsync();
+
+      if (!StatusText.StartsWith("Build complete", StringComparison.OrdinalIgnoreCase))
+      {
+        GuidedNextAction = "Build did not complete. Fix pack/profile inputs, then run Question 6 again.";
+        return;
+      }
+
+      if (string.IsNullOrWhiteSpace(BundleRoot) || !Directory.Exists(BundleRoot))
+      {
+        StatusText = "Simple Mode: build completed but bundle path is unavailable.";
+        GuidedNextAction = "Question 6: use Build Bundle first or select an existing bundle.";
+        return;
+      }
+    }
+    else if (string.IsNullOrWhiteSpace(BundleRoot) || !Directory.Exists(BundleRoot))
+    {
+      StatusText = "Simple Mode: select an existing bundle path first.";
+      GuidedNextAction = "Question 6: choose a valid bundle path when skipping build.";
+      return;
+    }
+
+    if (string.IsNullOrWhiteSpace(EvaluateStigRoot) && string.IsNullOrWhiteSpace(ScapCommandPath))
+      await TryActivateToolkitAsync(userInitiated: false, CancellationToken.None);
+
+    if (string.IsNullOrWhiteSpace(EvaluateStigRoot) && string.IsNullOrWhiteSpace(ScapCommandPath))
+    {
+      StatusText = "Simple Mode: configure Evaluate-STIG root or SCAP command path.";
+      GuidedNextAction = "Question 4: activate tools from STIG_SCAP or set scanner paths manually.";
+      return;
+    }
+
+    OrchRunApply = true;
+    OrchRunVerify = true;
+    OrchRunExport = true;
+    GuidedNextAction = "Running simple mission: apply, verify, and export.";
+    await Orchestrate();
   }
 
   [RelayCommand]
@@ -208,6 +279,7 @@ public partial class MainViewModel
       IsBusy = true;
       OrchLog = "";
       OrchStatus = "Starting orchestration...";
+      GuidedNextAction = "Orchestration in progress...";
       var log = new StringBuilder();
 
       // Step 1: Apply
@@ -231,12 +303,19 @@ public partial class MainViewModel
             if (ApplySkipSnapshot)
               await ValidateAndRecordBreakGlassAsync("orchestrate", BundleRoot, "skip-snapshot", CancellationToken.None);
 
+            if (!string.IsNullOrWhiteSpace(PowerStigModulePath))
+              log.AppendLine("  INFO: PowerSTIG compile enabled.");
+
             var result = await _applyRunner.RunAsync(new STIGForge.Apply.ApplyRequest
             {
               BundleRoot = BundleRoot,
               ScriptPath = script,
               ScriptArgs = "-BundleRoot \"" + BundleRoot + "\"",
-              SkipSnapshot = ApplySkipSnapshot
+              SkipSnapshot = ApplySkipSnapshot,
+              PowerStigModulePath = string.IsNullOrWhiteSpace(PowerStigModulePath) ? null : PowerStigModulePath.Trim(),
+              PowerStigDataFile = string.IsNullOrWhiteSpace(PowerStigDataFile) ? null : PowerStigDataFile.Trim(),
+              PowerStigOutputPath = string.IsNullOrWhiteSpace(PowerStigOutputPath) ? null : PowerStigOutputPath.Trim(),
+              PowerStigVerbose = PowerStigVerbose
             }, CancellationToken.None);
 
             log.AppendLine("  OK: Apply complete. Log: " + result.LogPath);
@@ -255,6 +334,9 @@ public partial class MainViewModel
 
       // Step 2: Verify
       var coverageInputs = new List<VerificationCoverageInput>();
+      if (OrchRunVerify && string.IsNullOrWhiteSpace(EvaluateStigRoot) && string.IsNullOrWhiteSpace(ScapCommandPath))
+        await TryActivateToolkitAsync(userInitiated: false, CancellationToken.None);
+
       if (OrchRunVerify)
       {
         if (blockingFailures.Count > 0)
@@ -428,14 +510,26 @@ public partial class MainViewModel
         ? "Orchestration complete."
         : "Orchestration blocked - operator decision required. " + BuildApplyRecoveryGuidance(BundleRoot);
 
+      if (blockingFailures.Count > 0)
+      {
+        var guidance = BuildApplyRecoveryGuidance(BundleRoot);
+        GuidedNextAction = "Blocking findings detected. " + guidance;
+        ReportSummary = "Mission blocked: " + string.Join(" | ", blockingFailures) + Environment.NewLine + GuidedNextAction;
+      }
+      else
+      {
+        ReportSummary = BuildReportSummary(BundleRoot);
+        GuidedNextAction = "No blocking mission findings. Next action: proceed with export and release evidence collection.";
+      }
+
       // Refresh dashboard
-      ReportSummary = BuildReportSummary(BundleRoot);
       LoadCoverageOverlap();
       RefreshDashboard();
     }
     catch (Exception ex)
     {
       OrchStatus = "Orchestration failed: " + ex.Message;
+      GuidedNextAction = OrchStatus;
     }
     finally
     {

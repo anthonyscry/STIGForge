@@ -84,6 +84,49 @@ public sealed class ContentPackImporter
         return incomplete;
     }
 
+    public async Task<IReadOnlyList<ContentPack>> ImportConsolidatedZipAsync(string consolidatedZipPath, string sourceLabel, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(consolidatedZipPath))
+            throw new ArgumentException("ZIP path cannot be empty.", nameof(consolidatedZipPath));
+
+        if (!File.Exists(consolidatedZipPath))
+            throw new FileNotFoundException("Consolidated ZIP not found", consolidatedZipPath);
+
+        var extractionRoot = Path.Combine(Path.GetTempPath(), "stigforge-consolidated-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(extractionRoot);
+
+        try
+        {
+            ExtractZipSafely(consolidatedZipPath, extractionRoot, ct);
+
+            var nestedZipPaths = Directory
+                .GetFiles(extractionRoot, "*.zip", SearchOption.AllDirectories)
+                .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (nestedZipPaths.Count == 0)
+            {
+                var singlePackName = BuildImportedPackName(consolidatedZipPath, "Imported");
+                var importedSingle = await ImportZipAsync(consolidatedZipPath, singlePackName, sourceLabel, ct);
+                return new[] { importedSingle };
+            }
+
+            var imported = new List<ContentPack>(nestedZipPaths.Count);
+            foreach (var nestedZipPath in nestedZipPaths)
+            {
+                ct.ThrowIfCancellationRequested();
+                var packName = BuildImportedPackName(nestedZipPath, "Imported");
+                imported.Add(await ImportZipAsync(nestedZipPath, packName, sourceLabel, ct));
+            }
+
+            return imported;
+        }
+        finally
+        {
+            try { Directory.Delete(extractionRoot, true); } catch { }
+        }
+    }
+
     public async Task<ContentPack> ImportZipAsync(string zipPath, string packName, string sourceLabel, CancellationToken ct)
     {
         var packId = Guid.NewGuid().ToString("n");
@@ -413,7 +456,6 @@ public sealed class ContentPackImporter
     {
         var xccdfFiles = Directory.GetFiles(rawRoot, "*.xml", SearchOption.AllDirectories)
             .Where(p => Path.GetFileName(p).IndexOf("xccdf", StringComparison.OrdinalIgnoreCase) >= 0)
-            .Take(10)
             .ToList();
 
         var parsed = new List<ControlRecord>();
@@ -528,7 +570,6 @@ public sealed class ContentPackImporter
     private List<ControlRecord> ImportGpoZip(string rawRoot, string packName, List<ParsingError> errors)
     {
         var admxFiles = Directory.GetFiles(rawRoot, "*.admx", SearchOption.AllDirectories)
-            .Take(10)
             .ToList();
 
         var parsed = new List<ControlRecord>();
@@ -616,6 +657,15 @@ public sealed class ContentPackImporter
         }
 
         return null;
+    }
+
+    private static string BuildImportedPackName(string zipPath, string prefix)
+    {
+        var baseName = Path.GetFileNameWithoutExtension(zipPath);
+        if (string.IsNullOrWhiteSpace(baseName))
+            baseName = "Pack";
+
+        return prefix + "_" + baseName + "_" + DateTimeOffset.Now.ToString("yyyyMMdd_HHmmss");
     }
 
     private static void ExtractZipSafely(string zipPath, string destinationRoot, CancellationToken ct)

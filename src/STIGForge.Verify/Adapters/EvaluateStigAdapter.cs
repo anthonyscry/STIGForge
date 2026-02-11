@@ -155,7 +155,7 @@ public sealed class EvaluateStigAdapter : IVerifyResultAdapter
     if (string.IsNullOrWhiteSpace(stigStatus))
       return VerifyStatus.NotReviewed;
 
-    var normalized = stigStatus
+    var normalized = stigStatus!
       .Trim()
       .Replace("_", string.Empty)
       .Replace("-", string.Empty)

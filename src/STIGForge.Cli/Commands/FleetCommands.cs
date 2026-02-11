@@ -142,14 +142,14 @@ internal static class FleetCommands
     var passOpt = new Option<string>("--password", "Password") { IsRequired = true };
     cmd.AddOption(hostOpt); cmd.AddOption(userOpt); cmd.AddOption(passOpt);
 
-    cmd.SetHandler((host, user, password) =>
+    cmd.SetHandler(async (host, user, password) =>
     {
       using var h = buildHost();
-      h.Start();
+      await h.StartAsync().ConfigureAwait(false);
       var store = h.Services.GetRequiredService<ICredentialStore>();
       store.Save(host, user, password);
       Console.WriteLine($"Credential saved for '{host}'.");
-      h.StopAsync().GetAwaiter().GetResult();
+      await h.StopAsync().ConfigureAwait(false);
     }, hostOpt, userOpt, passOpt);
 
     rootCmd.AddCommand(cmd);
@@ -159,10 +159,10 @@ internal static class FleetCommands
   {
     var cmd = new Command("fleet-credential-list", "List all stored fleet credentials");
 
-    cmd.SetHandler(() =>
+    cmd.SetHandler(async () =>
     {
       using var h = buildHost();
-      h.Start();
+      await h.StartAsync().ConfigureAwait(false);
       var store = h.Services.GetRequiredService<ICredentialStore>();
       var hosts = store.ListHosts();
 
@@ -176,7 +176,7 @@ internal static class FleetCommands
         foreach (var host in hosts)
           Console.WriteLine($"  {host}");
       }
-      h.StopAsync().GetAwaiter().GetResult();
+      await h.StopAsync().ConfigureAwait(false);
     });
 
     rootCmd.AddCommand(cmd);
@@ -188,14 +188,14 @@ internal static class FleetCommands
     var hostOpt = new Option<string>("--host", "Target hostname") { IsRequired = true };
     cmd.AddOption(hostOpt);
 
-    cmd.SetHandler((host) =>
+    cmd.SetHandler(async (host) =>
     {
       using var h = buildHost();
-      h.Start();
+      await h.StartAsync().ConfigureAwait(false);
       var store = h.Services.GetRequiredService<ICredentialStore>();
       var removed = store.Remove(host);
       Console.WriteLine(removed ? $"Credential removed for '{host}'." : $"No credential found for '{host}'.");
-      h.StopAsync().GetAwaiter().GetResult();
+      await h.StopAsync().ConfigureAwait(false);
     }, hostOpt);
 
     rootCmd.AddCommand(cmd);
@@ -225,18 +225,20 @@ internal static class FleetCommands
       if (item.Length == 0) continue;
 
       var colonIdx = item.IndexOf(':');
-      if (colonIdx > 0)
-      {
-        list.Add(new FleetTarget
-        {
-          HostName = item.Substring(0, colonIdx).Trim(),
-          IpAddress = item.Substring(colonIdx + 1).Trim()
-        });
-      }
-      else
+      if (colonIdx < 0)
       {
         list.Add(new FleetTarget { HostName = item });
+        continue;
       }
+
+      if (colonIdx == 0)
+        continue;
+
+      list.Add(new FleetTarget
+      {
+        HostName = item.Substring(0, colonIdx).Trim(),
+        IpAddress = item.Substring(colonIdx + 1).Trim()
+      });
     }
     return list;
   }

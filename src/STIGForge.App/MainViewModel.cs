@@ -35,7 +35,7 @@ public partial class MainViewModel : ObservableObject
   private ICollectionView? _manualView;
 
   [ObservableProperty] private string statusText = "Ready.";
-  [ObservableProperty] private string importHint = "Import the quarterly DISA zip(s). v1: parses XCCDF lightly.";
+  [ObservableProperty] private string importHint = "Import single ZIPs, consolidated bundles, or GPO/LGPO ZIPs (ADMX auto-import enabled).";
   [ObservableProperty] private string buildGateStatus = "";
   [ObservableProperty] private string applyStatus = "";
   [ObservableProperty] private string verifyStatus = "";
@@ -54,6 +54,19 @@ public partial class MainViewModel : ObservableObject
   [ObservableProperty] private bool applySkipSnapshot;
   [ObservableProperty] private bool breakGlassAcknowledged;
   [ObservableProperty] private string breakGlassReason = "";
+  [ObservableProperty] private string powerStigModulePath = "";
+  [ObservableProperty] private string powerStigDataFile = "";
+  [ObservableProperty] private string powerStigOutputPath = "";
+  [ObservableProperty] private bool powerStigVerbose;
+  [ObservableProperty] private string localToolkitRoot = "STIG_SCAP";
+  [ObservableProperty] private string toolkitActivationStatus = "Toolkit activation pending.";
+  [ObservableProperty] private string importLibraryStatus = "Library not loaded.";
+  [ObservableProperty] private string machineApplicabilityStatus = "";
+  [ObservableProperty] private string selectedContentSummary = "No content selected. Import or select packs above.";
+  [ObservableProperty] private string selectedMissionPreset = "Workstation/VM Compliance";
+  [ObservableProperty] private string missionPresetGuidance = "Use snapshot-protected apply for managed endpoints.";
+  [ObservableProperty] private bool simpleBuildBeforeRun = true;
+  [ObservableProperty] private string guidedNextAction = "Run orchestration to generate next action.";
 
   // Dashboard
   [ObservableProperty] private string dashBundleLabel = "(no bundle selected)";
@@ -86,12 +99,22 @@ public partial class MainViewModel : ObservableObject
 
   public bool ActionsEnabled => !IsBusy;
 
+  public IReadOnlyList<string> MissionPresets { get; } = new[]
+  {
+    "Workstation/VM Compliance",
+    "Golden VM Image",
+    "SCCM PXE Image"
+  };
+
   public IList<ContentPack> ContentPacks { get; } = new List<ContentPack>();
   public IList<Profile> Profiles { get; } = new List<Profile>();
   public ObservableCollection<OverlayItem> OverlayItems { get; } = new();
   public ObservableCollection<string> RecentBundles { get; } = new();
   public ObservableCollection<OverlapItem> OverlapItems { get; } = new();
   public ObservableCollection<ManualControlItem> ManualControls { get; } = new();
+  public ObservableCollection<ImportedLibraryItem> StigLibraryItems { get; } = new();
+  public ObservableCollection<ImportedLibraryItem> ScapLibraryItems { get; } = new();
+  public ObservableCollection<ImportedLibraryItem> OtherLibraryItems { get; } = new();
   public ICollectionView ManualControlsView => _manualView ??= CollectionViewSource.GetDefaultView(ManualControls);
 
   [ObservableProperty] private ContentPack? selectedPack;
@@ -117,6 +140,9 @@ public partial class MainViewModel : ObservableObject
   [ObservableProperty] private string evidenceStatus = "";
   [ObservableProperty] private string selectedRecentBundle = "";
   [ObservableProperty] private ManualControlItem? selectedManualControl;
+  [ObservableProperty] private ImportedLibraryItem? selectedStigLibraryItem;
+  [ObservableProperty] private ImportedLibraryItem? selectedScapLibraryItem;
+  [ObservableProperty] private ImportedLibraryItem? selectedOtherLibraryItem;
   [ObservableProperty] private string manualStatus = "Open";
   [ObservableProperty] private string manualReason = "";
   [ObservableProperty] private string manualComment = "";
@@ -170,7 +196,11 @@ public partial class MainViewModel : ObservableObject
     _manualAnswerService = new ManualAnswerService(_audit);
     _scheduledTaskService = scheduledTaskService;
     _fleetService = fleetService;
-    _ = LoadAsync();
+    _ = LoadAsync().ContinueWith(t =>
+    {
+      if (t.IsFaulted)
+        System.Diagnostics.Trace.TraceError("LoadAsync failed: " + t.Exception?.Flatten().Message);
+    }, System.Threading.Tasks.TaskScheduler.Default);
   }
 
   private async Task LoadAsync()
@@ -179,33 +209,50 @@ public partial class MainViewModel : ObservableObject
     {
       IsBusy = true;
       var list = await _packs.ListAsync(CancellationToken.None);
-      ContentPacks.Clear();
-      foreach (var p in list) ContentPacks.Add(p);
-      OnPropertyChanged(nameof(ContentPacks));
-
-      if (ContentPacks.Count > 0 && SelectedPack == null)
-        SelectedPack = ContentPacks[0];
-
       var profiles = await _profiles.ListAsync(CancellationToken.None);
-      Profiles.Clear();
-      foreach (var p in profiles) Profiles.Add(p);
-      OnPropertyChanged(nameof(Profiles));
-
-      if (Profiles.Count > 0 && SelectedProfile == null)
-        SelectedProfile = Profiles[0];
-
-      if (SelectedProfile != null)
-        LoadProfileFields(SelectedProfile);
-
       var overlays = await _overlays.ListAsync(CancellationToken.None);
-      OverlayItems.Clear();
-      foreach (var o in overlays) OverlayItems.Add(new OverlayItem(o));
-      OnPropertyChanged(nameof(OverlayItems));
 
-      if (SelectedProfile != null)
-        ApplyOverlaySelection(SelectedProfile);
+      System.Windows.Application.Current.Dispatcher.Invoke(() =>
+      {
+        ContentPacks.Clear();
+        foreach (var p in list) ContentPacks.Add(p);
+        OnPropertyChanged(nameof(ContentPacks));
+        RefreshImportLibrary();
+
+      if (SelectedPack == null)
+      {
+        if (ContentPacks.Count > 0)
+          SelectedPack = ContentPacks[0];
+        else
+          SelectedPack = null;
+      }
+
+        Profiles.Clear();
+        foreach (var p in profiles) Profiles.Add(p);
+        OnPropertyChanged(nameof(Profiles));
+
+      if (SelectedProfile == null)
+      {
+        if (Profiles.Count > 0)
+          SelectedProfile = Profiles[0];
+        else
+          SelectedProfile = null;
+      }
+
+        if (SelectedProfile != null)
+          LoadProfileFields(SelectedProfile);
+
+        OverlayItems.Clear();
+        foreach (var o in overlays) OverlayItems.Add(new OverlayItem(o));
+        OnPropertyChanged(nameof(OverlayItems));
+
+        if (SelectedProfile != null)
+          ApplyOverlaySelection(SelectedProfile);
+      });
 
       LoadUiState();
+      if (string.IsNullOrWhiteSpace(EvaluateStigRoot) && string.IsNullOrWhiteSpace(ScapCommandPath))
+        await TryActivateToolkitAsync(userInitiated: false, CancellationToken.None);
       LoadCoverageOverlap();
       LoadManualControls();
       ConfigureManualView();
@@ -280,6 +327,18 @@ public partial class MainViewModel : ObservableObject
     public int OpenCount { get; set; }
   }
 
+  public sealed class ImportedLibraryItem
+  {
+    public string PackId { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public string Format { get; set; } = string.Empty;
+    public string SourceLabel { get; set; } = string.Empty;
+    public DateTimeOffset ImportedAt { get; set; }
+    public string ImportedAtLabel { get; set; } = string.Empty;
+    public string ReleaseDateLabel { get; set; } = string.Empty;
+    public string RootPath { get; set; } = string.Empty;
+  }
+
   private sealed class UiState
   {
     public string? BundleRoot { get; set; }
@@ -288,6 +347,16 @@ public partial class MainViewModel : ObservableObject
     public string? ScapCommandPath { get; set; }
     public string? ScapArgs { get; set; }
     public string? ScapLabel { get; set; }
+    public string? PowerStigModulePath { get; set; }
+    public string? PowerStigDataFile { get; set; }
+    public string? PowerStigOutputPath { get; set; }
+    public bool PowerStigVerbose { get; set; }
+    public string? LocalToolkitRoot { get; set; }
+    public bool ApplySkipSnapshot { get; set; }
+    public bool BreakGlassAcknowledged { get; set; }
+    public string? BreakGlassReason { get; set; }
+    public string? SelectedMissionPreset { get; set; }
+    public bool SimpleBuildBeforeRun { get; set; }
     public List<string>? RecentBundles { get; set; }
   }
 }

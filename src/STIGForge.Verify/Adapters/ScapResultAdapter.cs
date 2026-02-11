@@ -166,7 +166,7 @@ public sealed class ScapResultAdapter : IVerifyResultAdapter
     if (string.IsNullOrWhiteSpace(scapStatus))
       return VerifyStatus.Unknown;
 
-    var normalized = scapStatus
+    var normalized = scapStatus!
       .Trim()
       .Replace("_", string.Empty)
       .Replace("-", string.Empty)

@@ -1,0 +1,108 @@
+<Window x:Class="STIGForge.App.Views.HelpDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="STIGForge Help and SOP" Height="760" Width="980"
+        WindowStartupLocation="CenterOwner">
+  <Grid Margin="16">
+    <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="Auto"/>
+    </Grid.RowDefinitions>
+
+    <StackPanel Grid.Row="0" Margin="0,0,0,12">
+      <TextBlock Text="STIGForge SOP and Workflow Guide" FontSize="24" FontWeight="Bold"/>
+      <TextBlock Text="Use this guide to run endpoint hardening, golden image baking, and SCCM PXE image preparation." Foreground="Gray" Margin="0,4,0,0" TextWrapping="Wrap"/>
+    </StackPanel>
+
+    <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
+      <StackPanel>
+        <Border BorderBrush="LightGray" BorderThickness="1" Padding="12" Margin="0,0,0,10" Background="#FAFAFA">
+          <StackPanel>
+            <TextBlock Text="Quick SOP (Guided Run)" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8"/>
+            <TextBlock Text="1) Import Content Pack: load DISA STIG ZIP content." Margin="0,0,0,4" TextWrapping="Wrap"/>
+            <TextBlock Text="2) Select and Save Profile: choose mode/classification and overlay policy." Margin="0,0,0,4" TextWrapping="Wrap"/>
+            <TextBlock Text="3) Build Bundle: generate Apply/Verify/Manual/Evidence/Reports artifacts." Margin="0,0,0,4" TextWrapping="Wrap"/>
+            <TextBlock Text="4) Run Orchestration: execute Apply -> Verify -> Export with selected options." Margin="0,0,0,4" TextWrapping="Wrap"/>
+            <TextBlock Text="5) Review and Export: inspect logs, open artifacts, rerun as needed." TextWrapping="Wrap"/>
+          </StackPanel>
+        </Border>
+
+        <Border BorderBrush="LightGray" BorderThickness="1" Padding="12" Margin="0,0,0,10" Background="White">
+          <StackPanel>
+            <TextBlock Text="Mission Presets" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8"/>
+            <TextBlock Text="Workstation/VM Compliance: safest default for managed endpoints. Snapshot stays enabled." Margin="0,0,0,4" TextWrapping="Wrap"/>
+            <TextBlock Text="Golden VM Image: image bake pattern. Often uses break-glass skip snapshot with external hypervisor snapshot control." Margin="0,0,0,4" TextWrapping="Wrap"/>
+            <TextBlock Text="SCCM PXE Image: bake and validate image baseline, then hand off captured image to SCCM task sequence." TextWrapping="Wrap"/>
+          </StackPanel>
+        </Border>
+
+        <Border BorderBrush="LightGray" BorderThickness="1" Padding="12" Margin="0,0,0,10" Background="White">
+          <StackPanel>
+            <TextBlock Text="PowerSTIG in Workflow" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8"/>
+            <TextBlock Text="PowerSTIG is optional and runs during Apply when a module path is provided." Margin="0,0,0,4" TextWrapping="Wrap"/>
+            <TextBlock Text="Input fields:" FontWeight="SemiBold"/>
+            <TextBlock Text="- PowerSTIG module: required to enable compile step." Margin="0,2,0,0" TextWrapping="Wrap"/>
+            <TextBlock Text="- PowerSTIG data: optional .psd1; auto-generated from bundle controls/overrides if omitted." Margin="0,2,0,0" TextWrapping="Wrap"/>
+            <TextBlock Text="- PowerSTIG output: optional output folder; default is bundle Apply/Dsc." Margin="0,2,0,0" TextWrapping="Wrap"/>
+            <TextBlock Text="- Verbose: additional compile detail in logs." Margin="0,2,0,0" TextWrapping="Wrap"/>
+          </StackPanel>
+        </Border>
+
+        <Border BorderBrush="LightGray" BorderThickness="1" Padding="12" Margin="0,0,0,10" Background="White">
+          <StackPanel>
+            <TextBlock Text="Snapshot and Break-Glass" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8"/>
+            <TextBlock Text="Snapshot captures pre-apply rollback artifacts (security policy, audit policy, optional LGPO state)." Margin="0,0,0,4" TextWrapping="Wrap"/>
+            <TextBlock Text="Skip snapshot is high risk and should be limited to controlled image-bake pipelines with alternate rollback controls." Margin="0,0,0,4" TextWrapping="Wrap"/>
+            <TextBlock Text="When skip snapshot is enabled, break-glass acknowledgement and a specific reason are required and auditable." TextWrapping="Wrap"/>
+          </StackPanel>
+        </Border>
+
+        <Border BorderBrush="LightGray" BorderThickness="1" Padding="12" Margin="0,0,0,10" Background="White">
+          <StackPanel>
+            <TextBlock Text="Workflows by Objective" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8"/>
+            <TextBlock Text="1) Endpoint Hardening (physical workstation or long-lived VM):" FontWeight="SemiBold"/>
+            <TextBlock Text="- Use Workstation/VM Compliance preset." Margin="0,2,0,0" TextWrapping="Wrap"/>
+            <TextBlock Text="- Keep snapshot enabled; run apply + verify + export." Margin="0,2,0,0" TextWrapping="Wrap"/>
+            <TextBlock Text="- Resolve blocking findings before release." Margin="0,2,0,6" TextWrapping="Wrap"/>
+
+            <TextBlock Text="2) Golden Image Build (reference VM):" FontWeight="SemiBold"/>
+            <TextBlock Text="- Use Golden VM Image preset." Margin="0,2,0,0" TextWrapping="Wrap"/>
+            <TextBlock Text="- Configure PowerSTIG if part of your baseline." Margin="0,2,0,0" TextWrapping="Wrap"/>
+            <TextBlock Text="- Run orchestration, validate outputs, then capture image." Margin="0,2,0,6" TextWrapping="Wrap"/>
+
+            <TextBlock Text="3) SCCM PXE Image Preparation:" FontWeight="SemiBold"/>
+            <TextBlock Text="- Use SCCM PXE Image preset." Margin="0,2,0,0" TextWrapping="Wrap"/>
+            <TextBlock Text="- Harden and validate in STIGForge first." Margin="0,2,0,0" TextWrapping="Wrap"/>
+            <TextBlock Text="- Capture/import resulting image into SCCM task sequence pipeline." Margin="0,2,0,0" TextWrapping="Wrap"/>
+          </StackPanel>
+        </Border>
+
+        <Border BorderBrush="LightGray" BorderThickness="1" Padding="12" Margin="0,0,0,10" Background="White">
+          <StackPanel>
+            <TextBlock Text="Advanced Tab Features" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8"/>
+            <TextBlock Text="Content Packs: import/manage STIG content and mapping exports." Margin="0,0,0,2" TextWrapping="Wrap"/>
+            <TextBlock Text="Profiles: mode/classification/NA policy and overlay selection." Margin="0,0,0,2" TextWrapping="Wrap"/>
+            <TextBlock Text="Build/Apply/Verify: direct phase execution and diagnostics." Margin="0,0,0,2" TextWrapping="Wrap"/>
+            <TextBlock Text="Evidence/Manual: collect operator evidence and complete manual controls." Margin="0,0,0,2" TextWrapping="Wrap"/>
+            <TextBlock Text="Orchestrate/Reports/Export: pipeline run, mission summaries, export packages." Margin="0,0,0,2" TextWrapping="Wrap"/>
+            <TextBlock Text="Audit Log/Schedule/Fleet: audit evidence, scheduling, and fleet operations." TextWrapping="Wrap"/>
+          </StackPanel>
+        </Border>
+
+        <Border BorderBrush="LightGray" BorderThickness="1" Padding="12" Background="#FAFAFA">
+          <StackPanel>
+            <TextBlock Text="Artifact Locations and Troubleshooting" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8"/>
+            <TextBlock Text="Bundle folders: Apply, Verify, Export, Reports, Manual, Evidence." Margin="0,0,0,4" TextWrapping="Wrap"/>
+            <TextBlock Text="Primary apply artifacts: Apply/apply_run.json and Apply/Snapshots." Margin="0,0,0,4" TextWrapping="Wrap"/>
+            <TextBlock Text="If orchestration blocks: use Guided Next Action text, inspect listed artifacts, fix prerequisites, rerun apply/verify." Margin="0,0,0,4" TextWrapping="Wrap"/>
+            <TextBlock Text="If snapshot fails: run elevated, verify secedit/auditpol availability, or use approved break-glass in image pipelines." TextWrapping="Wrap"/>
+          </StackPanel>
+        </Border>
+      </StackPanel>
+    </ScrollViewer>
+
+    <Button Grid.Row="2" Content="Close" Width="110" Height="30" HorizontalAlignment="Right" Margin="0,12,0,0"
+            IsDefault="True" IsCancel="True" Click="Close_Click"/>
+  </Grid>
+</Window>

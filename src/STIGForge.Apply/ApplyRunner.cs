@@ -331,7 +331,7 @@ public sealed class ApplyRunner
       };
    }
 
-   private static HardeningMode? TryReadModeFromManifest(string bundleRoot)
+  private static HardeningMode? TryReadModeFromManifest(string bundleRoot)
   {
     var manifestPath = Path.Combine(bundleRoot, "Manifest", "manifest.json");
     if (!File.Exists(manifestPath)) return null;
@@ -341,11 +341,23 @@ public sealed class ApplyRunner
     if (!doc.RootElement.TryGetProperty("Profile", out var profile)) return null;
 
     if (!profile.TryGetProperty("HardeningMode", out var mode)) return null;
-    var value = mode.GetString();
-    if (string.IsNullOrWhiteSpace(value)) return null;
 
-    if (Enum.TryParse<HardeningMode>(value, true, out var parsed))
-      return parsed;
+    if (mode.ValueKind == JsonValueKind.String)
+    {
+      var value = mode.GetString();
+      if (string.IsNullOrWhiteSpace(value)) return null;
+
+      if (Enum.TryParse<HardeningMode>(value, true, out var parsedFromString))
+        return parsedFromString;
+
+      return null;
+    }
+
+    if (mode.ValueKind == JsonValueKind.Number && mode.TryGetInt32(out var numeric))
+    {
+      if (Enum.IsDefined(typeof(HardeningMode), numeric))
+        return (HardeningMode)numeric;
+    }
 
     return null;
   }
@@ -393,11 +405,11 @@ public sealed class ApplyRunner
 
     var outputTask = process.StandardOutput.ReadToEndAsync();
     var errorTask = process.StandardError.ReadToEndAsync();
-    await Task.WhenAll(outputTask, errorTask);
+    await Task.WhenAll(outputTask, errorTask).ConfigureAwait(false);
     process.WaitForExit();
 
-    File.WriteAllText(stdout, outputTask.Result);
-    File.WriteAllText(stderr, errorTask.Result);
+    File.WriteAllText(stdout, await outputTask.ConfigureAwait(false));
+    File.WriteAllText(stderr, await errorTask.ConfigureAwait(false));
 
     return new ApplyStepOutcome
     {
@@ -453,11 +465,11 @@ public sealed class ApplyRunner
 
     var outputTask = process.StandardOutput.ReadToEndAsync();
     var errorTask = process.StandardError.ReadToEndAsync();
-    await Task.WhenAll(outputTask, errorTask);
+    await Task.WhenAll(outputTask, errorTask).ConfigureAwait(false);
     process.WaitForExit();
 
-    File.WriteAllText(stdout, outputTask.Result);
-    File.WriteAllText(stderr, errorTask.Result);
+    File.WriteAllText(stdout, await outputTask.ConfigureAwait(false));
+    File.WriteAllText(stderr, await errorTask.ConfigureAwait(false));
 
     return new ApplyStepOutcome
     {
@@ -481,8 +493,8 @@ public sealed class ApplyRunner
     bool verbose,
     CancellationToken ct)
   {
-    if (!Directory.Exists(modulePath))
-      throw new DirectoryNotFoundException("PowerSTIG module path not found: " + modulePath);
+    if (!Directory.Exists(modulePath) && !File.Exists(modulePath))
+      throw new FileNotFoundException("PowerSTIG module path not found: " + modulePath, modulePath);
 
     Directory.CreateDirectory(outputPath);
 
@@ -521,11 +533,11 @@ public sealed class ApplyRunner
 
     var outputTask = process.StandardOutput.ReadToEndAsync();
     var errorTask = process.StandardError.ReadToEndAsync();
-    await Task.WhenAll(outputTask, errorTask);
+    await Task.WhenAll(outputTask, errorTask).ConfigureAwait(false);
     process.WaitForExit();
 
-    File.WriteAllText(stdout, outputTask.Result);
-    File.WriteAllText(stderr, errorTask.Result);
+    File.WriteAllText(stdout, await outputTask.ConfigureAwait(false));
+    File.WriteAllText(stderr, await errorTask.ConfigureAwait(false));
 
     return new ApplyStepOutcome
     {
@@ -570,7 +582,8 @@ public sealed class ApplyRunner
   private static List<string> GetRecoveryArtifactPaths(SnapshotResult? snapshot, string snapshotsDir, string logPath)
   {
     var artifacts = new List<string>();
-    if (!string.IsNullOrWhiteSpace(snapshot?.RollbackScriptPath)) artifacts.Add(snapshot.RollbackScriptPath);
+    var rollbackScriptPath = snapshot?.RollbackScriptPath;
+    if (rollbackScriptPath is { Length: > 0 }) artifacts.Add(rollbackScriptPath);
     if (Directory.Exists(snapshotsDir)) artifacts.Add(snapshotsDir);
     if (!string.IsNullOrWhiteSpace(logPath)) artifacts.Add(logPath);
     return artifacts.Distinct(StringComparer.OrdinalIgnoreCase).ToList();

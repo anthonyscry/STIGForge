@@ -27,9 +27,11 @@ public static class OvalParser
       var title = metadata?.Element(OvalNs + "title")?.Value?.Trim();
       var description = metadata?.Element(OvalNs + "description")?.Value?.Trim();
 
+      var definitionId = id;
+
       results.Add(new OvalDefinition
       {
-        DefinitionId = id,
+        DefinitionId = definitionId!,
         Title = title,
         Class = definition.Attribute("class")?.Value?.Trim(),
         Description = description

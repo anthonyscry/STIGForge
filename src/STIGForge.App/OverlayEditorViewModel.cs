@@ -31,11 +31,14 @@ public partial class OverlayEditorViewModel : ObservableObject
   {
     if (string.IsNullOrWhiteSpace(PowerStigRuleId)) return;
 
-    PowerStigOverrides.Add(new PowerStigOverride
+    System.Windows.Application.Current.Dispatcher.Invoke(() =>
     {
-      RuleId = PowerStigRuleId.Trim(),
-      SettingName = string.IsNullOrWhiteSpace(PowerStigSettingName) ? null : PowerStigSettingName.Trim(),
-      Value = string.IsNullOrWhiteSpace(PowerStigValue) ? null : PowerStigValue.Trim()
+      PowerStigOverrides.Add(new PowerStigOverride
+      {
+        RuleId = PowerStigRuleId.Trim(),
+        SettingName = string.IsNullOrWhiteSpace(PowerStigSettingName) ? null : PowerStigSettingName.Trim(),
+        Value = string.IsNullOrWhiteSpace(PowerStigValue) ? null : PowerStigValue.Trim()
+      });
     });
 
     PowerStigRuleId = string.Empty;
@@ -56,8 +59,11 @@ public partial class OverlayEditorViewModel : ObservableObject
     if (ofd.ShowDialog() != true) return;
 
     var rows = ReadPowerStigCsv(ofd.FileName);
-    foreach (var r in rows)
-      PowerStigOverrides.Add(r);
+    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+    {
+      foreach (var r in rows)
+        PowerStigOverrides.Add(r);
+    });
 
     OnPropertyChanged(nameof(PowerStigOverrides));
   }

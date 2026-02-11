@@ -214,10 +214,12 @@ public sealed class LcmService
 
         var outputTask = process.StandardOutput.ReadToEndAsync();
         var errorTask = process.StandardError.ReadToEndAsync();
-        await Task.WhenAll(outputTask, errorTask);
+        await Task.WhenAll(outputTask, errorTask).ConfigureAwait(false);
         process.WaitForExit();
 
-        return (process.ExitCode, outputTask.Result, errorTask.Result);
+        var output = await outputTask.ConfigureAwait(false);
+        var error = await errorTask.ConfigureAwait(false);
+        return (process.ExitCode, output, error);
     }
 
     private static string? TryGetString(JsonElement element, string propertyName)

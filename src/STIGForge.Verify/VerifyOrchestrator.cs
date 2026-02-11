@@ -94,6 +94,9 @@ public sealed class VerifyOrchestrator
       var controlId = group.Key;
       var controlResults = group.Select(x => x.Result).ToList();
 
+      if (controlResults.Count == 0)
+        continue;
+
       if (controlResults.Count == 1)
       {
         // Single result - no conflict
@@ -167,6 +170,19 @@ public sealed class VerifyOrchestrator
                         .ThenBy(r => r.RuleId ?? string.Empty, StringComparer.OrdinalIgnoreCase)
                         .ThenBy(r => r.VulnId ?? string.Empty, StringComparer.OrdinalIgnoreCase)
                         .ToList();
+
+    if (sorted.Count == 0)
+    {
+      return new NormalizedVerifyResult
+      {
+        ControlId = controlId,
+        Status = VerifyStatus.NotReviewed,
+        Tool = "Merged",
+        SourceFile = string.Empty,
+        EvidencePaths = Array.Empty<string>(),
+        Metadata = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+      };
+    }
 
     var primary = sorted[0];
     var alternatives = sorted.Skip(1).ToList();
@@ -325,17 +341,17 @@ public sealed class VerifyOrchestrator
   private static string BuildGroupKey(NormalizedVerifyResult result, int fallbackIndex)
   {
     if (!string.IsNullOrWhiteSpace(result.ControlId))
-      return result.ControlId.Trim();
+      return result.ControlId!.Trim();
 
     if (!string.IsNullOrWhiteSpace(result.VulnId))
-      return result.VulnId.Trim();
+      return result.VulnId!.Trim();
 
     if (!string.IsNullOrWhiteSpace(result.RuleId))
-      return result.RuleId.Trim();
+      return result.RuleId!.Trim();
 
-    var tool = string.IsNullOrWhiteSpace(result.Tool) ? "unknown-tool" : result.Tool.Trim();
-    var source = string.IsNullOrWhiteSpace(result.SourceFile) ? "unknown-source" : result.SourceFile.Trim();
-    var title = string.IsNullOrWhiteSpace(result.Title) ? "unknown-title" : result.Title.Trim();
+    var tool = string.IsNullOrWhiteSpace(result.Tool) ? "unknown-tool" : result.Tool!.Trim();
+    var source = string.IsNullOrWhiteSpace(result.SourceFile) ? "unknown-source" : result.SourceFile!.Trim();
+    var title = string.IsNullOrWhiteSpace(result.Title) ? "unknown-title" : result.Title!.Trim();
     if (!string.Equals(tool, "unknown-tool", StringComparison.Ordinal)
         || !string.Equals(source, "unknown-source", StringComparison.Ordinal)
         || !string.Equals(title, "unknown-title", StringComparison.Ordinal))

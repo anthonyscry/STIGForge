@@ -73,10 +73,7 @@ public sealed class ManualAnswerService
 
   public bool IsMeaningfulReason(string? reason, int minimumLength = 3)
   {
-    if (string.IsNullOrWhiteSpace(reason))
-      return false;
-
-    var trimmed = reason.Trim();
+    var trimmed = (reason ?? string.Empty).Trim();
     if (trimmed.Length < minimumLength)
       return false;
 
@@ -151,15 +148,15 @@ public sealed class ManualAnswerService
     var file = LoadAnswerFile(bundleRoot);
 
     if (!string.IsNullOrWhiteSpace(profileId))
-      file.ProfileId = profileId.Trim();
+      file.ProfileId = (profileId ?? string.Empty).Trim();
 
     if (!string.IsNullOrWhiteSpace(packId))
-      file.PackId = packId.Trim();
+      file.PackId = (packId ?? string.Empty).Trim();
 
-    var ruleId = string.IsNullOrWhiteSpace(answer.RuleId) ? null : answer.RuleId.Trim();
-    var vulnId = string.IsNullOrWhiteSpace(answer.VulnId) ? null : answer.VulnId.Trim();
-    var reason = string.IsNullOrWhiteSpace(answer.Reason) ? null : answer.Reason.Trim();
-    var comment = string.IsNullOrWhiteSpace(answer.Comment) ? null : answer.Comment.Trim();
+    var ruleId = string.IsNullOrWhiteSpace(answer.RuleId) ? null : (answer.RuleId ?? string.Empty).Trim();
+    var vulnId = string.IsNullOrWhiteSpace(answer.VulnId) ? null : (answer.VulnId ?? string.Empty).Trim();
+    var reason = string.IsNullOrWhiteSpace(answer.Reason) ? null : (answer.Reason ?? string.Empty).Trim();
+    var comment = string.IsNullOrWhiteSpace(answer.Comment) ? null : (answer.Comment ?? string.Empty).Trim();
     
     // Find existing answer by RuleId or VulnId
     var existing = file.Answers.FirstOrDefault(a =>
@@ -323,11 +320,11 @@ public sealed class ManualAnswerService
 
     foreach (var answer in answerFile.Answers)
     {
-      answer.RuleId = string.IsNullOrWhiteSpace(answer.RuleId) ? null : answer.RuleId.Trim();
-      answer.VulnId = string.IsNullOrWhiteSpace(answer.VulnId) ? null : answer.VulnId.Trim();
+      answer.RuleId = string.IsNullOrWhiteSpace(answer.RuleId) ? null : (answer.RuleId ?? string.Empty).Trim();
+      answer.VulnId = string.IsNullOrWhiteSpace(answer.VulnId) ? null : (answer.VulnId ?? string.Empty).Trim();
       answer.Status = NormalizeStatus(answer.Status);
-      answer.Reason = string.IsNullOrWhiteSpace(answer.Reason) ? null : answer.Reason.Trim();
-      answer.Comment = string.IsNullOrWhiteSpace(answer.Comment) ? null : answer.Comment.Trim();
+      answer.Reason = string.IsNullOrWhiteSpace(answer.Reason) ? null : (answer.Reason ?? string.Empty).Trim();
+      answer.Comment = string.IsNullOrWhiteSpace(answer.Comment) ? null : (answer.Comment ?? string.Empty).Trim();
     }
   }
 
@@ -336,7 +333,7 @@ public sealed class ManualAnswerService
     if (string.IsNullOrWhiteSpace(status))
       return string.Empty;
 
-    var source = status.Trim().ToLowerInvariant();
+    var source = (status ?? string.Empty).Trim().ToLowerInvariant();
     var sb = new StringBuilder(source.Length);
     foreach (var ch in source)
     {

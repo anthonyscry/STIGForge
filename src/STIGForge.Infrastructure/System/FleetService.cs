@@ -130,46 +130,100 @@ public sealed class FleetService
 
   private static string BuildRemoteScript(FleetTarget target, FleetRequest request)
   {
-    var sb = new StringBuilder();
     var cliPath = request.RemoteCliPath ?? "C:\\STIGForge\\STIGForge.Cli.exe";
     var bundleRoot = request.RemoteBundleRoot ?? "C:\\STIGForge\\bundle";
+    var applyMode = (request.ApplyMode ?? string.Empty).Trim();
+    var scapCmd = (request.ScapCmd ?? string.Empty).Trim();
+    var scapArgs = (request.ScapArgs ?? string.Empty).Trim();
+    var evaluateStigRoot = (request.EvaluateStigRoot ?? string.Empty).Trim();
+    var args = new List<string>();
 
     switch (request.Operation?.ToLowerInvariant())
     {
       case "apply":
-        sb.Append($"& '{cliPath}' apply-run --bundle '{bundleRoot}'");
-        if (!string.IsNullOrWhiteSpace(request.ApplyMode))
-          sb.Append($" --mode {request.ApplyMode}");
+        args.Add("apply-run");
+        args.Add("--bundle");
+        args.Add(bundleRoot);
+        if (!string.IsNullOrWhiteSpace(applyMode))
+        {
+          args.Add("--mode");
+          args.Add(applyMode);
+        }
         break;
 
       case "verify":
-        if (!string.IsNullOrWhiteSpace(request.ScapCmd))
+        if (!string.IsNullOrWhiteSpace(scapCmd))
         {
-          sb.Append($"& '{cliPath}' verify-scap --cmd '{request.ScapCmd}'");
-          if (!string.IsNullOrWhiteSpace(request.ScapArgs))
-            sb.Append($" --args '{request.ScapArgs}'");
+          args.Add("verify-scap");
+          args.Add("--cmd");
+          args.Add(scapCmd);
+          if (!string.IsNullOrWhiteSpace(scapArgs))
+          {
+            args.Add("--args");
+            args.Add(scapArgs);
+          }
         }
-        else if (!string.IsNullOrWhiteSpace(request.EvaluateStigRoot))
+        else if (!string.IsNullOrWhiteSpace(evaluateStigRoot))
         {
-          sb.Append($"& '{cliPath}' verify-evaluate-stig --tool-root '{request.EvaluateStigRoot}'");
+          args.Add("verify-evaluate-stig");
+          args.Add("--tool-root");
+          args.Add(evaluateStigRoot);
         }
         else
         {
-          sb.Append($"& '{cliPath}' orchestrate --bundle '{bundleRoot}'");
+          args.Add("orchestrate");
+          args.Add("--bundle");
+          args.Add(bundleRoot);
         }
         break;
 
       case "orchestrate":
       default:
-        sb.Append($"& '{cliPath}' orchestrate --bundle '{bundleRoot}'");
-        if (!string.IsNullOrWhiteSpace(request.EvaluateStigRoot))
-          sb.Append($" --evaluate-stig '{request.EvaluateStigRoot}'");
-        if (!string.IsNullOrWhiteSpace(request.ScapCmd))
-          sb.Append($" --scap-cmd '{request.ScapCmd}'");
+        args.Add("orchestrate");
+        args.Add("--bundle");
+        args.Add(bundleRoot);
+        if (!string.IsNullOrWhiteSpace(evaluateStigRoot))
+        {
+          args.Add("--evaluate-stig");
+          args.Add(evaluateStigRoot);
+        }
+
+        if (!string.IsNullOrWhiteSpace(scapCmd))
+        {
+          args.Add("--scap-cmd");
+          args.Add(scapCmd);
+        }
+
+        if (!string.IsNullOrWhiteSpace(scapArgs))
+        {
+          args.Add("--scap-args");
+          args.Add(scapArgs);
+        }
         break;
     }
 
-    return sb.ToString();
+    return BuildCliInvocationScript(cliPath, args);
+  }
+
+  private static string BuildCliInvocationScript(string cliPath, IReadOnlyList<string> args)
+  {
+    var script = new StringBuilder();
+    script.Append("$cliPath = ").Append(ToPowerShellSingleQuoted(cliPath)).Append("; ");
+    script.Append("$cliArgs = @(");
+    for (var i = 0; i < args.Count; i++)
+    {
+      if (i > 0) script.Append(", ");
+      script.Append(ToPowerShellSingleQuoted(args[i]));
+    }
+
+    script.Append("); ");
+    script.Append("& $cliPath @cliArgs");
+    return script.ToString();
+  }
+
+  private static string ToPowerShellSingleQuoted(string? value)
+  {
+    return "'" + (value ?? string.Empty).Replace("'", "''") + "'";
   }
 
   private static async Task<(int ExitCode, string Output, string Error)> RunPowerShellRemoteAsync(
@@ -177,20 +231,29 @@ public sealed class FleetService
   {
     var connectionTarget = !string.IsNullOrWhiteSpace(target.IpAddress) ? target.IpAddress : target.HostName;
 
-    // Build Invoke-Command PSRemoting call
     var psScript = new StringBuilder();
-    psScript.Append($"$result = Invoke-Command -ComputerName '{connectionTarget}'");
+    psScript.Append("$computerName = ").Append(ToPowerShellSingleQuoted(connectionTarget)).Append("; ");
+    psScript.Append("$remoteScript = ").Append(ToPowerShellSingleQuoted(remoteScript)).Append("; ");
 
     if (!string.IsNullOrWhiteSpace(target.CredentialUser))
     {
-      psScript.Append($" -Credential (New-Object PSCredential('{target.CredentialUser}', (ConvertTo-SecureString '{target.CredentialPassword}' -AsPlainText -Force)))");
+      psScript.Append("$fleetUser = $env:STIGFORGE_FLEET_USER; ");
+      psScript.Append("$fleetPass = $env:STIGFORGE_FLEET_PASS; ");
+      psScript.Append("$fleetSecure = ConvertTo-SecureString $fleetPass -AsPlainText -Force; ");
+      psScript.Append("$fleetCredential = New-Object System.Management.Automation.PSCredential($fleetUser, $fleetSecure); ");
+      psScript.Append("$result = Invoke-Command -ComputerName $computerName -Credential $fleetCredential -ScriptBlock ([ScriptBlock]::Create($remoteScript)) -ErrorAction Stop; ");
+    }
+    else
+    {
+      psScript.Append("$result = Invoke-Command -ComputerName $computerName -ScriptBlock ([ScriptBlock]::Create($remoteScript)) -ErrorAction Stop; ");
     }
 
-    psScript.Append($" -ScriptBlock {{ {remoteScript} }} -ErrorAction Stop; ");
     psScript.Append("$result");
 
+    var encodedScript = Convert.ToBase64String(Encoding.Unicode.GetBytes(psScript.ToString()));
+
     var psi = new global::System.Diagnostics.ProcessStartInfo("powershell.exe",
-      $"-NoProfile -NonInteractive -ExecutionPolicy Bypass -Command \"{psScript}\"")
+      $"-NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand {encodedScript}")
     {
       RedirectStandardOutput = true,
       RedirectStandardError = true,
@@ -198,19 +261,75 @@ public sealed class FleetService
       CreateNoWindow = true
     };
 
+    if (!string.IsNullOrWhiteSpace(target.CredentialUser))
+    {
+      psi.Environment["STIGFORGE_FLEET_USER"] = target.CredentialUser;
+      psi.Environment["STIGFORGE_FLEET_PASS"] = target.CredentialPassword ?? string.Empty;
+    }
+
     using var proc = global::System.Diagnostics.Process.Start(psi);
     if (proc == null) return (-1, string.Empty, "Failed to start PowerShell");
+
+    var exited = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+    proc.EnableRaisingEvents = true;
+    proc.Exited += (_, _) => exited.TrySetResult(true);
+    if (proc.HasExited) exited.TrySetResult(true);
+
+    using var cancelRegistration = ct.Register(() =>
+    {
+      TryKill(proc);
+      exited.TrySetCanceled(ct);
+    });
 
     var outputTask = proc.StandardOutput.ReadToEndAsync();
     var errorTask = proc.StandardError.ReadToEndAsync();
 
-    var timeout = timeoutSeconds > 0 ? timeoutSeconds * 1000 : 600000; // default 10 min
-    proc.WaitForExit(timeout);
+    var effectiveTimeoutSeconds = timeoutSeconds > 0 ? timeoutSeconds : 600;
+    var timeoutTask = Task.Delay(effectiveTimeoutSeconds * 1000);
+    var completed = await Task.WhenAny(exited.Task, timeoutTask).ConfigureAwait(false);
+
+    if (completed == timeoutTask)
+    {
+      TryKill(proc);
+      await Task.WhenAny(exited.Task, Task.Delay(2000)).ConfigureAwait(false);
+      var timeoutOutput = await outputTask.ConfigureAwait(false);
+      var timeoutError = await errorTask.ConfigureAwait(false);
+      var timeoutMessage = "Timed out after " + effectiveTimeoutSeconds + " seconds.";
+      if (!string.IsNullOrWhiteSpace(timeoutError))
+        timeoutMessage += " " + timeoutError.Trim();
+      return (-1, timeoutOutput.Trim(), timeoutMessage.Trim());
+    }
+
+    try
+    {
+      await exited.Task.ConfigureAwait(false);
+    }
+    catch (TaskCanceledException)
+    {
+      var canceledOutput = await outputTask.ConfigureAwait(false);
+      var canceledError = await errorTask.ConfigureAwait(false);
+      var canceledMessage = "Operation cancelled.";
+      if (!string.IsNullOrWhiteSpace(canceledError))
+        canceledMessage += " " + canceledError.Trim();
+      return (-1, canceledOutput.Trim(), canceledMessage.Trim());
+    }
 
     var output = await outputTask.ConfigureAwait(false);
     var error = await errorTask.ConfigureAwait(false);
 
     return (proc.ExitCode, output.Trim(), error.Trim());
+  }
+
+  private static void TryKill(global::System.Diagnostics.Process process)
+  {
+    try
+    {
+      if (!process.HasExited)
+        process.Kill();
+    }
+    catch
+    {
+    }
   }
 
   private async Task<FleetMachineStatus> TestConnectionAsync(FleetTarget target, CancellationToken ct)

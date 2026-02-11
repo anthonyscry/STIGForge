@@ -121,7 +121,10 @@ public static class VerifyReportWriter
       bool anyOpen = g.Any(r => !IsClosed(r.Status));
       bool isClosed = anyClosed && !anyOpen;
 
-      var sample = g.First();
+      var sample = g.FirstOrDefault();
+      if (sample == null)
+        continue;
+
       maps.Add(new ControlSourceMap
       {
         ControlKey = g.Key,
