@@ -38,6 +38,46 @@ public partial class MainViewModel : ObservableObject, IDisposable
   private ICollectionView? _manualView;
 
   [ObservableProperty] private string statusText = "Ready.";
+  [ObservableProperty] private bool isDarkTheme = true;
+  public string ThemeToggleLabel => IsDarkTheme ? "\u2600\uFE0F" : "\uD83C\uDF19";
+
+  partial void OnIsDarkThemeChanged(bool value)
+  {
+    OnPropertyChanged(nameof(ThemeToggleLabel));
+    ApplyTheme(value);
+  }
+
+  public static void ApplyTheme(bool dark)
+  {
+    var app = System.Windows.Application.Current;
+    if (app == null) return;
+    var dict = app.Resources.MergedDictionaries;
+    dict.Clear();
+    var uri = dark
+      ? new Uri("Themes/DarkTheme.xaml", UriKind.Relative)
+      : new Uri("Themes/LightTheme.xaml", UriKind.Relative);
+    dict.Add(new System.Windows.ResourceDictionary { Source = uri });
+
+    // Apply dark/light title bar via DWM (Windows 10 1809+ / Windows 11)
+    if (app.MainWindow != null)
+      SetDarkTitleBar(app.MainWindow, dark);
+  }
+
+  [System.Runtime.InteropServices.DllImport("dwmapi.dll", PreserveSig = true)]
+  private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attr, ref int value, int size);
+
+  public static void SetDarkTitleBar(System.Windows.Window window, bool dark)
+  {
+    try
+    {
+      var hwnd = new System.Windows.Interop.WindowInteropHelper(window).Handle;
+      if (hwnd == IntPtr.Zero) return;
+      int useDark = dark ? 1 : 0;
+      // DWMWA_USE_IMMERSIVE_DARK_MODE = 20
+      DwmSetWindowAttribute(hwnd, 20, ref useDark, sizeof(int));
+    }
+    catch { /* Silently ignore on older Windows versions */ }
+  }
   [ObservableProperty] private string importHint = "Import single ZIPs, consolidated bundles, or GPO/LGPO ZIPs (ADMX auto-import enabled).";
   [ObservableProperty] private string buildGateStatus = "";
   [ObservableProperty] private string applyStatus = "";
@@ -115,10 +155,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
   public ObservableCollection<string> RecentBundles { get; } = new();
   public ObservableCollection<OverlapItem> OverlapItems { get; } = new();
   public ObservableCollection<ManualControlItem> ManualControls { get; } = new();
-  public ObservableCollection<ImportedLibraryItem> StigLibraryItems { get; } = new();
-  public ObservableCollection<ImportedLibraryItem> ScapLibraryItems { get; } = new();
-  public ObservableCollection<ImportedLibraryItem> OtherLibraryItems { get; } = new();
-  public ICollectionView ManualControlsView => _manualView ??= CollectionViewSource.GetDefaultView(ManualControls);
+   public ObservableCollection<ImportedLibraryItem> StigLibraryItems { get; } = new();
+   public ObservableCollection<ImportedLibraryItem> ScapLibraryItems { get; } = new();
+   public ObservableCollection<ImportedLibraryItem> OtherLibraryItems { get; } = new();
+   public ObservableCollection<ImportedLibraryItem> AllLibraryItems { get; } = new();
+    public HashSet<string> ApplicablePackIds { get; } = new(StringComparer.OrdinalIgnoreCase);
+    private ICollectionView? _filteredContentLibrary;
+   public ICollectionView FilteredContentLibrary => _filteredContentLibrary ??= CreateFilteredLibraryView();
+   public ICollectionView ManualControlsView => _manualView ??= CollectionViewSource.GetDefaultView(ManualControls);
 
   [ObservableProperty] private ContentPack? selectedPack;
   [ObservableProperty] private Profile? selectedProfile;
@@ -128,6 +172,16 @@ public partial class MainViewModel : ObservableObject, IDisposable
   [ObservableProperty] private int profileGraceDays = 30;
   [ObservableProperty] private bool profileAutoNa = true;
   [ObservableProperty] private string profileNaComment = "Not applicable: unclassified-only control; system is classified.";
+
+  partial void OnProfileClassificationChanged(string value)
+  {
+    ProfileNaComment = value switch
+    {
+      "Unclassified" => "Not applicable: unclassified-only control; system is classified.",
+      "Classified"   => "Not applicable: classified-only control; system is unclassified.",
+      _              => "Not applicable: control is out of scope for the current classification."
+    };
+  }
   [ObservableProperty] private string packDetailName = "";
   [ObservableProperty] private string packDetailId = "";
   [ObservableProperty] private string packDetailReleaseDate = "";
@@ -135,8 +189,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
   [ObservableProperty] private string packDetailSource = "";
   [ObservableProperty] private string packDetailHash = "";
   [ObservableProperty] private string packDetailControls = "";
-  [ObservableProperty] private string packDetailRoot = "";
-  [ObservableProperty] private string evidenceRuleId = "";
+   [ObservableProperty] private string packDetailRoot = "";
+   [ObservableProperty] private string packDetailFormat = "";
+   [ObservableProperty] private string contentLibraryFilter = "All";
+   [ObservableProperty] private string contentSearchText = "";
+   [ObservableProperty] private ImportedLibraryItem? selectedLibraryItem;
+   [ObservableProperty] private string evidenceRuleId = "";
   [ObservableProperty] private string evidenceType = "Command";
   [ObservableProperty] private string evidenceText = "";
   [ObservableProperty] private string evidenceFilePath = "";
@@ -171,16 +229,22 @@ public partial class MainViewModel : ObservableObject, IDisposable
     "Open"
   };
 
-  public IReadOnlyList<string> ManualStatusFilters { get; } = new[]
-  {
-    "All",
-    "Pass",
-    "Fail",
-    "NotApplicable",
-    "Open"
-  };
+   public IReadOnlyList<string> ManualStatusFilters { get; } = new[]
+   {
+     "All",
+     "Pass",
+     "Fail",
+     "NotApplicable",
+     "Open"
+   };
 
-  public MainViewModel(ContentPackImporter importer, IContentPackRepository packs, IProfileRepository profiles, IControlRepository controls, IOverlayRepository overlays, BundleBuilder builder, STIGForge.Apply.ApplyRunner applyRunner, IVerificationWorkflowService verificationWorkflow, STIGForge.Export.EmassExporter emassExporter, IPathBuilder paths, EvidenceCollector evidence, IBundleMissionSummaryService bundleMissionSummary, VerificationArtifactAggregationService artifactAggregation, IAuditTrailService? audit = null, STIGForge.Infrastructure.System.ScheduledTaskService? scheduledTaskService = null, STIGForge.Infrastructure.System.FleetService? fleetService = null)
+   // Content Library Filter Properties
+   public bool IsFilterAll { get => ContentLibraryFilter == "All"; set { if (value) ContentLibraryFilter = "All"; } }
+   public bool IsFilterStig { get => ContentLibraryFilter == "STIG"; set { if (value) ContentLibraryFilter = "STIG"; } }
+   public bool IsFilterScap { get => ContentLibraryFilter == "SCAP"; set { if (value) ContentLibraryFilter = "SCAP"; } }
+   public bool IsFilterGpo { get => ContentLibraryFilter == "GPO"; set { if (value) ContentLibraryFilter = "GPO"; } }
+
+   public MainViewModel(ContentPackImporter importer, IContentPackRepository packs, IProfileRepository profiles, IControlRepository controls, IOverlayRepository overlays, BundleBuilder builder, STIGForge.Apply.ApplyRunner applyRunner, IVerificationWorkflowService verificationWorkflow, STIGForge.Export.EmassExporter emassExporter, IPathBuilder paths, EvidenceCollector evidence, IBundleMissionSummaryService bundleMissionSummary, VerificationArtifactAggregationService artifactAggregation, IAuditTrailService? audit = null, STIGForge.Infrastructure.System.ScheduledTaskService? scheduledTaskService = null, STIGForge.Infrastructure.System.FleetService? fleetService = null)
   {
     _importer = importer;
     _packs = packs;
@@ -254,6 +318,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
       });
 
       LoadUiState();
+      AutoFillHostnameDefaults();
+      LoadFleetInventory();
+
+      // Apply default preset args when EvaluateStigArgs is empty
+      if (string.IsNullOrWhiteSpace(EvaluateStigArgs) && EvalStigPresetArgs.TryGetValue(SelectedEvalStigPreset, out var defaultArgs))
+        EvaluateStigArgs = defaultArgs;
+
       if (string.IsNullOrWhiteSpace(EvaluateStigRoot) && string.IsNullOrWhiteSpace(ScapCommandPath))
         await TryActivateToolkitAsync(userInitiated: false, _cts.Token);
       LoadCoverageOverlap();
@@ -360,7 +431,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
     public string? BreakGlassReason { get; set; }
     public string? SelectedMissionPreset { get; set; }
     public bool SimpleBuildBeforeRun { get; set; }
+    public string? EvaluateStigPreset { get; set; }
     public List<string>? RecentBundles { get; set; }
+    public bool IsDarkTheme { get; set; } = true;
   }
 
   public void Dispose()

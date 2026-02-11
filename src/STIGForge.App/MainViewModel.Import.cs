@@ -1,7 +1,9 @@
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
+using System.ComponentModel;
 using System.IO;
 using System.Text.Json;
+using System.Windows.Data;
 using STIGForge.Build;
 using STIGForge.Core.Models;
 using STIGForge.App.Views;
@@ -125,48 +127,52 @@ public partial class MainViewModel
   }
 
   [RelayCommand]
-  private void RefreshImportLibrary()
-  {
-    System.Windows.Application.Current.Dispatcher.Invoke(() =>
-    {
-      StigLibraryItems.Clear();
-      ScapLibraryItems.Clear();
-      OtherLibraryItems.Clear();
+   private void RefreshImportLibrary()
+   {
+     System.Windows.Application.Current.Dispatcher.Invoke(() =>
+     {
+       StigLibraryItems.Clear();
+       ScapLibraryItems.Clear();
+       OtherLibraryItems.Clear();
+       AllLibraryItems.Clear();
 
-      foreach (var pack in ContentPacks.OrderByDescending(p => p.ImportedAt))
-      {
-        var format = ResolvePackFormat(pack);
-        var item = new ImportedLibraryItem
-        {
-          PackId = pack.PackId,
-          Name = pack.Name,
-          Format = format,
-          SourceLabel = pack.SourceLabel,
-          ImportedAt = pack.ImportedAt,
-          ImportedAtLabel = pack.ImportedAt.ToString("yyyy-MM-dd HH:mm"),
-          ReleaseDateLabel = pack.ReleaseDate?.ToString("yyyy-MM-dd") ?? "(unknown)",
-          RootPath = _paths.GetPackRoot(pack.PackId)
-        };
+       foreach (var pack in ContentPacks.OrderByDescending(p => p.ImportedAt))
+       {
+         var format = ResolvePackFormat(pack);
+         var item = new ImportedLibraryItem
+         {
+           PackId = pack.PackId,
+           Name = pack.Name,
+           Format = format,
+           SourceLabel = pack.SourceLabel,
+           ImportedAt = pack.ImportedAt,
+           ImportedAtLabel = pack.ImportedAt.ToString("yyyy-MM-dd HH:mm"),
+           ReleaseDateLabel = pack.ReleaseDate?.ToString("yyyy-MM-dd") ?? "(unknown)",
+           RootPath = _paths.GetPackRoot(pack.PackId)
+         };
 
-        if (string.Equals(format, "STIG", StringComparison.OrdinalIgnoreCase))
-        {
-          StigLibraryItems.Add(item);
-        }
-        else if (string.Equals(format, "SCAP", StringComparison.OrdinalIgnoreCase))
-        {
-          ScapLibraryItems.Add(item);
-        }
-        else
-        {
-          OtherLibraryItems.Add(item);
-        }
-      }
+         AllLibraryItems.Add(item);
 
-      ImportLibraryStatus = "STIG: " + StigLibraryItems.Count
-        + " | SCAP: " + ScapLibraryItems.Count
-        + " | Other: " + OtherLibraryItems.Count;
-    });
-  }
+         if (string.Equals(format, "STIG", StringComparison.OrdinalIgnoreCase))
+         {
+           StigLibraryItems.Add(item);
+         }
+         else if (string.Equals(format, "SCAP", StringComparison.OrdinalIgnoreCase))
+         {
+           ScapLibraryItems.Add(item);
+         }
+         else
+         {
+           OtherLibraryItems.Add(item);
+         }
+       }
+
+       _filteredContentLibrary?.Refresh();
+       ImportLibraryStatus = "STIG: " + StigLibraryItems.Count
+         + " | SCAP: " + ScapLibraryItems.Count
+         + " | Other: " + OtherLibraryItems.Count;
+     });
+   }
 
   [RelayCommand]
   private void OpenSelectedLibraryItem()
@@ -251,22 +257,24 @@ public partial class MainViewModel
     try
     {
       IsBusy = true;
-      StatusText = "Building bundle...";
-      var pack = SelectedPack;
-      if (pack == null)
+
+      var packs = SelectedMissionPacks.Count > 0
+        ? SelectedMissionPacks.ToList()
+        : SelectedPack != null ? new List<ContentPack> { SelectedPack } : new List<ContentPack>();
+
+      if (packs.Count == 0)
       {
-        StatusText = "No content pack loaded.";
+        StatusText = "No content selected. Use 'Select Content' on the Import tab first.";
         return;
       }
 
       var profile = SelectedProfile;
       if (profile == null)
       {
-        StatusText = "No profile selected.";
+        StatusText = "No profile selected. Go to the Profile tab and save a profile first.";
         return;
       }
 
-      var controlList = await _controls.ListControlsAsync(pack.PackId, CancellationToken.None);
       var overlays = new List<Overlay>();
       if (profile.OverlayIds != null && profile.OverlayIds.Count > 0)
       {
@@ -278,21 +286,39 @@ public partial class MainViewModel
         }
       }
 
-      var result = await _builder.BuildAsync(new BundleBuildRequest
+      var built = 0;
+      BundleBuildResult? lastResult = null;
+      foreach (var pack in packs)
       {
-        Pack = pack,
-        Profile = profile,
-        Controls = controlList,
-        Overlays = overlays,
-        ToolVersion = "0.1.0-dev"
-      }, CancellationToken.None);
+        built++;
+        StatusText = packs.Count == 1
+          ? "Building bundle for " + pack.Name + "..."
+          : "Building bundle " + built + " of " + packs.Count + ": " + pack.Name + "...";
 
-      var gatePath = Path.Combine(result.BundleRoot, "Reports", "automation_gate.json");
-      BuildGateStatus = File.Exists(gatePath) ? "Automation gate: " + gatePath : "Automation gate: (not found)";
-      AutomationGatePath = File.Exists(gatePath) ? gatePath : string.Empty;
-      BundleRoot = result.BundleRoot;
-      AddRecentBundle(result.BundleRoot);
-      StatusText = "Build complete.";
+        var controlList = await _controls.ListControlsAsync(pack.PackId, CancellationToken.None);
+        lastResult = await _builder.BuildAsync(new BundleBuildRequest
+        {
+          Pack = pack,
+          Profile = profile,
+          Controls = controlList,
+          Overlays = overlays,
+          ToolVersion = "0.1.0-dev"
+        }, CancellationToken.None);
+
+        AddRecentBundle(lastResult.BundleRoot);
+      }
+
+      if (lastResult != null)
+      {
+        var gatePath = Path.Combine(lastResult.BundleRoot, "Reports", "automation_gate.json");
+        BuildGateStatus = File.Exists(gatePath) ? "Automation gate: " + gatePath : "Automation gate: (not found)";
+        AutomationGatePath = File.Exists(gatePath) ? gatePath : string.Empty;
+        BundleRoot = lastResult.BundleRoot;
+      }
+
+      StatusText = packs.Count == 1
+        ? "Build complete: " + packs[0].Name
+        : "Build complete: " + packs.Count + " bundles built.";
     }
     catch (Exception ex)
     {
@@ -501,16 +527,56 @@ public partial class MainViewModel
       SelectedOtherLibraryItem = null;
   }
 
-  partial void OnSelectedOtherLibraryItemChanged(ImportedLibraryItem? value)
-  {
-    if (value == null) return;
-    if (SelectedStigLibraryItem != null)
-      SelectedStigLibraryItem = null;
-    if (SelectedScapLibraryItem != null)
-      SelectedScapLibraryItem = null;
-  }
+   partial void OnSelectedOtherLibraryItemChanged(ImportedLibraryItem? value)
+   {
+     if (value == null) return;
+     if (SelectedStigLibraryItem != null)
+       SelectedStigLibraryItem = null;
+     if (SelectedScapLibraryItem != null)
+       SelectedScapLibraryItem = null;
+   }
 
-  private void LoadProfileFields(Profile profile)
+   partial void OnSelectedLibraryItemChanged(ImportedLibraryItem? value)
+   {
+     if (value == null) return;
+     var pack = ContentPacks.FirstOrDefault(p => p.PackId == value.PackId);
+     if (pack != null) SelectedPack = pack;
+   }
+
+   partial void OnContentLibraryFilterChanged(string value)
+   {
+     _filteredContentLibrary?.Refresh();
+     OnPropertyChanged(nameof(IsFilterAll));
+     OnPropertyChanged(nameof(IsFilterStig));
+     OnPropertyChanged(nameof(IsFilterScap));
+     OnPropertyChanged(nameof(IsFilterGpo));
+     OnPropertyChanged(nameof(FilteredContentLibrary));
+   }
+
+   partial void OnContentSearchTextChanged(string value)
+   {
+     _filteredContentLibrary?.Refresh();
+   }
+
+   private ICollectionView CreateFilteredLibraryView()
+   {
+     var view = CollectionViewSource.GetDefaultView(AllLibraryItems);
+     view.Filter = obj =>
+     {
+       if (obj is not ImportedLibraryItem item) return false;
+       if (ContentLibraryFilter != "All" &&
+           !string.Equals(item.Format, ContentLibraryFilter, StringComparison.OrdinalIgnoreCase))
+         return false;
+       if (!string.IsNullOrWhiteSpace(ContentSearchText) &&
+           !item.Name.Contains(ContentSearchText, StringComparison.OrdinalIgnoreCase) &&
+           !item.PackId.Contains(ContentSearchText, StringComparison.OrdinalIgnoreCase))
+         return false;
+       return true;
+     };
+     return view;
+   }
+
+   private void LoadProfileFields(Profile profile)
   {
     ProfileName = profile.Name;
     ProfileMode = profile.HardeningMode.ToString();
@@ -520,34 +586,36 @@ public partial class MainViewModel
     ProfileNaComment = profile.NaPolicy.DefaultNaCommentTemplate;
   }
 
-  private async Task LoadPackDetailsAsync(ContentPack pack)
-  {
-    PackDetailName = pack.Name;
-    PackDetailId = pack.PackId;
-    PackDetailReleaseDate = pack.ReleaseDate?.ToString("yyyy-MM-dd") ?? "(unknown)";
-    PackDetailImportedAt = pack.ImportedAt.ToString("yyyy-MM-dd HH:mm");
-    PackDetailSource = pack.SourceLabel;
-    PackDetailHash = pack.ManifestSha256;
+   private async Task LoadPackDetailsAsync(ContentPack pack)
+   {
+     PackDetailName = pack.Name;
+     PackDetailId = pack.PackId;
+     PackDetailFormat = ResolvePackFormat(pack);
+     PackDetailReleaseDate = pack.ReleaseDate?.ToString("yyyy-MM-dd") ?? "(unknown)";
+     PackDetailImportedAt = pack.ImportedAt.ToString("yyyy-MM-dd HH:mm");
+     PackDetailSource = pack.SourceLabel;
+     PackDetailHash = pack.ManifestSha256;
 
-    var root = _paths.GetPackRoot(pack.PackId);
-    PackDetailRoot = root;
+     var root = _paths.GetPackRoot(pack.PackId);
+     PackDetailRoot = root;
 
-    var controls = await _controls.ListControlsAsync(pack.PackId, CancellationToken.None);
-    var manual = controls.Count(c => c.IsManual);
-    PackDetailControls = "Total: " + controls.Count + ", Manual: " + manual;
-  }
+     var controls = await _controls.ListControlsAsync(pack.PackId, CancellationToken.None);
+     var manual = controls.Count(c => c.IsManual);
+     PackDetailControls = "Total: " + controls.Count + ", Manual: " + manual;
+   }
 
-  private void ClearPackDetails()
-  {
-    PackDetailName = string.Empty;
-    PackDetailId = string.Empty;
-    PackDetailReleaseDate = string.Empty;
-    PackDetailImportedAt = string.Empty;
-    PackDetailSource = string.Empty;
-    PackDetailHash = string.Empty;
-    PackDetailControls = string.Empty;
-    PackDetailRoot = string.Empty;
-  }
+   private void ClearPackDetails()
+   {
+     PackDetailName = string.Empty;
+     PackDetailId = string.Empty;
+     PackDetailFormat = string.Empty;
+     PackDetailReleaseDate = string.Empty;
+     PackDetailImportedAt = string.Empty;
+     PackDetailSource = string.Empty;
+     PackDetailHash = string.Empty;
+     PackDetailControls = string.Empty;
+     PackDetailRoot = string.Empty;
+   }
 
   [RelayCommand]
   private void OpenPackFolder()
@@ -658,7 +726,7 @@ public partial class MainViewModel
       IsSelected = SelectedMissionPacks.Any(s => s.PackId == pack.PackId)
     }).ToList();
 
-    var dialog = new ContentPickerDialog(items);
+    var dialog = new ContentPickerDialog(items, ApplicablePackIds);
     dialog.Owner = System.Windows.Application.Current.MainWindow;
     if (dialog.ShowDialog() != true) return;
 
@@ -720,13 +788,17 @@ public partial class MainViewModel
           lines.Add("  ... and " + (info.InstalledFeatures.Count - 10) + " more");
       }
 
+      ApplicablePackIds.Clear();
       if (ContentPacks.Count > 0)
       {
         var applicable = new List<string>();
         foreach (var pack in ContentPacks)
         {
           if (await IsPackApplicableAsync(pack, info))
+          {
             applicable.Add(pack.Name);
+            ApplicablePackIds.Add(pack.PackId);
+          }
         }
 
         if (applicable.Count > 0)
@@ -907,6 +979,49 @@ public partial class MainViewModel
       System.Diagnostics.Trace.TraceWarning("Registry/feature detection failed: " + ex.Message);
     }
 
+    // Detect Google Chrome
+    try
+    {
+      using var chromeKey = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows\CurrentVersion\App Paths\chrome.exe");
+      if (chromeKey != null)
+        info.InstalledFeatures.Add("Google Chrome");
+    }
+    catch { }
+
+    // Detect Mozilla Firefox
+    try
+    {
+      using var ffKey = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Mozilla\Mozilla Firefox");
+      if (ffKey != null)
+        info.InstalledFeatures.Add("Mozilla Firefox");
+    }
+    catch { }
+
+    // Detect Adobe Acrobat / Reader
+    try
+    {
+      using var adobeKey = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Adobe\Acrobat Reader");
+      using var acrobatKey = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Adobe\Adobe Acrobat");
+      if (adobeKey != null || acrobatKey != null)
+        info.InstalledFeatures.Add("Adobe Acrobat");
+    }
+    catch { }
+
+    // Detect Microsoft Office
+    try
+    {
+      using var officeKey = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Office\ClickToRun\Configuration");
+      if (officeKey != null)
+        info.InstalledFeatures.Add("Microsoft Office");
+      else
+      {
+        using var office16 = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Office\16.0\Common\InstallRoot");
+        if (office16 != null)
+          info.InstalledFeatures.Add("Microsoft Office");
+      }
+    }
+    catch { }
+
     return info;
   }
 
@@ -933,8 +1048,19 @@ public partial class MainViewModel
     return OsTarget.Unknown;
   }
 
+  private static readonly string[] UniversalPackKeywords = new[]
+  {
+    "Defender", "Firewall", "Microsoft Edge", ".NET Framework", "DotNet"
+  };
+
   private async Task<bool> IsPackApplicableAsync(ContentPack pack, MachineInfo info)
   {
+    var name = (pack.Name + " " + pack.SourceLabel);
+
+    // ── 1. Control-level OsTarget match (positive only — never early-exit false) ──
+    // A positive hit means the pack's controls explicitly target this OS.
+    // If controls target a DIFFERENT OS we still fall through — the pack may
+    // be universal (Defender, Edge, etc.) or matched by name/feature below.
     try
     {
       var controls = await _controls.ListControlsAsync(pack.PackId, CancellationToken.None);
@@ -948,24 +1074,21 @@ public partial class MainViewModel
 
         if (packOsTargets.Count > 0 && packOsTargets.Contains(info.OsTarget))
           return true;
-
-        if (packOsTargets.Count > 0 && !packOsTargets.Contains(info.OsTarget))
-          return false;
+        // DO NOT return false — fall through to name/keyword/feature matching
       }
     }
     catch (Exception ex)
     {
-      System.Diagnostics.Trace.TraceWarning("Registry/feature detection failed: " + ex.Message);
+      System.Diagnostics.Trace.TraceWarning("Pack applicability check failed: " + ex.Message);
     }
 
-    var name = (pack.Name + " " + pack.SourceLabel);
-
+    // ── 2. OS label matching (works for STIG, SCAP, GPO, ADMX — any format) ──
     var osLabels = info.OsTarget switch
     {
       OsTarget.Win11 => new[] { "Windows 11", "Win11" },
       OsTarget.Win10 => new[] { "Windows 10", "Win10" },
-      OsTarget.Server2022 => new[] { "Server 2022", "2022" },
-      OsTarget.Server2019 => new[] { "Server 2019", "2019" },
+      OsTarget.Server2022 => new[] { "Server 2022" },
+      OsTarget.Server2019 => new[] { "Server 2019" },
       _ => Array.Empty<string>()
     };
 
@@ -975,6 +1098,16 @@ public partial class MainViewModel
         return true;
     }
 
+    // ── 3. Universal packs — always apply to any Windows machine ──
+    // Defender, Firewall, Edge, .NET etc. ship with every Windows install.
+    // This catches STIG, SCAP, and GPO/ADMX packs for these products.
+    foreach (var keyword in UniversalPackKeywords)
+    {
+      if (name.IndexOf(keyword, StringComparison.OrdinalIgnoreCase) >= 0)
+        return true;
+    }
+
+    // ── 4. Role-based matching ──
     if (info.RoleTemplate == RoleTemplate.DomainController
         && name.IndexOf("Domain Controller", StringComparison.OrdinalIgnoreCase) >= 0)
       return true;
@@ -983,6 +1116,13 @@ public partial class MainViewModel
         && name.IndexOf("Member Server", StringComparison.OrdinalIgnoreCase) >= 0)
       return true;
 
+    if (info.RoleTemplate == RoleTemplate.DomainController
+        && (name.IndexOf("Active Directory", StringComparison.OrdinalIgnoreCase) >= 0
+            || name.IndexOf("AD Domain", StringComparison.OrdinalIgnoreCase) >= 0
+            || name.IndexOf("AD Forest", StringComparison.OrdinalIgnoreCase) >= 0))
+      return true;
+
+    // ── 5. Feature-based matching (IIS, DNS, SQL, DHCP, .NET, etc.) ──
     foreach (var feature in info.InstalledFeatures)
     {
       if (feature.IndexOf("IIS", StringComparison.OrdinalIgnoreCase) >= 0
@@ -994,6 +1134,38 @@ public partial class MainViewModel
       if (feature.IndexOf("SQL", StringComparison.OrdinalIgnoreCase) >= 0
           && name.IndexOf("SQL", StringComparison.OrdinalIgnoreCase) >= 0)
         return true;
+      if (feature.IndexOf("DHCP", StringComparison.OrdinalIgnoreCase) >= 0
+          && name.IndexOf("DHCP", StringComparison.OrdinalIgnoreCase) >= 0)
+        return true;
+      if (feature.IndexOf(".NET", StringComparison.OrdinalIgnoreCase) >= 0
+          && name.IndexOf(".NET", StringComparison.OrdinalIgnoreCase) >= 0)
+        return true;
+      if (feature.IndexOf("Chrome", StringComparison.OrdinalIgnoreCase) >= 0
+          && name.IndexOf("Chrome", StringComparison.OrdinalIgnoreCase) >= 0)
+        return true;
+      if (feature.IndexOf("Firefox", StringComparison.OrdinalIgnoreCase) >= 0
+          && name.IndexOf("Firefox", StringComparison.OrdinalIgnoreCase) >= 0)
+        return true;
+      if (feature.IndexOf("Adobe", StringComparison.OrdinalIgnoreCase) >= 0
+          && name.IndexOf("Adobe", StringComparison.OrdinalIgnoreCase) >= 0)
+        return true;
+      if (feature.IndexOf("Office", StringComparison.OrdinalIgnoreCase) >= 0
+          && name.IndexOf("Office", StringComparison.OrdinalIgnoreCase) >= 0)
+        return true;
+    }
+
+    // ── 6. GPO / ADMX catch-all — if the pack is a GPO/ADMX and contains
+    //    any OS-matching or "Security Baseline" keyword, include it ──
+    var format = ResolvePackFormat(pack);
+    if (string.Equals(format, "GPO", StringComparison.OrdinalIgnoreCase))
+    {
+      // GPO security baselines typically match the OS version
+      if (name.IndexOf("Baseline", StringComparison.OrdinalIgnoreCase) >= 0)
+        return true;
+      if (name.IndexOf("ADMX", StringComparison.OrdinalIgnoreCase) >= 0)
+        return true;
+      if (name.IndexOf("LGPO", StringComparison.OrdinalIgnoreCase) >= 0)
+        return true;
     }
 
     return false;
@@ -1003,52 +1175,62 @@ public partial class MainViewModel
   {
     var recs = new List<string>();
 
-    switch (info.OsTarget)
+    var osLabel = info.OsTarget switch
     {
-      case OsTarget.Win11:
-        recs.Add("Microsoft Windows 11 STIG");
-        break;
-      case OsTarget.Win10:
-        recs.Add("Microsoft Windows 10 STIG");
-        break;
-      case OsTarget.Server2022:
-        if (info.RoleTemplate == RoleTemplate.DomainController)
-          recs.Add("Microsoft Windows Server 2022 Domain Controller STIG");
-        else
-          recs.Add("Microsoft Windows Server 2022 Member Server STIG");
-        break;
-      case OsTarget.Server2019:
-        if (info.RoleTemplate == RoleTemplate.DomainController)
-          recs.Add("Microsoft Windows Server 2019 Domain Controller STIG");
-        else
-          recs.Add("Microsoft Windows Server 2019 Member Server STIG");
-        break;
-    }
+      OsTarget.Win11 => "Windows 11",
+      OsTarget.Win10 => "Windows 10",
+      OsTarget.Server2022 => "Windows Server 2022",
+      OsTarget.Server2019 => "Windows Server 2019",
+      _ => null
+    };
 
-    recs.Add("Microsoft Windows Defender Antivirus STIG");
-    recs.Add("Microsoft Windows Firewall with Advanced Security STIG");
-    recs.Add("Microsoft .NET Framework 4.0 STIG");
+    var roleTag = info.RoleTemplate switch
+    {
+      RoleTemplate.DomainController when info.IsServer => " Domain Controller",
+      RoleTemplate.MemberServer when info.IsServer => " Member Server",
+      _ => ""
+    };
+
+    recs.Add("[STIGs]");
+    if (osLabel != null)
+      recs.Add("  Microsoft " + osLabel + roleTag + " STIG");
+    recs.Add("  Microsoft Windows Defender Antivirus STIG");
+    recs.Add("  Microsoft Windows Firewall with Advanced Security STIG");
+    recs.Add("  Microsoft Edge STIG");
+    recs.Add("  Microsoft .NET Framework 4.0 STIG");
 
     foreach (var feature in info.InstalledFeatures)
     {
       if (feature.IndexOf("IIS", StringComparison.OrdinalIgnoreCase) >= 0)
       {
-        recs.Add("Microsoft IIS 10.0 Site STIG");
-        recs.Add("Microsoft IIS 10.0 Server STIG");
+        recs.Add("  Microsoft IIS 10.0 Site STIG");
+        recs.Add("  Microsoft IIS 10.0 Server STIG");
       }
       if (feature.IndexOf("DNS", StringComparison.OrdinalIgnoreCase) >= 0)
-        recs.Add("Microsoft Windows DNS Server STIG");
+        recs.Add("  Microsoft Windows DNS Server STIG");
       if (feature.IndexOf("SQL", StringComparison.OrdinalIgnoreCase) >= 0)
-        recs.Add("Microsoft SQL Server STIG");
+        recs.Add("  Microsoft SQL Server STIG");
       if (feature.IndexOf("DHCP", StringComparison.OrdinalIgnoreCase) >= 0)
-        recs.Add("Microsoft Windows DHCP Server STIG");
+        recs.Add("  Microsoft Windows DHCP Server STIG");
     }
 
     if (info.RoleTemplate == RoleTemplate.DomainController)
     {
-      recs.Add("Active Directory Domain STIG");
-      recs.Add("Active Directory Forest STIG");
+      recs.Add("  Active Directory Domain STIG");
+      recs.Add("  Active Directory Forest STIG");
     }
+
+    recs.Add("");
+    recs.Add("[SCAP Benchmarks]  (auto-selected with matching STIGs)");
+    if (osLabel != null)
+      recs.Add("  " + osLabel + roleTag + " SCAP Benchmark");
+    recs.Add("  Defender / Firewall / Edge / .NET benchmarks (if imported)");
+
+    recs.Add("");
+    recs.Add("[GPO / ADMX]  (auto-selected with matching STIGs)");
+    if (osLabel != null)
+      recs.Add("  " + osLabel + " Security Baseline GPO");
+    recs.Add("  Defender / Edge / Firewall ADMX templates (if imported)");
 
     return recs.Distinct().ToList();
   }

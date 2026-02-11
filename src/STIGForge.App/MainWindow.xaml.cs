@@ -8,5 +8,6 @@ public partial class MainWindow : Window
   {
     InitializeComponent();
     DataContext = vm;
+    SourceInitialized += (_, _) => MainViewModel.SetDarkTitleBar(this, vm.IsDarkTheme);
   }
 }

@@ -4,7 +4,7 @@
         xmlns:views="clr-namespace:STIGForge.App.Views"
         Title="STIGForge" Height="720" Width="1200" MinHeight="680" MinWidth="980"
         WindowStartupLocation="CenterScreen" FontFamily="Bahnschrift" FontSize="13"
-        Background="{StaticResource WindowBackgroundBrush}"
+        Background="{DynamicResource WindowBackgroundBrush}"
         FocusManager.FocusedElement="{Binding ElementName=MainTabControl}">
   <!-- Resources moved to App.xaml Application.Resources -->
 
@@ -18,9 +18,13 @@
       <TextBlock Text="STIGForge" FontSize="22" FontWeight="SemiBold" DockPanel.Dock="Left" VerticalAlignment="Center"
                  AutomationProperties.Name="STIGForge Application Title"/>
       <Button Content="About" Width="70" Height="28" Margin="8,0,0,0" Command="{Binding ShowAboutCommand}" DockPanel.Dock="Right"
-              TabIndex="92"
+              TabIndex="93"
               AutomationProperties.Name="About"
               ToolTipService.ToolTip="Application version, runtime, and local data root details."/>
+      <Button Content="{Binding ThemeToggleLabel}" Width="50" Height="28" Margin="0,0,8,0" Command="{Binding ToggleThemeCommand}" DockPanel.Dock="Right"
+              TabIndex="92"
+              AutomationProperties.Name="Toggle dark/light theme"
+              ToolTipService.ToolTip="Switch between dark and light mode."/>
       <Button Content="Help" Width="70" Height="28" Margin="0,0,8,0" Command="{Binding ShowHelpCommand}" DockPanel.Dock="Right"
               TabIndex="91"
               AutomationProperties.Name="Help"
@@ -30,9 +34,9 @@
                    AutomationProperties.Name="Operation in progress"
                    ToolTipService.ToolTip="An operation is running. Please wait."/>
       <StackPanel VerticalAlignment="Center" Margin="14,0,0,0">
-        <TextBlock Text="Import > Profile > Build > Orchestrate > Verify > Manual > Export"
-                   FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
-        <TextBlock Text="{Binding StatusText}" FontSize="11" Foreground="{StaticResource TextMutedBrush}"
+        <TextBlock Text="Import > Profile > Build > Orchestrate > Verify > Manual > Export | Fleet"
+                   FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+        <TextBlock Text="{Binding StatusText}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"
                    TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" Margin="0,2,0,0"
                    ToolTipService.ToolTip="{Binding StatusText}"
                    AutomationProperties.LiveSetting="Assertive"/>
@@ -40,28 +44,52 @@
     </DockPanel>
 
     <TabControl x:Name="MainTabControl" Grid.Row="1" TabIndex="0">
-      <TabItem Header="Simple Mode" TabIndex="1"
-               AutomationProperties.Name="Simple Mode tab"
-               ToolTipService.ToolTip="Five-question wizard for the fastest end-to-end mission run.">
-        <views:SimpleModeView />
+      <TabItem Header="Import" TabIndex="1"
+               AutomationProperties.Name="Import tab"
+               ToolTipService.ToolTip="Import STIG, SCAP, and GPO content packs; manage the content library.">
+        <views:ImportView />
       </TabItem>
 
-      <TabItem Header="Guided Run" TabIndex="2"
-               AutomationProperties.Name="Guided Run tab"
-               ToolTipService.ToolTip="Step-by-step workflow for most missions.">
-        <views:GuidedRunView />
+      <TabItem Header="Profile" TabIndex="2"
+               AutomationProperties.Name="Profile tab"
+               ToolTipService.ToolTip="Configure hardening profiles, overlays, and classification settings.">
+        <views:ProfileView />
       </TabItem>
 
-      <TabItem Header="Dashboard" TabIndex="3"
-               AutomationProperties.Name="Dashboard tab"
-               ToolTipService.ToolTip="Mission status, control totals, and recovery guidance.">
-        <views:DashboardView />
+      <TabItem Header="Build" TabIndex="3"
+               AutomationProperties.Name="Build tab"
+               ToolTipService.ToolTip="Generate an offline bundle from a content pack and profile.">
+        <views:BuildView />
       </TabItem>
 
-      <TabItem Header="Advanced" TabIndex="4"
-               AutomationProperties.Name="Advanced tab"
-               ToolTipService.ToolTip="All specialized workflows and operational tools.">
-        <views:AdvancedWorkspaceView />
+      <TabItem Header="Orchestrate" TabIndex="4"
+               AutomationProperties.Name="Orchestrate tab"
+               ToolTipService.ToolTip="Run the full Apply, Verify, and Export pipeline with all settings.">
+        <views:OrchestrateView />
+      </TabItem>
+
+      <TabItem Header="Verify" TabIndex="5"
+               AutomationProperties.Name="Verify tab"
+               ToolTipService.ToolTip="Run Evaluate-STIG and SCAP verification scans; view overlap analysis.">
+        <views:VerifyView />
+      </TabItem>
+
+      <TabItem Header="Manual" TabIndex="6"
+               AutomationProperties.Name="Manual tab"
+               ToolTipService.ToolTip="Review manual controls, set pass/fail/NA, and capture evidence.">
+        <views:ManualView />
+      </TabItem>
+
+      <TabItem Header="Export" TabIndex="7"
+               AutomationProperties.Name="Export tab"
+               ToolTipService.ToolTip="Dashboard metrics, eMASS export, POA&amp;M/CKL generation, and audit log.">
+        <views:ExportView />
+      </TabItem>
+
+      <TabItem Header="Fleet" TabIndex="8"
+               AutomationProperties.Name="Fleet tab"
+               ToolTipService.ToolTip="Manage fleet inventory, run remote operations, and schedule recurring tasks.">
+        <views:FleetView />
       </TabItem>
     </TabControl>
   </Grid>

@@ -1,0 +1,58 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+  <SolidColorBrush x:Key="WindowBackgroundBrush" Color="#F8FBFF"/>
+  <SolidColorBrush x:Key="SurfaceBrush" Color="#FFFFFF"/>
+  <SolidColorBrush x:Key="SurfaceMutedBrush" Color="#F4F8FD"/>
+  <SolidColorBrush x:Key="BorderBrush" Color="#D5DEE9"/>
+  <SolidColorBrush x:Key="TextPrimaryBrush" Color="#12233D"/>
+  <SolidColorBrush x:Key="TextMutedBrush" Color="#53657C"/>
+  <SolidColorBrush x:Key="AccentBrush" Color="#0A5AA8"/>
+  <SolidColorBrush x:Key="AccentSoftBrush" Color="#DBEAFB"/>
+  <SolidColorBrush x:Key="SuccessBrush" Color="#1B7A48"/>
+  <SolidColorBrush x:Key="WarningBrush" Color="#AF6700"/>
+  <SolidColorBrush x:Key="DangerBrush" Color="#B42318"/>
+
+  <!-- Button -->
+  <SolidColorBrush x:Key="ButtonBackgroundBrush" Color="#F4F8FD"/>
+  <SolidColorBrush x:Key="ButtonHoverBrush" Color="#DBEAFB"/>
+  <SolidColorBrush x:Key="ButtonPressedBrush" Color="#C8DCF4"/>
+  <SolidColorBrush x:Key="ButtonDisabledBgBrush" Color="#EEF2F7"/>
+  <SolidColorBrush x:Key="ButtonDisabledBorderBrush" Color="#D9E1EB"/>
+  <SolidColorBrush x:Key="ButtonDisabledFgBrush" Color="#8A99AC"/>
+
+  <!-- TabItem -->
+  <SolidColorBrush x:Key="TabBgBrush" Color="#EDF2F8"/>
+  <SolidColorBrush x:Key="TabSelectedBgBrush" Color="#FFFFFF"/>
+  <SolidColorBrush x:Key="TabHoverBgBrush" Color="#E2EAF3"/>
+  <SolidColorBrush x:Key="TabPanelBgBrush" Color="#FFFFFF"/>
+
+  <!-- ComboBox / Dropdown -->
+  <SolidColorBrush x:Key="ComboBoxBgBrush" Color="#FFFFFF"/>
+  <SolidColorBrush x:Key="ComboBoxPopupBgBrush" Color="#FFFFFF"/>
+  <SolidColorBrush x:Key="ComboBoxItemHoverBrush" Color="#DBEAFB"/>
+  <SolidColorBrush x:Key="ComboBoxArrowBrush" Color="#53657C"/>
+
+  <!-- ListViewItem -->
+  <SolidColorBrush x:Key="ListItemHoverBrush" Color="#EDF2F8"/>
+  <SolidColorBrush x:Key="ListItemSelectedBrush" Color="#DBEAFB"/>
+  <SolidColorBrush x:Key="ListItemSelectedTextBrush" Color="#12233D"/>
+  <SolidColorBrush x:Key="GridViewHeaderBgBrush" Color="#F4F8FD"/>
+  <SolidColorBrush x:Key="GridViewHeaderBorderBrush" Color="#D5DEE9"/>
+
+  <!-- ScrollBar -->
+  <SolidColorBrush x:Key="ScrollThumbBrush" Color="#C0C8D4"/>
+  <SolidColorBrush x:Key="ScrollThumbHoverBrush" Color="#A8B2C0"/>
+  <SolidColorBrush x:Key="ScrollTrackBrush" Color="#F0F3F7"/>
+  <SolidColorBrush x:Key="ScrollArrowBrush" Color="#53657C"/>
+
+  <!-- Help dialog -->
+  <SolidColorBrush x:Key="HelpSectionBrush" Color="#FFFFFF"/>
+  <SolidColorBrush x:Key="HelpSectionAltBrush" Color="#FAFAFA"/>
+  <SolidColorBrush x:Key="HelpBorderBrush" Color="LightGray"/>
+
+  <!-- ToolTip -->
+  <SolidColorBrush x:Key="ToolTipBgBrush" Color="#FFFFFF"/>
+  <SolidColorBrush x:Key="ToolTipBorderBrush" Color="#D5DEE9"/>
+
+</ResourceDictionary>

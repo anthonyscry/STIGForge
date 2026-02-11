@@ -10,6 +10,7 @@ public partial class ContentPickerDialog : Window
 {
   public List<ContentPickerItem> Items { get; }
   public List<string> SelectedPackIds { get; private set; } = new();
+  public HashSet<string> RecommendedPackIds { get; }
   private readonly List<CheckBox> _checkBoxes = new();
 
   private static readonly (string Key, string Label)[] SectionOrder = new[]
@@ -19,12 +20,14 @@ public partial class ContentPickerDialog : Window
     ("GPO", "GPO / LGPO  —  ADMX templates, group policy"),
   };
 
-  public ContentPickerDialog(List<ContentPickerItem> items)
+  public ContentPickerDialog(List<ContentPickerItem> items, HashSet<string>? recommendedIds = null)
   {
     InitializeComponent();
     Items = items;
+    RecommendedPackIds = recommendedIds ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
     BuildGroupedUI();
     UpdateCount();
+    SelectRecommendedBtn.Visibility = RecommendedPackIds.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
   }
 
   private void BuildGroupedUI()
@@ -137,6 +140,20 @@ public partial class ContentPickerDialog : Window
   {
     foreach (var item in Items) item.IsSelected = false;
     foreach (var cb in _checkBoxes) cb.IsChecked = false;
+    UpdateCount();
+  }
+
+  private void SelectRecommended_Click(object sender, RoutedEventArgs e)
+  {
+    foreach (var cb in _checkBoxes)
+    {
+      if (cb.Tag is ContentPickerItem item)
+      {
+        var match = RecommendedPackIds.Contains(item.PackId);
+        item.IsSelected = match;
+        cb.IsChecked = match;
+      }
+    }
     UpdateCount();
   }
 
