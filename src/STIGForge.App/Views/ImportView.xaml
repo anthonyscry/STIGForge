@@ -37,7 +37,10 @@
                   ToolTipService.ToolTip="Pick from imported packs for this mission. Multi-select supported."/>
         </WrapPanel>
         <TextBlock Text="{Binding ImportHint}" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,2"/>
-        <TextBlock Text="{Binding MachineApplicabilityStatus}" Foreground="{DynamicResource TextMutedBrush}" FontSize="11"/>
+        <Expander Header="Machine Scan Results" IsExpanded="{Binding IsScanExpanded}" Margin="0,0,0,2">
+          <TextBlock Text="{Binding MachineApplicabilityStatus}" Foreground="{DynamicResource TextMutedBrush}" FontSize="11"
+                     TextWrapping="Wrap" Margin="4,4,0,0"/>
+        </Expander>
         <TextBlock Text="{Binding SelectedContentSummary}" Foreground="{DynamicResource TextMutedBrush}" FontSize="11" Margin="0,2,0,0"/>
       </StackPanel>
 
@@ -66,7 +69,7 @@
 
           <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Margin="0,0,0,8">
             <ListView x:Name="ContentLibraryList" ItemsSource="{Binding FilteredContentLibrary}" SelectedItem="{Binding SelectedLibraryItem}"
-                      SelectionMode="Extended" MaxHeight="320"
+                      SelectionMode="Extended" MaxHeight="320" MinHeight="80"
                       SelectionChanged="ContentLibraryList_SelectionChanged"
                       GridViewColumnHeader.Click="ColumnHeader_Click">
               <ListView.View>

@@ -105,6 +105,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
   [ObservableProperty] private string toolkitActivationStatus = "Toolkit activation pending.";
   [ObservableProperty] private string importLibraryStatus = "Library not loaded.";
   [ObservableProperty] private string machineApplicabilityStatus = "";
+  [ObservableProperty] private bool isScanExpanded = true;
   [ObservableProperty] private string selectedContentSummary = "No content selected. Import or select packs above.";
   [ObservableProperty] private string selectedMissionPreset = "Workstation/VM Compliance";
   [ObservableProperty] private string missionPresetGuidance = "Use snapshot-protected apply for managed endpoints.";

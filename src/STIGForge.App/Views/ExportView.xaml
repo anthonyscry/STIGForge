@@ -26,10 +26,16 @@
               <TextBlock Text="{Binding DashProfileLabel}" Foreground="{DynamicResource TextMutedBrush}"/>
             </StackPanel>
           </StackPanel>
-          <Button Grid.Column="1" Content="Refresh" MinWidth="80" Height="28" Padding="14,0" VerticalAlignment="Top"
-                  Command="{Binding DashRefreshCommand}"
-                  AutomationProperties.Name="Refresh dashboard"
-                  ToolTipService.ToolTip="Reload bundle status, control totals, and compliance metrics."/>
+          <StackPanel Grid.Column="1" VerticalAlignment="Top">
+            <Button Content="Refresh" MinWidth="80" Height="28" Padding="14,0" Margin="0,0,0,6"
+                    Command="{Binding DashRefreshCommand}"
+                    AutomationProperties.Name="Refresh dashboard"
+                    ToolTipService.ToolTip="Reload bundle status, control totals, and compliance metrics."/>
+            <Button Content="Delete Bundle" MinWidth="80" Height="28" Padding="14,0"
+                    Command="{Binding DeleteBundleCommand}" Foreground="{DynamicResource DangerBrush}"
+                    AutomationProperties.Name="Delete current bundle"
+                    ToolTipService.ToolTip="Permanently delete the current bundle folder and all its contents."/>
+          </StackPanel>
         </Grid>
       </Border>
 
@@ -180,7 +186,7 @@
                     <TextBlock Text="POA&amp;M Export" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
                     <WrapPanel Margin="0,0,0,8">
                       <TextBlock Text="System Name:" Width="100" VerticalAlignment="Center"/>
-                      <TextBox Width="300" Text="{Binding PoamSystemName}" AutomationProperties.Name="POA&amp;M system name"
+                      <TextBox Width="260" Text="{Binding PoamSystemName}" AutomationProperties.Name="POA&amp;M system name"
                                ToolTipService.ToolTip="System name for the POA&amp;M export. Auto-filled with machine name."/>
                     </WrapPanel>
                     <Button Content="Export POA&amp;M" MinWidth="140" Height="32" Padding="14,0"
@@ -195,10 +201,10 @@
                     <TextBlock Text="CKL (Checklist) Export" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
                     <WrapPanel Margin="0,0,0,8">
                       <TextBlock Text="Host Name:" Width="80" VerticalAlignment="Center"/>
-                      <TextBox Width="180" Text="{Binding CklHostName}" AutomationProperties.Name="CKL host name"
+                      <TextBox Width="160" Text="{Binding CklHostName}" AutomationProperties.Name="CKL host name"
                                ToolTipService.ToolTip="Host name for the CKL file. Auto-filled with machine name."/>
                       <TextBlock Text="STIG ID:" Width="70" Margin="12,0,0,0" VerticalAlignment="Center"/>
-                      <TextBox Width="180" Text="{Binding CklStigId}" AutomationProperties.Name="CKL STIG ID"/>
+                      <TextBox Width="160" Text="{Binding CklStigId}" AutomationProperties.Name="CKL STIG ID"/>
                     </WrapPanel>
                     <Button Content="Export CKL" MinWidth="140" Height="32" Padding="14,0"
                             Command="{Binding ExportCklCommand}" IsEnabled="{Binding ActionsEnabled}"
@@ -232,7 +238,7 @@
                         ToolTipService.ToolTip="Check the cryptographic chain integrity of the audit trail."/>
               </WrapPanel>
               <TextBlock Text="{Binding AuditVerifyResult}" FontWeight="SemiBold" Margin="0,0,0,8"/>
-              <ListView ItemsSource="{Binding AuditEntries}" MaxHeight="260">
+              <ListView ItemsSource="{Binding AuditEntries}" MaxHeight="260" MinHeight="80">
                 <ListView.View>
                   <GridView>
                     <GridViewColumn Header="Id" DisplayMemberBinding="{Binding Id}"/>
