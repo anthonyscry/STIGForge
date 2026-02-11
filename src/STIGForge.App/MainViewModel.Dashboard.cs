@@ -496,6 +496,38 @@ public partial class MainViewModel
   }
 
   [RelayCommand]
+  private void DeleteBundle()
+  {
+    if (string.IsNullOrWhiteSpace(BundleRoot) || !Directory.Exists(BundleRoot))
+    {
+      StatusText = "No bundle selected or bundle path does not exist.";
+      return;
+    }
+
+    var result = System.Windows.MessageBox.Show(
+      $"Delete bundle at:\n{BundleRoot}\n\nThis permanently removes the bundle folder and all its contents (CKLs, POA&Ms, logs, snapshots).",
+      "Confirm Delete Bundle",
+      System.Windows.MessageBoxButton.YesNo,
+      System.Windows.MessageBoxImage.Warning);
+
+    if (result != System.Windows.MessageBoxResult.Yes) return;
+
+    try
+    {
+      var path = BundleRoot;
+      Directory.Delete(path, true);
+      RecentBundles.Remove(RecentBundles.FirstOrDefault(b =>
+        string.Equals(b, path, StringComparison.OrdinalIgnoreCase)) ?? "");
+      BundleRoot = "";
+      StatusText = "Bundle deleted: " + Path.GetFileName(path);
+    }
+    catch (Exception ex)
+    {
+      StatusText = "Delete failed: " + ex.Message;
+    }
+  }
+
+  [RelayCommand]
   private void RefreshOverlap()
   {
     LoadCoverageOverlap();

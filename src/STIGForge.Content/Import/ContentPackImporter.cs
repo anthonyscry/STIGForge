@@ -106,6 +106,34 @@ public sealed class ContentPackImporter
 
             if (nestedZipPaths.Count == 0)
             {
+                // NIWC-style bundles: no nested ZIPs, but multiple benchmark folders with XCCDF files.
+                // Split by parent directory of each XCCDF so each benchmark becomes its own pack.
+                var xccdfFiles = Directory
+                    .GetFiles(extractionRoot, "*.xml", SearchOption.AllDirectories)
+                    .Where(p => Path.GetFileName(p).IndexOf("xccdf", StringComparison.OrdinalIgnoreCase) >= 0)
+                    .ToList();
+
+                var benchmarkDirs = xccdfFiles
+                    .Select(f => Path.GetDirectoryName(f)!)
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .OrderBy(d => d, StringComparer.OrdinalIgnoreCase)
+                    .ToList();
+
+                if (benchmarkDirs.Count > 1)
+                {
+                    var splitPacks = new List<ContentPack>(benchmarkDirs.Count);
+                    foreach (var benchDir in benchmarkDirs)
+                    {
+                        ct.ThrowIfCancellationRequested();
+                        var dirName = new DirectoryInfo(benchDir).Name;
+                        var packName = CleanDisaPackName(dirName);
+                        if (string.IsNullOrWhiteSpace(packName))
+                            packName = dirName;
+                        splitPacks.Add(await ImportDirectoryAsPackAsync(benchDir, packName, sourceLabel, ct).ConfigureAwait(false));
+                    }
+                    return splitPacks;
+                }
+
                 var singlePackName = BuildImportedPackName(consolidatedZipPath, "Imported");
                 var importedSingle = await ImportZipAsync(consolidatedZipPath, singlePackName, sourceLabel, ct).ConfigureAwait(false);
                 return new[] { importedSingle };
@@ -128,6 +156,155 @@ public sealed class ContentPackImporter
             {
                 System.Diagnostics.Trace.TraceWarning("Temp cleanup failed: " + ex.Message);
             }
+        }
+    }
+
+    public async Task<ContentPack> ImportDirectoryAsPackAsync(string extractedDir, string packName, string sourceLabel, CancellationToken ct)
+    {
+        var packId = Guid.NewGuid().ToString("n");
+        var packRoot = _paths.GetPackRoot(packId);
+        var rawRoot = Path.Combine(packRoot, "raw");
+        Directory.CreateDirectory(rawRoot);
+
+        var checkpoint = new ImportCheckpoint
+        {
+            PackId = packId,
+            ZipPath = extractedDir,
+            PackName = packName,
+            Stage = ImportStage.Extracting,
+            StartedAt = DateTimeOffset.Now
+        };
+        checkpoint.Save(packRoot);
+
+        try
+        {
+            var extractedDirFull = Path.GetFullPath(extractedDir);
+            foreach (var file in Directory.GetFiles(extractedDir, "*", SearchOption.AllDirectories))
+            {
+                ct.ThrowIfCancellationRequested();
+                var fileFull = Path.GetFullPath(file);
+                var relativePath = fileFull.StartsWith(extractedDirFull, StringComparison.OrdinalIgnoreCase)
+                    ? fileFull.Substring(extractedDirFull.Length).TrimStart(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                    : Path.GetFileName(file);
+                var destPath = Path.Combine(rawRoot, relativePath);
+                Directory.CreateDirectory(Path.GetDirectoryName(destPath)!);
+                File.Copy(file, destPath, true);
+            }
+
+            checkpoint.Stage = ImportStage.Parsing;
+            checkpoint.Save(packRoot);
+
+            var pack = new ContentPack
+            {
+                PackId = packId,
+                Name = packName,
+                ImportedAt = DateTimeOffset.Now,
+                ReleaseDate = GuessReleaseDate(extractedDir, packName),
+                SourceLabel = sourceLabel,
+                HashAlgorithm = "sha256",
+                ManifestSha256 = packId,
+                SchemaVersion = CanonicalContract.Version
+            };
+
+            var sourceStats = CountSourceArtifacts(rawRoot);
+            var formatResult = DetectPackFormatWithConfidence(rawRoot, sourceStats);
+            var format = formatResult.Format;
+            var usedFallbackParser = format == PackFormat.Unknown;
+            var parsingErrors = new List<ParsingError>();
+
+            var parsed = format switch
+            {
+                PackFormat.Stig => ImportStigZip(rawRoot, packName, parsingErrors),
+                PackFormat.Scap => ImportScapZip(rawRoot, packName, parsingErrors),
+                PackFormat.Gpo => ImportGpoZip(rawRoot, packName, parsingErrors),
+                _ => ImportStigZip(rawRoot, packName, parsingErrors)
+            };
+
+            checkpoint.Stage = ImportStage.Validating;
+            checkpoint.ParsedControlCount = parsed.Count;
+            checkpoint.Save(packRoot);
+
+            var validationErrors = ControlRecordContractValidator.Validate(parsed);
+            if (validationErrors.Count > 0)
+            {
+                checkpoint.Stage = ImportStage.Failed;
+                checkpoint.ErrorMessage = $"Validation failed: {validationErrors.Count} errors";
+                checkpoint.Save(packRoot);
+                throw new ParsingException(
+                    $"[IMPORT-CONTRACT-001] Parsed controls failed canonical validation ({validationErrors.Count} errors): " +
+                    string.Join(" | ", validationErrors.Take(10)));
+            }
+
+            var conflictDetector = new ConflictDetector(_packs, _controls);
+            var conflicts = await conflictDetector.DetectConflictsAsync(pack.PackId, parsed, ct).ConfigureAwait(false);
+            var errorConflicts = conflicts.Where(c => c.Severity == ConflictSeverity.Error).ToList();
+            if (errorConflicts.Count > 0)
+            {
+                checkpoint.Stage = ImportStage.Failed;
+                checkpoint.ErrorMessage = $"Conflicts detected: {errorConflicts.Count} ERROR-level conflicts";
+                checkpoint.Save(packRoot);
+                throw new ParsingException(
+                    $"[IMPORT-CONFLICT-001] Import blocked due to {errorConflicts.Count} control conflicts.");
+            }
+
+            checkpoint.Stage = ImportStage.Persisting;
+            checkpoint.Save(packRoot);
+
+            await _packs.SaveAsync(pack, ct).ConfigureAwait(false);
+            if (parsed.Count > 0)
+                await _controls.SaveControlsAsync(pack.PackId, parsed, ct).ConfigureAwait(false);
+
+            var note = new
+            {
+                importedFrom = extractedDir,
+                schemaVersion = CanonicalContract.Version,
+                detectedFormat = format.ToString(),
+                parsedControls = parsed.Count,
+                timestamp = DateTimeOffset.Now
+            };
+            File.WriteAllText(
+                Path.Combine(packRoot, "import_note.json"),
+                JsonSerializer.Serialize(note, new JsonSerializerOptions { WriteIndented = true }));
+
+            var compatibility = BuildCompatibilityMatrix(formatResult, parsed.Count, sourceStats, usedFallbackParser, parsingErrors, conflicts);
+            File.WriteAllText(
+                Path.Combine(packRoot, "compatibility_matrix.json"),
+                JsonSerializer.Serialize(compatibility, new JsonSerializerOptions { WriteIndented = true }));
+
+            checkpoint.Stage = ImportStage.Complete;
+            checkpoint.CompletedAt = DateTimeOffset.Now;
+            checkpoint.Save(packRoot);
+
+            if (_audit != null)
+            {
+                try
+                {
+                    await _audit.RecordAsync(new AuditEntry
+                    {
+                        Action = "import-pack",
+                        Target = packName,
+                        Result = "success",
+                        Detail = $"PackId={packId}, Format={format}, Controls={parsed.Count}, Source=directory",
+                        User = Environment.UserName,
+                        Machine = Environment.MachineName,
+                        Timestamp = DateTimeOffset.Now
+                    }, ct).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Trace.TraceWarning("Audit write failed during import: " + ex.Message);
+                }
+            }
+
+            return pack;
+        }
+        catch (Exception ex)
+        {
+            checkpoint.Stage = ImportStage.Failed;
+            checkpoint.ErrorMessage = ex.Message;
+            checkpoint.CompletedAt = DateTimeOffset.Now;
+            checkpoint.Save(packRoot);
+            throw;
         }
     }
 
