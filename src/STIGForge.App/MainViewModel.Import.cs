@@ -1068,7 +1068,7 @@ public partial class MainViewModel
 
   private async Task<bool> IsPackApplicableAsync(ContentPack pack, MachineInfo info)
   {
-    var name = (pack.Name + " " + pack.SourceLabel);
+    var name = (pack.Name + " " + pack.SourceLabel).Replace('_', ' ');
 
     // ── 1. Control-level OsTarget match (positive only — never early-exit false) ──
     // A positive hit means the pack's controls explicitly target this OS.
