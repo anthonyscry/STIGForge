@@ -12,28 +12,69 @@ public static class XccdfParser
     {
         var settings = new XmlReaderSettings
         {
-            DtdProcessing = DtdProcessing.Ignore,
+            DtdProcessing = DtdProcessing.Prohibit,
             IgnoreWhitespace = true,
             Async = false
         };
 
         using var reader = XmlReader.Create(xmlPath, settings);
         var doc = XDocument.Load(reader, LoadOptions.None);
-        var ns = (XNamespace)XccdfNamespace;
+        var ns = doc.Root?.Name.Namespace ?? (XNamespace)XccdfNamespace;
 
         var benchmarkId = doc.Root?.Attribute("id")?.Value ?? Path.GetFileNameWithoutExtension(xmlPath);
+        var benchmarkVersion = doc.Root?.Element(ns + "version")?.Value?.Trim();
+        if (string.IsNullOrWhiteSpace(benchmarkVersion)) benchmarkVersion = null;
+
+        DateTimeOffset? benchmarkDate = null;
+        var dateText = doc.Root?.Element(ns + "status")?.Attribute("date")?.Value;
+        if (!string.IsNullOrWhiteSpace(dateText) && DateTimeOffset.TryParse(dateText, out var parsedBenchmarkDate))
+            benchmarkDate = parsedBenchmarkDate;
+
+        var rearMatter = doc.Root?.Element(ns + "rear-matter")?.Value;
+        var benchmarkRelease = ExtractRearMatterField(rearMatter, "releaseinfo");
+        var classificationText = ExtractRearMatterField(rearMatter, "classification");
+
+        var platformCpe = doc.Root?
+            .Descendants(ns + "platform")
+            .Select(p => p.Attribute("idref")?.Value?.Trim())
+            .FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
+
+        var osTarget = MapOsTarget(platformCpe);
+        var classificationScope = MapClassificationScope(classificationText);
+        var confidence = GetConfidence(benchmarkVersion, benchmarkDate);
+
         var results = new List<ControlRecord>();
 
         foreach (var rule in doc.Descendants(ns + "Rule"))
         {
-            var control = ParseRule(rule, benchmarkId, packName, ns);
+            var control = ParseRule(
+                rule,
+                benchmarkId,
+                packName,
+                ns,
+                benchmarkVersion,
+                benchmarkRelease,
+                benchmarkDate,
+                osTarget,
+                classificationScope,
+                confidence);
             if (control != null) results.Add(control);
         }
 
         return results;
     }
 
-    private static ControlRecord? ParseRule(XElement rule, string benchmarkId, string packName, XNamespace ns)
+    private static ControlRecord? ParseRule(
+        XElement rule,
+        string benchmarkId,
+        string packName,
+        XNamespace ns,
+        string? benchmarkVersion,
+        string? benchmarkRelease,
+        DateTimeOffset? benchmarkDate,
+        OsTarget osTarget,
+        ScopeTag classificationScope,
+        Confidence confidence)
     {
         var ruleId = rule.Attribute("id")?.Value;
         var severity = rule.Attribute("severity")?.Value ?? "unknown";
@@ -68,22 +109,21 @@ public static class XccdfParser
             BenchmarkId = benchmarkId
         };
 
-        // Build applicability (placeholder values)
         var app = new Applicability
         {
-            OsTarget = OsTarget.Win11,
+            OsTarget = osTarget,
+            // XCCDF 1.2 has no standard role element - parse custom metadata in v1.2
             RoleTags = Array.Empty<RoleTemplate>(),
-            ClassificationScope = ScopeTag.Unknown,
-            Confidence = Confidence.Low
+            ClassificationScope = classificationScope,
+            Confidence = confidence
         };
 
-        // Build revision info
         var rev = new RevisionInfo
         {
             PackName = packName,
-            BenchmarkVersion = null,
-            BenchmarkRelease = null,
-            BenchmarkDate = null
+            BenchmarkVersion = benchmarkVersion,
+            BenchmarkRelease = benchmarkRelease,
+            BenchmarkDate = benchmarkDate
         };
 
         return new ControlRecord
@@ -146,5 +186,78 @@ public static class XccdfParser
         if (!string.IsNullOrWhiteSpace(checkContent))
             prompt += "\n" + checkContent!.Trim();
         return prompt;
+    }
+
+    private static string? ExtractRearMatterField(string? rearMatterText, string fieldName)
+    {
+        if (string.IsNullOrWhiteSpace(rearMatterText)) return null;
+
+        var lines = rearMatterText!
+            .Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+            .Select(line => line.Trim());
+
+        foreach (var line in lines)
+        {
+            var separatorIndex = line.IndexOf(":--:", StringComparison.Ordinal);
+            if (separatorIndex <= 0) continue;
+
+            var key = line.Substring(0, separatorIndex).Trim();
+            if (!key.Equals(fieldName, StringComparison.OrdinalIgnoreCase)) continue;
+
+            var value = line.Substring(separatorIndex + 4).Trim();
+            return string.IsNullOrWhiteSpace(value) ? null : value;
+        }
+
+        return null;
+    }
+
+    private static OsTarget MapOsTarget(string? platformCpe)
+    {
+        if (string.IsNullOrWhiteSpace(platformCpe)) return OsTarget.Unknown;
+
+        if (platformCpe!.IndexOf("windows_11", StringComparison.OrdinalIgnoreCase) >= 0 ||
+            platformCpe.IndexOf("win11", StringComparison.OrdinalIgnoreCase) >= 0)
+            return OsTarget.Win11;
+
+        if (platformCpe.IndexOf("windows_server_2019", StringComparison.OrdinalIgnoreCase) >= 0 ||
+            platformCpe.IndexOf("2019", StringComparison.OrdinalIgnoreCase) >= 0)
+            return OsTarget.Server2019;
+
+        if (platformCpe.IndexOf("windows_server_2022", StringComparison.OrdinalIgnoreCase) >= 0 ||
+            platformCpe.IndexOf("2022", StringComparison.OrdinalIgnoreCase) >= 0)
+            return OsTarget.Server2022;
+
+        if (platformCpe.IndexOf("windows_10", StringComparison.OrdinalIgnoreCase) >= 0 ||
+            platformCpe.IndexOf("win10", StringComparison.OrdinalIgnoreCase) >= 0)
+            return OsTarget.Win10;
+
+        return OsTarget.Unknown;
+    }
+
+    private static ScopeTag MapClassificationScope(string? classification)
+    {
+        if (string.IsNullOrWhiteSpace(classification)) return ScopeTag.Unknown;
+
+        if (classification!.Equals("CLASSIFIED", StringComparison.OrdinalIgnoreCase))
+            return ScopeTag.ClassifiedOnly;
+
+        if (classification.Equals("UNCLASSIFIED", StringComparison.OrdinalIgnoreCase))
+            return ScopeTag.UnclassifiedOnly;
+
+        if (classification.Equals("MIXED", StringComparison.OrdinalIgnoreCase) ||
+            classification.Equals("BOTH", StringComparison.OrdinalIgnoreCase))
+            return ScopeTag.Both;
+
+        return ScopeTag.Unknown;
+    }
+
+    private static Confidence GetConfidence(string? benchmarkVersion, DateTimeOffset? benchmarkDate)
+    {
+        var hasVersion = !string.IsNullOrWhiteSpace(benchmarkVersion);
+        var hasDate = benchmarkDate != null;
+
+        if (hasVersion && hasDate) return Confidence.High;
+        if (hasVersion || hasDate) return Confidence.Medium;
+        return Confidence.Low;
     }
 }

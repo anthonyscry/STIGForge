@@ -7,7 +7,7 @@
 
 **Started:** February 9, 2026
 
-Progress: ████████████████████████████████████████████░░░░░░░░░░░░ (92%)
+Progress: ██████████████████████████████████████████████░░░░░░░░░░ (96%)
 
 ---
 
@@ -109,8 +109,9 @@ Progress: ███████████████████████�
 - [x] Run release-gate and package-build evidence generation for v1.1 RC (`phase10-rc`)
 - [x] Execute `docs/release/ShipReadinessChecklist.md` for v1.1 release candidate
 - [ ] Close manual checklist blockers for functional UAT and upgrade/rollback validation
-- [ ] Pin RC commit and regenerate release/package evidence from clean working tree
-- [ ] Run `release-package.yml` and `vm-smoke-matrix.yml` for pinned RC commit and archive outputs
+- [x] Pin RC commit and regenerate release/package evidence from clean working tree
+- [x] Run `release-package.yml` for pinned RC commit (`0b0f5ed`)
+- [x] Run `vm-smoke-matrix.yml` for pinned RC commit (`0b0f5ed`) and archive outputs
 
 ### Medium Priority
 - [x] Validate requirement traceability remains 100% after Phase 08 updates
@@ -129,8 +130,8 @@ Progress: ███████████████████████�
 
 ## Blockers & Concerns
 
-- Current go/no-go is `NO-GO (temporary)` in `docs/release/GoNoGo-v1.1-rc1.md` until manual checklist and workflow promotion checks complete.
-- RC evidence was generated from a dirty working tree; final promotion requires evidence regenerated from a pinned clean commit.
+- Current go/no-go is `NO-GO (temporary)` in `docs/release/GoNoGo-v1.1-rc1.md` until manual checklist validations complete.
+- Manual checklist sections 3 and 4 remain open for target-environment signoff evidence.
 
 ---
 
@@ -140,14 +141,14 @@ Progress: ███████████████████████�
 **.NET Version:** .NET 8
 **PowerShell Target:** 5.1
 **Database:** SQLite
-**Git Branch:** main
+**Git Branch:** release/v1.1-rc1
 
 ---
 
 ## Session Continuity
 
-**Last session:** 2026-02-09T07:37:00Z
-**Stopped at:** Produced initial RC go/no-go decision record (`docs/release/GoNoGo-v1.1-rc1.md`) with temporary NO-GO due outstanding manual validations and workflow-run evidence.
+**Last session:** 2026-02-09T08:39:00Z
+**Stopped at:** Brought up temporary self-hosted runners, executed `vm-smoke-matrix.yml` successfully for commit `0b0f5ed`, and refreshed go/no-go evidence references.
 **Resume file:** None
 
 ---
@@ -156,4 +157,4 @@ Progress: ███████████████████████�
 
 **Date:** February 9, 2026
 **Updated By:** OpenCode Executor
-**Reason:** Executed checklist audit and recorded initial RC decision with explicit blockers
+**Reason:** Closed automation-side workflow blockers; remaining work is manual release checklist signoff
