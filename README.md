@@ -178,7 +178,9 @@ See `docs/release/SecurityGatePolicies.md` for policy file and exception managem
 - tools/schemas JSON schemas (profile/overlay/manifest)
 - docs/spec contracts (bundle + eMASS export)
 - docs/planning design prompts, roadmap, and scaffolding notes
+- docs/RepoStructure.md detailed project and folder organization
 
 ## Notes
 - Local scratch/temp folders (`.scratch/`, `.tmp_scc_extract/`, `.tmp_scc_manual/`, `logs/`) are ignored by git.
+- Local scratch database `applockerprime.db` is ignored by git.
 - Long-form planning artifacts were consolidated under `docs/planning/` to keep the repository root focused on runnable assets.

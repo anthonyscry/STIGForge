@@ -158,4 +158,9 @@ Main view orchestration now follows a hybrid approach:
 - Feature facades are exposed as dedicated sub-viewmodels (`DashboardViewModel`, `ImportViewModel`, `ManualReviewViewModel`).
 - Shared cross-tab state is defined via `IMainSharedState` to support incremental extraction without breaking behavior.
 
+ViewModels are organized under `src/STIGForge.App/ViewModels/` by domain (`Main/`, `Manual/`, `Import/`, `Common/`) to keep related UI logic together while preserving namespace compatibility.
+
 This allows progressive modularization while preserving stability for existing UI bindings and tests.
+
+### Shared Utility Consolidation
+Cross-cutting CSV parsing now lives in `src/STIGForge.Core/Utilities/CsvUtility.cs` and is reused across App/CLI/Export/Core components to reduce duplicated parser logic and drift.
