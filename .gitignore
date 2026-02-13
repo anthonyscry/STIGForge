@@ -29,3 +29,6 @@ Thumbs.db
 .tmp_scc_extract/
 .tmp_scc_manual/
 logs/
+
+# Local scratch databases
+applockerprime.db
