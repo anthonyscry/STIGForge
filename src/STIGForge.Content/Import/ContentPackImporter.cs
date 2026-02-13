@@ -121,17 +121,22 @@ public sealed class ContentPackImporter
 
                 if (benchmarkDirs.Count > 1)
                 {
-                    var splitPacks = new List<ContentPack>(benchmarkDirs.Count);
-                    foreach (var benchDir in benchmarkDirs)
+                    var semaphore = new SemaphoreSlim(4);
+                    var tasks = benchmarkDirs.Select(async benchDir =>
                     {
-                        ct.ThrowIfCancellationRequested();
-                        var dirName = new DirectoryInfo(benchDir).Name;
-                        var packName = CleanDisaPackName(dirName);
-                        if (string.IsNullOrWhiteSpace(packName))
-                            packName = dirName;
-                        splitPacks.Add(await ImportDirectoryAsPackAsync(benchDir, packName, sourceLabel, ct).ConfigureAwait(false));
-                    }
-                    return splitPacks;
+                        await semaphore.WaitAsync(ct).ConfigureAwait(false);
+                        try
+                        {
+                            ct.ThrowIfCancellationRequested();
+                            var dirName = new DirectoryInfo(benchDir).Name;
+                            var packName = CleanDisaPackName(dirName);
+                            if (string.IsNullOrWhiteSpace(packName))
+                                packName = dirName;
+                            return await ImportDirectoryAsPackAsync(benchDir, packName, sourceLabel, ct).ConfigureAwait(false);
+                        }
+                        finally { semaphore.Release(); }
+                    }).ToList();
+                    return (await Task.WhenAll(tasks).ConfigureAwait(false)).ToList();
                 }
 
                 var singlePackName = BuildImportedPackName(consolidatedZipPath, "Imported");
@@ -139,15 +144,19 @@ public sealed class ContentPackImporter
                 return new[] { importedSingle };
             }
 
-            var imported = new List<ContentPack>(nestedZipPaths.Count);
-            foreach (var nestedZipPath in nestedZipPaths)
+            var zipSemaphore = new SemaphoreSlim(4);
+            var zipTasks = nestedZipPaths.Select(async nestedZipPath =>
             {
-                ct.ThrowIfCancellationRequested();
-                var packName = BuildImportedPackName(nestedZipPath, "Imported");
-                imported.Add(await ImportZipAsync(nestedZipPath, packName, sourceLabel, ct).ConfigureAwait(false));
-            }
-
-            return imported;
+                await zipSemaphore.WaitAsync(ct).ConfigureAwait(false);
+                try
+                {
+                    ct.ThrowIfCancellationRequested();
+                    var packName = BuildImportedPackName(nestedZipPath, "Imported");
+                    return await ImportZipAsync(nestedZipPath, packName, sourceLabel, ct).ConfigureAwait(false);
+                }
+                finally { zipSemaphore.Release(); }
+            }).ToList();
+            return (await Task.WhenAll(zipTasks).ConfigureAwait(false)).ToList();
         }
         finally
         {

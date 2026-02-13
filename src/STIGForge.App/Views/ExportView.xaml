@@ -238,19 +238,22 @@
                         ToolTipService.ToolTip="Check the cryptographic chain integrity of the audit trail."/>
               </WrapPanel>
               <TextBlock Text="{Binding AuditVerifyResult}" FontWeight="SemiBold" Margin="0,0,0,8"/>
-              <ListView ItemsSource="{Binding AuditEntries}" MaxHeight="260" MinHeight="80">
-                <ListView.View>
-                  <GridView>
-                    <GridViewColumn Header="Id" DisplayMemberBinding="{Binding Id}"/>
-                    <GridViewColumn Header="Time" DisplayMemberBinding="{Binding Timestamp}" Width="140"/>
-                    <GridViewColumn Header="Act" DisplayMemberBinding="{Binding Action}"/>
-                    <GridViewColumn Header="Target" DisplayMemberBinding="{Binding Target}" Width="180"/>
-                    <GridViewColumn Header="Res" DisplayMemberBinding="{Binding Result}"/>
-                    <GridViewColumn Header="User" DisplayMemberBinding="{Binding User}"/>
-                    <GridViewColumn Header="Detail" DisplayMemberBinding="{Binding Detail}" Width="260"/>
-                  </GridView>
-                </ListView.View>
-              </ListView>
+               <ListView ItemsSource="{Binding AuditEntries}" MaxHeight="260" MinHeight="80"
+                         VirtualizingStackPanel.IsVirtualizing="True"
+                         VirtualizingStackPanel.VirtualizationMode="Recycling"
+                         ScrollViewer.CanContentScroll="True">
+                 <ListView.View>
+                   <GridView>
+                     <GridViewColumn Header="Id" DisplayMemberBinding="{Binding Id}"/>
+                     <GridViewColumn Header="Time" DisplayMemberBinding="{Binding Timestamp}" Width="140"/>
+                     <GridViewColumn Header="Act" DisplayMemberBinding="{Binding Action}"/>
+                     <GridViewColumn Header="Target" DisplayMemberBinding="{Binding Target}" Width="180"/>
+                     <GridViewColumn Header="Res" DisplayMemberBinding="{Binding Result}"/>
+                     <GridViewColumn Header="User" DisplayMemberBinding="{Binding User}"/>
+                     <GridViewColumn Header="Detail" DisplayMemberBinding="{Binding Detail}" Width="260"/>
+                   </GridView>
+                 </ListView.View>
+               </ListView>
             </StackPanel>
           </ScrollViewer>
         </TabItem>

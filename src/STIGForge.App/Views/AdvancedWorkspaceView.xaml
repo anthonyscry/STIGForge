@@ -32,7 +32,10 @@
               <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <ListView Grid.Column="0" ItemsSource="{Binding ContentPacks}" SelectedItem="{Binding SelectedPack}">
+            <ListView Grid.Column="0" ItemsSource="{Binding ContentPacks}" SelectedItem="{Binding SelectedPack}"
+                      VirtualizingStackPanel.IsVirtualizing="True"
+                      VirtualizingStackPanel.VirtualizationMode="Recycling"
+                      ScrollViewer.CanContentScroll="True">
               <ListView.View>
                 <GridView>
                   <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}"/>
@@ -95,40 +98,49 @@
 
               <TabControl Margin="0,8,0,0" Height="280">
                 <TabItem Header="STIG">
-                  <ListView ItemsSource="{Binding StigLibraryItems}" SelectedItem="{Binding SelectedStigLibraryItem}">
-                    <ListView.View>
-                      <GridView>
-                        <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}"/>
-                        <GridViewColumn Header="Imported" DisplayMemberBinding="{Binding ImportedAtLabel}"/>
-                        <GridViewColumn Header="Source" DisplayMemberBinding="{Binding SourceLabel}"/>
-                      </GridView>
-                    </ListView.View>
-                  </ListView>
-                </TabItem>
+                   <ListView ItemsSource="{Binding StigLibraryItems}" SelectedItem="{Binding SelectedStigLibraryItem}"
+                             VirtualizingStackPanel.IsVirtualizing="True"
+                             VirtualizingStackPanel.VirtualizationMode="Recycling"
+                             ScrollViewer.CanContentScroll="True">
+                     <ListView.View>
+                       <GridView>
+                         <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}"/>
+                         <GridViewColumn Header="Imported" DisplayMemberBinding="{Binding ImportedAtLabel}"/>
+                         <GridViewColumn Header="Source" DisplayMemberBinding="{Binding SourceLabel}"/>
+                       </GridView>
+                     </ListView.View>
+                   </ListView>
+                 </TabItem>
 
                 <TabItem Header="SCAP">
-                  <ListView ItemsSource="{Binding ScapLibraryItems}" SelectedItem="{Binding SelectedScapLibraryItem}">
-                    <ListView.View>
-                      <GridView>
-                        <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}"/>
-                        <GridViewColumn Header="Imported" DisplayMemberBinding="{Binding ImportedAtLabel}"/>
-                        <GridViewColumn Header="Source" DisplayMemberBinding="{Binding SourceLabel}"/>
-                      </GridView>
-                    </ListView.View>
-                  </ListView>
-                </TabItem>
+                   <ListView ItemsSource="{Binding ScapLibraryItems}" SelectedItem="{Binding SelectedScapLibraryItem}"
+                             VirtualizingStackPanel.IsVirtualizing="True"
+                             VirtualizingStackPanel.VirtualizationMode="Recycling"
+                             ScrollViewer.CanContentScroll="True">
+                     <ListView.View>
+                       <GridView>
+                         <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}"/>
+                         <GridViewColumn Header="Imported" DisplayMemberBinding="{Binding ImportedAtLabel}"/>
+                         <GridViewColumn Header="Source" DisplayMemberBinding="{Binding SourceLabel}"/>
+                       </GridView>
+                     </ListView.View>
+                   </ListView>
+                 </TabItem>
 
                 <TabItem Header="Other">
-                  <ListView ItemsSource="{Binding OtherLibraryItems}" SelectedItem="{Binding SelectedOtherLibraryItem}">
-                    <ListView.View>
-                      <GridView>
-                        <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}"/>
-                        <GridViewColumn Header="Format" DisplayMemberBinding="{Binding Format}"/>
-                        <GridViewColumn Header="Imported" DisplayMemberBinding="{Binding ImportedAtLabel}"/>
-                      </GridView>
-                    </ListView.View>
-                  </ListView>
-                </TabItem>
+                   <ListView ItemsSource="{Binding OtherLibraryItems}" SelectedItem="{Binding SelectedOtherLibraryItem}"
+                             VirtualizingStackPanel.IsVirtualizing="True"
+                             VirtualizingStackPanel.VirtualizationMode="Recycling"
+                             ScrollViewer.CanContentScroll="True">
+                     <ListView.View>
+                       <GridView>
+                         <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}"/>
+                         <GridViewColumn Header="Format" DisplayMemberBinding="{Binding Format}"/>
+                         <GridViewColumn Header="Imported" DisplayMemberBinding="{Binding ImportedAtLabel}"/>
+                       </GridView>
+                     </ListView.View>
+                   </ListView>
+                 </TabItem>
               </TabControl>
             </StackPanel>
           </Grid>
@@ -377,17 +389,20 @@
             <Button Content="Refresh Overlap" Width="140" Margin="0,8,0,0" Command="{Binding RefreshOverlapCommand}"
                     AutomationProperties.Name="Refresh overlap analysis"
                     ToolTipService.ToolTip="Recalculate source overlap between verify results from different scanners."/>
-            <ListView ItemsSource="{Binding OverlapItems}" Height="160" Margin="0,6,0,0">
-              <ListView.View>
-                <GridView>
-                  <GridViewColumn Header="Sources" DisplayMemberBinding="{Binding SourcesKey}" Width="220" />
-                  <GridViewColumn Header="#" DisplayMemberBinding="{Binding SourceCount}" Width="40" />
-                  <GridViewColumn Header="Controls" DisplayMemberBinding="{Binding ControlsCount}" Width="70" />
-                  <GridViewColumn Header="Closed" DisplayMemberBinding="{Binding ClosedCount}" Width="60" />
-                  <GridViewColumn Header="Open" DisplayMemberBinding="{Binding OpenCount}" Width="60" />
-                </GridView>
-              </ListView.View>
-            </ListView>
+             <ListView ItemsSource="{Binding OverlapItems}" Height="160" Margin="0,6,0,0"
+                       VirtualizingStackPanel.IsVirtualizing="True"
+                       VirtualizingStackPanel.VirtualizationMode="Recycling"
+                       ScrollViewer.CanContentScroll="True">
+               <ListView.View>
+                 <GridView>
+                   <GridViewColumn Header="Sources" DisplayMemberBinding="{Binding SourcesKey}" Width="220" />
+                   <GridViewColumn Header="#" DisplayMemberBinding="{Binding SourceCount}" Width="40" />
+                   <GridViewColumn Header="Controls" DisplayMemberBinding="{Binding ControlsCount}" Width="70" />
+                   <GridViewColumn Header="Closed" DisplayMemberBinding="{Binding ClosedCount}" Width="60" />
+                   <GridViewColumn Header="Open" DisplayMemberBinding="{Binding OpenCount}" Width="60" />
+                 </GridView>
+               </ListView.View>
+             </ListView>
           </StackPanel>
         </Grid>
       </TabItem>
@@ -427,7 +442,10 @@
               <ColumnDefinition Width="3*" />
             </Grid.ColumnDefinitions>
 
-            <ListView Grid.Column="0" ItemsSource="{Binding ManualControlsView}" SelectedItem="{Binding SelectedManualControl}">
+            <ListView Grid.Column="0" ItemsSource="{Binding ManualControlsView}" SelectedItem="{Binding SelectedManualControl}"
+                      VirtualizingStackPanel.IsVirtualizing="True"
+                      VirtualizingStackPanel.VirtualizationMode="Recycling"
+                      ScrollViewer.CanContentScroll="True">
             <ListView.View>
               <GridView>
                 <GridViewColumn Header="Rule" DisplayMemberBinding="{Binding Control.ExternalIds.RuleId}" />
@@ -559,19 +577,22 @@
 
                 <TextBlock Grid.Row="1" Text="{Binding AuditVerifyResult}" Margin="0,0,0,8" FontWeight="SemiBold"/>
 
-                <ListView Grid.Row="2" ItemsSource="{Binding AuditEntries}">
-                  <ListView.View>
-                    <GridView>
-                      <GridViewColumn Header="Id" DisplayMemberBinding="{Binding Id}" />
-                      <GridViewColumn Header="Time" DisplayMemberBinding="{Binding Timestamp}" Width="140"/>
-                      <GridViewColumn Header="Act" DisplayMemberBinding="{Binding Action}" />
-                      <GridViewColumn Header="Target" DisplayMemberBinding="{Binding Target}" Width="180"/>
-                      <GridViewColumn Header="Res" DisplayMemberBinding="{Binding Result}" />
-                      <GridViewColumn Header="User" DisplayMemberBinding="{Binding User}" />
-                      <GridViewColumn Header="Detail" DisplayMemberBinding="{Binding Detail}" Width="260"/>
-                    </GridView>
-                  </ListView.View>
-                </ListView>
+                <ListView Grid.Row="2" ItemsSource="{Binding AuditEntries}"
+                          VirtualizingStackPanel.IsVirtualizing="True"
+                          VirtualizingStackPanel.VirtualizationMode="Recycling"
+                          ScrollViewer.CanContentScroll="True">
+                   <ListView.View>
+                     <GridView>
+                       <GridViewColumn Header="Id" DisplayMemberBinding="{Binding Id}" />
+                       <GridViewColumn Header="Time" DisplayMemberBinding="{Binding Timestamp}" Width="140"/>
+                       <GridViewColumn Header="Act" DisplayMemberBinding="{Binding Action}" />
+                       <GridViewColumn Header="Target" DisplayMemberBinding="{Binding Target}" Width="180"/>
+                       <GridViewColumn Header="Res" DisplayMemberBinding="{Binding Result}" />
+                       <GridViewColumn Header="User" DisplayMemberBinding="{Binding User}" />
+                       <GridViewColumn Header="Detail" DisplayMemberBinding="{Binding Detail}" Width="260"/>
+                     </GridView>
+                   </ListView.View>
+                 </ListView>
               </Grid>
             </TabItem>
 

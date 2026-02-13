@@ -103,16 +103,19 @@
             <RowDefinition Height="2*"/>
           </Grid.RowDefinitions>
           
-          <!-- Added Controls List -->
-          <ListView Grid.Row="0" ItemsSource="{Binding AddedControls}" SelectedItem="{Binding SelectedAddedControl}">
-            <ListView.View>
-              <GridView>
-                <GridViewColumn Header="Control ID" DisplayMemberBinding="{Binding ControlId}" Width="140"/>
-                <GridViewColumn Header="Title" DisplayMemberBinding="{Binding Title}" Width="350"/>
-                <GridViewColumn Header="Severity" DisplayMemberBinding="{Binding Severity}" Width="100"/>
-              </GridView>
-            </ListView.View>
-          </ListView>
+           <!-- Added Controls List -->
+           <ListView Grid.Row="0" ItemsSource="{Binding AddedControls}" SelectedItem="{Binding SelectedAddedControl}"
+                     VirtualizingStackPanel.IsVirtualizing="True"
+                     VirtualizingStackPanel.VirtualizationMode="Recycling"
+                     ScrollViewer.CanContentScroll="True">
+             <ListView.View>
+               <GridView>
+                 <GridViewColumn Header="Control ID" DisplayMemberBinding="{Binding ControlId}" Width="140"/>
+                 <GridViewColumn Header="Title" DisplayMemberBinding="{Binding Title}" Width="350"/>
+                 <GridViewColumn Header="Severity" DisplayMemberBinding="{Binding Severity}" Width="100"/>
+               </GridView>
+             </ListView.View>
+           </ListView>
           
           <GridSplitter Grid.Row="1" Height="4" HorizontalAlignment="Stretch" VerticalAlignment="Center" Background="LightGray"/>
           
@@ -160,16 +163,19 @@
             <RowDefinition Height="2*"/>
           </Grid.RowDefinitions>
           
-          <!-- Removed Controls List -->
-          <ListView Grid.Row="0" ItemsSource="{Binding RemovedControls}" SelectedItem="{Binding SelectedRemovedControl}">
-            <ListView.View>
-              <GridView>
-                <GridViewColumn Header="Control ID" DisplayMemberBinding="{Binding ControlId}" Width="140"/>
-                <GridViewColumn Header="Title" DisplayMemberBinding="{Binding Title}" Width="350"/>
-                <GridViewColumn Header="Severity" DisplayMemberBinding="{Binding Severity}" Width="100"/>
-              </GridView>
-            </ListView.View>
-          </ListView>
+           <!-- Removed Controls List -->
+           <ListView Grid.Row="0" ItemsSource="{Binding RemovedControls}" SelectedItem="{Binding SelectedRemovedControl}"
+                     VirtualizingStackPanel.IsVirtualizing="True"
+                     VirtualizingStackPanel.VirtualizationMode="Recycling"
+                     ScrollViewer.CanContentScroll="True">
+             <ListView.View>
+               <GridView>
+                 <GridViewColumn Header="Control ID" DisplayMemberBinding="{Binding ControlId}" Width="140"/>
+                 <GridViewColumn Header="Title" DisplayMemberBinding="{Binding Title}" Width="350"/>
+                 <GridViewColumn Header="Severity" DisplayMemberBinding="{Binding Severity}" Width="100"/>
+               </GridView>
+             </ListView.View>
+           </ListView>
           
           <GridSplitter Grid.Row="1" Height="4" HorizontalAlignment="Stretch" VerticalAlignment="Center" Background="LightGray"/>
           
@@ -217,26 +223,29 @@
             <RowDefinition Height="2*"/>
           </Grid.RowDefinitions>
           
-          <!-- Modified Controls List -->
-          <ListView Grid.Row="0" ItemsSource="{Binding ModifiedControls}" SelectedItem="{Binding SelectedModifiedItem}">
-            <ListView.View>
-              <GridView>
-                <GridViewColumn Header="Control ID" DisplayMemberBinding="{Binding ControlId}" Width="140"/>
-                <GridViewColumn Header="Title" DisplayMemberBinding="{Binding Title}" Width="280"/>
-                <GridViewColumn Header="Classification" DisplayMemberBinding="{Binding Classification}" Width="120"/>
-                <GridViewColumn Header="Impact" Width="100">
-                  <GridViewColumn.CellTemplate>
-                    <DataTemplate>
-                      <Border Background="{Binding ImpactColor}" Padding="4,2" CornerRadius="2">
-                        <TextBlock Text="{Binding Impact}" Foreground="White" FontWeight="SemiBold" HorizontalAlignment="Center"/>
-                      </Border>
-                    </DataTemplate>
-                  </GridViewColumn.CellTemplate>
-                </GridViewColumn>
-                <GridViewColumn Header="Changes" DisplayMemberBinding="{Binding ChangesSummary}" Width="250"/>
-              </GridView>
-            </ListView.View>
-          </ListView>
+           <!-- Modified Controls List -->
+           <ListView Grid.Row="0" ItemsSource="{Binding ModifiedControls}" SelectedItem="{Binding SelectedModifiedItem}"
+                     VirtualizingStackPanel.IsVirtualizing="True"
+                     VirtualizingStackPanel.VirtualizationMode="Recycling"
+                     ScrollViewer.CanContentScroll="True">
+             <ListView.View>
+               <GridView>
+                 <GridViewColumn Header="Control ID" DisplayMemberBinding="{Binding ControlId}" Width="140"/>
+                 <GridViewColumn Header="Title" DisplayMemberBinding="{Binding Title}" Width="280"/>
+                 <GridViewColumn Header="Classification" DisplayMemberBinding="{Binding Classification}" Width="120"/>
+                 <GridViewColumn Header="Impact" Width="100">
+                   <GridViewColumn.CellTemplate>
+                     <DataTemplate>
+                       <Border Background="{Binding ImpactColor}" Padding="4,2" CornerRadius="2">
+                         <TextBlock Text="{Binding Impact}" Foreground="White" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                       </Border>
+                     </DataTemplate>
+                   </GridViewColumn.CellTemplate>
+                 </GridViewColumn>
+                 <GridViewColumn Header="Changes" DisplayMemberBinding="{Binding ChangesSummary}" Width="250"/>
+               </GridView>
+             </ListView.View>
+           </ListView>
           
           <GridSplitter Grid.Row="1" Height="4" HorizontalAlignment="Stretch" VerticalAlignment="Center" Background="LightGray"/>
           
@@ -295,16 +304,19 @@
             <RowDefinition Height="2*"/>
           </Grid.RowDefinitions>
 
-          <ListView Grid.Row="0" ItemsSource="{Binding ReviewRequiredControls}" SelectedItem="{Binding SelectedReviewRequiredControl}">
-            <ListView.View>
-              <GridView>
-                <GridViewColumn Header="Control Key" DisplayMemberBinding="{Binding ControlKey}" Width="210"/>
-                <GridViewColumn Header="Title" DisplayMemberBinding="{Binding Title}" Width="260"/>
-                <GridViewColumn Header="Change Type" DisplayMemberBinding="{Binding ChangeType}" Width="120"/>
-                <GridViewColumn Header="Reason" DisplayMemberBinding="{Binding Reason}" Width="320"/>
-              </GridView>
-            </ListView.View>
-          </ListView>
+           <ListView Grid.Row="0" ItemsSource="{Binding ReviewRequiredControls}" SelectedItem="{Binding SelectedReviewRequiredControl}"
+                     VirtualizingStackPanel.IsVirtualizing="True"
+                     VirtualizingStackPanel.VirtualizationMode="Recycling"
+                     ScrollViewer.CanContentScroll="True">
+             <ListView.View>
+               <GridView>
+                 <GridViewColumn Header="Control Key" DisplayMemberBinding="{Binding ControlKey}" Width="210"/>
+                 <GridViewColumn Header="Title" DisplayMemberBinding="{Binding Title}" Width="260"/>
+                 <GridViewColumn Header="Change Type" DisplayMemberBinding="{Binding ChangeType}" Width="120"/>
+                 <GridViewColumn Header="Reason" DisplayMemberBinding="{Binding Reason}" Width="320"/>
+               </GridView>
+             </ListView.View>
+           </ListView>
 
           <GridSplitter Grid.Row="1" Height="4" HorizontalAlignment="Stretch" VerticalAlignment="Center" Background="LightGray"/>
 

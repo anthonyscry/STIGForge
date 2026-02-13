@@ -211,7 +211,7 @@ public partial class MainViewModel
       wizard.Closed += (s, e) =>
       {
         // Refresh manual controls after wizard closes
-        LoadManualControls();
+        LoadManualControlsAsync();
       };
       
       wizard.ShowDialog();
@@ -240,7 +240,7 @@ public partial class MainViewModel
     RefreshManualView();
   }
 
-  private void LoadManualControls()
+  private async void LoadManualControlsAsync()
   {
     System.Windows.Application.Current.Dispatcher.Invoke(() =>
     {
@@ -251,7 +251,7 @@ public partial class MainViewModel
     var controlsPath = Path.Combine(BundleRoot, "Manifest", "pack_controls.json");
     if (!File.Exists(controlsPath)) return;
 
-    var json = File.ReadAllText(controlsPath);
+    var json = await Task.Run(() => File.ReadAllText(controlsPath)).ConfigureAwait(false);
     var controls = JsonSerializer.Deserialize<List<ControlRecord>>(json,
       new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<ControlRecord>();
 

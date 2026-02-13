@@ -13,6 +13,7 @@ namespace STIGForge.App;
 public partial class MainViewModel
 {
   public List<ContentPack> SelectedMissionPacks { get; } = new();
+  private readonly Dictionary<string, string> _formatCache = new(StringComparer.OrdinalIgnoreCase);
 
   [RelayCommand]
   private async Task ImportContentPackAsync()
@@ -75,49 +76,68 @@ public partial class MainViewModel
     try
     {
       IsBusy = true;
+      IsProgressIndeterminate = false;
+      ProgressValue = 0;
+      ProgressMax = candidates.Count;
       StatusText = candidates.Count == 1
         ? "Importing " + contentLabel + " content..."
         : "Importing " + candidates.Count + " " + contentLabel + " files...";
 
       var totalImported = 0;
       var failed = new List<string>();
+      var importLock = new object();
 
-      foreach (var zip in candidates)
+      await Parallel.ForEachAsync(candidates, new ParallelOptions
+      {
+          MaxDegreeOfParallelism = Math.Min(4, candidates.Count),
+          CancellationToken = _cts.Token
+      }, async (zip, ct) =>
       {
         try
         {
-          var imported = await _importer.ImportConsolidatedZipAsync(zip, sourceLabel, CancellationToken.None);
-          foreach (var pack in imported)
-            AddImportedPack(pack);
-          totalImported += imported.Count;
+          var imported = await _importer.ImportConsolidatedZipAsync(zip, sourceLabel, ct);
+          lock (importLock)
+          {
+            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+            {
+              foreach (var pack in imported)
+                AddImportedPack(pack);
+            });
+            totalImported += imported.Count;
+            ProgressValue++;
+          }
         }
         catch (Exception ex)
         {
-          failed.Add(GetSafeFileLabel(zip) + ": " + ex.Message);
+          lock (importLock)
+          {
+            failed.Add(GetSafeFileLabel(zip) + ": " + ex.Message);
+            ProgressValue++;
+          }
         }
-      }
+      });
 
-      OnPropertyChanged(nameof(ContentPacks));
       RefreshImportLibrary();
 
-      var firstFailure = failed.FirstOrDefault() ?? "Unknown error";
-      if (totalImported == 0)
-        StatusText = failed.Count > 0 ? "Import failed: " + firstFailure : "No importable content found.";
-      else if (failed.Count == 0)
-        StatusText = totalImported == 1
-          ? "Imported: " + (SelectedPack?.Name ?? "package")
-          : "Imported " + totalImported + " " + contentLabel + " packages.";
-      else
-        StatusText = "Imported " + totalImported + " packages; " + failed.Count + " failed. First error: " + firstFailure;
+       var firstFailure = failed.FirstOrDefault() ?? "Unknown error";
+       if (totalImported == 0)
+         SetStatus(failed.Count > 0 ? "Import failed: " + firstFailure : "No importable content found.", failed.Count > 0 ? "Error" : "Warning");
+       else if (failed.Count == 0)
+         SetStatus(totalImported == 1
+           ? "Imported: " + (SelectedPack?.Name ?? "package")
+           : "Imported " + totalImported + " " + contentLabel + " packages.", "Success");
+       else
+         SetStatus("Imported " + totalImported + " packages; " + failed.Count + " failed. First error: " + firstFailure, "Warning");
     }
-    catch (Exception ex)
-    {
-      StatusText = "Import failed: " + ex.Message;
-    }
-    finally
-    {
-      IsBusy = false;
-    }
+     catch (Exception ex)
+     {
+       SetStatus("Import failed: " + ex.Message, "Error");
+     }
+     finally
+     {
+       IsProgressIndeterminate = true;
+       IsBusy = false;
+     }
   }
 
   private void AddImportedPack(ContentPack pack)
@@ -206,6 +226,9 @@ public partial class MainViewModel
 
   private string ResolvePackFormat(ContentPack pack)
   {
+    if (_formatCache.TryGetValue(pack.PackId, out var cached))
+        return cached;
+
     var compatibilityPath = Path.Combine(_paths.GetPackRoot(pack.PackId), "compatibility_matrix.json");
     if (File.Exists(compatibilityPath))
     {
@@ -219,22 +242,29 @@ public partial class MainViewModel
           if (!string.IsNullOrWhiteSpace(detectedValue)
               && !string.Equals(detectedValue, "Unknown", StringComparison.OrdinalIgnoreCase))
           {
-            if (string.Equals(detectedValue, "Scap", StringComparison.OrdinalIgnoreCase)) return "SCAP";
-            if (string.Equals(detectedValue, "Stig", StringComparison.OrdinalIgnoreCase)) return "STIG";
-            if (string.Equals(detectedValue, "Gpo", StringComparison.OrdinalIgnoreCase)) return "GPO";
-            return detectedValue.ToUpperInvariant();
+            string result;
+            if (string.Equals(detectedValue, "Scap", StringComparison.OrdinalIgnoreCase)) result = "SCAP";
+            else if (string.Equals(detectedValue, "Stig", StringComparison.OrdinalIgnoreCase)) result = "STIG";
+            else if (string.Equals(detectedValue, "Gpo", StringComparison.OrdinalIgnoreCase)) result = "GPO";
+            else result = detectedValue.ToUpperInvariant();
+            _formatCache[pack.PackId] = result;
+            return result;
           }
         }
       }
-      catch
+      catch (Exception ex)
       {
+          System.Diagnostics.Trace.TraceWarning("ResolvePackFormat failed for " + pack.PackId + ": " + ex.Message);
       }
     }
 
     var hint = (pack.SourceLabel + " " + pack.Name);
-    if (hint.IndexOf("scap", StringComparison.OrdinalIgnoreCase) >= 0) return "SCAP";
-    if (hint.IndexOf("gpo", StringComparison.OrdinalIgnoreCase) >= 0 || hint.IndexOf("admx", StringComparison.OrdinalIgnoreCase) >= 0) return "GPO";
-    return "STIG";
+    string format;
+    if (hint.IndexOf("scap", StringComparison.OrdinalIgnoreCase) >= 0) format = "SCAP";
+    else if (hint.IndexOf("gpo", StringComparison.OrdinalIgnoreCase) >= 0 || hint.IndexOf("admx", StringComparison.OrdinalIgnoreCase) >= 0) format = "GPO";
+    else format = "STIG";
+    _formatCache[pack.PackId] = format;
+    return format;
   }
 
   private static string GetSafeFileLabel(string path)
@@ -361,7 +391,6 @@ public partial class MainViewModel
       await _profiles.SaveAsync(profile, CancellationToken.None);
       if (!Profiles.Contains(profile)) Profiles.Add(profile);
       SelectedProfile = profile;
-      OnPropertyChanged(nameof(Profiles));
       StatusText = "Profile saved.";
     }
     catch (Exception ex)
@@ -426,11 +455,11 @@ public partial class MainViewModel
 
         await _packs.DeleteAsync(pack.PackId, CancellationToken.None);
         ContentPacks.Remove(pack);
+        _formatCache.Remove(pack.PackId);
         deleted++;
       }
 
       SelectedPack = ContentPacks.Count > 0 ? ContentPacks[0] : null;
-      OnPropertyChanged(nameof(ContentPacks));
       RefreshImportLibrary();
       StatusText = deleted == 1 ? "Pack deleted." : $"{deleted} packs deleted.";
     }

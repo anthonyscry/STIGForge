@@ -9,6 +9,8 @@ namespace STIGForge.App;
 
 public partial class MainViewModel
 {
+  private System.Threading.Timer? _saveDebounceTimer;
+
   [RelayCommand]
   private async Task ComparePacks()
   {
@@ -48,15 +50,15 @@ public partial class MainViewModel
       var baselinePack = ContentPacks.First(p => p.PackId == baselinePackId);
       var targetPack = ContentPacks.First(p => p.PackId == targetPackId);
 
-      var viewModel = new ViewModels.DiffViewerViewModel(diff, baselinePack.Name, targetPack.Name);
-      var diffViewer = new Views.DiffViewer(viewModel);
-      diffViewer.ShowDialog();
+       var viewModel = new ViewModels.DiffViewerViewModel(diff, baselinePack.Name, targetPack.Name);
+       var diffViewer = new Views.DiffViewer(viewModel);
+       diffViewer.ShowDialog();
 
-      StatusText = "Comparison complete.";
-    }
-    catch (Exception ex)
-    {
-      StatusText = "Comparison failed: " + ex.Message;
+       SetStatus("Comparison complete.", "Success");
+     }
+     catch (Exception ex)
+     {
+       SetStatus("Comparison failed: " + ex.Message, "Error");
     }
     finally
     {
@@ -542,68 +544,68 @@ public partial class MainViewModel
   {
     SaveUiState();
     LoadCoverageOverlap();
-    LoadManualControls();
+    LoadManualControlsAsync();
     RefreshDashboard();
   }
 
   partial void OnEvaluateStigRootChanged(string value)
   {
-    SaveUiState();
+    DebouncedSaveUiState();
   }
 
   partial void OnEvaluateStigArgsChanged(string value)
   {
-    SaveUiState();
+    DebouncedSaveUiState();
   }
 
   partial void OnScapCommandPathChanged(string value)
   {
-    SaveUiState();
+    DebouncedSaveUiState();
   }
 
   partial void OnScapArgsChanged(string value)
   {
-    SaveUiState();
+    DebouncedSaveUiState();
   }
 
   partial void OnScapLabelChanged(string value)
   {
-    SaveUiState();
+    DebouncedSaveUiState();
   }
 
   partial void OnLocalToolkitRootChanged(string value)
   {
-    SaveUiState();
+    DebouncedSaveUiState();
   }
 
   partial void OnPowerStigModulePathChanged(string value)
   {
-    SaveUiState();
+    DebouncedSaveUiState();
   }
 
   partial void OnPowerStigDataFileChanged(string value)
   {
-    SaveUiState();
+    DebouncedSaveUiState();
   }
 
   partial void OnPowerStigOutputPathChanged(string value)
   {
-    SaveUiState();
+    DebouncedSaveUiState();
   }
 
   partial void OnPowerStigVerboseChanged(bool value)
   {
-    SaveUiState();
+    DebouncedSaveUiState();
   }
 
   partial void OnApplySkipSnapshotChanged(bool value)
   {
-    SaveUiState();
+    DebouncedSaveUiState();
   }
 
   partial void OnSimpleBuildBeforeRunChanged(bool value)
   {
-    SaveUiState();
+    DebouncedSaveUiState();
   }
 
   partial void OnSelectedMissionPresetChanged(string value)
@@ -701,8 +703,9 @@ public partial class MainViewModel
         }
       });
     }
-    catch
+    catch (Exception ex)
     {
+      System.Diagnostics.Trace.TraceWarning("LoadUiState failed: " + ex.Message);
     }
   }
 
@@ -756,9 +759,20 @@ public partial class MainViewModel
       var json = JsonSerializer.Serialize(state, new JsonSerializerOptions { WriteIndented = true });
       File.WriteAllText(path, json);
     }
-    catch
+    catch (Exception ex)
     {
+      System.Diagnostics.Trace.TraceWarning("SaveUiState failed: " + ex.Message);
     }
+  }
+
+  private void DebouncedSaveUiState()
+  {
+      _saveDebounceTimer?.Dispose();
+      _saveDebounceTimer = new System.Threading.Timer(_ =>
+      {
+          try { System.Windows.Application.Current?.Dispatcher.Invoke(SaveUiState); }
+          catch (Exception ex) { System.Diagnostics.Trace.TraceWarning("Debounced SaveUiState failed: " + ex.Message); }
+      }, null, 500, Timeout.Infinite);
   }
 
   private async Task<bool> TryActivateToolkitAsync(bool userInitiated, CancellationToken ct)

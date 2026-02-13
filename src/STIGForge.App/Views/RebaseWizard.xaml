@@ -131,14 +131,17 @@
               </StackPanel>
             </TabItem.Header>
             
-            <DataGrid ItemsSource="{Binding AutoRebasedActions}" AutoGenerateColumns="False" IsReadOnly="True" Margin="8">
-              <DataGrid.Columns>
-                <DataGridTextColumn Header="Control ID" Binding="{Binding ControlId}" Width="120"/>
-                <DataGridTextColumn Header="Action" Binding="{Binding Action}" Width="120"/>
-                <DataGridTextColumn Header="Confidence" Binding="{Binding ConfidenceDisplay}" Width="100"/>
-                <DataGridTextColumn Header="Reason" Binding="{Binding Reason}" Width="*"/>
-              </DataGrid.Columns>
-            </DataGrid>
+             <DataGrid ItemsSource="{Binding AutoRebasedActions}" AutoGenerateColumns="False" IsReadOnly="True" Margin="8"
+                       VirtualizingStackPanel.IsVirtualizing="True"
+                       VirtualizingStackPanel.VirtualizationMode="Recycling"
+                       ScrollViewer.CanContentScroll="True">
+               <DataGrid.Columns>
+                 <DataGridTextColumn Header="Control ID" Binding="{Binding ControlId}" Width="120"/>
+                 <DataGridTextColumn Header="Action" Binding="{Binding Action}" Width="120"/>
+                 <DataGridTextColumn Header="Confidence" Binding="{Binding ConfidenceDisplay}" Width="100"/>
+                 <DataGridTextColumn Header="Reason" Binding="{Binding Reason}" Width="*"/>
+               </DataGrid.Columns>
+             </DataGrid>
           </TabItem>
 
           <TabItem>
@@ -157,16 +160,19 @@
                 <RowDefinition Height="200"/>
               </Grid.RowDefinitions>
               
-              <DataGrid Grid.Row="0" ItemsSource="{Binding NeedsReviewActions}" SelectedItem="{Binding SelectedReviewAction}" 
-                        AutoGenerateColumns="False" IsReadOnly="True">
-                <DataGrid.Columns>
-                  <DataGridTextColumn Header="Control ID" Binding="{Binding ControlId}" Width="120"/>
-                  <DataGridTextColumn Header="Suggested Action" Binding="{Binding Action}" Width="140"/>
-                  <DataGridTextColumn Header="Blocking" Binding="{Binding IsBlockingConflict}" Width="90"/>
-                  <DataGridTextColumn Header="Confidence" Binding="{Binding ConfidenceDisplay}" Width="100"/>
-                  <DataGridTextColumn Header="Reason" Binding="{Binding Reason}" Width="*"/>
-                </DataGrid.Columns>
-              </DataGrid>
+               <DataGrid Grid.Row="0" ItemsSource="{Binding NeedsReviewActions}" SelectedItem="{Binding SelectedReviewAction}" 
+                         AutoGenerateColumns="False" IsReadOnly="True"
+                         VirtualizingStackPanel.IsVirtualizing="True"
+                         VirtualizingStackPanel.VirtualizationMode="Recycling"
+                         ScrollViewer.CanContentScroll="True">
+                 <DataGrid.Columns>
+                   <DataGridTextColumn Header="Control ID" Binding="{Binding ControlId}" Width="120"/>
+                   <DataGridTextColumn Header="Suggested Action" Binding="{Binding Action}" Width="140"/>
+                   <DataGridTextColumn Header="Blocking" Binding="{Binding IsBlockingConflict}" Width="90"/>
+                   <DataGridTextColumn Header="Confidence" Binding="{Binding ConfidenceDisplay}" Width="100"/>
+                   <DataGridTextColumn Header="Reason" Binding="{Binding Reason}" Width="*"/>
+                 </DataGrid.Columns>
+               </DataGrid>
               
               <GridSplitter Grid.Row="1" Height="4" HorizontalAlignment="Stretch" Background="{DynamicResource BorderBrush}"/>
               

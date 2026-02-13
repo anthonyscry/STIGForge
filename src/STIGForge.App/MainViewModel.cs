@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.ComponentModel;
+using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
@@ -38,8 +39,16 @@ public partial class MainViewModel : ObservableObject, IDisposable
   private ICollectionView? _manualView;
 
   [ObservableProperty] private string statusText = "Ready.";
+  [ObservableProperty] private string statusSeverity = "Info";
   [ObservableProperty] private bool isDarkTheme = true;
+  [ObservableProperty] private int selectedTabIndex;
   public string ThemeToggleLabel => IsDarkTheme ? "\u2600\uFE0F" : "\uD83C\uDF19";
+
+  private void SetStatus(string text, string severity = "Info")
+  {
+    StatusText = text;
+    StatusSeverity = severity;
+  }
 
   partial void OnIsDarkThemeChanged(bool value)
   {
@@ -94,6 +103,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
   [ObservableProperty] private string verifySummary = "";
   [ObservableProperty] private string automationGatePath = "";
   [ObservableProperty] private bool isBusy;
+  [ObservableProperty] private double progressValue;
+  [ObservableProperty] private double progressMax = 1;
+  [ObservableProperty] private bool isProgressIndeterminate = true;
   [ObservableProperty] private bool applySkipSnapshot;
   [ObservableProperty] private bool breakGlassAcknowledged;
   [ObservableProperty] private string breakGlassReason = "";
@@ -150,8 +162,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
     "SCCM PXE Image"
   };
 
-  public IList<ContentPack> ContentPacks { get; } = new List<ContentPack>();
-  public IList<Profile> Profiles { get; } = new List<Profile>();
+  public ObservableCollection<ContentPack> ContentPacks { get; } = new();
+  public ObservableCollection<Profile> Profiles { get; } = new();
   public ObservableCollection<OverlayItem> OverlayItems { get; } = new();
   public ObservableCollection<string> RecentBundles { get; } = new();
   public ObservableCollection<OverlapItem> OverlapItems { get; } = new();
@@ -285,7 +297,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
       {
         ContentPacks.Clear();
         foreach (var p in list) ContentPacks.Add(p);
-        OnPropertyChanged(nameof(ContentPacks));
         RefreshImportLibrary();
 
       if (SelectedPack == null)
@@ -298,7 +309,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
         Profiles.Clear();
         foreach (var p in profiles) Profiles.Add(p);
-        OnPropertyChanged(nameof(Profiles));
 
       if (SelectedProfile == null)
       {
@@ -330,7 +340,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
       if (string.IsNullOrWhiteSpace(EvaluateStigRoot) && string.IsNullOrWhiteSpace(ScapCommandPath))
         await TryActivateToolkitAsync(userInitiated: false, _cts.Token);
       LoadCoverageOverlap();
-      LoadManualControls();
+      LoadManualControlsAsync();
       ConfigureManualView();
     }
     catch (Exception ex)
@@ -438,12 +448,20 @@ public partial class MainViewModel : ObservableObject, IDisposable
     public bool IsDarkTheme { get; set; } = true;
   }
 
+  [RelayCommand]
+  private void GoToTab(object? param)
+  {
+    if (param is int i) SelectedTabIndex = i;
+    else if (param is string s && int.TryParse(s, out var idx)) SelectedTabIndex = idx;
+  }
+
   public void Dispose()
   {
     if (_disposed)
       return;
 
     _disposed = true;
+    _saveDebounceTimer?.Dispose();
     _cts.Cancel();
     _cts.Dispose();
   }

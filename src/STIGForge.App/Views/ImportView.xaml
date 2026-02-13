@@ -69,9 +69,12 @@
 
           <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Margin="0,0,0,8">
             <ListView x:Name="ContentLibraryList" ItemsSource="{Binding FilteredContentLibrary}" SelectedItem="{Binding SelectedLibraryItem}"
-                      SelectionMode="Extended" MaxHeight="320" MinHeight="80"
-                      SelectionChanged="ContentLibraryList_SelectionChanged"
-                      GridViewColumnHeader.Click="ColumnHeader_Click">
+                       SelectionMode="Extended" MaxHeight="320" MinHeight="80"
+                       SelectionChanged="ContentLibraryList_SelectionChanged"
+                       GridViewColumnHeader.Click="ColumnHeader_Click"
+                       VirtualizingStackPanel.IsVirtualizing="True"
+                       VirtualizingStackPanel.VirtualizationMode="Recycling"
+                       ScrollViewer.CanContentScroll="True">
               <ListView.View>
                 <GridView>
                   <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}" Width="200"/>

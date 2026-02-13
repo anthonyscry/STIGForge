@@ -73,7 +73,10 @@
                     AutomationProperties.Name="Refresh overlap analysis"
                     ToolTipService.ToolTip="Recalculate source overlap between verify results from different scanners."/>
           </WrapPanel>
-          <ListView ItemsSource="{Binding OverlapItems}" MaxHeight="220">
+          <ListView ItemsSource="{Binding OverlapItems}" MaxHeight="220"
+                    VirtualizingStackPanel.IsVirtualizing="True"
+                    VirtualizingStackPanel.VirtualizationMode="Recycling"
+                    ScrollViewer.CanContentScroll="True">
             <ListView.View>
               <GridView>
                 <GridViewColumn Header="Sources" DisplayMemberBinding="{Binding SourcesKey}" Width="220"/>
