@@ -42,3 +42,4 @@ Keep namespaces under `STIGForge.App.ViewModels` unless there is a clear reason 
 - Shared parsing/format helpers should live in `STIGForge.Core/Utilities`.
 - Avoid duplicate helper implementations across App/CLI/Export.
 - Put non-runtime planning material under `docs/planning/`.
+- Keep tracked root files minimal; CI enforces this with `tools/ci/Invoke-RepoRootGuard.ps1`.

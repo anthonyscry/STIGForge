@@ -11,6 +11,11 @@ All notable changes to STIGForge are documented in this file.
 ### Performance and Reliability
 - Replaced remaining `File.ReadAllLines(...)` hot paths with streaming `File.ReadLines(...)` usage in App/CLI/Export to reduce peak memory usage on large files.
 - Improved fleet CSV import parsing robustness by switching from naive `Split(',')` to shared CSV parsing logic.
+- Added unit coverage for `CsvUtility` edge cases (quoted commas, escaped quotes, trailing empty columns, null input).
+
+### CI
+- Added repository root layout guard script `tools/ci/Invoke-RepoRootGuard.ps1`.
+- Integrated root layout guard into `.github/workflows/ci.yml`.
 
 ### Repository Cleanup
 - Reorganized WPF viewmodels into domain folders under `src/STIGForge.App/ViewModels/` (`Main/`, `Manual/`, `Import/`, `Common/`).

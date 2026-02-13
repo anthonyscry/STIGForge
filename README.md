@@ -184,3 +184,4 @@ See `docs/release/SecurityGatePolicies.md` for policy file and exception managem
 - Local scratch/temp folders (`.scratch/`, `.tmp_scc_extract/`, `.tmp_scc_manual/`, `logs/`) are ignored by git.
 - Local scratch database `applockerprime.db` is ignored by git.
 - Long-form planning artifacts were consolidated under `docs/planning/` to keep the repository root focused on runnable assets.
+- CI enforces root tracked-file hygiene via `tools/ci/Invoke-RepoRootGuard.ps1`.
