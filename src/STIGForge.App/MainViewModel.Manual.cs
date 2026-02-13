@@ -251,7 +251,7 @@ public partial class MainViewModel
     var controlsPath = Path.Combine(BundleRoot, "Manifest", "pack_controls.json");
     if (!File.Exists(controlsPath)) return;
 
-    var json = await Task.Run(() => File.ReadAllText(controlsPath)).ConfigureAwait(false);
+    var json = await Task.Run(() => File.ReadAllText(controlsPath));
     var controls = JsonSerializer.Deserialize<List<ControlRecord>>(json,
       new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<ControlRecord>();
 
@@ -275,10 +275,9 @@ public partial class MainViewModel
     {
       foreach (var item in manualItems)
         ManualControls.Add(item);
+      UpdateManualSummary();
+      ManualControlsView.Refresh();
     });
-
-    UpdateManualSummary();
-    ManualControlsView.Refresh();
   }
 
   private void ConfigureManualView()
