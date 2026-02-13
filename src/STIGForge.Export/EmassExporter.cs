@@ -473,10 +473,10 @@ public sealed class EmassExporter
     if (!File.Exists(path)) return new Dictionary<string, string>();
 
     var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-    var lines = File.ReadAllLines(path).Skip(1);
+    var lines = File.ReadLines(path).Skip(1);
     foreach (var line in lines)
     {
-      var parts = ParseCsvLine(line);
+      var parts = CsvUtility.ParseLine(line);
       if (parts.Length < 6) continue;
       var vulnId = parts[0];
       var ruleId = parts[1];
@@ -608,11 +608,6 @@ public sealed class EmassExporter
     var rel = GetRelativePath(root, path).Replace('\\', '/');
     return string.Equals(rel, "00_Manifest/validation_report.txt", StringComparison.OrdinalIgnoreCase)
       || string.Equals(rel, "00_Manifest/validation_report.json", StringComparison.OrdinalIgnoreCase);
-  }
-
-  private static string[] ParseCsvLine(string line)
-  {
-    return CsvUtility.ParseLine(line);
   }
 
   private sealed class BundleManifestDto

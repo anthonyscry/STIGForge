@@ -1375,7 +1375,7 @@ public partial class MainViewModel
       var path = Path.Combine(BundleRoot, BundlePaths.ReportsDirectory, "coverage_overlap.csv");
       if (File.Exists(path))
       {
-        var lines = File.ReadAllLines(path).Skip(1);
+        var lines = File.ReadLines(path).Skip(1);
         foreach (var line in lines)
         {
           if (string.IsNullOrWhiteSpace(line)) continue;

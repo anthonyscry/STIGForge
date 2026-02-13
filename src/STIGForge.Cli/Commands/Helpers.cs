@@ -20,9 +20,8 @@ internal static class Helpers
   public static IReadOnlyList<PowerStigOverride> ReadPowerStigOverrides(string csvPath)
   {
     if (!File.Exists(csvPath)) throw new FileNotFoundException("CSV not found", csvPath);
-    var lines = File.ReadAllLines(csvPath);
     var list = new List<PowerStigOverride>();
-    foreach (var line in lines)
+    foreach (var line in File.ReadLines(csvPath))
     {
       if (string.IsNullOrWhiteSpace(line)) continue;
       if (line.StartsWith("RuleId", StringComparison.OrdinalIgnoreCase)) continue;

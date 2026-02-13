@@ -1,7 +1,6 @@
 using System.Text;
 using System.Text.Json;
 using STIGForge.Core.Abstractions;
-using STIGForge.Core.Utilities;
 using BundlePaths = STIGForge.Core.Constants.BundlePaths;
 using ControlStatusStrings = STIGForge.Core.Constants.ControlStatus;
 using STIGForge.Core.Models;
@@ -204,11 +203,6 @@ public sealed class BundleMissionSummaryService : IBundleMissionSummaryService
     if (!string.IsNullOrWhiteSpace(fallback))
       return "TITLE:" + (fallback ?? string.Empty).Trim();
     return string.Empty;
-  }
-
-  private static string[] ParseCsvLine(string line)
-  {
-    return CsvUtility.ParseLine(line);
   }
 
   private static IReadOnlyList<ControlRecord> LoadControls(string bundleRoot, List<string> diagnostics)

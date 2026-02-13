@@ -3,6 +3,7 @@ using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using STIGForge.App.Helpers;
+using STIGForge.Core.Utilities;
 using STIGForge.Infrastructure.System;
 
 namespace STIGForge.App;
@@ -292,11 +293,10 @@ public partial class MainViewModel
 
     try
     {
-      var lines = File.ReadAllLines(ofd.FileName);
-      foreach (var line in lines)
+      foreach (var line in File.ReadLines(ofd.FileName))
       {
         if (string.IsNullOrWhiteSpace(line)) continue;
-        var parts = line.Split(',', StringSplitOptions.TrimEntries);
+        var parts = CsvUtility.ParseLine(line).Select(static p => p.Trim()).ToArray();
         if (parts.Length == 0 || string.IsNullOrWhiteSpace(parts[0])) continue;
 
         if (parts[0].Equals("Hostname", StringComparison.OrdinalIgnoreCase) ||

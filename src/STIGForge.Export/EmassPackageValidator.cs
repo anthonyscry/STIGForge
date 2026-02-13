@@ -215,8 +215,7 @@ public sealed class EmassPackageValidator
     var indexPath = Path.Combine(root, "06_Index", "control_evidence_index.csv");
     if (File.Exists(indexPath))
     {
-      var lines = File.ReadAllLines(indexPath);
-      if (lines.Length < 2)
+      if (!File.ReadLines(indexPath).Skip(1).Any(static line => !string.IsNullOrWhiteSpace(line)))
         warnings.Add("control_evidence_index.csv appears empty (only header or no content)");
     }
 
@@ -303,12 +302,12 @@ public sealed class EmassPackageValidator
     if (!File.Exists(indexPath))
       return rows;
 
-    foreach (var line in File.ReadAllLines(indexPath).Skip(1))
+    foreach (var line in File.ReadLines(indexPath).Skip(1))
     {
       if (string.IsNullOrWhiteSpace(line))
         continue;
 
-      var parts = ParseCsvLine(line);
+      var parts = CsvUtility.ParseLine(line);
       if (parts.Length < 5)
         continue;
 
@@ -370,9 +369,7 @@ public sealed class EmassPackageValidator
   private static Dictionary<string, string> ParseHashManifest(string path)
   {
     var hashes = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-    var lines = File.ReadAllLines(path);
-
-    foreach (var line in lines)
+    foreach (var line in File.ReadLines(path))
     {
       if (string.IsNullOrWhiteSpace(line))
         continue;
@@ -473,11 +470,6 @@ public sealed class EmassPackageValidator
     }
 
     File.WriteAllText(outputPath, sb.ToString(), Encoding.UTF8);
-  }
-
-  private static string[] ParseCsvLine(string line)
-  {
-    return CsvUtility.ParseLine(line);
   }
 
   private static bool IsValidationReportRelativePath(string relativePath)
