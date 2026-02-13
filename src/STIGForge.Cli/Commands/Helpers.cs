@@ -1,4 +1,5 @@
 using STIGForge.Core.Models;
+using BundlePaths = STIGForge.Core.Constants.BundlePaths;
 
 namespace STIGForge.Cli.Commands;
 
@@ -9,7 +10,7 @@ internal static class Helpers
     if (File.Exists(path)) return path;
     if (Directory.Exists(path))
     {
-      var candidate = Path.Combine(path, "consolidated-results.json");
+      var candidate = Path.Combine(path, BundlePaths.ConsolidatedResultsFileName);
       if (File.Exists(candidate)) return candidate;
     }
     throw new FileNotFoundException("Report not found: " + path);

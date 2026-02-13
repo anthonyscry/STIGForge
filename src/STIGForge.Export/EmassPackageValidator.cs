@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using STIGForge.Core.Constants;
 
 namespace STIGForge.Export;
 
@@ -266,14 +267,14 @@ public sealed class EmassPackageValidator
     foreach (var row in indexRows)
     {
       var key = !string.IsNullOrWhiteSpace(row.RuleId) ? "RULE:" + row.RuleId : "VULN:" + row.VulnId;
-      if (string.Equals(row.Status, "Fail", StringComparison.OrdinalIgnoreCase) && !poamMatchedKeys.Contains(key))
+      if (string.Equals(row.Status, ControlStatus.Fail, StringComparison.OrdinalIgnoreCase) && !poamMatchedKeys.Contains(key))
       {
         errors.Add("Failed control missing POA&M entry: " + key);
         metrics.CrossArtifactMismatchCount++;
       }
     }
 
-    var validAttestationStatuses = new HashSet<string>(new[] { "Pending", "Compliant", "NonCompliant", "PartiallyCompliant" }, StringComparer.OrdinalIgnoreCase);
+    var validAttestationStatuses = new HashSet<string>(new[] { "Pending", ControlStatus.Compliant, ControlStatus.NonCompliant, "PartiallyCompliant" }, StringComparer.OrdinalIgnoreCase);
     foreach (var att in attestations)
     {
       if (string.IsNullOrWhiteSpace(att.ControlId))

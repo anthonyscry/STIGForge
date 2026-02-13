@@ -1,7 +1,9 @@
 using System.Text;
 using System.Text.Json;
 using STIGForge.Core.Abstractions;
+using BundlePaths = STIGForge.Core.Constants.BundlePaths;
 using STIGForge.Core.Models;
+using STIGForge.Core.Services;
 
 namespace STIGForge.Build;
 
@@ -32,12 +34,12 @@ public sealed class BundleBuilder
 
     Directory.CreateDirectory(root);
 
-    var applyDir = Path.Combine(root, "Apply");
-    var verifyDir = Path.Combine(root, "Verify");
-    var manualDir = Path.Combine(root, "Manual");
-    var evidenceDir = Path.Combine(root, "Evidence");
-    var reportsDir = Path.Combine(root, "Reports");
-    var manifestDir = Path.Combine(root, "Manifest");
+    var applyDir = Path.Combine(root, BundlePaths.ApplyDirectory);
+    var verifyDir = Path.Combine(root, BundlePaths.VerifyDirectory);
+    var manualDir = Path.Combine(root, BundlePaths.ManualDirectory);
+    var evidenceDir = Path.Combine(root, BundlePaths.EvidenceDirectory);
+    var reportsDir = Path.Combine(root, BundlePaths.ReportsDirectory);
+    var manifestDir = Path.Combine(root, BundlePaths.ManifestDirectory);
 
     Directory.CreateDirectory(applyDir);
     Directory.CreateDirectory(verifyDir);
@@ -99,13 +101,18 @@ public sealed class BundleBuilder
     var manifestJson = JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true });
     File.WriteAllText(manifestPath, manifestJson, Encoding.UTF8);
 
-    var controlsPath = Path.Combine(manifestDir, "pack_controls.json");
+    var controlsPath = Path.Combine(manifestDir, BundlePaths.PackControlsFileName);
     var controlsJson = JsonSerializer.Serialize(request.Controls, new JsonSerializerOptions { WriteIndented = true });
     File.WriteAllText(controlsPath, controlsJson, Encoding.UTF8);
+    PackControlsReader.InvalidateCache();
 
     var overlaysPath = Path.Combine(manifestDir, "overlays.json");
     var overlaysJson = JsonSerializer.Serialize(request.Overlays, new JsonSerializerOptions { WriteIndented = true });
     File.WriteAllText(overlaysPath, overlaysJson, Encoding.UTF8);
+
+    var cklDir = Path.Combine(root, BundlePaths.VerifyDirectory, "Checklists");
+    Directory.CreateDirectory(cklDir);
+    CklTemplateWriter.WriteTemplateCkls(cklDir, request.Controls, request.Pack, request.Profile);
 
     var runLogPath = Path.Combine(manifestDir, "run_log.txt");
     File.WriteAllText(runLogPath, "Bundle created: " + BuildTime.Now.ToString("o"), Encoding.UTF8);
@@ -206,6 +213,8 @@ public sealed class BundleBuilder
     sb.AppendLine("VulnId,RuleId,Title,Reason");
 
     foreach (var c in reviewQueue
+      .GroupBy(x => BuildControlIdentityKey(x.Control.ExternalIds.RuleId, x.Control.ExternalIds.VulnId), StringComparer.OrdinalIgnoreCase)
+      .Select(g => g.First())
       .OrderBy(x => x.Control.ExternalIds.RuleId, StringComparer.OrdinalIgnoreCase))
     {
       sb.AppendLine(string.Join(",",
@@ -216,6 +225,15 @@ public sealed class BundleBuilder
     }
 
     File.WriteAllText(path, sb.ToString(), Encoding.UTF8);
+  }
+
+  private static string BuildControlIdentityKey(string? ruleId, string? vulnId)
+  {
+    if (!string.IsNullOrWhiteSpace(ruleId))
+      return "RULE:" + (ruleId ?? string.Empty).Trim();
+    if (!string.IsNullOrWhiteSpace(vulnId))
+      return "VULN:" + (vulnId ?? string.Empty).Trim();
+    return string.Empty;
   }
 
   private async Task WriteHashManifestAsync(string root, string outputPath, CancellationToken ct)

@@ -1,5 +1,7 @@
 using STIGForge.Core.Models;
 
+using PackTypes = STIGForge.Core.Constants.PackTypes;
+
 namespace STIGForge.Core.Abstractions;
 
 public interface IClock
@@ -118,6 +120,20 @@ public sealed class VerificationWorkflowRequest
   public EvaluateStigWorkflowOptions EvaluateStig { get; set; } = new();
 
   public ScapWorkflowOptions Scap { get; set; } = new();
+
+  public DscScanWorkflowOptions DscScan { get; set; } = new();
+}
+
+public sealed class DscScanWorkflowOptions
+{
+  public bool Enabled { get; set; }
+
+  /// <summary>Path to compiled MOF directory to scan with Test-DscConfiguration.</summary>
+  public string MofPath { get; set; } = string.Empty;
+
+  public bool Verbose { get; set; }
+
+  public string ToolLabel { get; set; } = "PowerSTIG-DSC";
 }
 
 public sealed class EvaluateStigWorkflowOptions
@@ -141,7 +157,7 @@ public sealed class ScapWorkflowOptions
 
   public string? WorkingDirectory { get; set; }
 
-  public string ToolLabel { get; set; } = "SCAP";
+  public string ToolLabel { get; set; } = PackTypes.Scap;
 }
 
 public sealed class VerificationWorkflowResult

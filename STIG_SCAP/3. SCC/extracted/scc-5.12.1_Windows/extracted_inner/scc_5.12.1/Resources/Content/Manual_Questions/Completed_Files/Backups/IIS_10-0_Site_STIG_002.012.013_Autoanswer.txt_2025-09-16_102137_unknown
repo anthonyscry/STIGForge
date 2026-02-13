@@ -1,0 +1,467 @@
+################################################################################
+DOCUMENT         : IIS_10-0_Site_STIG
+VERSION          : 002.012.013
+CHECKSUM         : 930e3f05c9d9bbf3ee912cd4ce28d1b181910a1d9820e487bb1633274bdf0451
+MANUAL QUESTIONS : 11
+
+IMPORTANT: Make sure to save the completed version of this file to: 
+<SCC Install>/Resources/Content/Manual_Questions/Completed_Files
+
+This file contains all of the non-automated STIG requirements found in the STIG.
+Results from this file will be combined with automated checks in SCC to provide
+complete STIG compliance results.
+
+This file will be programmaticaly imported, so do not modify anything in this file
+except for placing an '[X]' to select a Single answer, and entering text comments.
+
+The list of questions is printed in order of severity, listing CAT I (High), then CAT II, etc..
+
+################################################################################
+
+QUESTION         : 1 of 11
+TITLE            : CAT I, V-218750, SV-218750r961095, SRG-APP-000211-WSR-000031
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.10.site:testaction:2701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.10.site:question:2701
+RULE             : Anonymous IIS 10.0 website access accounts must be restricted.
+QUESTION_TEXT    : Check the account used for anonymous access to the website.
+
+Follow the procedures below for each site hosted on the IIS 10.0 web server:
+Open the IIS 10.0 Manager.
+
+Double-click "Authentication" in the IIS section of the website’s Home Pane.
+
+If "Anonymous access" is disabled, this is Not a Finding.
+
+If "Anonymous access" is enabled, click "Anonymous Authentication".
+
+Click "Edit" in the "Actions" pane.
+
+If the "Specific user" radio button is enabled and an ID is specified in the adjacent control box, this is the ID being used for anonymous access. Note the account name.
+
+If nothing is tied to "Specific User", this is Not a Finding.
+
+Check privileged groups that may allow the anonymous account inappropriate membership:
+Open "Computer Management" on the machine.
+
+Expand "Local Users and Groups".
+
+Open "Groups".
+
+Review the members of any of the following privileged groups:
+
+Administrators
+Backup Operators
+Certificate Services (of any designation)
+Distributed COM Users
+Event Log Readers
+Network Configuration Operators
+Performance Log Users
+Performance Monitor Users
+Power Users
+Print Operators
+Remote Desktop Users
+Replicator
+
+Double-click each group and review its members.
+
+If the IUSR account or any account noted above used for anonymous access is a member of any group with privileged access, this is a finding.
+
+References:
+SV-109325
+V-100221
+CCI-001082
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 1 *******************************
+
+QUESTION         : 2 of 11
+TITLE            : CAT II, V-218740, SV-218740r960900, SRG-APP-000098-WSR-000060
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.10.site:testaction:1101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.10.site:question:1101
+RULE             : An IIS 10.0 website behind a load balancer or proxy server must produce log records containing the source client IP, and destination information.
+QUESTION_TEXT    : Interview the System Administrator to review the configuration of the IIS 10.0 architecture and determine if inbound web traffic is passed through a proxy.
+
+If the IIS 10.0 is receiving inbound web traffic through a proxy, the audit logs must be reviewed to determine if correct source information is being passed through by the proxy server.
+
+Follow the procedures below for each site hosted on the IIS 10.0 web server:
+
+Open the IIS 10.0 Manager.
+
+Click the site name.
+
+Click the "Logging" icon.
+
+Click "View log file".
+
+When log file is displayed, review source IP information in log entries and verify entries do not reflect the IP address of the proxy server.
+
+If the website is not behind a load balancer or proxy server, this is Not Applicable.
+
+If the log entries in the log file(s) reflect the IP address of the proxy server as the source, this is a finding.
+
+If provisions have been made to log the client IP via another field (i.e., utilizing X-Forwarded-For), this is not a finding.
+
+References:
+SV-109305
+V-100201
+CCI-000133
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 2 *******************************
+
+QUESTION         : 3 of 11
+TITLE            : CAT II, V-218744, SV-218744r960963, SRG-APP-000141-WSR-000082
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.10.site:testaction:1901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.10.site:question:1901
+RULE             : Mappings to unused and vulnerable scripts on the IIS 10.0 website must be removed.
+QUESTION_TEXT    : Note: If the server being reviewed is hosting SharePoint, this is Not Applicable.
+
+For Handler Mappings, the ISSO must document and approve all allowable scripts the website allows (white list) and denies (black list). The white list and black list will be compared to the Handler Mappings in IIS 10.0. Handler Mappings at the site level take precedence over Handler Mappings at the server level.
+
+Open the IIS 10.0 Manager.
+
+Click the site name under review.
+
+Double-click "Handler Mappings".
+
+If any script file extensions from the black list are enabled, this is a finding.
+
+References:
+SV-109313
+V-100209
+CCI-000381
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 3 *******************************
+
+QUESTION         : 4 of 11
+TITLE            : CAT II, V-218745, SV-218745r960963, SRG-APP-000141-WSR-000083
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.10.site:testaction:2101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.10.site:question:2101
+RULE             : The IIS 10.0 website must have resource mappings set to disable the serving of certain file types.
+QUESTION_TEXT    : Note: If the server being reviewed is hosting SharePoint, this is Not Applicable.
+
+For Request Filtering, the ISSO must document and approve all allowable scripts the website allows (white list) and denies (black list). The white list and black list will be compared to the Request Filtering in IIS 10.0. Request Filtering at the site level take precedence over Request Filtering at the server level.
+
+Follow the procedures below for each site hosted on the IIS 10.0 web server: 
+
+Open the IIS 10.0 Manager.
+
+Click the site name to review.
+
+Double-click Request Filtering->File Name Extensions Tab.
+
+If any script file extensions from the black list are not denied, this is a finding.
+
+References:
+SV-109315
+V-100211
+CCI-000381
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 4 *******************************
+
+QUESTION         : 5 of 11
+TITLE            : CAT II, V-218764, SV-218764r961281, SRG-APP-000316-WSR-000170
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.10.site:testaction:5501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.10.site:question:5501
+RULE             : The IIS 10.0 website must provide the capability to immediately disconnect or disable remote access to the hosted applications.
+QUESTION_TEXT    : Interview the System Administrator and Web Manager.
+
+Ask for documentation for the IIS 10.0 web server administration.
+
+Verify there are documented procedures for shutting down an IIS 10.0 website in the event of an attack. The procedure should, at a minimum, provide the following steps:
+
+Determine the respective website for the application at risk of an attack.
+
+Access the IIS 10.0 web server IIS 10.0 Manager.
+
+Select the respective website.
+
+In the "Actions" pane, under "Manage Website", click "Stop".
+
+If necessary, stop all websites.
+
+If necessary, stop the IIS 10.0 web server by selecting the web server in the IIS 10.0 Manager.
+
+In the "Actions" pane, under "Manage Server", click "Stop".
+
+If there are not documented procedures with, at a minimum, the mentioned steps for stopping a website, this is a finding.
+
+References:
+SV-109353
+V-100249
+CCI-002322
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 5 *******************************
+
+QUESTION         : 6 of 11
+TITLE            : CAT II, V-218765, SV-218765r961392, SRG-APP-000357-WSR-000150
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.10.site:testaction:5701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.10.site:question:5701
+RULE             : The IIS 10.0 website must use a logging mechanism configured to allocate log record storage capacity large enough to accommodate the logging requirements of the IIS 10.0 website.
+QUESTION_TEXT    : Follow the procedures below for each site hosted on the IIS 10.0 web server:
+
+Access the IIS 10.0 web server IIS 10.0 Manager.
+
+Under "IIS" double-click on the "Logging" icon.
+
+In the "Logging" configuration box, determine the "Directory:" to which the "W3C" logging is being written.
+
+Confirm with the System Administrator that the designated log path is of sufficient size to maintain the logging.
+
+Under "Log File Rollover", verify "Do not create new log files" is not selected.
+
+Verify a schedule is configured to rollover log files on a regular basis.
+
+Consult with the System Administrator to determine if there is a documented process for moving the log files off of the IIS 10.0 web server to another logging device.
+
+If the designated logging path device is not of sufficient space to maintain all log files and there is not a schedule to rollover files on a regular basis, this is a finding.
+
+References:
+SV-109355
+V-100251
+CCI-001849
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 6 *******************************
+
+QUESTION         : 7 of 11
+TITLE            : CAT II, V-218766, SV-218766r1111809, SRG-APP-000383-WSR-000175
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.10.site:testaction:5901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.10.site:question:5901
+RULE             : The IIS 10.0 websites must use ports, protocols, and services according to Ports, Protocols, and Services Management (PPSM) guidelines.
+QUESTION_TEXT    : Note: If the server is providing OCSP, and not otherwise hosting any content, this requirement is not applicable.
+
+Review the website to determine if HTTP and HTTPs (e.g., 80 and 443) are used in accordance with those ports and services registered and approved for use by the DOD PPSM. Any variation in PPS will be documented, registered, and approved by the PPSM.
+
+Follow the procedures below for each site hosted on the IIS 10.0 web server:
+
+Open the IIS 10.0 Manager.
+
+Click the site name under review.
+
+In the "Action" Pane, click "Bindings".
+
+Review the ports and protocols. If unknown ports or protocols are used, then this is a finding.
+
+References:
+SV-109357
+V-100253
+CCI-001762
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 7 *******************************
+
+QUESTION         : 8 of 11
+TITLE            : CAT II, V-218767, SV-218767r1111811, SRG-APP-000427-WSR-000186
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.10.site:testaction:6101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.10.site:question:6101
+RULE             : The IIS 10.0 website must only accept client certificates issued by DOD PKI or DOD-approved PKI Certification Authorities (CAs).
+QUESTION_TEXT    : Note: If the server being reviewed is hosting WSUS, this is not applicable.
+Note: If the server is providing OCSP, and not otherwise hosting any content, this requirement is not applicable.
+
+Follow the procedures below for each site hosted on the IIS 10.0 web server:
+
+Open the IIS 10.0 Manager.
+
+Click the site name under review.
+
+Click "Bindings" in the "Action" Pane.
+
+Click the "HTTPS type" from the box.
+
+Click "Edit".
+
+Click "View" and then review and verify the certificate path.
+
+If the list of CAs in the trust hierarchy does not lead to the DOD PKI Root CA, DOD-approved external certificate authority (ECA), or DOD-approved external partner, this is a finding.
+
+If HTTPS is not an available type under site bindings, this is a finding.
+
+If HTTPS is not an available type under site bindings, and the Web Server ONLY communicates directly with a load balancer/proxy server with IP address and Domain Restrictions in place, this is not a finding.
+
+References:
+SV-109359
+V-100255
+CCI-002470
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 8 *******************************
+
+QUESTION         : 9 of 11
+TITLE            : CAT II, V-218779, SV-218779r1022698, SRG-APP-000141-WSR-000087
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.10.site:testaction:7901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.10.site:question:7901
+RULE             : Interactive scripts on the IIS 10.0 web server must be located in unique and designated folders.
+QUESTION_TEXT    : Determine whether scripts are used on the web server for the target website. Common file extensions include, but are not limited to: .cgi, .pl, .vbs, .class, .c, .php, and .asp. 
+
+All interactive programs must be placed in unique designated folders based on CGI or ASP script type. For modular and/or third-party applications, it is permissible to have script files in multiple folders.
+
+Open the IIS 10.0 Manager.
+
+Right-click the IIS 10.0 web site name and select "Explore".
+
+Search for the listed script extensions. Each script type must be in its unique designated folder.
+
+If scripts are not segregated from web content and in their own unique folders, this is a finding.
+
+If the website does not utilize CGI, this finding is Not Applicable.
+
+References:
+SV-109383
+V-100279
+CCI-000381
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 9 *******************************
+
+QUESTION         : 10 of 11
+TITLE            : CAT II, V-218780, SV-218780r960963, SRG-APP-000141-WSR-000087
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.10.site:testaction:8101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.10.site:question:8101
+RULE             : Interactive scripts on the IIS 10.0 web server must have restrictive access controls.
+QUESTION_TEXT    : Determine whether scripts are used on the web server for the subject website. Common file extensions include, but are not limited to: .cgi, .pl, .vb, .class, .c, .php, and .asp.
+
+If the website does not utilize CGI, this finding is Not Applicable.
+
+All interactive programs must have restrictive permissions.
+
+Open the IIS 10.0 Manager.
+
+Right-click the IIS 10.0 web site name and select "Explore".
+
+Search for the listed script extensions.
+
+Review the permissions to the CGI scripts and verify only the permissions listed, or more restrictive permissions are assigned.
+
+Administrators: FULL
+Web Administrators: FULL
+TrustedInstaller: FULL
+ALL APPLICATION PACKAGES: Read
+ALL RESTRICTED APPLICATION PACKAGES: Read
+SYSTEM: FULL
+ApplicationPoolId: READ
+Custom Service Account: READ
+Users: READ
+
+If the permissions are less restrictive than listed above, this is a finding.
+
+References:
+SV-109385
+V-100281
+CCI-000381
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 10 *******************************
+
+QUESTION         : 11 of 11
+APPLICABILITY    : WSUS
+TITLE            : CAT II, V-218782, SV-218782r1111818, SRG-APP-000516-WSR-000174
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.10.site:testaction:8501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.10.site:question:8501
+RULE             : The required DoD banner page must be displayed to authenticated users accessing a DoD private website.
+QUESTION_TEXT    : Note: This requirement is only applicable for private DOD websites.
+Note: If the server being reviewed is hosting WSUS, this is not applicable.
+
+If a banner is required, the following banner page must be in place: 
+
+“You are accessing a U.S. Government (USG) Information System (IS) that is provided for USG-authorized use only. 
+
+By using this IS (which includes any device attached to this IS), you consent to the following conditions: 
+
+-The USG routinely intercepts and monitors communications on this IS for purposes including, but not limited to, penetration testing, COMSEC monitoring, network operations and defense, personnel misconduct (PM), law enforcement (LE), and counterintelligence (CI) investigations. 
+
+- At any time, the USG may inspect and seize data stored on this IS. 
+
+- Communications using, or data stored on, this IS are not private, are subject to routine monitoring, interception, and search, and may be disclosed or used for any USG-authorized purpose. 
+
+- This IS includes security measures (e.g., authentication and access controls) to protect USG interests—not for your personal benefit or privacy. 
+
+- Notwithstanding the above, using this IS does not constitute consent to PM, LE or CI investigative searching or monitoring of the content of privileged communications, or work product, related to personal representation or services by attorneys, psychotherapists, or clergy, and their assistants. Such communications and work product are private and confidential. See User Agreement for details.” 
+
+OR 
+
+If your system cannot meet the character limits to store this amount of text in the banner, the following is another option for the warning banner: 
+
+"I've read & consent to terms in IS user agreem't." 
+
+NOTE: While DoDI 8500.01 does not contain a copy of the banner to be used, it does point to the RMF Knowledge Service for a copy of the required text. It is also noted that the banner is to be displayed only once when the individual enters the site and not for each page. 
+
+If the access-controlled website does not display this banner page before entry, this is a finding.
+
+References:
+SV-109389
+V-100285
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 11 *******************************
+

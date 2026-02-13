@@ -84,17 +84,20 @@
                     AutomationProperties.Name="Refresh overlap analysis"
                     ToolTipService.ToolTip="Compare results from different scanners to see where they agree or disagree on the same controls."/>
           </WrapPanel>
-          <ListView ItemsSource="{Binding OverlapItems}" MaxHeight="220">
-            <ListView.View>
-              <GridView>
-                <GridViewColumn Header="Sources" DisplayMemberBinding="{Binding SourcesKey}" Width="220"/>
-                <GridViewColumn Header="#" DisplayMemberBinding="{Binding SourceCount}" Width="40"/>
-                <GridViewColumn Header="Controls" DisplayMemberBinding="{Binding ControlsCount}" Width="80"/>
-                <GridViewColumn Header="Closed" DisplayMemberBinding="{Binding ClosedCount}" Width="70"/>
-                <GridViewColumn Header="Open" DisplayMemberBinding="{Binding OpenCount}" Width="70"/>
-              </GridView>
-            </ListView.View>
-          </ListView>
+           <ListView ItemsSource="{Binding OverlapItems}" MaxHeight="220"
+                     VirtualizingPanel.IsVirtualizing="True"
+                     VirtualizingPanel.VirtualizationMode="Recycling"
+                     ScrollViewer.CanContentScroll="True">
+             <ListView.View>
+               <GridView>
+                 <GridViewColumn Header="Sources" DisplayMemberBinding="{Binding SourcesKey}" Width="220"/>
+                 <GridViewColumn Header="#" DisplayMemberBinding="{Binding SourceCount}" Width="40"/>
+                 <GridViewColumn Header="Controls" DisplayMemberBinding="{Binding ControlsCount}" Width="80"/>
+                 <GridViewColumn Header="Closed" DisplayMemberBinding="{Binding ClosedCount}" Width="70"/>
+                 <GridViewColumn Header="Open" DisplayMemberBinding="{Binding OpenCount}" Width="70"/>
+               </GridView>
+             </ListView.View>
+           </ListView>
         </StackPanel>
       </Border>
 

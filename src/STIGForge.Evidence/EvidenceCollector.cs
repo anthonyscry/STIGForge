@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using BundlePaths = STIGForge.Core.Constants.BundlePaths;
 
 namespace STIGForge.Evidence;
 
@@ -16,7 +17,7 @@ public sealed class EvidenceCollector
       throw new DirectoryNotFoundException("Bundle root not found: " + bundleRoot);
 
     var controlKey = ResolveControlKey(request);
-    var evidenceDir = Path.Combine(bundleRoot, "Evidence", "by_control", controlKey);
+    var evidenceDir = Path.Combine(bundleRoot, BundlePaths.EvidenceDirectory, "by_control", controlKey);
     Directory.CreateDirectory(evidenceDir);
 
     var stamp = DateTimeOffset.UtcNow.ToString("yyyyMMdd_HHmmss_fff");

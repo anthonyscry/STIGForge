@@ -1,0 +1,817 @@
+################################################################################
+DOCUMENT         : IIS_8-5_Server_STIG
+VERSION          : 002.007.008
+CHECKSUM         : 945917b297ad678890b61c20c1a85bb8037fe4b01941f679e112ae16a062fc5c
+MANUAL QUESTIONS : 24
+
+IMPORTANT: Make sure to save the completed version of this file to: 
+<SCC Install>/Resources/Content/Manual_Questions/Completed_Files
+
+This file contains all of the non-automated STIG requirements found in the STIG.
+Results from this file will be combined with automated checks in SCC to provide
+complete STIG compliance results.
+
+This file will be programmaticaly imported, so do not modify anything in this file
+except for placing an '[X]' to select a Single answer, and entering text comments.
+
+The list of questions is printed in order of severity, listing CAT I (High), then CAT II, etc..
+
+################################################################################
+
+QUESTION         : 1 of 24
+TITLE            : CAT I, V-214410, SV-214410r879587, SRG-APP-000141-WSR-000077
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.server:testaction:2101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.server:question:2101
+RULE             : All IIS 8.5 web server sample code, example applications, and tutorials must be removed from a production IIS 8.5 server.
+QUESTION_TEXT    : Navigate to the following folders:
+
+inetpub\
+Program Files\Common Files\System\msadc
+Program Files (x86)\Common Files\System\msadc
+
+If the folder or sub-folders contain any executable sample code, example applications, or tutorials which are not explicitly used by a production website, this is a finding.
+
+References:
+SV-91401
+V-76705
+CCI-000381
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 1 *******************************
+
+QUESTION         : 2 of 24
+TITLE            : CAT I, V-214417, SV-214417r879631, SRG-APP-000211-WSR-000030
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.server:testaction:3501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.server:question:3501
+RULE             : IIS 8.5 Web server accounts accessing the directory tree, the shell, or other operating system functions and utilities must only be administrative accounts.
+QUESTION_TEXT    : Obtain a list of the user accounts with access to the system, including all local and domain accounts. 
+
+Review the privileges to the web server for each account.
+
+Verify with the system administrator or the ISSO that all privileged accounts are mission essential and documented.
+
+Verify with the system administrator or the ISSO that all non-administrator access to shell scripts and operating system functions are mission essential and documented.
+
+If undocumented privileged accounts are found, this is a finding.
+
+If undocumented non-administrator access to shell scripts and operating system functions are found, this is a finding.
+
+References:
+SV-91415
+V-76719
+CCI-001082
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 2 *******************************
+
+QUESTION         : 3 of 24
+TITLE            : CAT I, V-214438, SV-214438r879887, SRG-APP-000516-WSR-000079
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.server:testaction:7301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.server:question:7301
+RULE             : All accounts installed with the IIS 8.5 web server software and tools must have passwords assigned and default passwords changed.
+QUESTION_TEXT    : Access the IIS 8.5 web server.
+
+Access Apps menu. Under Administrative Tools, select Computer Management.
+
+In left pane, expand "Local Users and Groups" and click on "Users".
+
+Review the local users listed in the middle pane. 
+
+If any local accounts are present and are used by IIS 8.5 verify with System Administrator that default passwords have been changed.
+
+If passwords have not been changed from the default, this is a finding.
+
+References:
+SV-91461
+V-76765
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 3 *******************************
+
+QUESTION         : 4 of 24
+TITLE            : CAT II, V-214402, SV-214402r879566, SRG-APP-000098-WSR-000060
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.server:testaction:501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.server:question:501
+RULE             : An IIS 8.5 web server behind a load balancer or proxy server, must produce log records containing the source client IP and destination information.
+QUESTION_TEXT    : Interview the System Administrator to review the configuration of the IIS 8.5 architecture and determine if inbound web traffic is passed through a proxy.
+
+If the IIS 8.5 web server is receiving inbound web traffic through a proxy, the audit logs must be reviewed to determine if correct source information is being passed through by the proxy server.
+
+Follow this procedure for web server and each website:
+
+Open the IIS 8.5 Manager.
+
+Click the IIS 8.5 web server name.
+
+Click the "Logging" icon.
+
+Click on "View log files" under the "Actions" pane.
+
+When the log file is displayed, review source IP information in log entries and verify the entries do not reflect the IP address of the proxy server.
+
+If the website is not behind a load balancer or proxy server, this is Not Applicable.
+
+If the log entries in the log file(s) reflect the IP address of the proxy server as the source, this is a finding.
+
+If provisions have been made to log the client IP via another field (i.e., utilizing X-Forwarded-For), this is not a finding.
+
+References:
+SV-91381
+V-76685
+CCI-000133
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 4 *******************************
+
+QUESTION         : 5 of 24
+TITLE            : CAT II, V-214405, SV-214405r879578, SRG-APP-000120-WSR-000070
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.server:testaction:1101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.server:question:1101
+RULE             : The log information from the IIS 8.5 web server must be protected from unauthorized modification or deletion.
+QUESTION_TEXT    : This check does not apply to service account IDs utilized by automated services necessary to process, manage, and store log files.
+
+Open the IIS 8.5 Manager.
+Click the IIS 8.5 web server name.
+Click the "Logging" icon.
+Click the "Browse" button and navigate to the directory where the log files are stored.
+Right-click the log file name to review.
+Click “Properties”.
+Click the “Security” tab.
+
+Verify log file access is restricted as follows. 
+
+SYSTEM - Full Control
+Administrators - Full Control
+
+If log access is not restriced as listed above, this is a finding.
+
+References:
+SV-91391
+V-76695
+CCI-000162
+CCI-000163
+CCI-000164
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 5 *******************************
+
+QUESTION         : 6 of 24
+TITLE            : CAT II, V-214406, SV-214406r879582, SRG-APP-000125-WSR-000071
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.server:testaction:1301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.server:question:1301
+RULE             : The log data and records from the IIS 8.5 web server must be backed up onto a different system or media.
+QUESTION_TEXT    : The IIS 8.5 web server and website log files should be backed up by the system backup.
+
+To determine if log files are backed up by the system backup, determine the location of the web server log files and each website's log files.
+
+Open the IIS 8.5 Manager.
+
+Click the IIS 8.5 server name.
+
+Click the "Logging" icon.
+
+Under "Log File" >> "Directory" obtain the path of the log file.
+
+Once all locations are known, consult with the System Administrator to review the server's backup procedure and policy.
+
+Verify the paths of all log files are part of the system backup.
+Verify log files are backed up to an unrelated system or onto separate media than the system the web server is running on.
+
+If the paths of all log files are not part of the system backup and/or not backed up to a separate media, this is a finding.
+
+
+References:
+SV-91393
+V-76697
+CCI-001348
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 6 *******************************
+
+QUESTION         : 7 of 24
+TITLE            : CAT II, V-214407, SV-214407r879587, SRG-APP-000141-WSR-000015
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.server:testaction:1501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.server:question:1501
+RULE             : The IIS 8.5 web server must not perform user management for hosted applications.
+QUESTION_TEXT    : Interview the System Administrator about the role of the IIS 8.5 web server.
+
+If the IIS 8.5 web server is hosting an application, have the SA provide supporting documentation on how the application's user management is accomplished outside of the IIS 8.5 web server.
+
+If the IIS 8.5 web server is not hosting an application, this is Not Applicable.
+
+If the IIS web server is performing user management for hosted applications, this is a finding.
+
+If the IIS 8.5 web server is hosting an application and the SA cannot provide supporting documentation on how the application's user management is accomplished outside of the IIS 8.5 web server, this is a finding.
+
+References:
+SV-91395
+V-76699
+CCI-000381
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 7 *******************************
+
+QUESTION         : 8 of 24
+TITLE            : CAT II, V-214408, SV-214408r879587, SRG-APP-000141-WSR-000075
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.server:testaction:1701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.server:question:1701
+RULE             : The IIS 8.5 web server must only contain functions necessary for operation.
+QUESTION_TEXT    : Click on “Start”.
+
+Open Control Panel.
+
+Click on “Programs”.
+
+Click on “Programs and Features”.
+
+Review the installed programs, if any programs are installed other than those required for the IIS 8.5 web services, this is a finding.
+
+Note: If additional software is needed supporting documentation must be signed by the ISSO.
+
+References:
+SV-91397
+V-76701
+CCI-000381
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 8 *******************************
+
+QUESTION         : 9 of 24
+TITLE            : CAT II, V-214411, SV-214411r879587, SRG-APP-000141-WSR-000078
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.server:testaction:2301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.server:question:2301
+RULE             : The accounts created by uninstalled features (i.e., tools, utilities, specific, etc.) must be deleted from the IIS 8.5 server.
+QUESTION_TEXT    : Access the IIS 8.5 web server.
+
+Access “Apps” menu. Under “Administrative Tools”, select “Computer Management”.
+
+In left pane, expand "Local Users and Groups" and click on "Users".
+
+Review the local users listed in the middle pane.
+
+If any local accounts are present and were created by features which have been uninstalled or are not used, this is a finding.
+
+References:
+SV-91403
+V-76707
+CCI-000381
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 9 *******************************
+
+QUESTION         : 10 of 24
+TITLE            : CAT II, V-214412, SV-214412r879587, SRG-APP-000141-WSR-000080
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.server:testaction:2501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.server:question:2501
+RULE             : The IIS 8.5 web server must be reviewed on a regular basis to remove any Operating System features, utility programs, plug-ins, and modules not necessary for operation.
+QUESTION_TEXT    : Consult with the System Administrator and review all of the IIS 8.5 and Operating System features installed.
+
+Determine if any are installed which are no longer necessary for operation.
+
+If any utility programs, features or modules are installed which are not necessary for operation, this is a finding.
+
+If any unnecessary Operating System features are installed, this is a finding.
+
+References:
+SV-91405
+V-76709
+CCI-000381
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 10 *******************************
+
+QUESTION         : 11 of 24
+TITLE            : CAT II, V-214415, SV-214415r879612, SRG-APP-000175-WSR-000095
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.server:testaction:3101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.server:question:3101
+RULE             : The IIS 8.5 web server must perform RFC 5280-compliant certification path validation.
+QUESTION_TEXT    : Open the IIS 8.5 Manager.
+Click the IIS 8.5 web server name.
+Double-click the "Server Certificate" icon.
+Double-click each certificate and verify the certificate path is to a DoD root CA.
+If the “Issued By” field of the PKI certificate being used by the IIS 8.5 server/site does not indicate the issuing Certificate Authority (CA) is part of the DoD PKI or an approved ECA, this is a finding.
+
+References:
+SV-91411
+V-76715
+CCI-000185
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 11 *******************************
+
+QUESTION         : 12 of 24
+TITLE            : CAT II, V-214418, SV-214418r879631, SRG-APP-000211-WSR-000129
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.server:testaction:3701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.server:question:3701
+RULE             : The IIS 8.5 web server must separate the hosted applications from hosted web server management functionality.
+QUESTION_TEXT    : Review the IIS 8.5 web server configuration with the System Administrator.
+
+Determine if the IIS 8.5 web server hosts any applications.
+
+If the IIS 8.5 web server does not host any applications, this is Not Applicable.
+
+If the IIS 8.5 web server hosts applications, review the application's management functionality and authentication methods with the System Administrator to determine if the management of the application is accomplished with the same functions and authentication methods as the web server management.
+
+If the IIS 8.5 web server management and the application's management functionality is not separated, this is a finding.
+
+References:
+SV-91417
+V-76721
+CCI-001082
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 12 *******************************
+
+QUESTION         : 13 of 24
+TITLE            : CAT II, V-214419, SV-214419r879638, SRG-APP-000223-WSR-000011
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.server:testaction:3901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.server:question:3901
+RULE             : The IIS 8.5 web server must use cookies to track session state.
+QUESTION_TEXT    : Note: If IIS 8.5 server/site is used only for system-to-system maintenance, does not allow users to connect to interface, and is restricted to specific system IPs, this is Not Applicable.
+
+Open the IIS 8.5 Manager.
+Click the IIS 8.5 web server name.
+Under "ASP.Net", double-click on the "Session State" icon.
+Under "Cookie Settings", verify the "Mode" has "Use Cookies" selected from the drop-down list.
+
+If the "Cookie Settings" "Mode" is not set to "Use Cookies", this is a finding.
+
+Alternative method:
+Click the site name.
+Select "Configuration Editor" under the "Management" section.
+From the "Section:" drop-down list at the top of the configuration editor, locate "system.web/sessionState".
+Verify the "cookieless" is set to "UseCookies".
+
+If the "cookieless" is not set to "UseCookies", this is a finding.
+
+References:
+SV-91421
+V-76725
+CCI-001185
+CCI-001664
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 13 *******************************
+
+QUESTION         : 14 of 24
+TITLE            : CAT II, V-214420, SV-214420r879638, SRG-APP-000223-WSR-000145
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.server:testaction:4101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.server:question:4101
+RULE             : The IIS 8.5 web server must limit the amount of time a cookie persists.
+QUESTION_TEXT    : Note: If IIS 8.5 server/site is used only for system-to-system maintenance, does not allow users to connect to interface, and is restricted to specific system IPs, this is Not Applicable.
+
+Open the IIS 8.5 Manager.
+Click the IIS 8.5 web server name.
+Under the "ASP.NET" section, select "Session State".
+Under "Cookie Settings", verify the "Use Cookies" mode is selected from the "Mode:" drop-down list.
+Under Time-out (in minutes), verify “20 minutes or less” is selected.
+
+If the "Use Cookies” mode is selected and Time-out (in minutes) is configured for “20 minutes or less”, this is not a finding.
+
+Alternative method:
+Click the site name.
+Select "Configuration Editor" under the "Management" section.
+From the "Section:" drop-down list at the top of the configuration editor, locate "system.web/sessionState".
+Verify the "cookieless" is set to "UseCookies".
+
+If the "cookieless" is not set to "UseCookies", this is a finding.
+
+References:
+SV-91423
+V-76727
+CCI-001664
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 14 *******************************
+
+QUESTION         : 15 of 24
+TITLE            : CAT II, V-214421, SV-214421r879640, SRG-APP-000225-WSR-000074
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.server:testaction:4301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.server:question:4301
+RULE             : The IIS 8.5 web server must augment re-creation to a stable and known baseline.
+QUESTION_TEXT    : Interview the System Administrator for the IIS 8.5 web server.
+
+Ask for documentation on the disaster recovery methods tested and planned for the IIS 8.5 web server in the event of the necessity for rollback.
+
+If documentation for a disaster recovery has not been established, this is a finding.
+
+References:
+SV-91425
+V-76729
+CCI-001190
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 15 *******************************
+
+QUESTION         : 16 of 24
+TITLE            : CAT II, V-214424, SV-214424r879655, SRG-APP-000266-WSR-000142
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.server:testaction:4901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.server:question:4901
+RULE             : The IIS 8.5 web server Indexing must only index web content.
+QUESTION_TEXT    : Access the IIS 8.5 Web Server.
+
+Access an administrator command prompt and type "regedit <enter>" to access the server's registry.
+
+Navigate to HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\ContentIndex\Catalogs\.
+
+If this key exists, then indexing is enabled. 
+
+If the key does not exist, this check is Not Applicable.
+
+Review the Catalog keys to determine if directories other than web document directories are being indexed.
+
+If so, this is a finding.
+
+References:
+SV-91431
+V-76735
+CCI-001312
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 16 *******************************
+
+QUESTION         : 17 of 24
+TITLE            : CAT II, V-214428, SV-214428r879693, SRG-APP-000316-WSR-000170
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.server:testaction:5301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.server:question:5301
+RULE             : The IIS 8.5 web server must provide the capability to immediately disconnect or disable remote access to the hosted applications.
+QUESTION_TEXT    : Interview the System Administrator and Web Manager.
+
+Ask for documentation for the IIS 8.5 web server administration.
+
+Verify there are documented procedures for shutting down an IIS 8.5 website in the event of an attack. The procedure should, at a minimum, provide the following steps:
+
+Determine the respective website for the application at risk of an attack.
+
+Access the IIS 8.5 web server IIS Manager.
+
+Select the respective website.
+
+In the "Actions" pane, under "Manage Website", click on "Stop".
+
+If necessary, stop all websites.
+
+If necessary, stop the IIS 8.5 web server by selecting the web server in the IIS Manager.
+
+In the "Actions" pane, under "Manage Server", click on "Stop".
+
+If the web server is not capable of or cannot be configured to disconnect or disable remote access to the hosted applications when necessary, this is a finding.
+
+References:
+SV-91439
+V-76743
+CCI-002322
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 17 *******************************
+
+QUESTION         : 18 of 24
+TITLE            : CAT II, V-214430, SV-214430r879730, SRG-APP-000357-WSR-000150
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.server:testaction:5701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.server:question:5701
+RULE             : The IIS 8.5 web server must use a logging mechanism that is configured to allocate log record storage capacity large enough to accommodate the logging requirements of the IIS 8.5 web server.
+QUESTION_TEXT    : Open the IIS 8.5 Manager.
+
+Click the IIS 8.5 web server name.
+
+Under "IIS" double-click on the "Logging" icon.
+
+In the "Logging" configuration box, determine the "Directory:" to which the "W3C" logging is being written.
+
+Confirm with the System Administrator that the designated log path is of sufficient size to maintain the logging.
+
+Under "Log File Rollover", verify the "Do not create new log files" is not selected.
+
+Verify a schedule is configured to rollover log files on a regular basis.
+
+Consult with the System Administrator to determine if there is a documented process for moving the log files off of the IIS 8.5 web server to another logging device.
+
+If the designated logging path device is not of sufficient space to maintain all log files and there is not a schedule to rollover files on a regular basis, this is a finding.
+
+References:
+SV-91443
+V-76747
+CCI-001849
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 18 *******************************
+
+QUESTION         : 19 of 24
+TITLE            : CAT II, V-214431, SV-214431r879753, SRG-APP-000380-WSR-000072
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.server:testaction:5901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.server:question:5901
+RULE             : Access to web administration tools must be restricted to the web manager and the web managers designees.
+QUESTION_TEXT    : Right-click InetMgr.exe, then click “Properties” from the “Context” menu.
+
+Select the "Security" tab.
+
+Review the groups and user names.
+
+The following account may have Full control privileges:
+
+TrustedInstaller
+Web Managers
+Web Manager designees
+
+The following accounts may have read and execute, or read permissions:
+
+Non Web Manager Administrators
+ALL APPLICATION PACKAGES (built-in security group)
+SYSTEM
+Users
+
+Specific users may be granted read and execute and read permissions.
+
+Compare the local documentation authorizing specific users, against the users observed when reviewing the groups and users.
+
+If any other access is observed, this is a finding.
+
+References:
+SV-91445
+V-76749
+CCI-000213
+CCI-001813
+CCI-002385
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 19 *******************************
+
+QUESTION         : 20 of 24
+TITLE            : CAT II, V-214432, SV-214432r879756, SRG-APP-000383-WSR-000175
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.server:testaction:6101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.server:question:6101
+RULE             : The IIS 8.5 web server must not be running on a system providing any other role.
+QUESTION_TEXT    : Review programs installed on the OS.
+
+Open Control Panel.
+
+Open Programs and Features.
+
+The following programs may be installed without any additional documentation:
+
+Administration Pack for IIS
+IIS Search Engine Optimization Toolkit
+Microsoft .NET Framework version 3.5 SP1 or greater
+Microsoft Web Platform Installer version 3.x or greater
+Virtual Machine Additions
+
+Review the installed programs, if any programs are installed other than those listed above, this is a finding.
+
+Note: If additional software is needed and has supporting documentation signed by the ISSO, this is not a finding.
+
+References:
+SV-91447
+V-76751
+CCI-001762
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 20 *******************************
+
+QUESTION         : 21 of 24
+TITLE            : CAT II, V-214434, SV-214434r879806, SRG-APP-000435-WSR-000148
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.server:testaction:6501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.server:question:6501
+RULE             : The IIS 8.5 web server must be tuned to handle the operational requirements of the hosted application.
+QUESTION_TEXT    : If the IIS 8.5 web server is not hosting any applications, this is Not Applicable.
+
+If the IIS 8.5 web server is hosting applications, consult with the System Administrator to determine risk analysis performed when application was written and deployed to the IIS 8.5 web server.
+
+Obtain documentation on the configuration.
+
+Verify, at a minimum, the following tuning settings in the registry.
+
+Access the IIS 8.5 web server registry.
+
+Verify the following values are present and configured. The required setting depends upon the requirements of the application. 
+
+Recommended settings are not provided as these settings have to be explicitly configured to show a conscientious tuning has been made.
+
+Navigate to HKLM\SYSTEM\CurrentControlSet\Services\HTTP\Parameters\
+"URIEnableCache"
+"UriMaxUriBytes"
+"UriScavengerPeriod"
+
+If explicit settings are not configured for "URIEnableCache", "UriMaxUriBytes" and "UriScavengerPeriod", this is a finding.
+
+References:
+SV-91451
+V-76755
+CCI-002385
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 21 *******************************
+
+QUESTION         : 22 of 24
+TITLE            : CAT II, V-214437, SV-214437r879810, SRG-APP-000439-WSR-000156
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.server:testaction:7101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.server:question:7101
+RULE             : A web server must maintain the confidentiality of controlled information during transmission through the use of an approved TLS version.
+QUESTION_TEXT    : Review the web server documentation and deployed configuration to determine which version of TLS is being used.
+
+If the TLS version is not TLS 1.2 or higher, according to NIST SP 800-52, or if non-FIPS-approved algorithms are enabled, this is a finding.
+
+References:
+SV-91457
+V-76761
+CCI-002418
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 22 *******************************
+
+QUESTION         : 23 of 24
+TITLE            : CAT II, V-228573, SV-228573r879587, SRG-APP-000141-WSR-000075
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.server:testaction:8101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.server:question:8101
+RULE             : An IIS Server configured to be a SMTP relay must require authentication.
+QUESTION_TEXT    : Interview the System Administrator about the role of the IIS 8.5 web server.
+
+If the IIS 8.5 web server is running SMTP relay services, have the SA provide supporting documentation on how the server is hardened. A DoD-issued certificate, and specific allowed IP address should be configured.
+
+If the IIS 8.5 web server is not running SMTP relay services, this is Not Applicable.
+
+If the IIS web server running SMTP relay services without TLS enabled, this is a finding.
+
+If the IIS web server running SMTP relay services is not configured to only allow a specific IP address, from the same network as the relay, this is a finding.
+
+References:
+V-102893
+SV-111855
+CCI-000381
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 23 *******************************
+
+QUESTION         : 24 of 24
+TITLE            : CAT II, V-256987, SV-256987r903134, SRG-APP-000315-WSR-000004
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.server:testaction:8301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.server:question:8301
+RULE             : The IIS 8.5 web server must restrict inbound connections from nonsecure zones.
+QUESTION_TEXT    : Note:  This requirement applies to the Web Management Service. If the Web Management Service is not installed, this is Not Applicable.
+
+Open the IIS 8.5 Manager.
+
+Click the IIS 8.5 web server name.
+
+Under "Management", double-click "Management Service".
+
+If "Enable remote connections" is not selected, this is Not Applicable.
+
+If "Enable remote connections" is selected, review the entries under "IP Address Restrictions".
+
+Verify only known, secure IP ranges are configured as "Allow".
+
+If "IP Address Restrictions" are not configured or IP ranges configured to be "Allow" are not restrictive enough to prevent connections from nonsecure zones, this is a finding.
+
+References:
+SV-91437
+V-76741
+CCI-002314
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 24 *******************************
+

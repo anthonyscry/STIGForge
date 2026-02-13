@@ -28,6 +28,10 @@ public sealed class OrchestrateRequest
   public string? PowerStigDataFile { get; set; }
   public string? PowerStigOutputPath { get; set; }
   public bool PowerStigVerbose { get; set; }
+  public string? AdmxSourcePath { get; set; }
+  public string? LgpoExePath { get; set; }
+  public string? LgpoGpoBackupPath { get; set; }
+  public bool LgpoVerbose { get; set; }
 
   public string? EvaluateStigRoot { get; set; }
   public string? EvaluateStigArgs { get; set; }
@@ -36,6 +40,10 @@ public sealed class OrchestrateRequest
   public string? ScapToolLabel { get; set; }
 
   public string? VerifyOutputRoot { get; set; }
+
+  public bool DscScanEnabled { get; set; }
+  public bool DscScanVerbose { get; set; }
+  public string? DscScanToolLabel { get; set; }
 }
 
 public sealed class BundleBuildResult

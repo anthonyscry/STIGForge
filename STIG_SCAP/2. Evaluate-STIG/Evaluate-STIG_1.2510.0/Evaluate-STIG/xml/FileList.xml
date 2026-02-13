@@ -1,0 +1,1826 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<FileList Version="1.2510.0" ReleaseDate="2025-Dec-11">
+  <File Name="Template_AnswerFile.xml">
+    <Path>\AnswerFiles</Path>
+    <ScanReq>NotRequired</ScanReq>
+    <SHA256Hash>80DC5799B82C25FEB15F2D1942BA5D7BD29DA521A5951E18CC4B076717C31105</SHA256Hash>
+  </File>
+  <File Name="CHANGELOG.pdf">
+    <Path>\Doc</Path>
+    <ScanReq>NotRequired</ScanReq>
+    <SHA256Hash>F3538AFB894C11A95ECE5A99788753F61D6B8C33BD7604FBAA9D775FFA26545A</SHA256Hash>
+  </File>
+  <File Name="Evaluate-STIG_Calculator_and_Metrics.xlsx">
+    <Path>\Doc</Path>
+    <ScanReq>NotRequired</ScanReq>
+    <SHA256Hash>47472609A6016A801F14EC2DE4CF6E9F966E103D9F8DA4F31D05465A99047C08</SHA256Hash>
+  </File>
+  <File Name="Evaluate-STIG_FullSlides.pptx">
+    <Path>\Doc</Path>
+    <ScanReq>NotRequired</ScanReq>
+    <SHA256Hash>EE7435D0FF696B2FD4CAB0FA0F2CC1871CB517D929AE7A37CF0BFC908D361C98</SHA256Hash>
+  </File>
+  <File Name="Evaluate-STIG_to_STIG_Manager_Guide.pdf">
+    <Path>\Doc</Path>
+    <ScanReq>NotRequired</ScanReq>
+    <SHA256Hash>2DA3436560EC8D2372373DD1AD493761C706DCB92ABB35D96BBF1DE051B1007E</SHA256Hash>
+  </File>
+  <File Name="Evaluate-STIG_UserGuide.pdf">
+    <Path>\Doc</Path>
+    <ScanReq>NotRequired</ScanReq>
+    <SHA256Hash>9B92FBC9F5759D5035C877CDE7FFE1A247BDC468D92707106467B0239052B3F5</SHA256Hash>
+  </File>
+  <File Name="Cisco.psd1">
+    <Path>\Modules\Master_Functions\Cisco</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>96FF0C149042261054F4A3EF20E856392C2D2118B06AE8238530231973B203DD</SHA256Hash>
+  </File>
+  <File Name="Cisco.psm1">
+    <Path>\Modules\Master_Functions\Cisco</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>A68BD7FE960EFACEA8CF93070235A5D37BBE9473C8618162727413639AB29D8B</SHA256Hash>
+  </File>
+  <File Name="FormatOutput.psd1">
+    <Path>\Modules\Master_Functions\FormatOutput</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>E78673B6A7291BA2B2E18CD000EB18E80F094F0EB780528BDB6BD9CB3EAA770A</SHA256Hash>
+  </File>
+  <File Name="FormatOutput.psm1">
+    <Path>\Modules\Master_Functions\FormatOutput</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>691F609BB352B5E6B1D1B82310F0476CAF0597E13076BE130EA34B2923973A4B</SHA256Hash>
+  </File>
+  <File Name="RemoteScan.psd1">
+    <Path>\Modules\Master_Functions\RemoteScan</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>C59A29C6B1ED1312FE406BC7FD0A7217A897A647F433980E4EB27F56D0B171A1</SHA256Hash>
+  </File>
+  <File Name="RemoteScan.psm1">
+    <Path>\Modules\Master_Functions\RemoteScan</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>E46E379AD5BE1536D03474EBAD7EA3CD4DCF9687916097202C99289E31005CC0</SHA256Hash>
+  </File>
+  <File Name="Splunk.psd1">
+    <Path>\Modules\Master_Functions\Splunk</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>81BC5EEF32A1A8683D23310F600544C6B84C436BCB72AFCE92C09C8615BB30D2</SHA256Hash>
+  </File>
+  <File Name="Splunk.psm1">
+    <Path>\Modules\Master_Functions\Splunk</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>1E8AAE53961D50E6F69780878C1553FD0AD331C75DBF070BE4590FE7A98ED691</SHA256Hash>
+  </File>
+  <File Name="STIGDetection.psd1">
+    <Path>\Modules\Master_Functions\STIGDetection</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>0B80697CD43E972D9989D0CF40093B69502F7509B1F8EBB262C3CFCE276F2AE7</SHA256Hash>
+  </File>
+  <File Name="STIGDetection.psm1">
+    <Path>\Modules\Master_Functions\STIGDetection</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>5497CB69C2F0595CABF8F31E6E39C3266034846E890A35DDBE114194D3431472</SHA256Hash>
+  </File>
+  <File Name="STIGManager.psd1">
+    <Path>\Modules\Master_Functions\STIGManager</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>39A0A591D27E8CCE5FAB76FEDBBB24AE9C932558F6511ED0D2DC6D1B16978523</SHA256Hash>
+  </File>
+  <File Name="STIGManager.psm1">
+    <Path>\Modules\Master_Functions\STIGManager</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>D29CA5D386E02207C6A03899F44E56E3019D849CB57A78E5A37950D9F6AE6667</SHA256Hash>
+  </File>
+  <File Name="Updating.psd1">
+    <Path>\Modules\Master_Functions\Updating</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>12EDD12B6E33058E78A1AA8B12D3E40F712C86E72DFA5F256C36B6F1A2E95336</SHA256Hash>
+  </File>
+  <File Name="Updating.psm1">
+    <Path>\Modules\Master_Functions\Updating</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>BC07451295CF0C4C9704D6AB5478E2E7CA62295818C1B2E895B77A6F2DE22026</SHA256Hash>
+  </File>
+  <File Name="Master_Functions.psd1">
+    <Path>\Modules\Master_Functions</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>A4F84A1567E2EE6B4B299C380490E36DF368F6C9875243BD2B919641800424E0</SHA256Hash>
+  </File>
+  <File Name="Master_Functions.psm1">
+    <Path>\Modules\Master_Functions</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>E6F3E1BA54585D7C8EDBBE039D63F3498EF53B2C2A9DC47FEFD1C8C1DCFD9A56</SHA256Hash>
+  </File>
+  <File Name="Scan-Access2013_Checks.psd1">
+    <Path>\Modules\Scan-Access2013_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>BB3568E4FC13DD3ED4735EF1945227666010D9EA9B032142199D101403FA42BC</SHA256Hash>
+  </File>
+  <File Name="Scan-Access2013_Checks.psm1">
+    <Path>\Modules\Scan-Access2013_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>6409831759C0C73E5CE1545A1F188CCEF6B7E6724C871302CA3A9F8E98C3096F</SHA256Hash>
+  </File>
+  <File Name="Scan-Access2016_Checks.psd1">
+    <Path>\Modules\Scan-Access2016_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>EF4F6FD042C7C1373CF7C6EDB781C03A80DEFBD7915FF663DA7164F79072FB04</SHA256Hash>
+  </File>
+  <File Name="Scan-Access2016_Checks.psm1">
+    <Path>\Modules\Scan-Access2016_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>B424967AFB77AB0B18D14CE6373B24EC622BEF5A504C37C919BB1A6E9FB60EF4</SHA256Hash>
+  </File>
+  <File Name="Scan-ActiveDirectoryDomain_Checks.psd1">
+    <Path>\Modules\Scan-ActiveDirectoryDomain_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>AF3AA30EE6ABD3639777613EA88C925E3B1550297B1146353B64382C1A6C7AF8</SHA256Hash>
+  </File>
+  <File Name="Scan-ActiveDirectoryDomain_Checks.psm1">
+    <Path>\Modules\Scan-ActiveDirectoryDomain_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>A9BE43912B605267BEB7001D2BF55DE3FF6F497D7730A0F9762A41C8AB18517A</SHA256Hash>
+  </File>
+  <File Name="Scan-ActiveDirectoryForest_Checks.psd1">
+    <Path>\Modules\Scan-ActiveDirectoryForest_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>4B5A9721E92BF692E41CD69E21E7F7833DDE0C4CD9F68120653940A6D51BE96B</SHA256Hash>
+  </File>
+  <File Name="Scan-ActiveDirectoryForest_Checks.psm1">
+    <Path>\Modules\Scan-ActiveDirectoryForest_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>28FECFF4EDA1F9D75A1738BB0B7E3FC3F94E681254543773658D7DA5684D0E16</SHA256Hash>
+  </File>
+  <File Name="Scan-AdobeAcrobatProDCClassic_Checks.psd1">
+    <Path>\Modules\Scan-AdobeAcrobatProDCClassic_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>8FD6D9415F39F639798FEF575F4082790C28B749BDA9B732629FB952D31DB436</SHA256Hash>
+  </File>
+  <File Name="Scan-AdobeAcrobatProDCClassic_Checks.psm1">
+    <Path>\Modules\Scan-AdobeAcrobatProDCClassic_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>6EFE29032E320BFB49C53ACCFC6DE5B03E4E1EA677B13BA06E44C78F98BFD6F3</SHA256Hash>
+  </File>
+  <File Name="Scan-AdobeAcrobatProDCContinuous_Checks.psd1">
+    <Path>\Modules\Scan-AdobeAcrobatProDCContinuous_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>5AA683B4DE511D73F6A9ACDC40492BBA0FA4ABA1BB63DF930D6A3A7DAE5607AD</SHA256Hash>
+  </File>
+  <File Name="Scan-AdobeAcrobatProDCContinuous_Checks.psm1">
+    <Path>\Modules\Scan-AdobeAcrobatProDCContinuous_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>51E8431E45C10C167E3F15915D25ED2DF5CC3D02AF8A205D34698C0E1AB50375</SHA256Hash>
+  </File>
+  <File Name="Scan-AdobeAcrobatProXI_Checks.psd1">
+    <Path>\Modules\Scan-AdobeAcrobatProXI_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>7E351DDE4ACCE4975C75F931E6C85E767C4A9C2B9A32BB763E84F2FA589AFE43</SHA256Hash>
+  </File>
+  <File Name="Scan-AdobeAcrobatProXI_Checks.psm1">
+    <Path>\Modules\Scan-AdobeAcrobatProXI_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>3914738BD95D8236BAC2538E71BB18144FB09F772F749E43787E772144BEB7A4</SHA256Hash>
+  </File>
+  <File Name="Scan-AdobeReaderDCClassic_Checks.psd1">
+    <Path>\Modules\Scan-AdobeReaderDCClassic_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>B5A0704CAF82A0EF92FDFEA4D77C7AD07A846F9B51A20F003D61E3C9FFD45911</SHA256Hash>
+  </File>
+  <File Name="Scan-AdobeReaderDCClassic_Checks.psm1">
+    <Path>\Modules\Scan-AdobeReaderDCClassic_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>A1444AFEDAC0792650AF5AB156ECECFDEE1371D06E0F1DF76304AC29AF8D3651</SHA256Hash>
+  </File>
+  <File Name="Scan-AdobeReaderDCContinuous_Checks.psd1">
+    <Path>\Modules\Scan-AdobeReaderDCContinuous_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>AE52F72A957507DF6DC9BF7D8E13650F8967E845C296DE25675F32D6A212B32E</SHA256Hash>
+  </File>
+  <File Name="Scan-AdobeReaderDCContinuous_Checks.psm1">
+    <Path>\Modules\Scan-AdobeReaderDCContinuous_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>B0F3DD42B2656191B9CE31923825FD82F7AE00970350CD3AF1741177C8B33763</SHA256Hash>
+  </File>
+  <File Name="Scan-AmazonLinux2023_Checks.psd1">
+    <Path>\Modules\Scan-AmazonLinux2023_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>9C50D0C9700C5C195BE8AE78CB2553C4BF0BC2D41D51C3A5FBEF3603C502FCFE</SHA256Hash>
+  </File>
+  <File Name="Scan-AmazonLinux2023_Checks.psm1">
+    <Path>\Modules\Scan-AmazonLinux2023_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>D631E794BFB6937A54F26972ADFAC78F814050DE32873D356236B895BFEAED69</SHA256Hash>
+  </File>
+  <File Name="Scan-ApacheServer2-4UNIXServer_Checks.psd1">
+    <Path>\Modules\Scan-ApacheServer2-4UNIXServer_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>4627835966BADF91ED4B6885B83F397F558954247537173375FCF6F5BB505935</SHA256Hash>
+  </File>
+  <File Name="Scan-ApacheServer2-4UNIXServer_Checks.psm1">
+    <Path>\Modules\Scan-ApacheServer2-4UNIXServer_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>17EC5FAD2B2E2BE6B3078ACE3E501ABDBAAFC816244B858A7A9122B7DC2987DD</SHA256Hash>
+  </File>
+  <File Name="Scan-ApacheServer2-4UNIXSite_Checks.psd1">
+    <Path>\Modules\Scan-ApacheServer2-4UNIXSite_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>CC43ED4FC358C3FD1728F18278D8A6C6931DC9BC5A9A37E61128B113C2096F2B</SHA256Hash>
+  </File>
+  <File Name="Scan-ApacheServer2-4UNIXSite_Checks.psm1">
+    <Path>\Modules\Scan-ApacheServer2-4UNIXSite_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>3EB86BEDB5E47053B74751B95AC127D8DA97B0C167C27EA355054A2469B13349</SHA256Hash>
+  </File>
+  <File Name="Scan-ApacheServer2-4WindowsServer_Checks.psd1">
+    <Path>\Modules\Scan-ApacheServer2-4WindowsServer_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>93C9FE7581E19F8E545EABE68FA62B97E50DD3F1EC273404C4F981500A5A2D00</SHA256Hash>
+  </File>
+  <File Name="Scan-ApacheServer2-4WindowsServer_Checks.psm1">
+    <Path>\Modules\Scan-ApacheServer2-4WindowsServer_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>D6E16B166823A091AEC4804A0D7DB06917F90F29D3B4ABBA97E92C630364731D</SHA256Hash>
+  </File>
+  <File Name="Scan-ApacheServer2-4WindowsSite_Checks.psd1">
+    <Path>\Modules\Scan-ApacheServer2-4WindowsSite_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>67DE68B1AD9F4C574B04F6DF2387279C71F216E739A002B6C2CA80D30BE197BE</SHA256Hash>
+  </File>
+  <File Name="Scan-ApacheServer2-4WindowsSite_Checks.psm1">
+    <Path>\Modules\Scan-ApacheServer2-4WindowsSite_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>0CAB859E9FBCED1D413006A9A098D3ED3008CC234CC8FF3E01CC6DD943BDC29F</SHA256Hash>
+  </File>
+  <File Name="Scan-ArcGISServer10-3_Checks.psd1">
+    <Path>\Modules\Scan-ArcGISServer10-3_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>BE70340C0BEF52E76DB45B9C108AD832D9EC751164A45AD94C8E6E8EA2313132</SHA256Hash>
+  </File>
+  <File Name="Scan-ArcGISServer10-3_Checks.psm1">
+    <Path>\Modules\Scan-ArcGISServer10-3_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>38E8C0870403DB6BE097C827E8A688785BF20F9A74E683FEC5510029BF442533</SHA256Hash>
+  </File>
+  <File Name="Scan-CiscoIOSRouterNDM_Checks.psd1">
+    <Path>\Modules\Scan-CiscoIOSRouterNDM_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>7C76C920868EEAF2C6CF75AAB3901CEC13C33734F1FEF18E4CFE62361F265D86</SHA256Hash>
+  </File>
+  <File Name="Scan-CiscoIOSRouterNDM_Checks.psm1">
+    <Path>\Modules\Scan-CiscoIOSRouterNDM_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>D96C249646CE2C529D3876E0FBA7D46916EDD2DEF7751C1439E1A3B5C3FA9A1D</SHA256Hash>
+  </File>
+  <File Name="Scan-CiscoIOSRouterRTR_Checks.psd1">
+    <Path>\Modules\Scan-CiscoIOSRouterRTR_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>51D14FDD1692FB728DB0476D30F408AA5FEA67DE0CA96F41F685AC4FE91D3A8B</SHA256Hash>
+  </File>
+  <File Name="Scan-CiscoIOSRouterRTR_Checks.psm1">
+    <Path>\Modules\Scan-CiscoIOSRouterRTR_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>3AE12967C1A4174CA89115AB853686FF6CAA18841129CFC19E02ED666063C87D</SHA256Hash>
+  </File>
+  <File Name="Scan-CiscoIOSSwitchL2S_Checks.psd1">
+    <Path>\Modules\Scan-CiscoIOSSwitchL2S_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>F98321DBCEBF21023BE270192B7295095CF58C064EF60725AC87BE98A1BD6120</SHA256Hash>
+  </File>
+  <File Name="Scan-CiscoIOSSwitchL2S_Checks.psm1">
+    <Path>\Modules\Scan-CiscoIOSSwitchL2S_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>FEFF064EEC0171A19D2131899AC8C41C3D6FA82517447C66B7CA2B0056823E56</SHA256Hash>
+  </File>
+  <File Name="Scan-CiscoIOSSwitchNDM_Checks.psd1">
+    <Path>\Modules\Scan-CiscoIOSSwitchNDM_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>5B6C0BA51946BADBADFD6332BF1685F5B77DC0B098CEDD637A13B52EE9F2AE11</SHA256Hash>
+  </File>
+  <File Name="Scan-CiscoIOSSwitchNDM_Checks.psm1">
+    <Path>\Modules\Scan-CiscoIOSSwitchNDM_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>F2AC216AFB9B771C01D19403C79BBB48CDFE29876CAAAD030F632B7311F93BB1</SHA256Hash>
+  </File>
+  <File Name="Scan-CiscoIOSSwitchRTR_Checks.psd1">
+    <Path>\Modules\Scan-CiscoIOSSwitchRTR_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>559C9598B529F2BE71E378F5E99B57BD7198578435CB10942570C3AA3C80D729</SHA256Hash>
+  </File>
+  <File Name="Scan-CiscoIOSSwitchRTR_Checks.psm1">
+    <Path>\Modules\Scan-CiscoIOSSwitchRTR_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>CE38FA8904FB0E29E117C87663F927139ED4CF0860B76CAF4241A50AA5CDD290</SHA256Hash>
+  </File>
+  <File Name="Scan-CiscoXERouterNDM_Checks.psd1">
+    <Path>\Modules\Scan-CiscoXERouterNDM_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>9D9825C6289B8C1DCDF6F8BD57A0E5BCA0AC80585D351FFD67C9EF4A1570ED2F</SHA256Hash>
+  </File>
+  <File Name="Scan-CiscoXERouterNDM_Checks.psm1">
+    <Path>\Modules\Scan-CiscoXERouterNDM_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>27E536C97080F53FD7484023D2B54570AEFB6986D2367573607189676940406A</SHA256Hash>
+  </File>
+  <File Name="Scan-CiscoXERouterRTR_Checks.psd1">
+    <Path>\Modules\Scan-CiscoXERouterRTR_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>8F5DDE7C9CAEB2F4D48AD950EE077D07D67F8B998731EF867F66BC60489690C2</SHA256Hash>
+  </File>
+  <File Name="Scan-CiscoXERouterRTR_Checks.psm1">
+    <Path>\Modules\Scan-CiscoXERouterRTR_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>F973B863FEF0DFA539D96397D66885B35368BB6B50B9BC822B1F81981DF57A64</SHA256Hash>
+  </File>
+  <File Name="Scan-CiscoXESwitchL2S_Checks.psd1">
+    <Path>\Modules\Scan-CiscoXESwitchL2S_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>271C71BEAC8BE94BA9753496B8AEEE9FF1AB5CACFCFF93A014621A546C8410F3</SHA256Hash>
+  </File>
+  <File Name="Scan-CiscoXESwitchL2S_Checks.psm1">
+    <Path>\Modules\Scan-CiscoXESwitchL2S_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>5DD78168598F87C220CF7624CA66AEB8F71F69453A9DF9CDE841D7814ACDBDC1</SHA256Hash>
+  </File>
+  <File Name="Scan-CiscoXESwitchNDM_Checks.psd1">
+    <Path>\Modules\Scan-CiscoXESwitchNDM_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>A94516D7D3DF064EF4D44DAAD42E3A84C4F309F460E320A4A7D42B6B95F3E540</SHA256Hash>
+  </File>
+  <File Name="Scan-CiscoXESwitchNDM_Checks.psm1">
+    <Path>\Modules\Scan-CiscoXESwitchNDM_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>31E2FC059BB0E379141F0BFE2DAF83314CEB3108B6EE79EFD6C37F783BF2A9BE</SHA256Hash>
+  </File>
+  <File Name="Scan-CiscoXESwitchRTR_Checks.psd1">
+    <Path>\Modules\Scan-CiscoXESwitchRTR_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>09CA9F488A0DEA8B06C0703F002FCBF2AF638CDE3C52F587BC7D9297B925794E</SHA256Hash>
+  </File>
+  <File Name="Scan-CiscoXESwitchRTR_Checks.psm1">
+    <Path>\Modules\Scan-CiscoXESwitchRTR_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>DFC40DD3F449E08C735CFDE8CD986AEC2F6ABA310B524F0325628E0D50E2A351</SHA256Hash>
+  </File>
+  <File Name="Scan-CitrixVAD7-xWorkspaceApp_Checks.psd1">
+    <Path>\Modules\Scan-CitrixVAD7-xWorkspaceApp_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>2C158D7FF21D230075D7A1CB1A1D65E36958A7D7190E6A15C1A1E48DA473BEC1</SHA256Hash>
+  </File>
+  <File Name="Scan-CitrixVAD7-xWorkspaceApp_Checks.psm1">
+    <Path>\Modules\Scan-CitrixVAD7-xWorkspaceApp_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>58F323A7C9AB11FB336F703552C20A820BBD67B165DF52372F7361260906B0AB</SHA256Hash>
+  </File>
+  <File Name="Scan-Excel2013_Checks.psd1">
+    <Path>\Modules\Scan-Excel2013_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>826A2F1EA8C1B03361A6958E768821F8A3BEF586AC12E6DF01D2E6C77C111255</SHA256Hash>
+  </File>
+  <File Name="Scan-Excel2013_Checks.psm1">
+    <Path>\Modules\Scan-Excel2013_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>32D973862F750AF64D1F60640AE88F177EC02929919FB116F0E82CD05DAE27AB</SHA256Hash>
+  </File>
+  <File Name="Scan-Excel2016_Checks.psd1">
+    <Path>\Modules\Scan-Excel2016_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>6CBE68300AB4870754324A8887E5F4B7273CFBB16A2D9226757CBEC3D2D41B56</SHA256Hash>
+  </File>
+  <File Name="Scan-Excel2016_Checks.psm1">
+    <Path>\Modules\Scan-Excel2016_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>59AE0A27F2F025825E7B09D2276BA991A21417431BB2434A0CEDDC7E37F84720</SHA256Hash>
+  </File>
+  <File Name="Scan-GoogleChrome_Checks.psd1">
+    <Path>\Modules\Scan-GoogleChrome_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>C9CB538581AB0419054DD393EAD9E6A689510EC13EAAC8FD61CC8E9BBDCFE3D8</SHA256Hash>
+  </File>
+  <File Name="Scan-GoogleChrome_Checks.psm1">
+    <Path>\Modules\Scan-GoogleChrome_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>39CE421CF0FB213FDF7337E9B60EDD015C5339C343A0EF79D3F91BD7461FAC94</SHA256Hash>
+  </File>
+  <File Name="Scan-Groove2013_Checks.psd1">
+    <Path>\Modules\Scan-Groove2013_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>CACE81F80B5464E644113318D4DA6236A2C8802BE7A617B974B4FDEAEC9C9DA3</SHA256Hash>
+  </File>
+  <File Name="Scan-Groove2013_Checks.psm1">
+    <Path>\Modules\Scan-Groove2013_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>DDAF9B1A643DC94A99A20C9DC78B787A2E765586E75FEAFD9550866853D3B633</SHA256Hash>
+  </File>
+  <File Name="Scan-IE11_Checks.psd1">
+    <Path>\Modules\Scan-IE11_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>59EE68881E089BFF7A98E90678C8611680CFC9B6035A034BFCCC48ED541C7C7D</SHA256Hash>
+  </File>
+  <File Name="Scan-IE11_Checks.psm1">
+    <Path>\Modules\Scan-IE11_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>2FE91DA8F39F47728D48BF50A3EF99380C4CF73BF05680A0174363DE531F1CD0</SHA256Hash>
+  </File>
+  <File Name="Scan-IIS10_0_Server_Checks.psd1">
+    <Path>\Modules\Scan-IIS10_0_Server_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>4F9B5871FCC279DEDF88CF56BEAB7EAE8DBAF28745BF0BB0B3BB5D9DF4FF8738</SHA256Hash>
+  </File>
+  <File Name="Scan-IIS10_0_Server_Checks.psm1">
+    <Path>\Modules\Scan-IIS10_0_Server_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>33260CC00842D16FBA169083FA02E6CFF2BD6AC101E2DAB4F984355BF8B7F8FD</SHA256Hash>
+  </File>
+  <File Name="Scan-IIS10_0_Site_Checks.psd1">
+    <Path>\Modules\Scan-IIS10_0_Site_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>768299CCBD9A76E45DE525E0F4C778BA24DC747CE183CCEA1C96ECC7221491D0</SHA256Hash>
+  </File>
+  <File Name="Scan-IIS10_0_Site_Checks.psm1">
+    <Path>\Modules\Scan-IIS10_0_Site_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>194791451C57B52211E7EE8B3B62F8B5D3869F0482AED60CB2C5A7B6F00568C6</SHA256Hash>
+  </File>
+  <File Name="Scan-IIS85_Server_Checks.psd1">
+    <Path>\Modules\Scan-IIS85_Server_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>469B567963C28C0751F8C691757EC95A0C6E2D270F2810F198B7961160585C86</SHA256Hash>
+  </File>
+  <File Name="Scan-IIS85_Server_Checks.psm1">
+    <Path>\Modules\Scan-IIS85_Server_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>7337BD3075C19738BE6D384D1ED7402F586716274701AB7846AE5504549774F5</SHA256Hash>
+  </File>
+  <File Name="Scan-IIS85_Site_Checks.psd1">
+    <Path>\Modules\Scan-IIS85_Site_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>B013D4FA7AC3F6EDAD23560F8A14D74E4D0BE371FBD43687E96D4ACF695B55C8</SHA256Hash>
+  </File>
+  <File Name="Scan-IIS85_Site_Checks.psm1">
+    <Path>\Modules\Scan-IIS85_Site_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>F2F8B3BB2992860D3CE51358B7BB66F43ABAE974423D984D5C9E99810BEA5554</SHA256Hash>
+  </File>
+  <File Name="Scan-InfoPath2013_Checks.psd1">
+    <Path>\Modules\Scan-InfoPath2013_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>ABFFDA12BE94E1E4CDB0837B2C951EB79C5995F3441ABE920EDB8D64689B56C3</SHA256Hash>
+  </File>
+  <File Name="Scan-InfoPath2013_Checks.psm1">
+    <Path>\Modules\Scan-InfoPath2013_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>3BE3621CFC4C49B4553DDEFCC93E8A99C5F92FC0BABF2382E4E05ED4620A3956</SHA256Hash>
+  </File>
+  <File Name="Scan-JavaJRE8_Unix_Checks.psd1">
+    <Path>\Modules\Scan-JavaJRE8_Unix_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>BC4B66A54CE8931130AED6B0DDF9F9F9CD8354547D55133B0232393C6DF0BD9A</SHA256Hash>
+  </File>
+  <File Name="Scan-JavaJRE8_Unix_Checks.psm1">
+    <Path>\Modules\Scan-JavaJRE8_Unix_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>77018CA642D4DF99ADAF96DDBBD79F169FC1D4D1908F3A64818E963EE795159D</SHA256Hash>
+  </File>
+  <File Name="Scan-JavaJRE8_Windows_Checks.psd1">
+    <Path>\Modules\Scan-JavaJRE8_Windows_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>29C568E2BB4A7A9CAD729D551C7510CF4753EFB5C31B1CF08EA112CCC5A4B116</SHA256Hash>
+  </File>
+  <File Name="Scan-JavaJRE8_Windows_Checks.psm1">
+    <Path>\Modules\Scan-JavaJRE8_Windows_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>3C5713F358E5A72464ED2DD1913F36ADADBB4BFC1EE7277D4BED6F5D3F8013E9</SHA256Hash>
+  </File>
+  <File Name="Scan-JBossEAP6-3_Checks.psd1">
+    <Path>\Modules\Scan-JBossEAP6-3_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>C603698D7605B0CA8DF76785552738174F5A66D7EAB00C51D319FE72799AC36C</SHA256Hash>
+  </File>
+  <File Name="Scan-JBossEAP6-3_Checks.psm1">
+    <Path>\Modules\Scan-JBossEAP6-3_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>EB8E5B01F24018749CB127D2489C416ACA442287CDA8B93A726E52E4B0375897</SHA256Hash>
+  </File>
+  <File Name="Scan-Lync2013_Checks.psd1">
+    <Path>\Modules\Scan-Lync2013_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>E1A453AA46D5C4F2D11A6F1867B81C2FDBDCB6CDED62FCB81DC1FF49B50F462C</SHA256Hash>
+  </File>
+  <File Name="Scan-Lync2013_Checks.psm1">
+    <Path>\Modules\Scan-Lync2013_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>C457AD39965D9E938C0FDF34293AD847E482A99C0F641BC277B184638A8AFBBC</SHA256Hash>
+  </File>
+  <File Name="Scan-McAfeeVirusScanLocalClient_Checks.psd1">
+    <Path>\Modules\Scan-McAfeeVirusScanLocalClient_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>7AE18DD8D03F8B0DD9C1B112632EA071AD03B454A3066004242BD94E1816D909</SHA256Hash>
+  </File>
+  <File Name="Scan-McAfeeVirusScanLocalClient_Checks.psm1">
+    <Path>\Modules\Scan-McAfeeVirusScanLocalClient_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>636253BA8D1F45D4526E83857F21E0CE954928453F094F28478538A0A162C11A</SHA256Hash>
+  </File>
+  <File Name="Scan-MicrosoftDefenderAntivirus_Checks.psd1">
+    <Path>\Modules\Scan-MicrosoftDefenderAntivirus_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>D8D04AAFAFE16DA61F9CB6DFFA5137CA51F9D66208334325D163CF887E9CC6B0</SHA256Hash>
+  </File>
+  <File Name="Scan-MicrosoftDefenderAntivirus_Checks.psm1">
+    <Path>\Modules\Scan-MicrosoftDefenderAntivirus_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>B2CA2265A8FDC3D6237F07415F4385AC70293D1A4493A0F1720CDDF3B90D9B5B</SHA256Hash>
+  </File>
+  <File Name="Scan-MicrosoftEdge_Checks.psd1">
+    <Path>\Modules\Scan-MicrosoftEdge_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>0C1BF18FA74080B4D5D77F279B0306C7C2A12E9B288ACF5691D8E3B59EB22295</SHA256Hash>
+  </File>
+  <File Name="Scan-MicrosoftEdge_Checks.psm1">
+    <Path>\Modules\Scan-MicrosoftEdge_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>7BC61AE50760574890577643AD99305F1CDD5B3E315FB633738DB31E29DA1EFC</SHA256Hash>
+  </File>
+  <File Name="Scan-MicrosoftSharePointServer2013_Checks.psd1">
+    <Path>\Modules\Scan-MicrosoftSharePointServer2013_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>450791B90C3C952250E585BE101E1710D2BE4B6D432AA9B6DACCC1B17F8C9964</SHA256Hash>
+  </File>
+  <File Name="Scan-MicrosoftSharePointServer2013_Checks.psm1">
+    <Path>\Modules\Scan-MicrosoftSharePointServer2013_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>B2BE326C9EAE59F07879FE8C5577CDE57A354CE94EFE3858DFBEE3B422240EEB</SHA256Hash>
+  </File>
+  <File Name="Scan-MongoDB3-x_Checks.psd1">
+    <Path>\Modules\Scan-MongoDB3-x_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>727C544D7D01289E4F24E58E13FBE034C33C58D089D7A6B752F5A85173468803</SHA256Hash>
+  </File>
+  <File Name="Scan-MongoDB3-x_Checks.psm1">
+    <Path>\Modules\Scan-MongoDB3-x_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>4D72715916C84B840FC57299F56BBCF56486F3ADBC987FC2A8AEBAED8B05A888</SHA256Hash>
+  </File>
+  <File Name="Scan-MozillaFirefox_Checks.psd1">
+    <Path>\Modules\Scan-MozillaFirefox_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>C247710E08EFE200DEA9E37E4BF8FD0D424515B39DD3FFF0A732BC6C1F4A6281</SHA256Hash>
+  </File>
+  <File Name="Scan-MozillaFirefox_Checks.psm1">
+    <Path>\Modules\Scan-MozillaFirefox_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>B87C72B9CCA3E643245143F2F97DA5DFAF8386AAE3BBEF930E6BF99570BAF03A</SHA256Hash>
+  </File>
+  <File Name="Scan-MSExchange2016EdgeTP_Checks.psd1">
+    <Path>\Modules\Scan-MSExchange2016EdgeTP_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>E208F88FB68E4407D58BAEAC7C99558966137C1A21292CD5BFC7932C8F09AAD3</SHA256Hash>
+  </File>
+  <File Name="Scan-MSExchange2016EdgeTP_Checks.psm1">
+    <Path>\Modules\Scan-MSExchange2016EdgeTP_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>9A958A42D8B1865E04692FC8D8E9E5A405225D00BE6BF18F9A4E2BCCA018362F</SHA256Hash>
+  </File>
+  <File Name="Scan-MSExchange2016MB_Checks.psd1">
+    <Path>\Modules\Scan-MSExchange2016MB_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>CE13FB36EE5BCEB04663CF2B4DABEB4BFBF2723607B61992A355E976F8ED4ABC</SHA256Hash>
+  </File>
+  <File Name="Scan-MSExchange2016MB_Checks.psm1">
+    <Path>\Modules\Scan-MSExchange2016MB_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>24CE57FD8ECDA106766618AEFDE03CE395DCBB98C19764F02EB714AA4D29CFDF</SHA256Hash>
+  </File>
+  <File Name="Scan-MSExchange2019Edge_Checks.psd1">
+    <Path>\Modules\Scan-MSExchange2019Edge_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>8321506220DCFD3EFBA65703D77A32401CB696E467EDDC2C303EFB6C22E0279D</SHA256Hash>
+  </File>
+  <File Name="Scan-MSExchange2019Edge_Checks.psm1">
+    <Path>\Modules\Scan-MSExchange2019Edge_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>5E59AAB90E491EACB31FBA6499F5B7A42A04AD5DC8D33B312B567017AFFFF493</SHA256Hash>
+  </File>
+  <File Name="Scan-MSExchange2019MB_Checks.psd1">
+    <Path>\Modules\Scan-MSExchange2019MB_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>27FFBC3F630BD24F4AE2A1E4435E82148F43E4D8B7AA188F8BB8A5A06C7EA325</SHA256Hash>
+  </File>
+  <File Name="Scan-MSExchange2019MB_Checks.psm1">
+    <Path>\Modules\Scan-MSExchange2019MB_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>D2FCD9692D80784C548F227853E6BD4F37B4DD8EE207226AB9F0F02383ADA8ED</SHA256Hash>
+  </File>
+  <File Name="Scan-NETFramework4_Checks.psd1">
+    <Path>\Modules\Scan-NETFramework4_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>96734F87A00DE3176F0D8461D6FF1154C8711266143051648AF8A82F2F23D55E</SHA256Hash>
+  </File>
+  <File Name="Scan-NETFramework4_Checks.psm1">
+    <Path>\Modules\Scan-NETFramework4_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>0D874CE3C21200F7D7AEDE278189C70BD27AADB7D528BEAF648832D8AB8B0928</SHA256Hash>
+  </File>
+  <File Name="Scan-Office365_Checks.psd1">
+    <Path>\Modules\Scan-Office365_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>44E91DFA6B38D7F0E577BEACC64CC24E0847B16C12915BEB6EC2310FC4EA1872</SHA256Hash>
+  </File>
+  <File Name="Scan-Office365_Checks.psm1">
+    <Path>\Modules\Scan-Office365_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>900346AF09BE70C3BD090ED64EE76B351FF4570AF256A02266CDFD8D6532315D</SHA256Hash>
+  </File>
+  <File Name="Scan-OfficeSystem2013_Checks.psd1">
+    <Path>\Modules\Scan-OfficeSystem2013_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>D98DFB77A047E6F32419DFA579F9BA7D1E10E1A40396688A5BFA924E9B44E05F</SHA256Hash>
+  </File>
+  <File Name="Scan-OfficeSystem2013_Checks.psm1">
+    <Path>\Modules\Scan-OfficeSystem2013_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>44EE0187AAB4AB7A22E2610C90AF033ACD8F2133ED03EB72C5E2C8071798E83C</SHA256Hash>
+  </File>
+  <File Name="Scan-OfficeSystem2016_Checks.psd1">
+    <Path>\Modules\Scan-OfficeSystem2016_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>974AF6FBB15EFE4CEF390F0F04E83F979C7E4D5BAD5E5EFEEA46C56EC059ADCD</SHA256Hash>
+  </File>
+  <File Name="Scan-OfficeSystem2016_Checks.psm1">
+    <Path>\Modules\Scan-OfficeSystem2016_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>99BF8662D31DA219BF9549682FCCADEB07689B72442B283F85A48A57C5A9B057</SHA256Hash>
+  </File>
+  <File Name="Scan-OneDrive_Checks.psd1">
+    <Path>\Modules\Scan-OneDrive_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>7B68C2DEB92664D7D08D67C3793466D5C8857798D540A0FFBAFB39C287992E9B</SHA256Hash>
+  </File>
+  <File Name="Scan-OneDrive_Checks.psm1">
+    <Path>\Modules\Scan-OneDrive_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>C2A289D5776E513710722EF616B51DCACF8001850270E539C6C57BF62AB099A9</SHA256Hash>
+  </File>
+  <File Name="Scan-OneNote2013_Checks.psd1">
+    <Path>\Modules\Scan-OneNote2013_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>C54004AF02236789F4AEDA7B001F8D4BFCCE0330540FE58558D0597964079CEE</SHA256Hash>
+  </File>
+  <File Name="Scan-OneNote2013_Checks.psm1">
+    <Path>\Modules\Scan-OneNote2013_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>7F86EC4C3B6334862747109072A0AD59A944B55566BECB7974B1E58FCD8C26EF</SHA256Hash>
+  </File>
+  <File Name="Scan-OneNote2016_Checks.psd1">
+    <Path>\Modules\Scan-OneNote2016_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>31EEFB1E8CB828935AE729C0260072814D2F718630A86BA7D11826C055EED5DE</SHA256Hash>
+  </File>
+  <File Name="Scan-OneNote2016_Checks.psm1">
+    <Path>\Modules\Scan-OneNote2016_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>AAE771C9183508952A08BF8EDCDC5172A3F9C74DF03FDF8DDF2C8398FC30CC35</SHA256Hash>
+  </File>
+  <File Name="Scan-Oracle7_Checks.psd1">
+    <Path>\Modules\Scan-Oracle7_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>5638ECB31DCB13F5707FF925C9C28682897BDAE8DC10B60FC7916B808556F9B7</SHA256Hash>
+  </File>
+  <File Name="Scan-Oracle7_Checks.psm1">
+    <Path>\Modules\Scan-Oracle7_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>7FFD2F794DA63CD85B2934EB883E4E656EC41161E00B5A6F6405080AB9C38776</SHA256Hash>
+  </File>
+  <File Name="Scan-Oracle8_Checks.psd1">
+    <Path>\Modules\Scan-Oracle8_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>7C44AD6C43F61A712EA47AA8020F2D3E97036C93347A3E46326525696E3AD270</SHA256Hash>
+  </File>
+  <File Name="Scan-Oracle8_Checks.psm1">
+    <Path>\Modules\Scan-Oracle8_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>3E636D91E891D5E391849E7FC80A22454B9DD819913DC7A51426416565D8A8ED</SHA256Hash>
+  </File>
+  <File Name="Scan-Oracle9_Checks.psd1">
+    <Path>\Modules\Scan-Oracle9_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>0B4E929B044B1D1F4D0EEDB2984B095F0F8048773FF91E1A599220FFDD86C6DB</SHA256Hash>
+  </File>
+  <File Name="Scan-Oracle9_Checks.psm1">
+    <Path>\Modules\Scan-Oracle9_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>2350729012BD257EBC24DDE41F74F910891856CB2E9B497681E3A2EEBC46E8E8</SHA256Hash>
+  </File>
+  <File Name="Scan-Outlook2013_Checks.psd1">
+    <Path>\Modules\Scan-Outlook2013_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>F78A57CBDD15690C73CF3C2C1F3CECB8799229192CDF896D86315FA5C78940D4</SHA256Hash>
+  </File>
+  <File Name="Scan-Outlook2013_Checks.psm1">
+    <Path>\Modules\Scan-Outlook2013_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>989727A3BA078C01FDB954B2F38D42EE660D9C80E2FB59C384388C20185C47E8</SHA256Hash>
+  </File>
+  <File Name="Scan-Outlook2016_Checks.psd1">
+    <Path>\Modules\Scan-Outlook2016_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>B0274D94F46A67E38705D9A36841A29EF2C7A0ECDCC30B6A27695E27550B4925</SHA256Hash>
+  </File>
+  <File Name="Scan-Outlook2016_Checks.psm1">
+    <Path>\Modules\Scan-Outlook2016_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>27566CAA2D3671AED3CA2C2CBC21422B58DC1E9B0E63B449DC707AB5EAA9F0C8</SHA256Hash>
+  </File>
+  <File Name="Scan-PostgreSQL9-x_Checks.psd1">
+    <Path>\Modules\Scan-PostgreSQL9-x_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>D2805E52E01D751697292AE728AC91F5028529A9D3493B16E29D5B2E6728A81D</SHA256Hash>
+  </File>
+  <File Name="Scan-PostgreSQL9-x_Checks.psm1">
+    <Path>\Modules\Scan-PostgreSQL9-x_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>9F03B6D58844226CB33C63EF2899253ED4809B80EABD31C2F14E13E6CA597B95</SHA256Hash>
+  </File>
+  <File Name="Scan-PowerPoint2013_Checks.psd1">
+    <Path>\Modules\Scan-PowerPoint2013_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>02D2932C1D3DFA30338BFFD1375BCE1A634821AE2D6F128306A1537C6454F935</SHA256Hash>
+  </File>
+  <File Name="Scan-PowerPoint2013_Checks.psm1">
+    <Path>\Modules\Scan-PowerPoint2013_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>5BC3BF2516BCD77E9E7D6F02F1E8154E47D0473931445110C417D0BCDB5E569E</SHA256Hash>
+  </File>
+  <File Name="Scan-PowerPoint2016_Checks.psd1">
+    <Path>\Modules\Scan-PowerPoint2016_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>0D74F2F896CCC514DE4288FBC020A64B5AA3BBE0A9B5D135EB2BD1A459B22BB1</SHA256Hash>
+  </File>
+  <File Name="Scan-PowerPoint2016_Checks.psm1">
+    <Path>\Modules\Scan-PowerPoint2016_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>D19FD9CC501A4E4354395F3C6D72CA8FC0EDA50231DFE6E0F0789EB150190D26</SHA256Hash>
+  </File>
+  <File Name="Scan-Project2013_Checks.psd1">
+    <Path>\Modules\Scan-Project2013_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>2EFF4EF6114A679F96F11C34E1A835220311E2F6F945FFB46AB05DCC7E1A3FB6</SHA256Hash>
+  </File>
+  <File Name="Scan-Project2013_Checks.psm1">
+    <Path>\Modules\Scan-Project2013_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>FA3C59F2B9283BDCE9F4C72889FD2AD7BA1452975019574C77ABDD202259B865</SHA256Hash>
+  </File>
+  <File Name="Scan-Project2016_Checks.psd1">
+    <Path>\Modules\Scan-Project2016_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>8C3FB7E1806CEC7A2471C22498BA37819BA374A79CA0E04236A6C6B29C3EA8A1</SHA256Hash>
+  </File>
+  <File Name="Scan-Project2016_Checks.psm1">
+    <Path>\Modules\Scan-Project2016_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>F51E171C9DAAB3CD2914ACFC8F87E73FAB0B2FF1DB3E34E133182212329919DF</SHA256Hash>
+  </File>
+  <File Name="Scan-Publisher2013_Checks.psd1">
+    <Path>\Modules\Scan-Publisher2013_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>1E7B448AB8AE8D9A52E33A479FF0FD3E734B59C0942BCC1DC92649B33FB0EF7B</SHA256Hash>
+  </File>
+  <File Name="Scan-Publisher2013_Checks.psm1">
+    <Path>\Modules\Scan-Publisher2013_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>C1E59D5172F11786D4EF5FEC4ED65F1E69E112780A46675487CF7BC101266451</SHA256Hash>
+  </File>
+  <File Name="Scan-Publisher2016_Checks.psd1">
+    <Path>\Modules\Scan-Publisher2016_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>A5E592FB2F9B381100232B6F8087B714DEFE30EC230673633F61A196EC5EB8F3</SHA256Hash>
+  </File>
+  <File Name="Scan-Publisher2016_Checks.psm1">
+    <Path>\Modules\Scan-Publisher2016_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>389F006DBF85E0DE4F539FE0661F43DAE05D64A3275D1FA4FA7A30D82BD2D40D</SHA256Hash>
+  </File>
+  <File Name="Scan-RGSRKE2_Checks.psd1">
+    <Path>\Modules\Scan-RGSRKE2_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>D7558BC5DBC88C51D56268067EA771203F7F5FBA4C87832D5E0DAA708806175B</SHA256Hash>
+  </File>
+  <File Name="Scan-RGSRKE2_Checks.psm1">
+    <Path>\Modules\Scan-RGSRKE2_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>FDB7E92ECF163F94AE0ADFA9567E990582A68FCCE54D69DE335AE43DE5F05DC6</SHA256Hash>
+  </File>
+  <File Name="Scan-RHEL7_Checks.psd1">
+    <Path>\Modules\Scan-RHEL7_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>848297A6A2CA11E3FEDF554596788E764604B24D944CC0829E82BA011CD18658</SHA256Hash>
+  </File>
+  <File Name="Scan-RHEL7_Checks.psm1">
+    <Path>\Modules\Scan-RHEL7_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>CF1BEC0B1DE5F3E4EE6A59D8575B435970EA9D0CE47C1FD36F2040870224D092</SHA256Hash>
+  </File>
+  <File Name="Scan-RHEL8_Checks.psd1">
+    <Path>\Modules\Scan-RHEL8_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>B0DE66F15427FF4002F271C225FE18E580F425442B618A31296F2A6DCF6BFA45</SHA256Hash>
+  </File>
+  <File Name="Scan-RHEL8_Checks.psm1">
+    <Path>\Modules\Scan-RHEL8_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>0DD27D639FC8B9D21A04410B17DDF373E443CCC5573FA91EE0622A3DB0C8BE1E</SHA256Hash>
+  </File>
+  <File Name="Scan-RHEL9_Checks.psd1">
+    <Path>\Modules\Scan-RHEL9_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>4BBFD1C1F69528863A792805AFA2ED66A07AA6DFDB71FF41A497B368328643F0</SHA256Hash>
+  </File>
+  <File Name="Scan-RHEL9_Checks.psm1">
+    <Path>\Modules\Scan-RHEL9_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>FBCC7615FB739A221D57456C0B9E27FF93C1C0124635903DA94B1D8DD721686B</SHA256Hash>
+  </File>
+  <File Name="Scan-SharePointDesigner2013_Checks.psd1">
+    <Path>\Modules\Scan-SharePointDesigner2013_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>F216555E1E7EFE729BB7AB5AAA167FFC79E4E57ABC1598BFB7E870E2A23DB354</SHA256Hash>
+  </File>
+  <File Name="Scan-SharePointDesigner2013_Checks.psm1">
+    <Path>\Modules\Scan-SharePointDesigner2013_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>83B98BA47DB0C7440CCBA6CA581157A2E55395881A488A4A694A627764A570A3</SHA256Hash>
+  </File>
+  <File Name="Scan-SkypeForBusiness2016_Checks.psd1">
+    <Path>\Modules\Scan-SkypeForBusiness2016_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>EA15688B5C43AC49CAADF04F7D71EA9E999C492C78162C7078AD2CEA183072BC</SHA256Hash>
+  </File>
+  <File Name="Scan-SkypeForBusiness2016_Checks.psm1">
+    <Path>\Modules\Scan-SkypeForBusiness2016_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>005CCF32519DD36D606B4044FBC8C094C92A3E3B77801FD1C93B4B0E69FB207E</SHA256Hash>
+  </File>
+  <File Name="Scan-SqlServer2014Database_Checks.psd1">
+    <Path>\Modules\Scan-SqlServer2014Database_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>BBCE230E049AB9C61A5BAF97D3766DDE71950D55E3FCC3ED59E8F3489BF20A8A</SHA256Hash>
+  </File>
+  <File Name="Scan-SqlServer2014Database_Checks.psm1">
+    <Path>\Modules\Scan-SqlServer2014Database_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>A5E91E03E17809544B3EB91E5E4AE5E6CE6B4EC55856EFEDCBBC0D14FF2DBB93</SHA256Hash>
+  </File>
+  <File Name="Scan-SqlServer2014Instance_Checks.psd1">
+    <Path>\Modules\Scan-SqlServer2014Instance_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>720903674D41AD5575F41E43D26672529F8AE00485552EBF5B573D31F0AAF930</SHA256Hash>
+  </File>
+  <File Name="Scan-SqlServer2014Instance_Checks.psm1">
+    <Path>\Modules\Scan-SqlServer2014Instance_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>5D7925F9A92930BD2970A811C16681B33BDE820774244ECF07BFC90889401C67</SHA256Hash>
+  </File>
+  <File Name="Scan-SqlServer2016Database_Checks.psd1">
+    <Path>\Modules\Scan-SqlServer2016Database_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>96A4309F4B132366E789571A89128E11E4C115ED00325CF337B5EED6FDA7A2D3</SHA256Hash>
+  </File>
+  <File Name="Scan-SqlServer2016Database_Checks.psm1">
+    <Path>\Modules\Scan-SqlServer2016Database_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>2855A394DDBCC512A9DE79D686634FCFD5784C150ECBFB1BC027633BF2E207AE</SHA256Hash>
+  </File>
+  <File Name="Scan-SqlServer2016Instance_Checks.psd1">
+    <Path>\Modules\Scan-SqlServer2016Instance_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>D55273F3C3D575A6112D0CE7A09BB147432AE0A51B1EF76AF57D16AE46833A5E</SHA256Hash>
+  </File>
+  <File Name="Scan-SqlServer2016Instance_Checks.psm1">
+    <Path>\Modules\Scan-SqlServer2016Instance_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>CDBCA0E79481E5D4DFD5C6CF6E5397ED5A756586701091A09752A9E15EF8E808</SHA256Hash>
+  </File>
+  <File Name="Scan-SQLServer2022Database_Checks.psd1">
+    <Path>\Modules\Scan-SQLServer2022Database_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>39C221A6B7E59F88D77E4C85BF001CEF9097C1A32A7F80A58DE423CCEAE0F4A8</SHA256Hash>
+  </File>
+  <File Name="Scan-SQLServer2022Database_Checks.psm1">
+    <Path>\Modules\Scan-SQLServer2022Database_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>B3A83EBE7027514956C280CDAAFA95153BF7AB1CE01CA1709FCEE67DB8529A5C</SHA256Hash>
+  </File>
+  <File Name="Scan-SQLServer2022Instance_Checks.psd1">
+    <Path>\Modules\Scan-SQLServer2022Instance_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>9D53B0C864733872FCA4393090FE4BCEC2809D0D10AC44C4DF6FF0F48616136A</SHA256Hash>
+  </File>
+  <File Name="Scan-SQLServer2022Instance_Checks.psm1">
+    <Path>\Modules\Scan-SQLServer2022Instance_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>54C93044062164F5BC2C2C30F92C7912DE631F56E8FBD3DB13EFD6B244165029</SHA256Hash>
+  </File>
+  <File Name="Scan-TomcatApplicationServer9_Checks.psd1">
+    <Path>\Modules\Scan-TomcatApplicationServer9_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>E0692FFB0E1C97E7B3EF0366A50997EDE4CA4145CF98166A06CF9312C9258C4B</SHA256Hash>
+  </File>
+  <File Name="Scan-TomcatApplicationServer9_Checks.psm1">
+    <Path>\Modules\Scan-TomcatApplicationServer9_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>C6E96AA104554AE1C7240AEC939115A7060EA938515EAF751D7DBCC4160BCC3B</SHA256Hash>
+  </File>
+  <File Name="Scan-TrellixENS10-xLocalClient_Checks_(CUI).psd1">
+    <Path>\Modules\Scan-TrellixENS10-xLocalClient_Checks_(CUI)</Path>
+    <ScanReq>Optional</ScanReq>
+    <SHA256Hash>FD8C36B8D6520D4FA70571C33DD05AEED7BBBCF70E1AE25F9670AAD5D8FC97FB</SHA256Hash>
+  </File>
+  <File Name="Scan-TrellixENS10-xLocalClient_Checks_(CUI).psm1">
+    <Path>\Modules\Scan-TrellixENS10-xLocalClient_Checks_(CUI)</Path>
+    <ScanReq>Optional</ScanReq>
+    <SHA256Hash>20B4107495542F7532EA40D38C825E878E199B72970BE56749BC3B15C57E5BB9</SHA256Hash>
+  </File>
+  <File Name="Scan-Ubuntu16_04_Checks.psd1">
+    <Path>\Modules\Scan-Ubuntu16_04_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>9E730362FC1D60CF6A7EAB506D0754400D6AB85CEE1AC2A401BC48792A35ADB1</SHA256Hash>
+  </File>
+  <File Name="Scan-Ubuntu16_04_Checks.psm1">
+    <Path>\Modules\Scan-Ubuntu16_04_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>3525546CDBC267397CABA316B004D1AA8F6C0B63668CF1501B338268C405081A</SHA256Hash>
+  </File>
+  <File Name="Scan-Ubuntu18_04_Checks.psd1">
+    <Path>\Modules\Scan-Ubuntu18_04_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>D46F56A061D5588C3DF6F5829F5D782ECA16796A6EA9136B62EFE31863122717</SHA256Hash>
+  </File>
+  <File Name="Scan-Ubuntu18_04_Checks.psm1">
+    <Path>\Modules\Scan-Ubuntu18_04_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>4426C9DA95B29D51B295564C898E3A069D045FC3F5F4F5BBF362821E5F33CDBB</SHA256Hash>
+  </File>
+  <File Name="Scan-Ubuntu20_04_Checks.psd1">
+    <Path>\Modules\Scan-Ubuntu20_04_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>28977F84A96B605C7B18508611366C45A943C58C5A83B05B8CE5D19D6A9FE4CD</SHA256Hash>
+  </File>
+  <File Name="Scan-Ubuntu20_04_Checks.psm1">
+    <Path>\Modules\Scan-Ubuntu20_04_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>021ADD2CBDA38399B25E110257F82D6F1664FC4B0339670925B1F58AC9DAB2A9</SHA256Hash>
+  </File>
+  <File Name="Scan-Ubuntu22_04_Checks.psd1">
+    <Path>\Modules\Scan-Ubuntu22_04_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>015F228FE8171B4BDBA3E684E304D46BEE5E93805491AFF231D65680447F3C94</SHA256Hash>
+  </File>
+  <File Name="Scan-Ubuntu22_04_Checks.psm1">
+    <Path>\Modules\Scan-Ubuntu22_04_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>125EC9E168FCB02C10A086C4383C2975B73338B97822C91E64717DD3CA96401B</SHA256Hash>
+  </File>
+  <File Name="Scan-Ubuntu24_04_Checks.psd1">
+    <Path>\Modules\Scan-Ubuntu24_04_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>850414453D813BE74E8879B433693370FAA2926F5E77A6D9B46323A7805FAB2A</SHA256Hash>
+  </File>
+  <File Name="Scan-Ubuntu24_04_Checks.psm1">
+    <Path>\Modules\Scan-Ubuntu24_04_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>C28339D215E25EF9AE945412256FA4F04E6BDA1660E63D0072B1551D40B91C28</SHA256Hash>
+  </File>
+  <File Name="Scan-Visio2013_Checks.psd1">
+    <Path>\Modules\Scan-Visio2013_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>C689563C3CFD6BAC1BFDD7EF6B02C4F8F28F60A17B6BEE80A231E7F68D9E331C</SHA256Hash>
+  </File>
+  <File Name="Scan-Visio2013_Checks.psm1">
+    <Path>\Modules\Scan-Visio2013_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>966FDA8F5DD5429D0779BAF870AF63C3BDC095BC4ABCB916EB49AF789069CC73</SHA256Hash>
+  </File>
+  <File Name="Scan-Visio2016_Checks.psd1">
+    <Path>\Modules\Scan-Visio2016_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>49ED16344E7237988FAB74375BCB0696F1AF7F9814E43ECD4B7D778C3A347EAC</SHA256Hash>
+  </File>
+  <File Name="Scan-Visio2016_Checks.psm1">
+    <Path>\Modules\Scan-Visio2016_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>D1C10A54FB83AF70585ACBEE5B67CB79E0B083A77062EFEFABFC7A063037AED7</SHA256Hash>
+  </File>
+  <File Name="Scan-VMwareHorizon7-13Agent_Checks.psd1">
+    <Path>\Modules\Scan-VMwareHorizon7-13Agent_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>52561595A539279118DD66BF17B816310F124C17D3FD76566BECEB410E7337EC</SHA256Hash>
+  </File>
+  <File Name="Scan-VMwareHorizon7-13Agent_Checks.psm1">
+    <Path>\Modules\Scan-VMwareHorizon7-13Agent_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>4F337DA410E1D8801A6DBB418715C8F359556498708FA720B87722F254776DE5</SHA256Hash>
+  </File>
+  <File Name="Scan-VMwareHorizon7-13Client_Checks.psd1">
+    <Path>\Modules\Scan-VMwareHorizon7-13Client_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>45D4BE011794677109D26D67366CF813D2CB6F07F027AA2C5EEB2200A3AA7F70</SHA256Hash>
+  </File>
+  <File Name="Scan-VMwareHorizon7-13Client_Checks.psm1">
+    <Path>\Modules\Scan-VMwareHorizon7-13Client_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>6536B3DA57D68153E5F6B80D04CB7B0FA6D98FC46549DE15223201DDBE438302</SHA256Hash>
+  </File>
+  <File Name="Scan-VMwareHorizon7-13ConnectionServer_Checks.psd1">
+    <Path>\Modules\Scan-VMwareHorizon7-13ConnectionServer_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>6F3074747782CCEAB283C96BE6593B02CEA512B53D8C4BC60114245DF38C5008</SHA256Hash>
+  </File>
+  <File Name="Scan-VMwareHorizon7-13ConnectionServer_Checks.psm1">
+    <Path>\Modules\Scan-VMwareHorizon7-13ConnectionServer_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>56BCE440A2AC8A54BA6826D32157F88CCC9140BF2F6092220B4D938E116D3FF4</SHA256Hash>
+  </File>
+  <File Name="Scan-Windows10_Checks.psd1">
+    <Path>\Modules\Scan-Windows10_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>A654002F7811FA2908F9BD568AF9C492CF321EFC05646AAB33AF5407A98D6BEB</SHA256Hash>
+  </File>
+  <File Name="Scan-Windows10_Checks.psm1">
+    <Path>\Modules\Scan-Windows10_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>51908C2D104222E3CBD1AF11BCF1B7C07BD8F1C63BC44D25D796DD2478E52276</SHA256Hash>
+  </File>
+  <File Name="Scan-Windows11_Checks.psd1">
+    <Path>\Modules\Scan-Windows11_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>E5B38151A47F1829B656E2418B040587985DDE752E7FB70F876AD0F508DD1AEB</SHA256Hash>
+  </File>
+  <File Name="Scan-Windows11_Checks.psm1">
+    <Path>\Modules\Scan-Windows11_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>48B91E3D497B5C7820DE2422AFA8D357836739026243C3BCA7E32D130D7766A5</SHA256Hash>
+  </File>
+  <File Name="Scan-Windows7_Checks.psd1">
+    <Path>\Modules\Scan-Windows7_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>052C2211DA39AF7E97844D11B5B04A5A9E677DA8B0744B2D264552DAFECD3DB0</SHA256Hash>
+  </File>
+  <File Name="Scan-Windows7_Checks.psm1">
+    <Path>\Modules\Scan-Windows7_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>027DE4086096DB6635A2346B9591F0167530BA4731F8C595483F2A833F7C4BC6</SHA256Hash>
+  </File>
+  <File Name="Scan-WindowsFirewall_Checks.psd1">
+    <Path>\Modules\Scan-WindowsFirewall_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>49158CAC4E76CAC9C08675F1A0D649D96FBA7DB09C4EC7E4B8FE86377C1DDDC8</SHA256Hash>
+  </File>
+  <File Name="Scan-WindowsFirewall_Checks.psm1">
+    <Path>\Modules\Scan-WindowsFirewall_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>30F5BD343E9E61AB1CB164E21C012106A22C202EA217EE50B97316AFE3956CFA</SHA256Hash>
+  </File>
+  <File Name="Scan-WindowsServer2008R2_MS_Checks.psd1">
+    <Path>\Modules\Scan-WindowsServer2008R2_MS_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>00D760242A1485A47E68C7905A4D2C87E3A3FDAA555D989E51E32FE3A9048437</SHA256Hash>
+  </File>
+  <File Name="Scan-WindowsServer2008R2_MS_Checks.psm1">
+    <Path>\Modules\Scan-WindowsServer2008R2_MS_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>3074CE0859F89C859748BDF3F65DDB6FC02B99A3589F1E21FAAF4C2DECF2F518</SHA256Hash>
+  </File>
+  <File Name="Scan-WindowsServer2012R2_DC_Checks.psd1">
+    <Path>\Modules\Scan-WindowsServer2012R2_DC_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>CCDC85510DFFE3898E566FF3636832E05E080F4650D79C1F45C5CAA474DC1249</SHA256Hash>
+  </File>
+  <File Name="Scan-WindowsServer2012R2_DC_Checks.psm1">
+    <Path>\Modules\Scan-WindowsServer2012R2_DC_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>777E4C74B8CEDA7343E048C626BEB7A51DB5C3890AD1BD0B343A19608CE19A14</SHA256Hash>
+  </File>
+  <File Name="Scan-WindowsServer2012R2_MS_Checks.psd1">
+    <Path>\Modules\Scan-WindowsServer2012R2_MS_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>33EFA5140B7D92320D12E32486355BB46AFB8ECF7B6EF692C33487CB2698D4F9</SHA256Hash>
+  </File>
+  <File Name="Scan-WindowsServer2012R2_MS_Checks.psm1">
+    <Path>\Modules\Scan-WindowsServer2012R2_MS_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>CFA0FFAB72F64529C497348947DF10FE3F84B13C02591D1B6D6495067DF8393C</SHA256Hash>
+  </File>
+  <File Name="Scan-WindowsServer2016_Checks.psd1">
+    <Path>\Modules\Scan-WindowsServer2016_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>8AB28B9B464196EE6D50488F89A59C1B73C775B02FD808571F06C0DA154AB1BC</SHA256Hash>
+  </File>
+  <File Name="Scan-WindowsServer2016_Checks.psm1">
+    <Path>\Modules\Scan-WindowsServer2016_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>94F92836978908CBA420B4BBF8F213C8C7EB523792DE5DF54AFC28D830D30ED1</SHA256Hash>
+  </File>
+  <File Name="Scan-WindowsServer2019_Checks.psd1">
+    <Path>\Modules\Scan-WindowsServer2019_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>71CEA7CF2ACB83E13263DD989519E5A563BF73DDFDA98689DFCF7A6B06319FD8</SHA256Hash>
+  </File>
+  <File Name="Scan-WindowsServer2019_Checks.psm1">
+    <Path>\Modules\Scan-WindowsServer2019_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>79974F8594E9D672042EC3DD839F7CFFEA9756965E88E1B562B39ABF0D285A4F</SHA256Hash>
+  </File>
+  <File Name="Scan-WindowsServer2022_Checks.psd1">
+    <Path>\Modules\Scan-WindowsServer2022_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>6F2EE407829156844ED205174357206D9A7A81FC9977D81498217AFA2AFC0EE3</SHA256Hash>
+  </File>
+  <File Name="Scan-WindowsServer2022_Checks.psm1">
+    <Path>\Modules\Scan-WindowsServer2022_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>A0B8CF5058C8067CDD8B4349181FE3617DFD752EB9FD70F422CF50D885D8F34C</SHA256Hash>
+  </File>
+  <File Name="Scan-WindowsServerDNS_Checks.psd1">
+    <Path>\Modules\Scan-WindowsServerDNS_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>7E91702FC59F81A2034594428F995C4D0C6F0BF47A0795FAA9F5254B098E1864</SHA256Hash>
+  </File>
+  <File Name="Scan-WindowsServerDNS_Checks.psm1">
+    <Path>\Modules\Scan-WindowsServerDNS_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>09C0859D14CF5D15F3E66E100D8FB754845F3E4511E0F12738ABEAFAE9A7ADD3</SHA256Hash>
+  </File>
+  <File Name="Scan-Word2013_Checks.psd1">
+    <Path>\Modules\Scan-Word2013_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>FE174B14A002E1C77AE30081E3AC9353374AE6553AFF2D040935D315AAAD0D79</SHA256Hash>
+  </File>
+  <File Name="Scan-Word2013_Checks.psm1">
+    <Path>\Modules\Scan-Word2013_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>90E4360223E0061A1DD2498C0A70405BD692F3C22635CDEB93D0635AC7BAE8A6</SHA256Hash>
+  </File>
+  <File Name="Scan-Word2016_Checks.psd1">
+    <Path>\Modules\Scan-Word2016_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>786D97F08B0FCED9D958F0D27ACBAD9B11B8CD3F57B8AA29204A0464E6DF5DD5</SHA256Hash>
+  </File>
+  <File Name="Scan-Word2016_Checks.psm1">
+    <Path>\Modules\Scan-Word2016_Checks</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>E8F296F2744B892A5FD65CB847EADB385A17B6AB3A191EA8AD78356FC86D9B07</SHA256Hash>
+  </File>
+  <File Name="CS.NSWC_Crane.cer">
+    <Path>\Prerequisites\Certificates</Path>
+    <ScanReq>NotRequired</ScanReq>
+    <SHA256Hash>920C0AFF07E98D40A112D44168DE56A566D9C068CB2D742ABDC5D4361FA1BC1A</SHA256Hash>
+  </File>
+  <File Name="DOD_ID_CA-72.cer">
+    <Path>\Prerequisites\Certificates</Path>
+    <ScanReq>NotRequired</ScanReq>
+    <SHA256Hash>B1C14EA631F47BCD7698E7673FDF5B5B104C52631CE58913346EC7A07E154638</SHA256Hash>
+  </File>
+  <File Name="DOD_Root_CA_6.cer">
+    <Path>\Prerequisites\Certificates</Path>
+    <ScanReq>NotRequired</ScanReq>
+    <SHA256Hash>2A5E41ACA93DF7CC496D2369B7A0A037045D502F1ABAAF76975FC07C6660CF93</SHA256Hash>
+  </File>
+  <File Name="Import-Certificates.bat">
+    <Path>\Prerequisites</Path>
+    <ScanReq>NotRequired</ScanReq>
+    <SHA256Hash>D5ED9F99519083179DD39CCB9CE347F09A4283CFA34AEAD41810C5B783511199</SHA256Hash>
+  </File>
+  <File Name="Test-Prerequisites.bat">
+    <Path>\Prerequisites</Path>
+    <ScanReq>NotRequired</ScanReq>
+    <SHA256Hash>0057453127B661254114E7C582484A8BE4515C222B2856939A589BAA750F439B</SHA256Hash>
+  </File>
+  <File Name="Test-Prerequisites.sh">
+    <Path>\Prerequisites</Path>
+    <ScanReq>NotRequired</ScanReq>
+    <SHA256Hash>15B6CD35F908CF99D560131420BE90AFC3422B9CC0804A6B2F3A1F4480A06A76</SHA256Hash>
+  </File>
+  <File Name="ReadMe.txt">
+    <Path>\StigContent\Manual</Path>
+    <ScanReq>NotRequired</ScanReq>
+    <SHA256Hash>0451D9993E4A9CE714197B99C3721C1F1A13CEA99FC4D216C3658B76F2666DD8</SHA256Hash>
+  </File>
+  <File Name="CUI_Trellix_ENS_10-x_Local_Client_STIG_V2R4_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Optional</ScanReq>
+    <SHA256Hash>B81B15F32BCBF0B0AD03C4DD66AD0F4EEE3A0E29DAC76106A323028F627BABED</SHA256Hash>
+  </File>
+  <File Name="U_Active_Directory_Domain_STIG_V3R5_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>7AD9E5AFF1B2204921BD91F2E69FCF52EE40CF2B831B38E48F500A41081F184C</SHA256Hash>
+  </File>
+  <File Name="U_Active_Directory_Forest_STIG_V3R2_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>8E2C73DAFE60B289DCB645D1690BD01FA7AA5FF05103D6CDEEDED497488D452D</SHA256Hash>
+  </File>
+  <File Name="U_Adobe_Acrobat_Pro_DC_Classic_V2R1_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>B6FF1A744D09E1317D68466DA3ED0F7A94DE584D4AB828A423EBCFB478D20A6A</SHA256Hash>
+  </File>
+  <File Name="U_Adobe_Acrobat_Pro_DC_Continuous_V2R1_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>57E08E78CD70E75C730FB575CD8A26560635952E2CBCB262D85BBE9A4F1F2FB0</SHA256Hash>
+  </File>
+  <File Name="U_Adobe_Acrobat_Pro_XI_STIG_V1R2_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>59A181F615BB50F59025366DDEF3287429D0497CC3772D9827114FADA07BE1B4</SHA256Hash>
+  </File>
+  <File Name="U_Adobe_Acrobat_Reader_DC_Classic_V2R1_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>F16F04AC86C0A12F3F2791A35C3DB83A4FA01A57A7183C7983CD9F47911BC00A</SHA256Hash>
+  </File>
+  <File Name="U_Adobe_Acrobat_Reader_DC_Continuous_STIG_V2R1_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>06258A078A78EC1120A82A05D51099817823C151854802D3E6544B1B4D1F99BA</SHA256Hash>
+  </File>
+  <File Name="U_Amazon_Linux_2023_V1R1_STIG_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>38A05F5AF8F68DAE465604E73DC9FF04F23FECC8AA078060DA5F7BCA8E57D212</SHA256Hash>
+  </File>
+  <File Name="U_Apache_Server_2-4_UNIX_Server_STIG_V3R2_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>07577641E0B748C51FC841AD165A06E31A75843DCCD5BDC502D2DC89ED9A3CD2</SHA256Hash>
+  </File>
+  <File Name="U_Apache_Server_2-4_UNIX_Site_STIG_V2R6_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>BDC8BA36A5F2E3AAEF2498A2C84BE17E04F9B0BE0641B3B55B89BC0AD49DC4A5</SHA256Hash>
+  </File>
+  <File Name="U_Apache_Server_2-4_Windows_Server_STIG_V3R3_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>5C663128DE0B9B6138987169C988E4E04E2002114D91FEFD0E48ACCFF5DBE623</SHA256Hash>
+  </File>
+  <File Name="U_Apache_Server_2-4_Windows_Site_STIG_V2R2_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>81E0DA298100197454E5558C91A8CE6A55C298DD88B7E61FEB3FA66FE4244977</SHA256Hash>
+  </File>
+  <File Name="U_Apache_Tomcat_Application_Server_9_STIG_V3R3_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>FEC683AE0E27009798CC4B789E6CCBDCD7DDC4D10BF954D593C44EDA109CF0D3</SHA256Hash>
+  </File>
+  <File Name="U_ArcGIS_Server_10-3_STIG_V2R1_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>5205F3E2A6E2EF82DD033EC98D5BCE4D05D437FCD83BB16AF95BEB6D9E00FC7F</SHA256Hash>
+  </File>
+  <File Name="U_CAN_Ubuntu_16-04_LTS_STIG_V2R3_Manual-xccdf.xml.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>998C1EE1721F6D74E54BE29757C5FFACFF1DEAC158A0872A90239C032465E09F</SHA256Hash>
+  </File>
+  <File Name="U_CAN_Ubuntu_18-04_LTS_STIG_V2R15_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>1D245BF0523B884E1CF3C4A33287C271CB864474F5C1CA7BC4F9A4487C1CB956</SHA256Hash>
+  </File>
+  <File Name="U_CAN_Ubuntu_20-04_LTS_STIG_V2R4_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>5D814C72E6E689585E9CF13CF55CF5138E137009FE4CCF27AB4F81D67444D44B</SHA256Hash>
+  </File>
+  <File Name="U_CAN_Ubuntu_22-04_LTS_STIG_V2R6_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>B655A265502B9C6CAC5CFEDE5D6DE467255C86E0AC2830DBF9961EF5096A8D4F</SHA256Hash>
+  </File>
+  <File Name="U_CAN_Ubuntu_24-04_LTS_STIG_V1R3_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>F1A7533F09FEC8A5047D838BC63110FB6F7557948E41A09E827E6ECDC0E47D3A</SHA256Hash>
+  </File>
+  <File Name="U_Cisco_IOS_Router_NDM_STIG_V3R5_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>46B9F6A5F324EF01A1FB5BEB3CD0ABDCCA5723BB94CEB4365B8A451D85BA9B01</SHA256Hash>
+  </File>
+  <File Name="U_Cisco_IOS_Router_RTR_STIG_V3R4_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>4903B67B10B37B7D625E2104E9B821FD7262252CA97B67C992E4A83FEF84CB4E</SHA256Hash>
+  </File>
+  <File Name="U_Cisco_IOS_Switch_L2S_STIG_V3R1_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>735F6DCEE089747118F598340EF1131CC94DD5C58EC36934F77B53A50B097ABE</SHA256Hash>
+  </File>
+  <File Name="U_Cisco_IOS_Switch_NDM_STIG_V3R5_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>929D24265FE13C808B74421B54BE7A960ADC31041AE898DC1963921C0B8E8497</SHA256Hash>
+  </File>
+  <File Name="U_Cisco_IOS_Switch_RTR_STIG_V3R2_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>0F3828B9E6D343368A3CEFA3D197B8F075742DDFABE6D70F5E8777CDE7D2A6D5</SHA256Hash>
+  </File>
+  <File Name="U_Cisco_IOS-XE_Router_NDM_STIG_V3R5_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>EC4BAF182E1CC3E8977CCE161401F3F264BF4D8C9A6F8A05051383110970C365</SHA256Hash>
+  </File>
+  <File Name="U_Cisco_IOS-XE_Router_RTR_STIG_V3R5_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>12E3637E7C03278881ED45D4C8AEDB205D67EE8AEFDA3BF809B1DB65B542C941</SHA256Hash>
+  </File>
+  <File Name="U_Cisco_IOS-XE_Switch_L2S_STIG_V3R2_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>E0DD8C7BF54A46474D09CC23186D5A7C12D883421D2C187FC8025D4DDBF0297F</SHA256Hash>
+  </File>
+  <File Name="U_Cisco_IOS-XE_Switch_NDM_STIG_V3R4_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>94CC08DAD72A76D13636D1753285CDD3665F87D145609171FEFD5DF9D4AD28F7</SHA256Hash>
+  </File>
+  <File Name="U_Cisco_IOS-XE_Switch_RTR_STIG_V3R3_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>5ED3B4A9E8C1CA59DC8196FC089C585F1F27407FC0493433011C1B152D5C5B98</SHA256Hash>
+  </File>
+  <File Name="U_Citrix_VAD_7-x_Workspace_App_STIG_V1R3_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>270EE64597F9B92B7F6D1A1E4F281DACA6FCA658200E30ADCA7143C897B70365</SHA256Hash>
+  </File>
+  <File Name="U_Google_Chrome_STIG_V2R11_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>D1FCF0B51A839EF78B1A3C53484BBD14194D399A3A2BB1F4EA6F6A86C4282B42</SHA256Hash>
+  </File>
+  <File Name="U_JBoss_EAP_6-3_STIG_V2R6_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>E737196F171ED8EE9EBC7B1E7026B99F12CD87255EEC55B54A11BB90E2DE6FE0</SHA256Hash>
+  </File>
+  <File Name="U_McAfee_VirusScan88_Local_Client_STIG_V6R1_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>0ABDD6AC862AF3BAA10B8AC1BD5B1DCB6A2C5E4C8534037B5DD0A6E53DEFA3D8</SHA256Hash>
+  </File>
+  <File Name="U_MDB_Enterprise_Advanced_3-x_STIG_V2R3_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>D113E14E94F3CD8EB936097D97203149A0088822827FC786FA0842FA8AC0BB89</SHA256Hash>
+  </File>
+  <File Name="U_Microsoft_Access_2016_STIG_V1R1_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>53E581523393D8C90D16C39D83D03012F708166C5C1AE1FBC3B1EF9EC678E26F</SHA256Hash>
+  </File>
+  <File Name="U_Microsoft_OneNote_2016_STIG_V1R2_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>A52AE762F42F56E3452719F5E47DF74335577A25BC6327CFADC6604010D63519</SHA256Hash>
+  </File>
+  <File Name="U_Microsoft_PowerPoint_2016_STIG_V1R1_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>452234A89AA029C055E7B25791D1564ED7D12C44D90D47E608C92339F6351AF9</SHA256Hash>
+  </File>
+  <File Name="U_Microsoft_Project_2016_STIG_V1R1_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>9AB9CDE614A0C3B47917A8AE9551E04830BF99257DFC003BCCDBD9BBD8DA2034</SHA256Hash>
+  </File>
+  <File Name="U_Microsoft_Skype_for_Business_2016_STIG_V1R1_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>C3D59194892C7F5A0D68DD7FCCC1A09C0C5C506FBD46E06063249411DD4BE4FB</SHA256Hash>
+  </File>
+  <File Name="U_Microsoft_Visio_2016_STIG_V1R1_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>D4B91EE9C698C37602BB251987D2970F15F0A76C233174CF3C8B153178CE46BF</SHA256Hash>
+  </File>
+  <File Name="U_Microsoft_Word_2016_STIG_V1R1_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>405D2C64CE4259C61818C71FE472FA4D325D21ED278B7DD3819DCF50C5E2ABD4</SHA256Hash>
+  </File>
+  <File Name="U_MOZ_Firefox_STIG_V6R6_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>989F940AF60CE289B88BECF3027CE1BE83A23A39FE5B0F1F37B05D01228C23A3</SHA256Hash>
+  </File>
+  <File Name="U_MS_Access_2013_STIG_V1R7_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>E1B582B4EDA95F74C51A0E15C0AAB5DC0D35FE6D62F27B3CF66A23039D20DB53</SHA256Hash>
+  </File>
+  <File Name="U_MS_Defender_Antivirus_STIG_V2R6_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>19BEA3ECFF16754CC0E62EF8336ECEED119F7B15C0F67867CE4092703695B0B1</SHA256Hash>
+  </File>
+  <File Name="U_MS_DotNet_Framework_4-0_STIG_V2R7_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>91DE10F020F56301BDF1AAA7B5133E36C2DE52FFE1DDE4BF1226159367052B8F</SHA256Hash>
+  </File>
+  <File Name="U_MS_Edge_V2R3_STIG_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>3FEB9712445D8339484A4FA994E790A46E2B6B564B7938AE053D63902F3CF039</SHA256Hash>
+  </File>
+  <File Name="U_MS_Excel_2013_STIG_V1R8_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>F8264ADA49F14EEBC45EDDA4F32FA15002FAD645D0E0A0DEDBC36D3E4F52F92D</SHA256Hash>
+  </File>
+  <File Name="U_MS_Excel_2016_STIG_V2R1_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>7AC0769E9E38EF0A5BD7B300D59AF5615AF78498AE9104F6FADBF9E08C5B9AA8</SHA256Hash>
+  </File>
+  <File Name="U_MS_Exchange_2016_Edge_Transport_Server_STIG_V2R6_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>CE8C7B263318F331896F602B000028200F32A4D1879BBFF0AAEFA85320300D18</SHA256Hash>
+  </File>
+  <File Name="U_MS_Exchange_2016_Mailbox_Server_STIG_V2R6_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>C44946E374736F4E7D35E64F4DE9209D67B92D56D5ABD5ABB9FC3AC0B565B51F</SHA256Hash>
+  </File>
+  <File Name="U_MS_Exchange_2019_Edge_Server_STIG_V2R2_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>E103A4C8BD1AC55FAEFE4114247E2EA976D104AD964EB5B97546311F0DFF6013</SHA256Hash>
+  </File>
+  <File Name="U_MS_Exchange_2019_Mailbox_Server_STIG_V2R3_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>038239E063474A9620AF8464BEB49AF8DBBC34C9FC09E20AC77868F8EC2B1C90</SHA256Hash>
+  </File>
+  <File Name="U_MS_Groove_2013_STIG_V1R4_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>CE3EC916AE879ADE253A09546260ACB4B7979A66CC8C5FAD567B12069AD2323B</SHA256Hash>
+  </File>
+  <File Name="U_MS_IE11_STIG_V2R5_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>EE83D49F6B094A4A96550AA19F3BD6100FDB41EF908DDC66DD2682EF56FEC8AC</SHA256Hash>
+  </File>
+  <File Name="U_MS_IIS_10-0_Server_STIG_V3R5_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>480B52F0501BCCF4C1A00BA56799AE84300D69D7F09854FF1E4B405397756E32</SHA256Hash>
+  </File>
+  <File Name="U_MS_IIS_10-0_Site_STIG_V2R13_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>3A285D67083E4FBA6F73FE5F46AD138DF3AF14876DCD1313E6F16E34FC7F5B55</SHA256Hash>
+  </File>
+  <File Name="U_MS_IIS_8-5_Server_STIG_V2R7_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>ED2BDCDC9141AFCCFF08BA05FD5B192216D8E73111B45B3B1F07D11C0FD82F0D</SHA256Hash>
+  </File>
+  <File Name="U_MS_IIS_8-5_Site_STIG_V2R9_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>18C7EE5A54672C739F7E335898015B49F5A186F1B26C87EE7879388D1E8286B7</SHA256Hash>
+  </File>
+  <File Name="U_MS_InfoPath_2013_STIG_V1R6_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>5F7F299C219857C5EDFBFC5DFA6D38841FBF7A060FFCAFB0B74939D86EF1892C</SHA256Hash>
+  </File>
+  <File Name="U_MS_Lync_2013_STIG_V1R5_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>27B0FEBBD4AA35B31CE0876931213C0BBF1DD56F326D85CB296F39F2BA98C395</SHA256Hash>
+  </File>
+  <File Name="U_MS_Office_365_ProPlus_STIG_V3R4_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>0EFAE79E96614E47DBAB58EC790BFE0065FEF5393D867457727B5D9026BF4BF4</SHA256Hash>
+  </File>
+  <File Name="U_MS_Office_System_2016_STIG_V2R4_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>CBF7814A0425C5B4AAEC71D7621DFD8B42F3894B64A52799A06245891E9B432B</SHA256Hash>
+  </File>
+  <File Name="U_MS_OfficeSystem_2013_STIG_V2R2_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>98FF24DB889B9597D925793F5FC5E9CFC1596645E1610A70C7CE55995C43B3E6</SHA256Hash>
+  </File>
+  <File Name="U_MS_OneDrive_STIG_V2R4_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>11240DEFCD422030AA0A744BF02D17E4F68598DC0C4A5A6C402E53BB71DFD255</SHA256Hash>
+  </File>
+  <File Name="U_MS_OneNote_2013_STIG_V1R4_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>06C7DD1B22D820C97F7AB1742EC936C699C0FEC6A86398226248899BE9AA82D2</SHA256Hash>
+  </File>
+  <File Name="U_MS_Outlook_2013_STIG_V1R14_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>01E01348FA81335A7FDFB47CD8C19BE6087C5473CB657669C8BD5627FE2744AB</SHA256Hash>
+  </File>
+  <File Name="U_MS_Outlook_2016_STIG_V2R3_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>4C5216C9AE0D3593D949E2AF609A1E6B1A294489F7BBBA365495DB408E1505C5</SHA256Hash>
+  </File>
+  <File Name="U_MS_PowerPoint_2013_STIG_V1R7_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>8A4AA18ED296B36E6AD7AB95BD47A514DE15F43D11ACBD82D51D008F18B641CE</SHA256Hash>
+  </File>
+  <File Name="U_MS_Project_2013_STIG_V1R5_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>9F5ABC4A5E87F30AC8D668225DAECE660C8941C96FDA8358B657B541AFEE694E</SHA256Hash>
+  </File>
+  <File Name="U_MS_Publisher_2013_STIG_V1R6_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>CC47E1199DEEA465A9D71324300D5DA45F87AC5C712F2AA1870006B96873A7CF</SHA256Hash>
+  </File>
+  <File Name="U_MS_Publisher_2016_STIG_V1R3_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>084AFBCC3DBC6963C18DCD19E38BD72F08169C49C0D8C0A10B095784DE070392</SHA256Hash>
+  </File>
+  <File Name="U_MS_Sharepoint_2013_STIG_V2R4_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>98E851E634BD66D2ECB794C5C919BCE3E0DFEB43D69A63369F22283EDE04AAA0</SHA256Hash>
+  </File>
+  <File Name="U_MS_SharePointDesigner_2013_STIG_V1R3_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>0F8148691F49E83D97D96D0FF7CD25AAAB369CA22A51AF544D62B07CAC0F057E</SHA256Hash>
+  </File>
+  <File Name="U_MS_SQL_Server_2014_Database_STIG_V1R7_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>0AEC892C79CC6AD0F6C7110C3FE63B74B1B9C854AD849FD476B64B1040903644</SHA256Hash>
+  </File>
+  <File Name="U_MS_SQL_Server_2014_Instance_STIG_V2R4_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>15FC50D4F476C90DCCD63AF556CD3CE027490DC83E472B6F80FD76FFB8B36433</SHA256Hash>
+  </File>
+  <File Name="U_MS_SQL_Server_2016_Database_STIG_V3R3_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>A6BF63175BD8765703F6D03BE367C07E1366C6CBFF067B8013DF37F3B9E26E6C</SHA256Hash>
+  </File>
+  <File Name="U_MS_SQL_Server_2016_Instance_STIG_V3R5_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>3427824E82C58D063B67417A6916345F350EF84C0246F22334E629F02FB5C173</SHA256Hash>
+  </File>
+  <File Name="U_MS_SQL_Server_2022_Database_STIG_V1R1_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>07FBB40D8B3B712C431356A3DD9BB4239A97C45FBD75E37A2AE83CDBED133D36</SHA256Hash>
+  </File>
+  <File Name="U_MS_SQL_Server_2022_Instance_STIG_V1R2_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>9E9DE5512DB8CC0973432A3A29F1FF0DE0CFD3879C2179A107C8B1CE5B17CD9A</SHA256Hash>
+  </File>
+  <File Name="U_MS_Visio_2013_STIG_V1R5_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>B26462F473860D303D25B2E5C439BC54909C2246AB2962D0A2BD200A16142E09</SHA256Hash>
+  </File>
+  <File Name="U_MS_Windows_10_STIG_V3R5_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>43DBC304A07E9307D3EE6964E0096E0BD142036912F38C395B1C7CCE9853A4CD</SHA256Hash>
+  </File>
+  <File Name="U_MS_Windows_11_STIG_V2R5_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>FFDF1AFC106ABAA07FA9BCB8CA138835344C5F0311F698AB682650406158483F</SHA256Hash>
+  </File>
+  <File Name="U_MS_Windows_2008_R2_MS_STIG_V1R33_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>31279FCF2A97A98F12D1117F0B2407066A74E38F771BD757D9BC695813BDEB7F</SHA256Hash>
+  </File>
+  <File Name="U_MS_Windows_2012_and_2012_R2_DC_STIG_V3R7_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>2948A7F5784BED0EC2E63953091BE790A83F7F70C045867CDA035B208DB7AF5E</SHA256Hash>
+  </File>
+  <File Name="U_MS_Windows_2012_and_2012_R2_MS_STIG_V3R7_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>F8CFA1C77E804365348A48A785CECF3A4092076D6DB7EE450AD14FA0F3012F2C</SHA256Hash>
+  </File>
+  <File Name="U_MS_Windows_7_STIG_V1R32_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>13B4305C7A22451CE987A09E126AA37F42836FE4C4E2C47C2992838A042352C6</SHA256Hash>
+  </File>
+  <File Name="U_MS_Windows_Defender_Firewall_STIG_V2R2_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>1AB51658E50CBCD6A7BF139DEE884AFCA60DE1049A8ED19391160FBD36E769BD</SHA256Hash>
+  </File>
+  <File Name="U_MS_Windows_Server_2016_STIG_V2R10_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>9922F25271D869C13C50B71855A51F3F18108EB93E525790850A9BD993323ED3</SHA256Hash>
+  </File>
+  <File Name="U_MS_Windows_Server_2019_STIG_V3R6_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>6533BA0D164AA6A9212C8C37E05CDA2800383E9A5693EEFE43F3B4F16F3DF75B</SHA256Hash>
+  </File>
+  <File Name="U_MS_Windows_Server_2022_STIG_V2R6_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>D8DD8DE526FE4EF2E8B866D0CAA3EAFB63CA1236E3CC8307D8D94D8898DD43D9</SHA256Hash>
+  </File>
+  <File Name="U_MS_Windows_Server_DNS_STIG_V2R3_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>CEDE103DA5CDD0021262646BE1EF5BA6B7A888D1A9A0A6AD846A9C9D56753587</SHA256Hash>
+  </File>
+  <File Name="U_MS_Word_2013_STIG_V1R7_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>2140638B8418857CABE1BF259F47C0B48FDFED2A1471498ECC6A9262F5F43FAB</SHA256Hash>
+  </File>
+  <File Name="U_Oracle_JRE_8_UNIX_STIG_V1R3_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>D07AD9B5A7D5E8807BF3EFC7DD71B4FBE3D47530D5840479A5A10AD697761E7B</SHA256Hash>
+  </File>
+  <File Name="U_Oracle_JRE_8_Windows_STIG_V2R1_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>BCB1AB7F5F89A5FA0636688EE8A94D7F440E306A404A9CB36B1BE3F8E3AB0F8C</SHA256Hash>
+  </File>
+  <File Name="U_Oracle_Linux_7_STIG_V3R4_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>C48562094E7C52A69D201052E7DEE38E7CD9E09463BA6D06EF3D35AA60E437AD</SHA256Hash>
+  </File>
+  <File Name="U_Oracle_Linux_8_STIG_V2R6_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>5D6D1B25801A0157616C46C608AD7151ECFBABE8C13AA385D413AF39A0FDB31F</SHA256Hash>
+  </File>
+  <File Name="U_Oracle_Linux_9_STIG_V1R3_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>B6CC73712049DEC2EA29CEF410D87E1B2DEEC2F90FEE83D442DE7446539C9CFC</SHA256Hash>
+  </File>
+  <File Name="U_PGS_SQL_9-x_STIG_V2R5_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>FDDF7DD6850E78B890C060089EE9097B378C7131BDA2327470E26AC21A77E7D8</SHA256Hash>
+  </File>
+  <File Name="U_RGS_RKE2_STIG_V2R4_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>12E7D1F0C228313F8119BD28F6D1CED85854DA3EF048B2B93FFFFFE6EEEFB3D5</SHA256Hash>
+  </File>
+  <File Name="U_RHEL_7_STIG_V3R15_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>C563A56CCBE934C82FBEA336FABC26D0E5C2C23EFC54E6A562F649BC65EC83B2</SHA256Hash>
+  </File>
+  <File Name="U_RHEL_8_STIG_V2R5_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>DD733D17A7F727FF9BBB64808C94ADB82796AB2984204863E75E9D7F3B6DFB0E</SHA256Hash>
+  </File>
+  <File Name="U_RHEL_9_STIG_V2R6_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>983A31EAE1C8840F5519377FD0A796F5ABC626B86D3CA115DE625802069F7A03</SHA256Hash>
+  </File>
+  <File Name="U_VMW_Horizon_7-13_Agent_STIG_V1R1_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>E4FC6005F176FF3A727F7B506AA94502F5FA036526875D31E101A9B398D72098</SHA256Hash>
+  </File>
+  <File Name="U_VMW_Horizon_7-13_Client_STIG_V1R1_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>DB000C7A260F597B86B0200D3B89EB3766941CBCEC7E0F77469B02A0440B68E1</SHA256Hash>
+  </File>
+  <File Name="U_VMW_Horizon_7-13_Connection_Server_STIG_V1R2_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>1CC848C6010FE2A9536B86DB13E42DF68D6AFAD5D58C29E952AA60440A1CF812</SHA256Hash>
+  </File>
+  <File Name="U_VMW_vSphere_8-0_Virtual_Machine_STIG_V2R1_Manual-xccdf.xml">
+    <Path>\StigContent</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>113BC8BFC52A78351DCCB05C29DEEC161E7C59CE2343E217084DBCAA769675ED</SHA256Hash>
+  </File>
+  <File Name="CKLB.schema.json">
+    <Path>\xml</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>442E0DDF0DF0EB45D494B044E212F15EB39144865D632711F057D8CC6D5749F5</SHA256Hash>
+  </File>
+  <File Name="Preferences.default.xml">
+    <Path>\xml</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>2D5BF2DEAAF360648D166111AE03D0F5AEE2AFF84962D396E5D1F289455FAEE0</SHA256Hash>
+  </File>
+  <File Name="Schema_AnswerFile.xsd">
+    <Path>\xml</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>41B9FEDEB7E112E33D04067A6F44CD63F666C270854606D9FF07233E40A89DE6</SHA256Hash>
+  </File>
+  <File Name="Schema_Preferences.xsd">
+    <Path>\xml</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>C886700FC81092118EE81B5EDC6D38E9686A20484242822F767B62E556A9EF6E</SHA256Hash>
+  </File>
+  <File Name="Schema_STIGList.xsd">
+    <Path>\xml</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>3896BDE1B62CD2F40F0C9654DEE5B46A663C2B4FE9E0362AFB6B59EF8C2A9351</SHA256Hash>
+  </File>
+  <File Name="STIGList.xml">
+    <Path>\xml</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>80A586877C5FDE6E791A482B2D2EFE3EC1F83DAA93197030E71D6B55CFB2A4BE</SHA256Hash>
+  </File>
+  <File Name="SummaryReport.xslt">
+    <Path>\xml</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>81A311B1EA9EEF34795CED7FEED6F1CC082E1794DF804A6242AF3B83A53FC176</SHA256Hash>
+  </File>
+  <File Name="U_Checklist_Schema_V2.xsd">
+    <Path>\xml</Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>15D7BBCBB5FC062D9254AF236CC5FCBA05567EDF1873B4E23D77D891BF966A37</SHA256Hash>
+  </File>
+  <File Name="Evaluate-STIG_Bash.sh">
+    <Path>
+    </Path>
+    <ScanReq>NotRequired</ScanReq>
+    <SHA256Hash>F8ABA87812EB63259AD50B42BCE41C7E2C143F08F7E5A665690775F2ED8AFA60</SHA256Hash>
+  </File>
+  <File Name="Evaluate-STIG_GUI.ps1">
+    <Path>
+    </Path>
+    <ScanReq>NotRequired</ScanReq>
+    <SHA256Hash>6DA104067D4E747C324FC354A539B3EAE15B4B08D375076FE004B6F6523AA037</SHA256Hash>
+  </File>
+  <File Name="Evaluate-STIG.ps1">
+    <Path>
+    </Path>
+    <ScanReq>Required</ScanReq>
+    <SHA256Hash>D2AE7EBBED8C07D7E14C5FD0442E6049788279FC1A912D15A648561C12D61715</SHA256Hash>
+  </File>
+  <File Name="LICENSE">
+    <Path>
+    </Path>
+    <ScanReq>NotRequired</ScanReq>
+    <SHA256Hash>080DAC2CB2DA1D5516B6360BEAFD97E3E59FEF7FD52F2921CB0F206C25EC5094</SHA256Hash>
+  </File>
+  <Signature xmlns="http://www.w3.org/2000/09/xmldsig#">
+    <SignedInfo>
+      <CanonicalizationMethod Algorithm="http://www.w3.org/TR/2001/REC-xml-c14n-20010315" />
+      <SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256" />
+      <Reference URI="">
+        <Transforms>
+          <Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature" />
+        </Transforms>
+        <DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256" />
+        <DigestValue>KYhW2sjTEoJIjTkzAqi69BJkgRtDxy+TRyCPOrAg4EY=</DigestValue>
+      </Reference>
+    </SignedInfo>
+    <SignatureValue>LnEU1guOHI6rUpZmkGoW+520fuK7Bi1rnhQ9T97t1huRJJWZGrW2IDewNCRpZfezOzpAQRspTFC4mdvi6ab0uC8STbISgHZ1UgSaORJPWdF4YZlAyzB+9/cYFX18HIDYoZskDGY6zmhInNhFycPd/bYDKnKfUXVSMZ3n/XSW+YDucMfTv+Ovw085QD1UGQyTTsPF5QPpFYoQRPUQ8IoP5B4br1c/qbSpBj9+WQP2QABMGcgKftt9sxa41Ny+ZXmr66/fnx+rcWius/E8YrYV8eQ87lnd6S1CaU20qPmWya2w4scWDD5jAtpo4pT3ZrL7/nMuZNnuq/oQ9LrpG0vR1A==</SignatureValue>
+    <KeyInfo>
+      <X509Data>
+        <X509Certificate>MIIFKjCCBBKgAwIBAgIDE2HVMA0GCSqGSIb3DQEBCwUAMFoxCzAJBgNVBAYTAlVTMRgwFgYDVQQKEw9VLlMuIEdvdmVybm1lbnQxDDAKBgNVBAsTA0RvRDEMMAoGA1UECxMDUEtJMRUwEwYDVQQDEwxET0QgSUQgQ0EtNzIwHhcNMjUwMzI1MDAwMDAwWhcNMjgwMzIzMjM1OTU5WjCBjjELMAkGA1UEBhMCVVMxGDAWBgNVBAoTD1UuUy4gR292ZXJubWVudDEMMAoGA1UECxMDRG9EMQwwCgYDVQQLEwNQS0kxDDAKBgNVBAsTA1VTTjE7MDkGA1UEAxMyQ1MuTkFWQUwgU1VSRkFDRSBXQVJGQVJFIENFTlRFUiBDUkFORSBESVZJU0lPTi4wMDEwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQC5fF0dWni9QEQPXPUROOvs1ZrZ22HLHA+lhv3lT6Gzyoc2Hj31tx2UthcUENMh10Tx+gEv/rYwqqRraa/jAOSfq+V/V5KmG9fp8HzJVxwkGQywLJkTeGzQywLQA8xDqfWKIw00yBOtR+fLEUsOn+LicJonFZGF6mdMazztsQtfwdA+4cwVSpsXlRHFhfNawd0H/ayjsIls/YnDGdRZGGQMp2knDeVCL1fj7i4B9JvYpWOeCWOD1hJzQcsTP9gN+CFecRtwL5OVohhTBptZSgsdAcLCp9D31yndESHLv35DhHAs+y5uzX7EEKrWkykbgQBOZi4g/XJpm7dlnJ3wELz3AgMBAAGjggHCMIIBvjAfBgNVHSMEGDAWgBSD9F8168zaXXuZT8JTRBhAWr3vWTA3BgNVHR8EMDAuMCygKqAohiZodHRwOi8vY3JsLmRpc2EubWlsL2NybC9ET0RJRENBXzcyLmNybDAOBgNVHQ8BAf8EBAMCBsAwFgYDVR0gBA8wDTALBglghkgBZQIBCyowHQYDVR0OBBYEFJli7TCgur7Llzs/Z2ELU7Z9bAKXMGUGCCsGAQUFBwEBBFkwVzAzBggrBgEFBQcwAoYnaHR0cDovL2NybC5kaXNhLm1pbC9zaWduL0RPRElEQ0FfNzIuY2VyMCAGCCsGAQUFBzABhhRodHRwOi8vb2NzcC5kaXNhLm1pbDCBkgYDVR0RBIGKMIGHpIGEMIGBMQswCQYDVQQGEwJVUzEYMBYGA1UEChMPVS5TLiBHb3Zlcm5tZW50MQwwCgYDVQQLEwNEb0QxDDAKBgNVBAsTA1BLSTEMMAoGA1UECxMDVVNOMS4wLAYDVQQDEyVJUkVMQU5ELkRBTklFTC5DSFJJU1RPUEhFUi4xMzg3MTUwMzM4MB8GA1UdJQQYMBYGCisGAQQBgjcKAw0GCCsGAQUFBwMDMA0GCSqGSIb3DQEBCwUAA4IBAQCO/l7eTZIkqWGBGiEkaZrCg5xKbqCs7x4xCpeNYJkzC54+5lUy0BZtCFC52i7vBR3pVJCPkZhRVoB8Ghk7o23tB/UusksykBhkre462Yo2BgFghvwbUVFYDki5VmbC8YlQlNO33phBk9iUExIcef+gAwBP2U+hWYnog2GuwmdePtcimdO8freZPoSgBxKnSOvoJCJ8asLp2fFRVKD8kyQ7Ionw14+Sxu/r1K+mDVmX1YdkCSXkN5JoXii10SKjQF9jr2t4BVM5ntOVqfYAE+LzO2ZPOnBwKlRbcDpyvyBkSgVshFtW7SRljOMpPfE8RioeSUjzeBAJZ94tmwH5dgSw</X509Certificate>
+      </X509Data>
+    </KeyInfo>
+  </Signature>
+</FileList>

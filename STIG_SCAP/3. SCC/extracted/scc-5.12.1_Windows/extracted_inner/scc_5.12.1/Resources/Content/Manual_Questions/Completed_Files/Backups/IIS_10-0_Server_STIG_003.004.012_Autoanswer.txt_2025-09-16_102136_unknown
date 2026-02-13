@@ -1,0 +1,616 @@
+################################################################################
+DOCUMENT         : IIS_10-0_Server_STIG
+VERSION          : 003.004.012
+CHECKSUM         : aa031d31ae5bd1b0f180e9fd084dc0f0ded8d1a659048e195184530662b906f2
+MANUAL QUESTIONS : 18
+
+IMPORTANT: Make sure to save the completed version of this file to: 
+<SCC Install>/Resources/Content/Manual_Questions/Completed_Files
+
+This file contains all of the non-automated STIG requirements found in the STIG.
+Results from this file will be combined with automated checks in SCC to provide
+complete STIG compliance results.
+
+This file will be programmaticaly imported, so do not modify anything in this file
+except for placing an '[X]' to select a Single answer, and entering text comments.
+
+The list of questions is printed in order of severity, listing CAT I (High), then CAT II, etc..
+
+################################################################################
+
+QUESTION         : 1 of 18
+TITLE            : CAT I, V-218802, SV-218802r961095, SRG-APP-000211-WSR-000030
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.10.0.server:testaction:2901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.10.0.server:question:2901
+RULE             : IIS 10.0 Web server accounts accessing the directory tree, the shell, or other operating system functions and utilities must only be administrative accounts.
+QUESTION_TEXT    : Obtain a list of the user accounts with access to the system, including all local and domain accounts. 
+
+Review the privileges to the web server for each account.
+
+Verify with the system administrator or the ISSO that all privileged accounts are mission essential and documented.
+
+Verify with the system administrator or the ISSO that all non-administrator access to shell scripts and operating system functions are mission essential and documented.
+
+If undocumented privileged accounts are found, this is a finding.
+
+If undocumented non-administrator access to shell scripts and operating system functions are found, this is a finding.
+
+If this IIS 10 installation is supporting Microsoft Exchange, and not otherwise hosting any content, this requirement is Not Applicable.
+
+References:
+SV-109243
+V-100139
+CCI-001082
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 1 *******************************
+
+QUESTION         : 2 of 18
+TITLE            : CAT I, V-218823, SV-218823r961863, SRG-APP-000516-WSR-000079
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.10.0.server:testaction:6901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.10.0.server:question:6901
+RULE             : All accounts installed with the IIS 10.0 web server software and tools must have passwords assigned and default passwords changed.
+QUESTION_TEXT    : Access the IIS 10.0 web server.
+
+Access the "Apps" menu. Under "Administrative Tools", select "Computer Management".
+
+In left pane, expand "Local Users and Groups" and click "Users".
+
+Review the local users listed in the middle pane. 
+
+If any local accounts are present and used by IIS 10.0, verify with System Administrator that default passwords have been changed.
+
+If passwords have not been changed from the default, this is a finding.
+
+References:
+SV-109285
+V-100181
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 2 *******************************
+
+QUESTION         : 3 of 18
+TITLE            : CAT II, V-218790, SV-218790r1067580, SRG-APP-000120-WSR-000070
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.10.0.server:testaction:701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.10.0.server:question:701
+RULE             : The log information from the IIS 10.0 web server must be protected from unauthorized modification or deletion.
+QUESTION_TEXT    : This check does not apply to service account IDs utilized by automated services necessary to process, manage, and store log files.
+
+Open the IIS 10.0 Manager.
+
+Click the IIS 10.0 web server name.
+
+Click the "Logging" icon.
+
+Click "Browse" and navigate to the directory where the log files are stored.
+
+Right-click the log file directory to review.
+
+Click "Properties".
+
+Click the "Security" tab.
+
+Verify log file access is restricted as follows. Otherwise, this is a finding.
+SYSTEM - Full Control, This folder, subfolders and files
+Administrators - Full Control, This folder, subfolders and files
+
+Note:  A "Web Administrators", etc., type group that is an approved group of administrators is also allowed, and must be given "Full Control, This folder, subfolders and files" permissions.
+
+References:
+SV-109219
+V-100115
+CCI-000164
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 3 *******************************
+
+QUESTION         : 4 of 18
+TITLE            : CAT II, V-218791, SV-218791r960948, SRG-APP-000125-WSR-000071
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.10.0.server:testaction:901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.10.0.server:question:901
+RULE             : The log data and records from the IIS 10.0 web server must be backed up onto a different system or media.
+QUESTION_TEXT    : The IIS 10.0 web server and website log files should be backed up by the system backup.
+
+To determine if log files are backed up by the system backup, determine the location of the web server log files and each website's log files.
+
+Open the IIS 10.0 Manager.
+
+Click the IIS 10.0 server name.
+
+Click the "Logging" icon.
+
+Under "Log File" >> "Directory" obtain the path of the log file.
+
+Once all locations are known, consult with the System Administrator to review the server's backup procedure and policy.
+
+Verify the paths of all log files are part of the system backup.
+Verify log files are backed up to an unrelated system or onto separate media on which the system the web server is running.
+
+If the paths of all log files are not part of the system backup and/or not backed up to a separate media, this is a finding.
+
+References:
+SV-109221
+V-100117
+CCI-001348
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 4 *******************************
+
+QUESTION         : 5 of 18
+TITLE            : CAT II, V-218792, SV-218792r960963, SRG-APP-000141-WSR-000015
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.10.0.server:testaction:1101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.10.0.server:question:1101
+RULE             : The IIS 10.0 web server must not perform user management for hosted applications.
+QUESTION_TEXT    : Interview the System Administrator about the role of the IIS 10.0 web server.
+
+If the IIS 10.0 web server is hosting an application, have the SA provide supporting documentation on how the application's user management is accomplished outside of the IIS 10.0 web server.
+
+If the IIS 10.0 web server is not hosting an application, this is Not Applicable.
+
+If the IIS web server is performing user management for hosted applications, this is a finding.
+
+If the IIS 10.0 web server is hosting an application and the SA cannot provide supporting documentation on how the application's user management is accomplished outside of the IIS 10.0 web server, this is a finding.
+
+References:
+SV-109223
+V-100119
+CCI-000381
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 5 *******************************
+
+QUESTION         : 6 of 18
+TITLE            : CAT II, V-218793, SV-218793r960963, SRG-APP-000141-WSR-000075
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.10.0.server:testaction:1301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.10.0.server:question:1301
+RULE             : The IIS 10.0 web server must only contain functions necessary for operation.
+QUESTION_TEXT    : Click “Start”.
+
+Open Control Panel.
+
+Click “Programs”.
+
+Click “Programs and Features”.
+
+Review the installed programs. If any programs are installed other than those required for the IIS 10.0 web services, this is a finding.
+
+Note: If additional software is needed, supporting documentation must be signed by the ISSO.
+
+References:
+SV-109225
+V-100121
+CCI-000381
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 6 *******************************
+
+QUESTION         : 7 of 18
+TITLE            : CAT II, V-218796, SV-218796r960963, SRG-APP-000141-WSR-000078
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.10.0.server:testaction:1901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.10.0.server:question:1901
+RULE             : The accounts created by uninstalled features (i.e., tools, utilities, specific, etc.) must be deleted from the IIS 10.0 server.
+QUESTION_TEXT    : Access the IIS 10.0 web server.
+
+Access “Apps” menu. Under “Administrative Tools”, select “Computer Management”.
+
+In the left pane, expand "Local Users and Groups" and click "Users".
+
+Review the local users listed in the middle pane.
+
+If any local accounts are present and were created by features which have been uninstalled or are not used, this is a finding.
+
+References:
+SV-109231
+V-100127
+CCI-000381
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 7 *******************************
+
+QUESTION         : 8 of 18
+TITLE            : CAT II, V-218797, SV-218797r960963, SRG-APP-000141-WSR-000080
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.10.0.server:testaction:2101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.10.0.server:question:2101
+RULE             : The IIS 10.0 web server must be reviewed on a regular basis to remove any Operating System features, utility programs, plug-ins, and modules not necessary for operation.
+QUESTION_TEXT    : Consult with the System Administrator and review all of the IIS 10.0 and Operating System features installed.
+
+Determine if any features installed are no longer necessary for operation.
+
+If any utility programs, features, or modules are installed which are not necessary for operation, this is a finding.
+
+If any unnecessary Operating System features are installed, this is a finding.
+
+References:
+SV-109233
+V-100129
+CCI-000381
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 8 *******************************
+
+QUESTION         : 9 of 18
+TITLE            : CAT II, V-218803, SV-218803r961095, SRG-APP-000211-WSR-000129
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.10.0.server:testaction:3101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.10.0.server:question:3101
+RULE             : The IIS 10.0 web server must separate the hosted applications from hosted web server management functionality.
+QUESTION_TEXT    : Review the IIS 10.0 web server configuration with the System Administrator.
+
+Determine if the IIS 10.0 web server hosts any applications.
+
+If the IIS 10.0 web server does not host any applications, this is Not Applicable.
+
+If the IIS 10.0 web server is hosting Exchange, this is Not Applicable.
+
+If the IIS 10.0 web server hosts applications, review the application's management functionality and authentication methods with the System Administrator to determine if the management of the application is accomplished with the same functions and authentication methods as the web server management.
+
+If the IIS 10.0 web server management and the application's management functionality is not separated, this is a finding.
+
+References:
+SV-109245
+V-100141
+CCI-001082
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 9 *******************************
+
+QUESTION         : 10 of 18
+TITLE            : CAT II, V-218806, SV-218806r961122, SRG-APP-000225-WSR-000074
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.10.0.server:testaction:3701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.10.0.server:question:3701
+RULE             : The IIS 10.0 web server must augment re-creation to a stable and known baseline.
+QUESTION_TEXT    : Interview the System Administrator for the IIS 10.0 web server.
+
+Ask for documentation on the disaster recovery methods tested and planned for the IIS 10.0 web server in the event of the necessity for rollback.
+
+If documentation for a disaster recovery has not been established, this is a finding.
+
+References:
+SV-109251
+V-100147
+CCI-001190
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 10 *******************************
+
+QUESTION         : 11 of 18
+TITLE            : CAT II, V-218809, SV-218809r961167, SRG-APP-000266-WSR-000142
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.10.0.server:testaction:4301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.10.0.server:question:4301
+RULE             : The IIS 10.0 web server Indexing must only index web content.
+QUESTION_TEXT    : Access the IIS 10.0 Web Server.
+
+Access an administrator command prompt and type "regedit <enter>" to access the server's registry.
+
+Navigate to HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Control\ContentIndex\Catalogs\.
+
+If this key exists, then indexing is enabled. 
+
+If the key does not exist, this check is Not Applicable.
+
+Review the Catalog keys to determine if directories other than web document directories are being indexed.
+
+If so, this is a finding.
+
+References:
+SV-109257
+V-100153
+CCI-001312
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 11 *******************************
+
+QUESTION         : 12 of 18
+TITLE            : CAT II, V-218812, SV-218812r961278, SRG-APP-000315-WSR-000004
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.10.0.server:testaction:4701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.10.0.server:question:4701
+RULE             : The IIS 10.0 web server must restrict inbound connections from non-secure zones.
+QUESTION_TEXT    : Note: This requirement applies to the Web Management Service. If the Web Management Service is not installed, this is Not Applicable.
+
+Open the IIS 10.0 Manager.
+
+Click the IIS 10.0 web server name.
+
+Under "Management", double-click "Management Service".
+
+If "Enable remote connections" is not selected, this is Not Applicable.
+
+If "Enable remote connections" is selected, review the entries under "IP Address Restrictions".
+
+Verify only known, secure IP ranges are configured as "Allow".
+
+If "IP Address Restrictions" are not configured or IP ranges configured to "Allow" are not restrictive enough to prevent connections from nonsecure zones, this is a finding.
+
+References:
+SV-109263
+V-100159
+CCI-002314
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 12 *******************************
+
+QUESTION         : 13 of 18
+TITLE            : CAT II, V-218813, SV-218813r961281, SRG-APP-000316-WSR-000170
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.10.0.server:testaction:4901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.10.0.server:question:4901
+RULE             : The IIS 10.0 web server must provide the capability to immediately disconnect or disable remote access to the hosted applications.
+QUESTION_TEXT    : Interview the System Administrator and Web Manager.
+
+Ask for documentation for the IIS 10.0 web server administration.
+
+Verify there are documented procedures for shutting down an IIS 10.0 website in the event of an attack. The procedure should, at a minimum, provide the following steps:
+
+Determine the respective website for the application at risk of an attack.
+
+Access the IIS 10.0 web server IIS Manager.
+
+Select the respective website.
+
+In the "Actions" pane, under "Manage Website", click "Stop".
+
+If necessary, stop all websites.
+
+If necessary, stop the IIS 10.0 web server by selecting the web server in the IIS Manager.
+
+In the "Actions" pane, under "Manage Server", click "Stop".
+
+If the web server is not capable or cannot be configured to disconnect or disable remote access to the hosted applications when necessary, this is a finding.
+
+References:
+SV-109265
+V-100161
+CCI-002322
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 13 *******************************
+
+QUESTION         : 14 of 18
+TITLE            : CAT II, V-218814, SV-218814r1067589, SRG-APP-000340-WSR-000029
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.10.0.server:testaction:5101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.10.0.server:question:5101
+RULE             : IIS 10.0 web server system files must conform to minimum file permission requirements.
+QUESTION_TEXT    : Open Explorer and navigate to the inetpub directory.
+
+Right-click "inetpub" and select "Properties".
+
+Click the "Security" tab.
+
+Verify the permissions for the following users; if the permissions are less restrictive, this is a finding.
+
+System: Full control
+Administrators: Full control
+TrustedInstaller: Full control
+ALL APPLICATION PACKAGES (built-in security group): Read and execute, This folder, subfolders and files
+ALL RESTRICTED APPLICATION PACKAGES (built-in security group): Read and execute, This folder, subfolders and files
+Users: Read and execute, list folder contents
+CREATOR OWNER: Full Control, Subfolders and files only
+
+References:
+SV-109267
+V-100163
+CCI-002235
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 14 *******************************
+
+QUESTION         : 15 of 18
+TITLE            : CAT II, V-218816, SV-218816r1067591, SRG-APP-000380-WSR-000072
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.10.0.server:testaction:5501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.10.0.server:question:5501
+RULE             : Access to web administration tools must be restricted to the web manager and the web managers designees.
+QUESTION_TEXT    : Right-click "InetMgr.exe", then click "Properties" from the "Context" menu.
+
+Select the "Security" tab.
+
+Review the groups and user names.
+
+The following accounts may have Full control privileges:
+
+TrustedInstaller
+Web Managers
+Web Manager designees
+CREATOR OWNER
+
+The following accounts may have read and execute, or read permissions:
+
+Non Web Manager Administrators
+ALL APPLICATION PACKAGES (built-in security group)
+ALL RESTRICTED APPLICATION PACKAGES (built-in security group)
+SYSTEM
+Users
+
+Specific users may be granted read and execute and read permissions.
+
+Compare the local documentation authorizing specific users, against the users observed when reviewing the groups and users.
+
+If any other access is observed, this is a finding.
+
+References:
+SV-109271
+V-100167
+CCI-000213
+CCI-001813
+CCI-002385
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 15 *******************************
+
+QUESTION         : 16 of 18
+TITLE            : CAT II, V-218817, SV-218817r961470, SRG-APP-000383-WSR-000175
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.10.0.server:testaction:5701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.10.0.server:question:5701
+RULE             : The IIS 10.0 web server must not be running on a system providing any other role.
+QUESTION_TEXT    : Review programs installed on the OS.
+
+Open Control Panel.
+
+Open Programs and Features.
+
+The following programs may be installed without any additional documentation:
+
+Administration Pack for IIS
+IIS Search Engine Optimization Toolkit
+Microsoft .NET Framework version 3.5 SP1 or greater
+Microsoft Web Platform Installer version 3.x or greater
+Virtual Machine Additions
+
+Review the installed programs, if any programs are installed other than those listed above, this is a finding.
+
+Note: If additional software is needed and has supporting documentation signed by the ISSO, this is not a finding.
+
+References:
+SV-109273
+V-100169
+CCI-001762
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 16 *******************************
+
+QUESTION         : 17 of 18
+TITLE            : CAT II, V-218822, SV-218822r961632, SRG-APP-000439-WSR-000156
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.10.0.server:testaction:6701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.10.0.server:question:6701
+RULE             : The IIS 10.0 web server must maintain the confidentiality of controlled information during transmission through the use of an approved Transport Layer Security (TLS) version.
+QUESTION_TEXT    : Review the web server documentation and deployed configuration to determine which version of TLS is being used.
+
+If the TLS version is not TLS 1.2 or higher, according to NIST SP 800-52, or if non-FIPS-approved algorithms are enabled, this is a finding.
+
+References:
+SV-109283
+V-100179
+CCI-002418
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 17 *******************************
+
+QUESTION         : 18 of 18
+TITLE            : CAT II, V-228572, SV-228572r960963, SRG-APP-000141-WSR-000075
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.10.0.server:testaction:7901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.10.0.server:question:7901
+RULE             : An IIS Server configured to be a SMTP relay must require authentication.
+QUESTION_TEXT    : Interview the System Administrator about the role of the IIS 10.0 web server.
+
+If the IIS 10.0 web server is running SMTP relay services, have the SA provide supporting documentation on how the server is hardened. A DoD-issued certificate, and specific allowed IP address should be configured.
+
+If the IIS web server is not running SMTP relay services, this is Not Applicable.
+
+If the IIS web server running SMTP relay services without TLS enabled, this is a finding.
+
+If the IIS web server running SMTP relay services is not configured to only allow a specific IP address, from the same network as the relay, this is a finding.
+
+References:
+V-102895
+SV-111857
+CCI-000381
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 18 *******************************
+

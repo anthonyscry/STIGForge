@@ -7,9 +7,16 @@
   <Window.Resources>
     <BooleanToVisibilityConverter x:Key="BoolToVis"/>
   </Window.Resources>
+
+  <Window.InputBindings>
+    <KeyBinding Key="Return" Modifiers="Ctrl" Command="{Binding SaveAndNextCommand}"/>
+    <KeyBinding Key="Left" Modifiers="Ctrl" Command="{Binding PreviousControlCommand}"/>
+    <KeyBinding Key="Right" Modifiers="Ctrl" Command="{Binding SkipControlCommand}"/>
+  </Window.InputBindings>
   
   <Grid Margin="16">
     <Grid.RowDefinitions>
+      <RowDefinition Height="Auto"/>
       <RowDefinition Height="Auto"/>
       <RowDefinition Height="*"/>
       <RowDefinition Height="Auto"/>
@@ -24,8 +31,13 @@
       </StackPanel>
     </DockPanel>
 
+    <!-- Progress Bar -->
+    <ProgressBar Grid.Row="1" Height="4" Minimum="0" Maximum="100" Value="{Binding ProgressPercentage}"
+                 Margin="0,0,0,8"
+                 Foreground="{DynamicResource AccentBrush}" Background="{DynamicResource SurfaceMutedBrush}"/>
+
     <!-- Main Content -->
-    <Grid Grid.Row="1">
+    <Grid Grid.Row="2">
       <!-- Welcome Screen -->
       <StackPanel Visibility="{Binding ShowWelcome, Converter={StaticResource BoolToVis}}">
         <TextBlock Text="Welcome to the Manual Check Wizard" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,16"/>
@@ -63,9 +75,15 @@
           <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding NotApplicableCount}" Foreground="{DynamicResource TextMutedBrush}" Margin="8,2"/>
         </Grid>
 
-        <Button Content="Start Review" Width="140" Height="32" Command="{Binding StartWizardCommand}" 
-                Visibility="{Binding HasUnansweredControls, Converter={StaticResource BoolToVis}}" Margin="0,16,0,0"
-                ToolTipService.ToolTip="Begin walking through each unanswered control one at a time."/>
+        <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+          <Button Content="Start Review" Width="140" Height="32" Command="{Binding StartWizardCommand}" 
+                  Visibility="{Binding HasUnansweredControls, Converter={StaticResource BoolToVis}}" Margin="0,0,8,0"
+                  ToolTipService.ToolTip="Begin walking through each unanswered control one at a time."/>
+          <Button Content="Import Answers" Width="140" Height="32" Command="{Binding ImportAnswersCommand}" Margin="0,0,8,0"
+                  ToolTipService.ToolTip="Import previously exported answers from a JSON file."/>
+          <Button Content="Export Answers" Width="140" Height="32" Command="{Binding ExportAnswersCommand}"
+                  ToolTipService.ToolTip="Export current answers to a JSON file for reuse in other bundles."/>
+        </StackPanel>
         <TextBlock Text="All controls have been answered!" FontWeight="SemiBold" Foreground="{DynamicResource SuccessBrush}"
                    Visibility="{Binding AllControlsAnswered, Converter={StaticResource BoolToVis}}" Margin="0,16,0,0"/>
       </StackPanel>
@@ -91,6 +109,11 @@
           <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
             <TextBlock Text="Title:" FontWeight="SemiBold" Width="100"/>
             <TextBlock Text="{Binding CurrentTitle}" TextWrapping="Wrap" FontSize="14"/>
+          </StackPanel>
+
+          <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+            <TextBlock Text="STIG Group:" FontWeight="SemiBold" Width="100"/>
+            <TextBlock Text="{Binding CurrentStigGroup}" FontSize="14" Foreground="{DynamicResource AccentBrush}"/>
           </StackPanel>
         </StackPanel>
 
@@ -127,6 +150,11 @@
           <TextBlock Text="Additional Comments:" FontWeight="SemiBold" Margin="0,0,0,4"/>
           <TextBox Text="{Binding AnswerComment, UpdateSourceTrigger=PropertyChanged}" 
                    Height="60" TextWrapping="Wrap" AcceptsReturn="True"/>
+
+          <TextBlock Text="Notes:" FontWeight="SemiBold" Margin="0,8,0,4"/>
+          <TextBox Text="{Binding ControlNotes, UpdateSourceTrigger=PropertyChanged}"
+                   Height="40" TextWrapping="Wrap" AcceptsReturn="True"
+                   AutomationProperties.Name="Control notes"/>
 
           <StackPanel Orientation="Horizontal" Margin="0,8,0,0">
             <Button Content="Collect Evidence" Width="140" Command="{Binding CollectEvidenceCommand}"
@@ -168,20 +196,25 @@
 
         <TextBlock Text="Your answers have been saved to the bundle." Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,16"/>
         
-        <Button Content="Return to Main App" Width="160" Height="32" Command="{Binding CloseWizardCommand}"
-                ToolTipService.ToolTip="Close the wizard and go back to the Manual tab. Your answers are already saved."/>
+        <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+          <Button Content="Export Answers" Width="140" Height="32" Command="{Binding ExportAnswersCommand}" Margin="0,0,8,0"
+                  ToolTipService.ToolTip="Export answers to a JSON file for reuse in other bundles."/>
+          <Button Content="Return to Main App" Width="160" Height="32" Command="{Binding CloseWizardCommand}"
+                  ToolTipService.ToolTip="Close the wizard and go back to the Manual tab. Your answers are already saved."/>
+        </StackPanel>
+        <TextBlock Text="{Binding EvidenceStatus}" Foreground="{DynamicResource TextMutedBrush}" Margin="0,4,0,0" TextWrapping="Wrap"/>
       </StackPanel>
     </Grid>
 
     <!-- Navigation Buttons -->
-    <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0"
+    <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0"
                 Visibility="{Binding ShowReview, Converter={StaticResource BoolToVis}}">
       <Button Content="Previous" Width="100" Command="{Binding PreviousControlCommand}" Margin="0,0,8,0"
-              ToolTipService.ToolTip="Go back to the previous control you just reviewed."/>
+              ToolTipService.ToolTip="Go back to the previous control you just reviewed. (Ctrl+Left)"/>
       <Button Content="Skip" Width="100" Command="{Binding SkipControlCommand}" Margin="0,0,8,0"
-              ToolTipService.ToolTip="Skip this control for now and come back to it later."/>
+              ToolTipService.ToolTip="Skip this control for now and come back to it later. (Ctrl+Right)"/>
       <Button Content="Save &amp; Next" Width="120" Command="{Binding SaveAndNextCommand}" IsDefault="True"
-              ToolTipService.ToolTip="Save your answer for this control and move to the next one."/>
+              ToolTipService.ToolTip="Save your answer for this control and move to the next one. (Ctrl+Enter)"/>
     </StackPanel>
   </Grid>
 </Window>

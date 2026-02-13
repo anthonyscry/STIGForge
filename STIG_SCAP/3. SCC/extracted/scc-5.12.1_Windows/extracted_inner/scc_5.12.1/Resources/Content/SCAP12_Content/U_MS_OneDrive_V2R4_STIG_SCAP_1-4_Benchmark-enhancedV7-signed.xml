@@ -1,0 +1,1655 @@
+<data-stream-collection xmlns="http://scap.nist.gov/schema/scap/source/1.2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" id="scap_navy.navwar.niwcatlantic.scc_collection_U_MS_OneDrive_V2R2_STIG_SCAP_1-4_Benchmark-enhancedV7" schematron-version="1.4" xsi:schemaLocation="http://checklists.nist.gov/xccdf/1.2 http://scap.nist.gov/schema/xccdf/1.2/xccdf_1.2.xsd http://cpe.mitre.org/dictionary/2.0 http://scap.nist.gov/schema/cpe/2.3/cpe-dictionary_2.3.xsd http://oval.mitre.org/XMLSchema/oval-common-5 https://github.com/OVALProject/Language/tree/5.11.2/schemas/oval-common-schema.xsd http://oval.mitre.org/XMLSchema/oval-definitions-5 https://github.com/OVALProject/Language/tree/5.11.2/schemas/oval-definitions-schema.xsd http://oval.mitre.org/XMLSchema/oval-definitions-5#independent https://github.com/OVALProject/Language/tree/5.11.2/schemas/independent-definitions-schema.xsd http://oval.mitre.org/XMLSchema/oval-definitions-5#iosxe https://github.com/OVALProject/Language/tree/5.11.2/schemas/iosxe-definitions-schema.xsd http://scap.nist.gov/schema/scap/source/1.2 http://scap.nist.gov/schema/scap/1.4/scap-source-data-stream_1.4.xsd">
+  <data-stream id="scap_navy.navwar.niwcatlantic.scc_datastream_U_MS_OneDrive_V2R2_STIG_SCAP_1-4_Benchmark-enhancedV7" use-case="CONFIGURATION" scap-version="1.4" timestamp="2025-09-16T13:55:38.438416+00:00">
+    <dictionaries>
+      <component-ref xmlns:xlink="http://www.w3.org/1999/xlink" id="scap_navy.navwar.niwcatlantic.scc_cref_U_MS_OneDrive_V2R2_STIG_SCAP_1-4_Benchmark-enhancedV7-cpe-dictionary.xml" xlink:href="#scap_navy.navwar.niwcatlantic.scc_comp_U_MS_OneDrive_V2R2_STIG_SCAP_1-4_Benchmark-enhancedV7-cpe-dictionary.xml">
+        <cat:catalog xmlns:cat="urn:oasis:names:tc:entity:xmlns:xml:catalog">
+          <cat:uri name="U_MS_OneDrive_V2R2_STIG_SCAP_1-4_Benchmark-enhancedV7-cpe-oval.xml" uri="#scap_navy.navwar.niwcatlantic.scc_cref_U_MS_OneDrive_V2R2_STIG_SCAP_1-4_Benchmark-enhancedV7-cpe-oval.xml"/>
+        </cat:catalog>
+      </component-ref>
+    </dictionaries>
+    <checklists>
+      <component-ref xmlns:xlink="http://www.w3.org/1999/xlink" id="scap_navy.navwar.niwcatlantic.scc_cref_U_MS_OneDrive_V2R2_STIG_SCAP_1-4_Benchmark-enhancedV7-xccdf.xml" xlink:href="#scap_navy.navwar.niwcatlantic.scc_comp_U_MS_OneDrive_V2R2_STIG_SCAP_1-4_Benchmark-enhancedV7-xccdf.xml">
+        <cat:catalog xmlns:cat="urn:oasis:names:tc:entity:xmlns:xml:catalog">
+          <cat:uri name="U_MS_OneDrive_V2R2_STIG_SCAP_1-4_Benchmark-enhancedV7-oval.xml" uri="#scap_navy.navwar.niwcatlantic.scc_cref_U_MS_OneDrive_V2R2_STIG_SCAP_1-4_Benchmark-enhancedV7-oval.xml"/>
+          <uri name="U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-oval2.xml" uri="#scap_navy.navwar.niwcatlantic.scc_cref_U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-oval2.xml"/>
+          <uri name="U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-ocil.xml" uri="#scap_navy.navwar.niwcatlantic.scc_cref_U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-ocil.xml"/>
+        </cat:catalog>
+      </component-ref>
+    </checklists>
+    <checks>
+      <component-ref xmlns:xlink="http://www.w3.org/1999/xlink" id="scap_navy.navwar.niwcatlantic.scc_cref_U_MS_OneDrive_V2R2_STIG_SCAP_1-4_Benchmark-enhancedV7-oval.xml" xlink:href="#scap_navy.navwar.niwcatlantic.scc_comp_U_MS_OneDrive_V2R2_STIG_SCAP_1-4_Benchmark-enhancedV7-oval.xml"/>
+      <component-ref xmlns:xlink="http://www.w3.org/1999/xlink" id="scap_navy.navwar.niwcatlantic.scc_cref_U_MS_OneDrive_V2R2_STIG_SCAP_1-4_Benchmark-enhancedV7-cpe-oval.xml" xlink:href="#scap_navy.navwar.niwcatlantic.scc_comp_U_MS_OneDrive_V2R2_STIG_SCAP_1-4_Benchmark-enhancedV7-cpe-oval.xml"/>
+      <component-ref xmlns:xlink="http://www.w3.org/1999/xlink" id="scap_navy.navwar.niwcatlantic.scc_cref_U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-oval2.xml" xlink:href="#scap_navy.navwar.niwcatlantic.scc_comp_U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-oval2.xml"/>
+      <component-ref xmlns:xlink="http://www.w3.org/1999/xlink" id="scap_navy.navwar.niwcatlantic.scc_cref_U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-ocil.xml" xlink:href="#scap_navy.navwar.niwcatlantic.scc_comp_U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-ocil.xml"/>
+    </checks>
+  </data-stream>
+  <component id="scap_navy.navwar.niwcatlantic.scc_comp_U_MS_OneDrive_V2R2_STIG_SCAP_1-4_Benchmark-enhancedV7-xccdf.xml" timestamp="2025-09-16T13:55:38.438416+00:00">
+    <xccdf:Benchmark xmlns:xccdf="http://checklists.nist.gov/xccdf/1.2" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:cpe="http://cpe.mitre.org/language/2.0" id="xccdf_navy.navwar.niwcatlantic.scc_benchmark_Microsoft_OneDrive_STIG" xml:lang="en">
+      <xccdf:status date="2025-09-16">deprecated</xccdf:status>
+      <xccdf:title>Microsoft OneDrive STIG SCAP Benchmark - NIWC Enhanced with Manual Questions</xccdf:title>
+      <xccdf:description>This SCAP Benchmark was created based on the DISA Microsoft OneDrive Security Technical Implementation Guide, Version 2, Release 2, by NIWC Atlantic.  For questions/issues with the content please contact:  scc.fct@navy.mil</xccdf:description>
+      <xccdf:notice id="terms-of-use" xml:lang="en">Portions of this document were developed at Naval Information Warfare Center Atlantic by employees of the Federal Government in the course of their official duties. Pursuant to title 17 Section 105 of the United States Code this software is not subject to copyright protection and is in the public domain. The Government assumes no responsibility whatsoever for its use by other parties, and the software is provided "AS IS" without warranty or guarantee of any kind, express or implied, including, but not limited to, the warranties of merchantability and of fitness for a particular purpose. In no event shall the Government be liable for any claim, damages or other liability, whether in an action of contract, tort or other dealings in the software. The Government has no obligation hereunder to provide maintenance, support, updates, enhancements, or modifications. We would appreciate acknowledgement if the software is used. This software can be redistributed and/or modified freely provided that any derivative works bear some notice that they are derived from it, and any modified versions bear some notice that they have been modified.</xccdf:notice>
+      <xccdf:front-matter xml:lang="en">This content stream was enhanced with OCIL manual questions derived from the STIG Manual by the NIWC SCC team.
+Timestamp: 2025-09-16T13:55:38.438416+00:00
+Tool Version: 2.0
+STIG Manual Version: 2
+SCAP Benchmark Version: 002.004
+Total Rules: 12
+DISA Automated Rules: 0
+NIST Automated Rules: 0
+NIWC Automated Rules: 12
+Manual rules added: 0</xccdf:front-matter>
+      <xccdf:rear-matter xml:lang="en">This data is metadata to be used for the creation of CKL reports.
+version:--:2
+classification:--:UNCLASSIFIED
+customname:--:
+stigid:--:Microsoft_OneDrive
+description:--:This Security Technical Implementation Guide is published as a tool to improve the security of Department of Defense (DOD) information systems. The requirements are derived from the National Institute of Standards and Technology (NIST) 800-53 and related documents. Comments or proposed revisions to this document should be sent via email to the following address: disa.stig_spt@mail.mil.
+filename:--:U_MS_OneDrive_V2R4_STIG_Manual-xccdf.xml
+releaseinfo:--:Release: 4 Benchmark Date: 02 Jul 2025
+title:--:Microsoft OneDrive Security Technical Implementation Guide
+uuid:--:
+notice:--:
+source:--:STIG.DOD.MIL</xccdf:rear-matter>
+      <xccdf:reference href="https://cyber.mil">
+        <dc:publisher>NIWC</dc:publisher>
+        <dc:source>STIG.DOD.MIL</dc:source>
+      </xccdf:reference>
+      <xccdf:plain-text id="release-info">Enhanced Content 002.004.7 Date: 2025-09-16, based on Release: 4 Benchmark Date: 02 Jul 2025</xccdf:plain-text>
+      <xccdf:plain-text id="generator">3.5</xccdf:plain-text>
+      <xccdf:plain-text id="conventionsVersion">1.10.0</xccdf:plain-text>
+      <xccdf:platform idref="cpe:/a:microsoft:onedrive:-"/>
+      <xccdf:version>002.004.007</xccdf:version>
+      <xccdf:metadata>
+        <dc:creator>NIWC</dc:creator>
+        <dc:publisher>NIWC</dc:publisher>
+        <dc:contributor>NIWC</dc:contributor>
+        <dc:contributor>DISA</dc:contributor>
+        <dc:source>STIG.DOD.MIL</dc:source>
+      </xccdf:metadata>
+      <xccdf:Profile id="xccdf_navy.navwar.niwcatlantic.scc.ms_profile_MAC-1_Classified">
+        <xccdf:title>I - Mission Critical Classified</xccdf:title>
+        <xccdf:description>&lt;ProfileDescription&gt;&lt;/ProfileDescription&gt;</xccdf:description>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215529" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215531" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215532" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215533" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215534" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215535" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215536" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215537" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215538" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-230562" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-230564" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-275978" selected="true"/>
+      </xccdf:Profile>
+      <xccdf:Profile id="xccdf_navy.navwar.niwcatlantic.scc.ms_profile_MAC-1_Public">
+        <xccdf:title>I - Mission Critical Public</xccdf:title>
+        <xccdf:description>&lt;ProfileDescription&gt;&lt;/ProfileDescription&gt;</xccdf:description>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215529" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215531" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215532" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215533" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215534" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215535" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215536" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215537" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215538" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-230562" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-230564" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-275978" selected="true"/>
+      </xccdf:Profile>
+      <xccdf:Profile id="xccdf_navy.navwar.niwcatlantic.scc.ms_profile_MAC-1_Sensitive">
+        <xccdf:title>I - Mission Critical Sensitive</xccdf:title>
+        <xccdf:description>&lt;ProfileDescription&gt;&lt;/ProfileDescription&gt;</xccdf:description>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215529" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215531" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215532" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215533" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215534" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215535" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215536" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215537" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215538" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-230562" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-230564" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-275978" selected="true"/>
+      </xccdf:Profile>
+      <xccdf:Profile id="xccdf_navy.navwar.niwcatlantic.scc.ms_profile_MAC-2_Classified">
+        <xccdf:title>II - Mission Support Classified</xccdf:title>
+        <xccdf:description>&lt;ProfileDescription&gt;&lt;/ProfileDescription&gt;</xccdf:description>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215529" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215531" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215532" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215533" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215534" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215535" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215536" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215537" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215538" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-230562" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-230564" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-275978" selected="true"/>
+      </xccdf:Profile>
+      <xccdf:Profile id="xccdf_navy.navwar.niwcatlantic.scc.ms_profile_MAC-2_Public">
+        <xccdf:title>II - Mission Support Public</xccdf:title>
+        <xccdf:description>&lt;ProfileDescription&gt;&lt;/ProfileDescription&gt;</xccdf:description>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215529" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215531" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215532" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215533" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215534" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215535" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215536" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215537" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215538" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-230562" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-230564" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-275978" selected="true"/>
+      </xccdf:Profile>
+      <xccdf:Profile id="xccdf_navy.navwar.niwcatlantic.scc.ms_profile_MAC-2_Sensitive">
+        <xccdf:title>II - Mission Support Sensitive</xccdf:title>
+        <xccdf:description>&lt;ProfileDescription&gt;&lt;/ProfileDescription&gt;</xccdf:description>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215529" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215531" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215532" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215533" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215534" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215535" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215536" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215537" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215538" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-230562" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-230564" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-275978" selected="true"/>
+      </xccdf:Profile>
+      <xccdf:Profile id="xccdf_navy.navwar.niwcatlantic.scc.ms_profile_MAC-3_Classified">
+        <xccdf:title>III - Administrative Classified</xccdf:title>
+        <xccdf:description>&lt;ProfileDescription&gt;&lt;/ProfileDescription&gt;</xccdf:description>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215529" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215531" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215532" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215533" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215534" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215535" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215536" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215537" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215538" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-230562" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-230564" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-275978" selected="true"/>
+      </xccdf:Profile>
+      <xccdf:Profile id="xccdf_navy.navwar.niwcatlantic.scc.ms_profile_MAC-3_Public">
+        <xccdf:title>III - Administrative Public</xccdf:title>
+        <xccdf:description>&lt;ProfileDescription&gt;&lt;/ProfileDescription&gt;</xccdf:description>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215529" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215531" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215532" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215533" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215534" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215535" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215536" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215537" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215538" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-230562" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-230564" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-275978" selected="true"/>
+      </xccdf:Profile>
+      <xccdf:Profile id="xccdf_navy.navwar.niwcatlantic.scc.ms_profile_MAC-3_Sensitive">
+        <xccdf:title>III - Administrative Sensitive</xccdf:title>
+        <xccdf:description>&lt;ProfileDescription&gt;&lt;/ProfileDescription&gt;</xccdf:description>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215529" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215531" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215532" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215533" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215534" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215535" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215536" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215537" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215538" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-230562" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-230564" selected="true"/>
+        <xccdf:select idref="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-275978" selected="true"/>
+      </xccdf:Profile>
+      <xccdf:Group id="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215529">
+        <xccdf:title>SRG-APP-000210</xccdf:title>
+        <xccdf:description>&lt;GroupDescription&gt;&lt;/GroupDescription&gt;</xccdf:description>
+        <xccdf:Rule id="xccdf_navy.navwar.niwcatlantic.scc.ms_rule_SV-215529r961092_rule" weight="10.0" severity="medium">
+          <xccdf:version>DTOO104</xccdf:version>
+          <xccdf:title>Disabling of user name and password syntax from being used in URLs must be enforced.
+</xccdf:title>
+          <xccdf:description>&lt;VulnDiscussion&gt;The Uniform Resource Locator (URL) standard allows user authentication to be included in URL strings in the form http://username:password@example.com. A malicious user might use this URL syntax to create a hyperlink that appears to open a legitimate website but actually opens a deceptive (spoofed) website. For example, the URL http://www.wingtiptoys.com@example.com appears to open http://www.wingtiptoys.com but actually opens http://example.com. To protect users from such attacks, Internet Explorer usually blocks any URLs using this syntax.
+
+This functionality can be controlled separately for instances of Internet Explorer spawned by Office applications (for example, if a user clicks a link in an Office document or selects a menu option that loads a website). If user names and passwords in URLs are allowed, users could be diverted to dangerous Web pages, which could pose a security risk.&lt;/VulnDiscussion&gt;&lt;FalsePositives&gt;&lt;/FalsePositives&gt;&lt;FalseNegatives&gt;&lt;/FalseNegatives&gt;&lt;Documentable&gt;false&lt;/Documentable&gt;&lt;Mitigations&gt;&lt;/Mitigations&gt;&lt;SeverityOverrideGuidance&gt;&lt;/SeverityOverrideGuidance&gt;&lt;PotentialImpacts&gt;&lt;/PotentialImpacts&gt;&lt;ThirdPartyTools&gt;&lt;/ThirdPartyTools&gt;&lt;MitigationControl&gt;&lt;/MitigationControl&gt;&lt;Responsibility&gt;&lt;/Responsibility&gt;&lt;IAControls&gt;&lt;/IAControls&gt;</xccdf:description>
+          <xccdf:reference>
+            <dc:title>DPMS Target Microsoft OneDrive</dc:title>
+            <dc:publisher>DISA</dc:publisher>
+            <dc:type>DPMS Target</dc:type>
+            <dc:subject>Microsoft OneDrive</dc:subject>
+            <dc:identifier>4015</dc:identifier>
+          </xccdf:reference>
+          <xccdf:ident system="http://cyber.mil/legacy">SV-85921</xccdf:ident>
+          <xccdf:ident system="http://cyber.mil/legacy">V-71297</xccdf:ident>
+          <xccdf:ident system="http://cyber.mil/cci">CCI-001170</xccdf:ident>
+          <xccdf:fixtext fixref="F-16722r312206_fix">Set the policy value for Computer Configuration -&gt; Administrative Templates -&gt; Microsoft Office 2016 (Machine) -&gt; Security Settings -&gt; IE Security "Disable user name and password" to "Enabled" and place a check in the 'groove.exe' check box.
+</xccdf:fixtext>
+          <xccdf:fix id="F-16722r312206_fix"/>
+          <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5" selector="">
+            <xccdf:check-content-ref href="U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-oval2.xml" name="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:def:215529"/>
+          </xccdf:check>
+          <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5" selector="automated">
+            <xccdf:check-content-ref href="U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-oval2.xml" name="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:def:215529"/>
+          </xccdf:check>
+          <xccdf:check system="http://scap.nist.gov/schema/ocil/2" selector="manual">
+            <xccdf:check-content-ref href="U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-ocil.xml" name="ocil:navy.navwar.niwcatlantic.scc.onedrive:questionnaire:101"/>
+            <xccdf:check-content>Verify the policy value for Computer Configuration -&gt; Administrative Templates -&gt; Microsoft Office 2016 (Machine) -&gt; Security Settings -&gt; IE Security "Disable user name and password" is set to "Enabled" and 'groove.exe' is checked.
+
+Procedure: Use the Windows Registry Editor to navigate to the following key:
+HKLM\Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_HTTP_USERNAME_PASSWORD_DISABLE
+
+Criteria: If the value groove.exe is REG_DWORD = 1, this is not a finding.
+</xccdf:check-content>
+          </xccdf:check>
+        </xccdf:Rule>
+      </xccdf:Group>
+      <xccdf:Group id="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215531">
+        <xccdf:title>SRG-APP-000210</xccdf:title>
+        <xccdf:description>&lt;GroupDescription&gt;&lt;/GroupDescription&gt;</xccdf:description>
+        <xccdf:Rule id="xccdf_navy.navwar.niwcatlantic.scc.ms_rule_SV-215531r961092_rule" weight="10.0" severity="medium">
+          <xccdf:version>DTOO117</xccdf:version>
+          <xccdf:title>Saved from URL mark to assure Internet zone processing must be enforced.
+</xccdf:title>
+          <xccdf:description>&lt;VulnDiscussion&gt;Typically, when Internet Explorer loads a web page from a Universal Naming Convention (UNC) share that contains a Mark of the Web (MOTW) comment, indicating the page was saved from a site on the Internet, Internet Explorer runs the page in the Internet security zone instead of the less restrictive Local Intranet security zone. This functionality can be controlled separately for instances of Internet Explorer spawned by Office applications (for example, if a user clicks a link in an Office document or selects a menu option that loads a web page). If Internet Explorer does not evaluate the page for a MOTW, potentially dangerous code could be allowed to run.&lt;/VulnDiscussion&gt;&lt;FalsePositives&gt;&lt;/FalsePositives&gt;&lt;FalseNegatives&gt;&lt;/FalseNegatives&gt;&lt;Documentable&gt;false&lt;/Documentable&gt;&lt;Mitigations&gt;&lt;/Mitigations&gt;&lt;SeverityOverrideGuidance&gt;&lt;/SeverityOverrideGuidance&gt;&lt;PotentialImpacts&gt;&lt;/PotentialImpacts&gt;&lt;ThirdPartyTools&gt;&lt;/ThirdPartyTools&gt;&lt;MitigationControl&gt;&lt;/MitigationControl&gt;&lt;Responsibility&gt;&lt;/Responsibility&gt;&lt;IAControls&gt;&lt;/IAControls&gt;</xccdf:description>
+          <xccdf:reference>
+            <dc:title>DPMS Target Microsoft OneDrive</dc:title>
+            <dc:publisher>DISA</dc:publisher>
+            <dc:type>DPMS Target</dc:type>
+            <dc:subject>Microsoft OneDrive</dc:subject>
+            <dc:identifier>4015</dc:identifier>
+          </xccdf:reference>
+          <xccdf:ident system="http://cyber.mil/legacy">SV-85927</xccdf:ident>
+          <xccdf:ident system="http://cyber.mil/legacy">V-71303</xccdf:ident>
+          <xccdf:ident system="http://cyber.mil/cci">CCI-001170</xccdf:ident>
+          <xccdf:fixtext fixref="F-16724r312212_fix">Set the policy value for Computer Configuration -&gt; Administrative Templates -&gt; Microsoft Office 2016 (Machine) -&gt; Security Settings -&gt; IE Security "Saved from URL" to "Enabled" and place a check in the 'groove.exe' check box.
+</xccdf:fixtext>
+          <xccdf:fix id="F-16724r312212_fix"/>
+          <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5" selector="">
+            <xccdf:check-content-ref href="U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-oval2.xml" name="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:def:215531"/>
+          </xccdf:check>
+          <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5" selector="automated">
+            <xccdf:check-content-ref href="U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-oval2.xml" name="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:def:215531"/>
+          </xccdf:check>
+          <xccdf:check system="http://scap.nist.gov/schema/ocil/2" selector="manual">
+            <xccdf:check-content-ref href="U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-ocil.xml" name="ocil:navy.navwar.niwcatlantic.scc.onedrive:questionnaire:301"/>
+            <xccdf:check-content>Verify the policy value for Computer Configuration -&gt; Administrative Templates -&gt; Microsoft Office 2016 (Machine) -&gt; Security Settings -&gt; IE Security "Saved from URL" is set to "Enabled" and 'groove.exe' is checked.
+
+Procedure: Use the Windows Registry Editor to navigate to the following key: 
+
+HKLM\Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_UNC_SAVEDFILECHECK
+
+Criteria: If the value groove.exe is REG_DWORD = 1, this is not a finding.</xccdf:check-content>
+          </xccdf:check>
+        </xccdf:Rule>
+      </xccdf:Group>
+      <xccdf:Group id="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215532">
+        <xccdf:title>SRG-APP-000210</xccdf:title>
+        <xccdf:description>&lt;GroupDescription&gt;&lt;/GroupDescription&gt;</xccdf:description>
+        <xccdf:Rule id="xccdf_navy.navwar.niwcatlantic.scc.ms_rule_SV-215532r961092_rule" weight="10.0" severity="medium">
+          <xccdf:version>DTOO123</xccdf:version>
+          <xccdf:title>Navigation to URLs embedded in Office products must be blocked.
+</xccdf:title>
+          <xccdf:description>&lt;VulnDiscussion&gt;To protect users from attacks, Internet Explorer usually does not attempt to load malformed URLs. This functionality can be controlled separately for instances of Internet Explorer spawned by Office applications (for example, if a user clicks a link in an Office document or selects a menu option that loads a web page). If Internet Explorer attempts to load a malformed URL, a security risk could occur.&lt;/VulnDiscussion&gt;&lt;FalsePositives&gt;&lt;/FalsePositives&gt;&lt;FalseNegatives&gt;&lt;/FalseNegatives&gt;&lt;Documentable&gt;false&lt;/Documentable&gt;&lt;Mitigations&gt;&lt;/Mitigations&gt;&lt;SeverityOverrideGuidance&gt;&lt;/SeverityOverrideGuidance&gt;&lt;PotentialImpacts&gt;&lt;/PotentialImpacts&gt;&lt;ThirdPartyTools&gt;&lt;/ThirdPartyTools&gt;&lt;MitigationControl&gt;&lt;/MitigationControl&gt;&lt;Responsibility&gt;&lt;/Responsibility&gt;&lt;IAControls&gt;&lt;/IAControls&gt;</xccdf:description>
+          <xccdf:reference>
+            <dc:title>DPMS Target Microsoft OneDrive</dc:title>
+            <dc:publisher>DISA</dc:publisher>
+            <dc:type>DPMS Target</dc:type>
+            <dc:subject>Microsoft OneDrive</dc:subject>
+            <dc:identifier>4015</dc:identifier>
+          </xccdf:reference>
+          <xccdf:ident system="http://cyber.mil/legacy">SV-85929</xccdf:ident>
+          <xccdf:ident system="http://cyber.mil/legacy">V-71305</xccdf:ident>
+          <xccdf:ident system="http://cyber.mil/cci">CCI-001170</xccdf:ident>
+          <xccdf:fixtext fixref="F-16725r312215_fix">Set the policy value for Computer Configuration -&gt; Administrative Templates -&gt; Microsoft Office 2016 (Machine) -&gt; Security Settings -&gt; IE Security "Navigate URL" to "Enabled" and place a check in the 'groove.exe' check box.
+</xccdf:fixtext>
+          <xccdf:fix id="F-16725r312215_fix"/>
+          <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5" selector="">
+            <xccdf:check-content-ref href="U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-oval2.xml" name="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:def:215532"/>
+          </xccdf:check>
+          <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5" selector="automated">
+            <xccdf:check-content-ref href="U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-oval2.xml" name="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:def:215532"/>
+          </xccdf:check>
+          <xccdf:check system="http://scap.nist.gov/schema/ocil/2" selector="manual">
+            <xccdf:check-content-ref href="U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-ocil.xml" name="ocil:navy.navwar.niwcatlantic.scc.onedrive:questionnaire:501"/>
+            <xccdf:check-content>Verify the policy value for Computer Configuration -&gt; Administrative Templates -&gt; Microsoft Office 2016 (Machine) -&gt; Security Settings -&gt; IE Security "Navigate URL" is set to "Enabled" and 'groove.exe' is checked.
+
+Procedure: Use the Windows Registry Editor to navigate to the following key: 
+
+HKLM\Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_VALIDATE_NAVIGATE_URL
+
+Criteria: If the value groove.exe is REG_DWORD = 1, this is not a finding.</xccdf:check-content>
+          </xccdf:check>
+        </xccdf:Rule>
+      </xccdf:Group>
+      <xccdf:Group id="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215533">
+        <xccdf:title>SRG-APP-000112</xccdf:title>
+        <xccdf:description>&lt;GroupDescription&gt;&lt;/GroupDescription&gt;</xccdf:description>
+        <xccdf:Rule id="xccdf_navy.navwar.niwcatlantic.scc.ms_rule_SV-215533r960921_rule" weight="10.0" severity="medium">
+          <xccdf:version>DTOO124</xccdf:version>
+          <xccdf:title>Scripted Window Security must be enforced.
+</xccdf:title>
+          <xccdf:description>&lt;VulnDiscussion&gt;Malicious websites often try to confuse or trick users into giving a site permission to perform an action allowing the site to take control of the users' computers in some manner. Disabling or not configuring this setting allows unknown websites to:
+-Create browser windows appearing to be from the local operating system.
+-Draw active windows displaying outside of the viewable areas of the screen capturing keyboard input.
+-Overlay parent windows with their own browser windows to hide important system information, choices or prompts.&lt;/VulnDiscussion&gt;&lt;FalsePositives&gt;&lt;/FalsePositives&gt;&lt;FalseNegatives&gt;&lt;/FalseNegatives&gt;&lt;Documentable&gt;false&lt;/Documentable&gt;&lt;Mitigations&gt;&lt;/Mitigations&gt;&lt;SeverityOverrideGuidance&gt;&lt;/SeverityOverrideGuidance&gt;&lt;PotentialImpacts&gt;&lt;/PotentialImpacts&gt;&lt;ThirdPartyTools&gt;&lt;/ThirdPartyTools&gt;&lt;MitigationControl&gt;&lt;/MitigationControl&gt;&lt;Responsibility&gt;&lt;/Responsibility&gt;&lt;IAControls&gt;&lt;/IAControls&gt;</xccdf:description>
+          <xccdf:reference>
+            <dc:title>DPMS Target Microsoft OneDrive</dc:title>
+            <dc:publisher>DISA</dc:publisher>
+            <dc:type>DPMS Target</dc:type>
+            <dc:subject>Microsoft OneDrive</dc:subject>
+            <dc:identifier>4015</dc:identifier>
+          </xccdf:reference>
+          <xccdf:ident system="http://cyber.mil/legacy">SV-85933</xccdf:ident>
+          <xccdf:ident system="http://cyber.mil/legacy">V-71309</xccdf:ident>
+          <xccdf:ident system="http://cyber.mil/cci">CCI-001695</xccdf:ident>
+          <xccdf:fixtext fixref="F-16726r312218_fix">Set the policy value for Computer Configuration -&gt; Administrative Templates -&gt; Microsoft Office 2016 (Machine) -&gt; Security Settings -&gt; IE Security "Scripted Window Security Restrictions" to "Enabled" and place a check in the 'groove.exe' check box.
+</xccdf:fixtext>
+          <xccdf:fix id="F-16726r312218_fix"/>
+          <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5" selector="">
+            <xccdf:check-content-ref href="U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-oval2.xml" name="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:def:215533"/>
+          </xccdf:check>
+          <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5" selector="automated">
+            <xccdf:check-content-ref href="U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-oval2.xml" name="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:def:215533"/>
+          </xccdf:check>
+          <xccdf:check system="http://scap.nist.gov/schema/ocil/2" selector="manual">
+            <xccdf:check-content-ref href="U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-ocil.xml" name="ocil:navy.navwar.niwcatlantic.scc.onedrive:questionnaire:701"/>
+            <xccdf:check-content>Verify the policy value for Computer Configuration -&gt; Administrative Templates -&gt; Microsoft Office 2016 (Machine) -&gt; Security Settings -&gt; IE Security "Scripted Window Security Restrictions" is set to "Enabled" and 'groove.exe' is checked.
+
+Procedure: Use the Windows Registry Editor to navigate to the following key: 
+
+HKLM\Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_WINDOW_RESTRICTIONS
+
+Criteria: If the value groove.exe is REG_DWORD = 1, this is not a finding.</xccdf:check-content>
+          </xccdf:check>
+        </xccdf:Rule>
+      </xccdf:Group>
+      <xccdf:Group id="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215534">
+        <xccdf:title>SRG-APP-000207</xccdf:title>
+        <xccdf:description>&lt;GroupDescription&gt;&lt;/GroupDescription&gt;</xccdf:description>
+        <xccdf:Rule id="xccdf_navy.navwar.niwcatlantic.scc.ms_rule_SV-215534r961086_rule" weight="10.0" severity="medium">
+          <xccdf:version>DTOO126</xccdf:version>
+          <xccdf:title>Add-on Management functionality must be allowed.
+</xccdf:title>
+          <xccdf:description>&lt;VulnDiscussion&gt;Internet Explorer add-ons are pieces of code, run in Internet Explorer, to provide additional functionality. Rogue add-ons may contain viruses or other malicious code. Disabling or not configuring this setting could allow malicious code or users to become active on user computers or the network. For example, a malicious user can monitor and then use keystrokes users type into Internet Explorer. Even legitimate add-ons may demand resources, compromising the performance of Internet Explorer, and the operating systems for user computers.&lt;/VulnDiscussion&gt;&lt;FalsePositives&gt;&lt;/FalsePositives&gt;&lt;FalseNegatives&gt;&lt;/FalseNegatives&gt;&lt;Documentable&gt;false&lt;/Documentable&gt;&lt;Mitigations&gt;&lt;/Mitigations&gt;&lt;SeverityOverrideGuidance&gt;&lt;/SeverityOverrideGuidance&gt;&lt;PotentialImpacts&gt;&lt;/PotentialImpacts&gt;&lt;ThirdPartyTools&gt;&lt;/ThirdPartyTools&gt;&lt;MitigationControl&gt;&lt;/MitigationControl&gt;&lt;Responsibility&gt;&lt;/Responsibility&gt;&lt;IAControls&gt;&lt;/IAControls&gt;</xccdf:description>
+          <xccdf:reference>
+            <dc:title>DPMS Target Microsoft OneDrive</dc:title>
+            <dc:publisher>DISA</dc:publisher>
+            <dc:type>DPMS Target</dc:type>
+            <dc:subject>Microsoft OneDrive</dc:subject>
+            <dc:identifier>4015</dc:identifier>
+          </xccdf:reference>
+          <xccdf:ident system="http://cyber.mil/legacy">SV-85935</xccdf:ident>
+          <xccdf:ident system="http://cyber.mil/legacy">V-71311</xccdf:ident>
+          <xccdf:ident system="http://cyber.mil/cci">CCI-001662</xccdf:ident>
+          <xccdf:fixtext fixref="F-16727r312221_fix">Set the policy value for Computer Configuration -&gt; Administrative Templates -&gt; Microsoft Office 2016 (Machine) -&gt; Security Settings -&gt; IE Security "Add-on Management" to "Enabled" and place a check in the 'groove.exe' check box.
+</xccdf:fixtext>
+          <xccdf:fix id="F-16727r312221_fix"/>
+          <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5" selector="">
+            <xccdf:check-content-ref href="U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-oval2.xml" name="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:def:215534"/>
+          </xccdf:check>
+          <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5" selector="automated">
+            <xccdf:check-content-ref href="U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-oval2.xml" name="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:def:215534"/>
+          </xccdf:check>
+          <xccdf:check system="http://scap.nist.gov/schema/ocil/2" selector="manual">
+            <xccdf:check-content-ref href="U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-ocil.xml" name="ocil:navy.navwar.niwcatlantic.scc.onedrive:questionnaire:901"/>
+            <xccdf:check-content>Verify the policy value for Computer Configuration -&gt; Administrative Templates -&gt; Microsoft Office 2016 (Machine) -&gt; Security Settings -&gt; IE Security "Add-on Management" is set to "Enabled" and 'groove.exe' is checked.
+
+Procedure: Use the Windows Registry Editor to navigate to the following key: 
+
+HKLM\Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_ADDON_MANAGEMENT
+
+Criteria: If the value groove.exe is REG_DWORD = 1, this is not a finding.</xccdf:check-content>
+          </xccdf:check>
+        </xccdf:Rule>
+      </xccdf:Group>
+      <xccdf:Group id="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215535">
+        <xccdf:title>SRG-APP-000207</xccdf:title>
+        <xccdf:description>&lt;GroupDescription&gt;&lt;/GroupDescription&gt;</xccdf:description>
+        <xccdf:Rule id="xccdf_navy.navwar.niwcatlantic.scc.ms_rule_SV-215535r961086_rule" weight="10.0" severity="medium">
+          <xccdf:version>DTOO129</xccdf:version>
+          <xccdf:title>Links that invoke instances of Internet Explorer from within an Office product must be blocked.
+</xccdf:title>
+          <xccdf:description>&lt;VulnDiscussion&gt;The Pop-up Blocker feature in Internet Explorer can be used to block most unwanted pop-up and pop-under windows from appearing. This functionality can be controlled separately for instances of Internet Explorer spawned by Office applications (for example, if a user clicks a link in an Office document or selects a menu option that loads a web page). If the Pop-up Blocker is disabled, disruptive and potentially dangerous pop-up windows could load and present a security risk.&lt;/VulnDiscussion&gt;&lt;FalsePositives&gt;&lt;/FalsePositives&gt;&lt;FalseNegatives&gt;&lt;/FalseNegatives&gt;&lt;Documentable&gt;false&lt;/Documentable&gt;&lt;Mitigations&gt;&lt;/Mitigations&gt;&lt;SeverityOverrideGuidance&gt;&lt;/SeverityOverrideGuidance&gt;&lt;PotentialImpacts&gt;&lt;/PotentialImpacts&gt;&lt;ThirdPartyTools&gt;&lt;/ThirdPartyTools&gt;&lt;MitigationControl&gt;&lt;/MitigationControl&gt;&lt;Responsibility&gt;&lt;/Responsibility&gt;&lt;IAControls&gt;&lt;/IAControls&gt;</xccdf:description>
+          <xccdf:reference>
+            <dc:title>DPMS Target Microsoft OneDrive</dc:title>
+            <dc:publisher>DISA</dc:publisher>
+            <dc:type>DPMS Target</dc:type>
+            <dc:subject>Microsoft OneDrive</dc:subject>
+            <dc:identifier>4015</dc:identifier>
+          </xccdf:reference>
+          <xccdf:ident system="http://cyber.mil/legacy">SV-85937</xccdf:ident>
+          <xccdf:ident system="http://cyber.mil/legacy">V-71313</xccdf:ident>
+          <xccdf:ident system="http://cyber.mil/cci">CCI-001662</xccdf:ident>
+          <xccdf:fixtext fixref="F-16728r312224_fix">Set the policy value for Computer Configuration -&gt; Administrative Templates -&gt; Microsoft Office 2016 (Machine) -&gt; Security Settings -&gt; IE Security "Block popups" to "Enabled" and place a check in the 'groove.exe' check box.
+</xccdf:fixtext>
+          <xccdf:fix id="F-16728r312224_fix"/>
+          <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5" selector="">
+            <xccdf:check-content-ref href="U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-oval2.xml" name="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:def:215535"/>
+          </xccdf:check>
+          <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5" selector="automated">
+            <xccdf:check-content-ref href="U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-oval2.xml" name="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:def:215535"/>
+          </xccdf:check>
+          <xccdf:check system="http://scap.nist.gov/schema/ocil/2" selector="manual">
+            <xccdf:check-content-ref href="U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-ocil.xml" name="ocil:navy.navwar.niwcatlantic.scc.onedrive:questionnaire:1101"/>
+            <xccdf:check-content>Verify the policy value for Computer Configuration -&gt; Administrative Templates -&gt; Microsoft Office 2016 (Machine) -&gt; Security Settings -&gt; IE Security "Block popups" is set to "Enabled" and 'groove.exe' is checked.
+
+Procedure: Use the Windows Registry Editor to navigate to the following key: 
+
+HKLM\Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_WEBOC_POPUPMANAGEMENT
+
+Criteria: If the value groove.exe is REG_DWORD = 1, this is not a finding.</xccdf:check-content>
+          </xccdf:check>
+        </xccdf:Rule>
+      </xccdf:Group>
+      <xccdf:Group id="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215536">
+        <xccdf:title>SRG-APP-000209</xccdf:title>
+        <xccdf:description>&lt;GroupDescription&gt;&lt;/GroupDescription&gt;</xccdf:description>
+        <xccdf:Rule id="xccdf_navy.navwar.niwcatlantic.scc.ms_rule_SV-215536r961089_rule" weight="10.0" severity="medium">
+          <xccdf:version>DTOO132</xccdf:version>
+          <xccdf:title>File Downloads must be configured for proper restrictions.
+</xccdf:title>
+          <xccdf:description>&lt;VulnDiscussion&gt;Disabling this setting allows websites to present file download prompts via code without the user specifically initiating the download. User preferences may also allow the download to occur without prompting or interaction with the user. Even if Internet Explorer prompts the user to accept the download, some websites abuse this functionality. Malicious websites may continually prompt users to download a file or present confusing dialog boxes to trick users into downloading or running a file. If the download occurs and it contains malicious code, the code could become active on user computers or the network.&lt;/VulnDiscussion&gt;&lt;FalsePositives&gt;&lt;/FalsePositives&gt;&lt;FalseNegatives&gt;&lt;/FalseNegatives&gt;&lt;Documentable&gt;false&lt;/Documentable&gt;&lt;Mitigations&gt;&lt;/Mitigations&gt;&lt;SeverityOverrideGuidance&gt;&lt;/SeverityOverrideGuidance&gt;&lt;PotentialImpacts&gt;&lt;/PotentialImpacts&gt;&lt;ThirdPartyTools&gt;&lt;/ThirdPartyTools&gt;&lt;MitigationControl&gt;&lt;/MitigationControl&gt;&lt;Responsibility&gt;&lt;/Responsibility&gt;&lt;IAControls&gt;&lt;/IAControls&gt;</xccdf:description>
+          <xccdf:reference>
+            <dc:title>DPMS Target Microsoft OneDrive</dc:title>
+            <dc:publisher>DISA</dc:publisher>
+            <dc:type>DPMS Target</dc:type>
+            <dc:subject>Microsoft OneDrive</dc:subject>
+            <dc:identifier>4015</dc:identifier>
+          </xccdf:reference>
+          <xccdf:ident system="http://cyber.mil/legacy">SV-85941</xccdf:ident>
+          <xccdf:ident system="http://cyber.mil/legacy">V-71317</xccdf:ident>
+          <xccdf:ident system="http://cyber.mil/cci">CCI-001169</xccdf:ident>
+          <xccdf:fixtext fixref="F-16729r312227_fix">Set the policy value for Computer Configuration -&gt; Administrative Templates -&gt; Microsoft Office 2016 (Machine) -&gt; Security Settings -&gt; IE Security "Restrict File Download" to "Enabled" and place a check in the 'groove.exe' check box.</xccdf:fixtext>
+          <xccdf:fix id="F-16729r312227_fix"/>
+          <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5" selector="">
+            <xccdf:check-content-ref href="U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-oval2.xml" name="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:def:215536"/>
+          </xccdf:check>
+          <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5" selector="automated">
+            <xccdf:check-content-ref href="U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-oval2.xml" name="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:def:215536"/>
+          </xccdf:check>
+          <xccdf:check system="http://scap.nist.gov/schema/ocil/2" selector="manual">
+            <xccdf:check-content-ref href="U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-ocil.xml" name="ocil:navy.navwar.niwcatlantic.scc.onedrive:questionnaire:1301"/>
+            <xccdf:check-content>Verify the policy value for Computer Configuration -&gt; Administrative Templates -&gt; Microsoft Office 2016 (Machine) -&gt; Security Settings -&gt; IE Security "Restrict File Download" is set to "Enabled" and 'groove.exe' is checked.
+
+Procedure: Use the Windows Registry Editor to navigate to the following key: 
+
+HKLM\Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_RESTRICT_FILEDOWNLOAD
+
+Criteria: If the value of groove.exe is REG_DWORD = 1, this is not a finding.
+</xccdf:check-content>
+          </xccdf:check>
+        </xccdf:Rule>
+      </xccdf:Group>
+      <xccdf:Group id="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215537">
+        <xccdf:title>SRG-APP-000112</xccdf:title>
+        <xccdf:description>&lt;GroupDescription&gt;&lt;/GroupDescription&gt;</xccdf:description>
+        <xccdf:Rule id="xccdf_navy.navwar.niwcatlantic.scc.ms_rule_SV-215537r960921_rule" weight="10.0" severity="medium">
+          <xccdf:version>DTOO209</xccdf:version>
+          <xccdf:title>Protection from zone elevation must be enforced.
+</xccdf:title>
+          <xccdf:description>&lt;VulnDiscussion&gt;Internet Explorer places restrictions on each web page users can use the browser to open. Web pages on a user's local computer have the fewest security restrictions and reside in the Local Machine zone, making this security zone a prime target for malicious users and code. Disabling or not configuring this setting could allow pages in the Internet zone to navigate to pages in the Local Machine zone to then run code to elevate privileges. This could allow malicious code or users to become active on user computers or the network.&lt;/VulnDiscussion&gt;&lt;FalsePositives&gt;&lt;/FalsePositives&gt;&lt;FalseNegatives&gt;&lt;/FalseNegatives&gt;&lt;Documentable&gt;false&lt;/Documentable&gt;&lt;Mitigations&gt;&lt;/Mitigations&gt;&lt;SeverityOverrideGuidance&gt;&lt;/SeverityOverrideGuidance&gt;&lt;PotentialImpacts&gt;&lt;/PotentialImpacts&gt;&lt;ThirdPartyTools&gt;&lt;/ThirdPartyTools&gt;&lt;MitigationControl&gt;&lt;/MitigationControl&gt;&lt;Responsibility&gt;&lt;/Responsibility&gt;&lt;IAControls&gt;&lt;/IAControls&gt;</xccdf:description>
+          <xccdf:reference>
+            <dc:title>DPMS Target Microsoft OneDrive</dc:title>
+            <dc:publisher>DISA</dc:publisher>
+            <dc:type>DPMS Target</dc:type>
+            <dc:subject>Microsoft OneDrive</dc:subject>
+            <dc:identifier>4015</dc:identifier>
+          </xccdf:reference>
+          <xccdf:ident system="http://cyber.mil/legacy">SV-85943</xccdf:ident>
+          <xccdf:ident system="http://cyber.mil/legacy">V-71319</xccdf:ident>
+          <xccdf:ident system="http://cyber.mil/cci">CCI-001695</xccdf:ident>
+          <xccdf:fixtext fixref="F-16730r312230_fix">Set the policy value for Computer Configuration -&gt; Administrative Templates -&gt; Microsoft Office 2016 (Machine) -&gt; Security Settings -&gt; IE Security "Protection From Zone Elevation" to "Enabled" and place a check in the 'groove.exe' check box.
+</xccdf:fixtext>
+          <xccdf:fix id="F-16730r312230_fix"/>
+          <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5" selector="">
+            <xccdf:check-content-ref href="U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-oval2.xml" name="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:def:215537"/>
+          </xccdf:check>
+          <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5" selector="automated">
+            <xccdf:check-content-ref href="U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-oval2.xml" name="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:def:215537"/>
+          </xccdf:check>
+          <xccdf:check system="http://scap.nist.gov/schema/ocil/2" selector="manual">
+            <xccdf:check-content-ref href="U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-ocil.xml" name="ocil:navy.navwar.niwcatlantic.scc.onedrive:questionnaire:1501"/>
+            <xccdf:check-content>Verify the policy value for Computer Configuration -&gt; Administrative Templates -&gt; Microsoft Office 2016 (Machine) -&gt; Security Settings -&gt; IE Security "Protection From Zone Elevation" is set to "Enabled" and 'groove.exe' is checked.
+
+Procedure: Use the Windows Registry Editor to navigate to the following key: 
+
+HKLM\Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_ZONE_ELEVATION
+
+Criteria: If the value groove.exe is REG_DWORD = 1, this is not a finding.</xccdf:check-content>
+          </xccdf:check>
+        </xccdf:Rule>
+      </xccdf:Group>
+      <xccdf:Group id="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-215538">
+        <xccdf:title>SRG-APP-000488</xccdf:title>
+        <xccdf:description>&lt;GroupDescription&gt;&lt;/GroupDescription&gt;</xccdf:description>
+        <xccdf:Rule id="xccdf_navy.navwar.niwcatlantic.scc.ms_rule_SV-215538r961779_rule" weight="10.0" severity="medium">
+          <xccdf:version>DTOO211</xccdf:version>
+          <xccdf:title>ActiveX Installs must be configured for proper restriction.
+</xccdf:title>
+          <xccdf:description>&lt;VulnDiscussion&gt;Microsoft ActiveX controls allow unmanaged, unprotected code to run on the user computers. ActiveX controls do not run within a protected container in the browser like the other types of HTML or Microsoft Silverlight-based controls. Disabling or not configuring this setting does not block prompts for ActiveX control installations, and these prompts display to users. This could allow malicious code to become active on user computers or the network.&lt;/VulnDiscussion&gt;&lt;FalsePositives&gt;&lt;/FalsePositives&gt;&lt;FalseNegatives&gt;&lt;/FalseNegatives&gt;&lt;Documentable&gt;false&lt;/Documentable&gt;&lt;Mitigations&gt;&lt;/Mitigations&gt;&lt;SeverityOverrideGuidance&gt;&lt;/SeverityOverrideGuidance&gt;&lt;PotentialImpacts&gt;&lt;/PotentialImpacts&gt;&lt;ThirdPartyTools&gt;&lt;/ThirdPartyTools&gt;&lt;MitigationControl&gt;&lt;/MitigationControl&gt;&lt;Responsibility&gt;&lt;/Responsibility&gt;&lt;IAControls&gt;&lt;/IAControls&gt;</xccdf:description>
+          <xccdf:reference>
+            <dc:title>DPMS Target Microsoft OneDrive</dc:title>
+            <dc:publisher>DISA</dc:publisher>
+            <dc:type>DPMS Target</dc:type>
+            <dc:subject>Microsoft OneDrive</dc:subject>
+            <dc:identifier>4015</dc:identifier>
+          </xccdf:reference>
+          <xccdf:ident system="http://cyber.mil/legacy">SV-85945</xccdf:ident>
+          <xccdf:ident system="http://cyber.mil/legacy">V-71321</xccdf:ident>
+          <xccdf:ident system="http://cyber.mil/cci">CCI-002460</xccdf:ident>
+          <xccdf:fixtext fixref="F-16731r312233_fix">Set the policy value for Computer Configuration -&gt; Administrative Templates -&gt; Microsoft Office 2016 (Machine) -&gt; Security Settings -&gt; IE Security "Restrict ActiveX Install" to "Enabled" and place a check in the 'groove.exe' check box.</xccdf:fixtext>
+          <xccdf:fix id="F-16731r312233_fix"/>
+          <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5" selector="">
+            <xccdf:check-content-ref href="U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-oval2.xml" name="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:def:215538"/>
+          </xccdf:check>
+          <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5" selector="automated">
+            <xccdf:check-content-ref href="U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-oval2.xml" name="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:def:215538"/>
+          </xccdf:check>
+          <xccdf:check system="http://scap.nist.gov/schema/ocil/2" selector="manual">
+            <xccdf:check-content-ref href="U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-ocil.xml" name="ocil:navy.navwar.niwcatlantic.scc.onedrive:questionnaire:1701"/>
+            <xccdf:check-content>Verify the policy value for Computer Configuration -&gt; Administrative Templates -&gt; Microsoft Office 2016 (Machine) -&gt; Security Settings -&gt; IE Security "Restrict ActiveX Install" is set to "Enabled" and 'groove.exe' is checked.
+
+Procedure: Use the Windows Registry Editor to navigate to the following key: 
+
+HKLM\Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_RESTRICT_ACTIVEXINSTALL
+
+Criteria: If the value groove.exe is REG_DWORD = 1, this is not a finding.</xccdf:check-content>
+          </xccdf:check>
+        </xccdf:Rule>
+      </xccdf:Group>
+      <xccdf:Group id="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-230562">
+        <xccdf:title>SRG-APP-000516</xccdf:title>
+        <xccdf:description>&lt;GroupDescription&gt;&lt;/GroupDescription&gt;</xccdf:description>
+        <xccdf:Rule id="xccdf_navy.navwar.niwcatlantic.scc.ms_rule_SV-230562r961863_rule" weight="10.0" severity="medium">
+          <xccdf:version>DTOO605</xccdf:version>
+          <xccdf:title>OneDrive must only allow synchronizing of accounts for DoD organization instances.</xccdf:title>
+          <xccdf:description>&lt;VulnDiscussion&gt;OneDrive provides access to external services for data storage, which must be restricted to authorized instances if enabled. Configuring this setting will restrict synchronizing of OneDrive accounts to DoD organization instances.&lt;/VulnDiscussion&gt;&lt;FalsePositives&gt;&lt;/FalsePositives&gt;&lt;FalseNegatives&gt;&lt;/FalseNegatives&gt;&lt;Documentable&gt;false&lt;/Documentable&gt;&lt;Mitigations&gt;&lt;/Mitigations&gt;&lt;SeverityOverrideGuidance&gt;&lt;/SeverityOverrideGuidance&gt;&lt;PotentialImpacts&gt;&lt;/PotentialImpacts&gt;&lt;ThirdPartyTools&gt;&lt;/ThirdPartyTools&gt;&lt;MitigationControl&gt;&lt;/MitigationControl&gt;&lt;Responsibility&gt;&lt;/Responsibility&gt;&lt;IAControls&gt;&lt;/IAControls&gt;</xccdf:description>
+          <xccdf:reference>
+            <dc:title>DPMS Target Microsoft OneDrive</dc:title>
+            <dc:publisher>DISA</dc:publisher>
+            <dc:type>DPMS Target</dc:type>
+            <dc:subject>Microsoft OneDrive</dc:subject>
+            <dc:identifier>4015</dc:identifier>
+          </xccdf:reference>
+          <xccdf:ident system="http://cyber.mil/legacy">SV-98853</xccdf:ident>
+          <xccdf:ident system="http://cyber.mil/legacy">V-88203</xccdf:ident>
+          <xccdf:ident system="http://cyber.mil/cci">CCI-000366</xccdf:ident>
+          <xccdf:fixtext fixref="F-33206r603118_fix">Configure the policy value for Computer Configuration &gt;&gt; Administrative Templates &gt;&gt; OneDrive &gt;&gt; "Allow syncing OneDrive accounts for only specific organizations", with the Tenant GUID of the organization's DoD instance in the format 1111-2222-3333-4444.
+
+If the organization does not have an instance of OneDrive, configure the Tenant GUID with "1111-2222-3333-4444".
+
+Group policy files for OneDrive are located on a system with OneDrive in "%localappdata%\Microsoft\OneDrive\BuildNumber\adm\".
+
+Copy the OneDrive.admx and .adml files to the \Windows\PolicyDefinitions and \Windows\PolicyDefinitions\en-US directories respectively.</xccdf:fixtext>
+          <xccdf:fix id="F-33206r603118_fix"/>
+          <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5" selector="">
+            <xccdf:check-content-ref href="U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-oval2.xml" name="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:def:230562"/>
+          </xccdf:check>
+          <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5" selector="automated">
+            <xccdf:check-content-ref href="U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-oval2.xml" name="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:def:230562"/>
+          </xccdf:check>
+          <xccdf:check system="http://scap.nist.gov/schema/ocil/2" selector="manual">
+            <xccdf:check-content-ref href="U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-ocil.xml" name="ocil:navy.navwar.niwcatlantic.scc.onedrive:questionnaire:1901"/>
+            <xccdf:check-content>If the organization is using a DoD instance of OneDrive, verify synchronizing is only allowed to the organization's DoD instance.
+
+If the organization does not have an instance of OneDrive, verify this is configured with the noted dummy entry to prevent synchronizing with other instances.
+
+If the following registry value does not exist or is not configured as specified, this is a finding.
+
+Registry Hive: HKEY_LOCAL_MACHINE
+Registry Path: \SOFTWARE\Policies\Microsoft\OneDrive\AllowTenantList\
+
+Value Name: Organization's Tenant GUID
+
+Value Type: REG_SZ
+Value: Organization's Tenant GUID
+
+If the organization does not have an instance of OneDrive, the Value Name and Value must be 1111-2222-3333-4444.
+
+If it is not, this is a finding.</xccdf:check-content>
+          </xccdf:check>
+        </xccdf:Rule>
+      </xccdf:Group>
+      <xccdf:Group id="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-230564">
+        <xccdf:title>SRG-APP-000141</xccdf:title>
+        <xccdf:description>&lt;GroupDescription&gt;&lt;/GroupDescription&gt;</xccdf:description>
+        <xccdf:Rule id="xccdf_navy.navwar.niwcatlantic.scc.ms_rule_SV-230564r960963_rule" weight="10.0" severity="medium">
+          <xccdf:version>DTOO607</xccdf:version>
+          <xccdf:title>The use of personal accounts for OneDrive synchronization must be disabled.</xccdf:title>
+          <xccdf:description>&lt;VulnDiscussion&gt;OneDrive provides access to external services for data storage, which must be restricted to authorized instances. Enabling this setting will prevent the use of personal OneDrive accounts for synchronization.&lt;/VulnDiscussion&gt;&lt;FalsePositives&gt;&lt;/FalsePositives&gt;&lt;FalseNegatives&gt;&lt;/FalseNegatives&gt;&lt;Documentable&gt;false&lt;/Documentable&gt;&lt;Mitigations&gt;&lt;/Mitigations&gt;&lt;SeverityOverrideGuidance&gt;&lt;/SeverityOverrideGuidance&gt;&lt;PotentialImpacts&gt;&lt;/PotentialImpacts&gt;&lt;ThirdPartyTools&gt;&lt;/ThirdPartyTools&gt;&lt;MitigationControl&gt;&lt;/MitigationControl&gt;&lt;Responsibility&gt;&lt;/Responsibility&gt;&lt;IAControls&gt;&lt;/IAControls&gt;</xccdf:description>
+          <xccdf:reference>
+            <dc:title>DPMS Target Microsoft OneDrive</dc:title>
+            <dc:publisher>DISA</dc:publisher>
+            <dc:type>DPMS Target</dc:type>
+            <dc:subject>Microsoft OneDrive</dc:subject>
+            <dc:identifier>4015</dc:identifier>
+          </xccdf:reference>
+          <xccdf:ident system="http://cyber.mil/legacy">V-82137</xccdf:ident>
+          <xccdf:ident system="http://cyber.mil/legacy">SV-96851</xccdf:ident>
+          <xccdf:ident system="http://cyber.mil/cci">CCI-000381</xccdf:ident>
+          <xccdf:fixtext fixref="F-33208r918122_fix">Configure the policy value for User Configuration &gt;&gt; Administrative Templates &gt;&gt; OneDrive &gt;&gt; "Prevent users from syncing personal OneDrive accounts" to "Enabled". 
+
+Group policy files for OneDrive are located on a system with OneDrive in "%localappdata%\Microsoft\OneDrive\BuildNumber\adm\".
+
+Copy the OneDrive.admx and .adml files to the \Windows\PolicyDefinitions and \Windows\PolicyDefinitions\en-US directories respectively.</xccdf:fixtext>
+          <xccdf:fix id="F-33208r918122_fix"/>
+          <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5" selector="">
+            <xccdf:check-content-ref href="U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-oval2.xml" name="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:def:230564"/>
+          </xccdf:check>
+          <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5" selector="automated">
+            <xccdf:check-content-ref href="U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-oval2.xml" name="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:def:230564"/>
+          </xccdf:check>
+          <xccdf:check system="http://scap.nist.gov/schema/ocil/2" selector="manual">
+            <xccdf:check-content-ref href="U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-ocil.xml" name="ocil:navy.navwar.niwcatlantic.scc.onedrive:questionnaire:2101"/>
+            <xccdf:check-content>If the following registry value does not exist or is not configured as specified, this is a finding.
+
+Registry Hive: HKEY_CURRENT_USER
+Registry Path: \Software\Policies\Microsoft\OneDrive\
+
+Value Name: DisablePersonalSync
+
+Value Type: REG_DWORD
+Value: 0x00000001 (1)</xccdf:check-content>
+          </xccdf:check>
+        </xccdf:Rule>
+      </xccdf:Group>
+      <xccdf:Group id="xccdf_navy.navwar.niwcatlantic.scc.ms_group_V-275978">
+        <xccdf:title>SRG-APP-000456</xccdf:title>
+        <xccdf:description>&lt;GroupDescription&gt;&lt;/GroupDescription&gt;</xccdf:description>
+        <xccdf:Rule id="xccdf_navy.navwar.niwcatlantic.scc.ms_rule_SV-275978r1111822_rule" weight="10.0" severity="high">
+          <xccdf:version>DTOO999-OneDrive</xccdf:version>
+          <xccdf:title>The version of OneDrive running on the system must be a supported version.</xccdf:title>
+          <xccdf:description>&lt;VulnDiscussion&gt;Security flaws with software applications are discovered daily. Vendors are constantly updating and patching their products to address newly discovered security vulnerabilities. Organizations (including any contractor to the organization) are required to promptly install security-relevant software updates (e.g., patches, service packs, and hot fixes). Flaws discovered during security assessments, continuous monitoring, incident response activities, or information system error handling must also be addressed expeditiously.
+
+Organization-defined time periods for updating security-relevant software may vary based on a variety of factors including, for example, the security category of the information system or the criticality of the update (i.e., severity of the vulnerability related to the discovered flaw).
+
+This requirement will apply to software patch management solutions that are used to install patches across the enclave and also to applications themselves that are not part of that patch management solution. For example, many browsers today provide the capability to install their own patch software. Patch criticality, as well as system criticality will vary. Therefore, the tactical situations regarding the patch management process will also vary. This means that the time period used must be a configurable parameter. Time frames for application of security-relevant software updates may be dependent upon the Information Assurance Vulnerability Management (IAVM) process.
+
+The application will be configured to check for and install security-relevant software updates within an identified time period from the availability of the update. The specific time period will be defined by an authoritative source (e.g., IAVM, CTOs, DTMs, and STIGs).&lt;/VulnDiscussion&gt;&lt;FalsePositives&gt;&lt;/FalsePositives&gt;&lt;FalseNegatives&gt;&lt;/FalseNegatives&gt;&lt;Documentable&gt;false&lt;/Documentable&gt;&lt;Mitigations&gt;&lt;/Mitigations&gt;&lt;SeverityOverrideGuidance&gt;&lt;/SeverityOverrideGuidance&gt;&lt;PotentialImpacts&gt;&lt;/PotentialImpacts&gt;&lt;ThirdPartyTools&gt;&lt;/ThirdPartyTools&gt;&lt;MitigationControl&gt;&lt;/MitigationControl&gt;&lt;Responsibility&gt;&lt;/Responsibility&gt;&lt;IAControls&gt;&lt;/IAControls&gt;</xccdf:description>
+          <xccdf:reference>
+            <dc:title>DPMS Target Microsoft OneDrive</dc:title>
+            <dc:publisher>DISA</dc:publisher>
+            <dc:type>DPMS Target</dc:type>
+            <dc:subject>Microsoft OneDrive</dc:subject>
+            <dc:identifier>4015</dc:identifier>
+          </xccdf:reference>
+          <xccdf:ident system="http://cyber.mil/cci">CCI-002605</xccdf:ident>
+          <xccdf:fixtext fixref="F-80001r1111821_fix">Upgrade to a supported version.</xccdf:fixtext>
+          <xccdf:fix id="F-80001r1111821_fix"/>
+          <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5" selector="">
+            <xccdf:check-content-ref href="U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-oval2.xml" name="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:def:275978"/>
+          </xccdf:check>
+          <xccdf:check system="http://oval.mitre.org/XMLSchema/oval-definitions-5" selector="automated">
+            <xccdf:check-content-ref href="U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-oval2.xml" name="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:def:275978"/>
+          </xccdf:check>
+          <xccdf:check system="http://scap.nist.gov/schema/ocil/2" selector="manual">
+            <xccdf:check-content-ref href="U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-ocil.xml" name="ocil:navy.navwar.niwcatlantic.scc.onedrive:questionnaire:2301"/>
+            <xccdf:check-content>OneDrive version 24.x.x.x (and older) are no longer supported by the vendor. If the system is running OneDrive version 24.x.x.x (or older), this is a finding.</xccdf:check-content>
+          </xccdf:check>
+        </xccdf:Rule>
+      </xccdf:Group>
+    </xccdf:Benchmark>
+  </component>
+  <component id="scap_navy.navwar.niwcatlantic.scc_comp_U_MS_OneDrive_V2R2_STIG_SCAP_1-4_Benchmark-enhancedV7-cpe-oval.xml" timestamp="2025-09-16T13:55:38.438416+00:00">
+    <oval_definitions xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5" xmlns:oval="http://oval.mitre.org/XMLSchema/oval-common-5" xmlns:oval-def="http://oval.mitre.org/XMLSchema/oval-definitions-5" xmlns:macos-def="http://oval.mitre.org/XMLSchema/oval-definitions-5#windows" xmlns:independent-def="http://oval.mitre.org/XMLSchema/oval-definitions-5#independent" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://oval.mitre.org/XMLSchema/oval-definitions-5 https://oval.mitre.org/language/version5.11/ovaldefinition/complete/oval-definitions-schema.xsd http://oval.mitre.org/XMLSchema/oval-common-5 https://oval.mitre.org/language/version5.11/ovaldefinition/complete/oval-common-schema.xsd http://oval.mitre.org/XMLSchema/oval-definitions-5#windows https://oval.mitre.org/language/version5.11/ovaldefinition/complete/windows-definitions-schema.xsd http://oval.mitre.org/XMLSchema/oval-definitions-5#independent https://oval.mitre.org/language/version5.11/ovaldefinition/complete/independent-definitions-schema.xsd">
+      <oval-def:generator>
+        <oval:product_name>Naval Information Warfare Center Atlantic</oval:product_name>
+        <oval:schema_version>5.11.2</oval:schema_version>
+        <oval:timestamp>2025-07-17T09:00:00</oval:timestamp>
+      </oval-def:generator>
+      <definitions>
+        <definition id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:def:1" version="1" class="inventory">
+          <metadata>
+            <title>Microsoft OneDrive</title>
+            <affected family="windows">
+              <platform>Windows</platform>
+            </affected>
+            <reference source="CPE" ref_id="cpe:/a:microsoft:onedrive:-"/>
+            <description>Microsoft OneDrive</description>
+          </metadata>
+          <criteria operator="AND">
+            <criterion test_ref="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:tst:1"/>
+          </criteria>
+        </definition>
+      </definitions>
+      <tests>
+        <registry_test xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5#windows" check="all" version="1" comment="Determine the installed Office product version, if any." id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:tst:1">
+          <object object_ref="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:obj:1"/>
+          <state state_ref="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:ste:1"/>
+        </registry_test>
+      </tests>
+      <objects>
+        <registry_object xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5#windows" version="1" comment="Check the OneDrive keys to find version numbers" id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:obj:1">
+          <hive>HKEY_LOCAL_MACHINE</hive>
+          <key>SOFTWARE\Microsoft\OneDrive</key>
+          <name>Version</name>
+        </registry_object>
+      </objects>
+      <states>
+        <registry_state xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5#windows" version="1" comment="Version must be of format ##.###.####.####" id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:ste:1">
+          <value operation="pattern match">\d*\.\d*\.\d*\.\d*</value>
+        </registry_state>
+      </states>
+    </oval_definitions>
+  </component>
+  <component id="scap_navy.navwar.niwcatlantic.scc_comp_U_MS_OneDrive_V2R2_STIG_SCAP_1-4_Benchmark-enhancedV7-cpe-dictionary.xml" timestamp="2025-09-16T13:55:38.438416+00:00">
+    <cpe-list xmlns="http://cpe.mitre.org/dictionary/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://cpe.mitre.org/dictionary/2.0 http://cpe.mitre.org/files/cpe-dictionary_2.3.xsd">
+      <cpe-item name="cpe:/a:microsoft:onedrive:-">
+        <title>Microsoft OneDrive</title>
+        <check system="http://oval.mitre.org/XMLSchema/oval-definitions-5" href="U_MS_OneDrive_V2R2_STIG_SCAP_1-4_Benchmark-enhancedV7-cpe-oval.xml">oval:navy.navwar.niwcatlantic.scc.ms.onedrive:def:1</check>
+      </cpe-item>
+    </cpe-list>
+  </component>
+  <component id="scap_navy.navwar.niwcatlantic.scc_comp_U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-oval2.xml" timestamp="2025-09-16T13:55:38.438416+00:00">
+    <oval_definitions xmlns="http://oval.mitre.org/XMLSchema/oval-definitions-5" xmlns:oval="http://oval.mitre.org/XMLSchema/oval-common-5" xmlns:oval-def="http://oval.mitre.org/XMLSchema/oval-definitions-5" xmlns:independent-def="http://oval.mitre.org/XMLSchema/oval-definitions-5#independent" xmlns:unix-def="http://oval.mitre.org/XMLSchema/oval-definitions-5#unix" xmlns:linux-def="http://oval.mitre.org/XMLSchema/oval-definitions-5#linux" xmlns:macos-def="http://oval.mitre.org/XMLSchema/oval-definitions-5#macos" xmlns:win-def="http://oval.mitre.org/XMLSchema/oval-definitions-5#windows" xmlns:sol-def="http://oval.mitre.org/XMLSchema/oval-definitions-5#" xsi:schemaLocation="http://oval.mitre.org/XMLSchema/oval-definitions-5 https://raw.githubusercontent.com/OVAL-Community/OVAL/refs/heads/5.12.1_release/oval-schemas/oval-definitions-schema.xsd http://oval.mitre.org/XMLSchema/oval-common-5 https://raw.githubusercontent.com/OVAL-Community/OVAL/refs/heads/5.12.1_release/oval-schemas/oval-common-schema.xsd http://oval.mitre.org/XMLSchema/oval-definitions-5#windows https://raw.githubusercontent.com/OVAL-Community/OVAL/refs/heads/5.12.1_release/oval-schemas/windows-definitions-schema.xsd http://oval.mitre.org/XMLSchema/oval-definitions-5#independent https://raw.githubusercontent.com/OVAL-Community/OVAL/refs/heads/5.12.1_release/oval-schemas/independent-definitions-schema.xsd http://oval.mitre.org/XMLSchema/oval-definitions-5#unix https://raw.githubusercontent.com/OVAL-Community/OVAL/refs/heads/5.12.1_release/oval-schemas/unix-definitions-schema.xsd http://oval.mitre.org/XMLSchema/oval-definitions-5#linux https://raw.githubusercontent.com/OVAL-Community/OVAL/refs/heads/5.12.1_release/oval-schemas/linux-definitions-schema.xsd http://oval.mitre.org/XMLSchema/oval-definitions-5#macos https://raw.githubusercontent.com/OVAL-Community/OVAL/refs/heads/5.12.1_release/oval-schemas/macos-definitions-schema.xsd http://oval.mitre.org/XMLSchema/oval-definitions-5#iosxe https://raw.githubusercontent.com/OVAL-Community/OVAL/refs/heads/5.12.1_release/oval-schemas/iosxe-definitions-schema.xsd http://scap.nist.gov/schema/scap/source/1.2 http://scap.nist.gov/schema/scap/1.4/scap-source-data-stream_1.4.xsd">
+      <generator>
+        <oval:product_name>NIWC Atlantic - Complete Compliance v2</oval:product_name>
+        <oval:schema_version>5.12.1</oval:schema_version>
+        <oval:timestamp>2025-09-16T13:55:38.467873+00:00</oval:timestamp>
+      </generator>
+      <definitions>
+        <definition id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:def:215529" version="7" class="compliance">
+          <metadata>
+            <title>Disabling of user name and password syntax from being used in URLs must be enforced.
+</title>
+            <description/>
+            <affected family="windows">
+              <product>MS OneDrive</product>
+            </affected>
+            <reference source="DISA" ref_id="V-215529" ref_url="http://iase.disa.mil"/>
+            <reference source="CCI" ref_id="SV-85921 V-71297 CCI-001170" ref_url="http://iase.disa.mil/cci"/>
+          </metadata>
+          <criteria operator="AND">
+            <criterion test_ref="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:tst:21552901" comment="Verify the policy value for Computer Configuration -&gt; Administrative Templates -&gt; Microsoft Office 2016 (Machine) -&gt; Security Settings -&gt; IE Security 'Disable user name and password' is set to 'Enabled' and 'groove.exe' is checked. Procedure: Use the Windows Registry Editor to navigate to the following key: HKLM\Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_HTTP_USERNAME_PASSWORD_DISABLE Criteria: If the value groove.exe is REG_DWORD = 1, this is not a finding. "/>
+          </criteria>
+        </definition>
+        <definition id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:def:215531" version="7" class="compliance">
+          <metadata>
+            <title>Saved from URL mark to assure Internet zone processing must be enforced.
+</title>
+            <description/>
+            <affected family="windows">
+              <product>MS OneDrive</product>
+            </affected>
+            <reference source="DISA" ref_id="V-215531" ref_url="http://iase.disa.mil"/>
+            <reference source="CCI" ref_id="SV-85927 V-71303 CCI-001170" ref_url="http://iase.disa.mil/cci"/>
+          </metadata>
+          <criteria operator="AND">
+            <criterion test_ref="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:tst:21553101" comment="Verify the policy value for Computer Configuration -&gt; Administrative Templates -&gt; Microsoft Office 2016 (Machine) -&gt; Security Settings -&gt; IE Security 'Saved from URL' is set to 'Enabled' and 'groove.exe' is checked. Procedure: Use the Windows Registry Editor to navigate to the following key: HKLM\Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_UNC_SAVEDFILECHECK Criteria: If the value groove.exe is REG_DWORD = 1, this is not a finding."/>
+          </criteria>
+        </definition>
+        <definition id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:def:215532" version="7" class="compliance">
+          <metadata>
+            <title>Navigation to URLs embedded in Office products must be blocked.
+</title>
+            <description/>
+            <affected family="windows">
+              <product>MS OneDrive</product>
+            </affected>
+            <reference source="DISA" ref_id="V-215532" ref_url="http://iase.disa.mil"/>
+            <reference source="CCI" ref_id="SV-85929 V-71305 CCI-001170" ref_url="http://iase.disa.mil/cci"/>
+          </metadata>
+          <criteria operator="AND">
+            <criterion test_ref="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:tst:21553201" comment="Verify the policy value for Computer Configuration -&gt; Administrative Templates -&gt; Microsoft Office 2016 (Machine) -&gt; Security Settings -&gt; IE Security 'Navigate URL' is set to 'Enabled' and 'groove.exe' is checked. Procedure: Use the Windows Registry Editor to navigate to the following key: HKLM\Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_VALIDATE_NAVIGATE_URL Criteria: If the value groove.exe is REG_DWORD = 1, this is not a finding."/>
+          </criteria>
+        </definition>
+        <definition id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:def:215533" version="7" class="compliance">
+          <metadata>
+            <title>Scripted Window Security must be enforced.
+</title>
+            <description/>
+            <affected family="windows">
+              <product>MS OneDrive</product>
+            </affected>
+            <reference source="DISA" ref_id="V-215533" ref_url="http://iase.disa.mil"/>
+            <reference source="CCI" ref_id="SV-85933 V-71309 CCI-001695" ref_url="http://iase.disa.mil/cci"/>
+          </metadata>
+          <criteria operator="AND">
+            <criterion test_ref="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:tst:21553301" comment="Verify the policy value for Computer Configuration -&gt; Administrative Templates -&gt; Microsoft Office 2016 (Machine) -&gt; Security Settings -&gt; IE Security 'Scripted Window Security Restrictions' is set to 'Enabled' and 'groove.exe' is checked. Procedure: Use the Windows Registry Editor to navigate to the following key: HKLM\Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_WINDOW_RESTRICTIONS Criteria: If the value groove.exe is REG_DWORD = 1, this is not a finding."/>
+          </criteria>
+        </definition>
+        <definition id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:def:215534" version="7" class="compliance">
+          <metadata>
+            <title>Add-on Management functionality must be allowed.
+</title>
+            <description/>
+            <affected family="windows">
+              <product>MS OneDrive</product>
+            </affected>
+            <reference source="DISA" ref_id="V-215534" ref_url="http://iase.disa.mil"/>
+            <reference source="CCI" ref_id="SV-85935 V-71311 CCI-001662" ref_url="http://iase.disa.mil/cci"/>
+          </metadata>
+          <criteria operator="AND">
+            <criterion test_ref="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:tst:21553401" comment="Verify the policy value for Computer Configuration -&gt; Administrative Templates -&gt; Microsoft Office 2016 (Machine) -&gt; Security Settings -&gt; IE Security 'Add-on Management' is set to 'Enabled' and 'groove.exe' is checked. Procedure: Use the Windows Registry Editor to navigate to the following key: HKLM\Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_ADDON_MANAGEMENT Criteria: If the value groove.exe is REG_DWORD = 1, this is not a finding."/>
+          </criteria>
+        </definition>
+        <definition id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:def:215535" version="7" class="compliance">
+          <metadata>
+            <title>Links that invoke instances of Internet Explorer from within an Office product must be blocked.
+</title>
+            <description/>
+            <affected family="windows">
+              <product>MS OneDrive</product>
+            </affected>
+            <reference source="DISA" ref_id="V-215535" ref_url="http://iase.disa.mil"/>
+            <reference source="CCI" ref_id="SV-85937 V-71313 CCI-001662" ref_url="http://iase.disa.mil/cci"/>
+          </metadata>
+          <criteria operator="AND">
+            <criterion test_ref="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:tst:21553501" comment="Verify the policy value for Computer Configuration -&gt; Administrative Templates -&gt; Microsoft Office 2016 (Machine) -&gt; Security Settings -&gt; IE Security 'Block popups' is set to 'Enabled' and 'groove.exe' is checked. Procedure: Use the Windows Registry Editor to navigate to the following key: HKLM\Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_WEBOC_POPUPMANAGEMENT Criteria: If the value groove.exe is REG_DWORD = 1, this is not a finding."/>
+          </criteria>
+        </definition>
+        <definition id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:def:215536" version="7" class="compliance">
+          <metadata>
+            <title>File Downloads must be configured for proper restrictions.
+</title>
+            <description/>
+            <affected family="windows">
+              <product>MS OneDrive</product>
+            </affected>
+            <reference source="DISA" ref_id="V-215536" ref_url="http://iase.disa.mil"/>
+            <reference source="CCI" ref_id="SV-85941 V-71317 CCI-001169" ref_url="http://iase.disa.mil/cci"/>
+          </metadata>
+          <criteria operator="AND">
+            <criterion test_ref="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:tst:21553601" comment="Verify the policy value for Computer Configuration -&gt; Administrative Templates -&gt; Microsoft Office 2016 (Machine) -&gt; Security Settings -&gt; IE Security 'Restrict File Download' is set to 'Enabled' and 'groove.exe' is checked. Procedure: Use the Windows Registry Editor to navigate to the following key: HKLM\Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_RESTRICT_FILEDOWNLOAD Criteria: If the value of groove.exe is REG_DWORD = 1, this is not a finding. "/>
+          </criteria>
+        </definition>
+        <definition id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:def:215537" version="7" class="compliance">
+          <metadata>
+            <title>Protection from zone elevation must be enforced.
+</title>
+            <description/>
+            <affected family="windows">
+              <product>MS OneDrive</product>
+            </affected>
+            <reference source="DISA" ref_id="V-215537" ref_url="http://iase.disa.mil"/>
+            <reference source="CCI" ref_id="SV-85943 V-71319 CCI-001695" ref_url="http://iase.disa.mil/cci"/>
+          </metadata>
+          <criteria operator="AND">
+            <criterion test_ref="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:tst:21553701" comment="Verify the policy value for Computer Configuration -&gt; Administrative Templates -&gt; Microsoft Office 2016 (Machine) -&gt; Security Settings -&gt; IE Security 'Protection From Zone Elevation' is set to 'Enabled' and 'groove.exe' is checked. Procedure: Use the Windows Registry Editor to navigate to the following key: HKLM\Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_ZONE_ELEVATION Criteria: If the value groove.exe is REG_DWORD = 1, this is not a finding."/>
+          </criteria>
+        </definition>
+        <definition id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:def:215538" version="7" class="compliance">
+          <metadata>
+            <title>ActiveX Installs must be configured for proper restriction.
+</title>
+            <description/>
+            <affected family="windows">
+              <product>MS OneDrive</product>
+            </affected>
+            <reference source="DISA" ref_id="V-215538" ref_url="http://iase.disa.mil"/>
+            <reference source="CCI" ref_id="SV-85945 V-71321 CCI-002460" ref_url="http://iase.disa.mil/cci"/>
+          </metadata>
+          <criteria operator="AND">
+            <criterion test_ref="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:tst:21553801" comment="Verify the policy value for Computer Configuration -&gt; Administrative Templates -&gt; Microsoft Office 2016 (Machine) -&gt; Security Settings -&gt; IE Security 'Restrict ActiveX Install' is set to 'Enabled' and 'groove.exe' is checked. Procedure: Use the Windows Registry Editor to navigate to the following key: HKLM\Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_RESTRICT_ACTIVEXINSTALL Criteria: If the value groove.exe is REG_DWORD = 1, this is not a finding."/>
+          </criteria>
+        </definition>
+        <definition id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:def:230562" version="7" class="compliance">
+          <metadata>
+            <title>OneDrive must only allow synchronizing of accounts for DoD organization instances.</title>
+            <description/>
+            <affected family="windows">
+              <product>MS OneDrive</product>
+            </affected>
+          </metadata>
+          <criteria operator="AND">
+            <criterion test_ref="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:tst:23056201" comment="OneDrive must only allow synchronizing of accounts for DoD organization instances."/>
+          </criteria>
+        </definition>
+        <definition id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:def:230564" version="7" class="compliance">
+          <metadata>
+            <title>The use of personal accounts for OneDrive synchronization must be disabled.</title>
+            <description/>
+            <affected family="windows">
+              <product>MS OneDrive</product>
+            </affected>
+            <reference source="DISA" ref_id="V-230564" ref_url="http://iase.disa.mil"/>
+            <reference source="CCI" ref_id="V-82137 SV-96851 CCI-000381" ref_url="http://iase.disa.mil/cci"/>
+          </metadata>
+          <criteria operator="AND">
+            <criterion test_ref="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:tst:23056401" comment="If the following registry value does not exist or is not configured as specified, this is a finding. Registry Hive: HKEY_CURRENT_USER Registry Path: \Software\Policies\Microsoft\OneDrive\ Value Name: DisablePersonalSync Value Type: REG_DWORD Value: 0x00000001 (1)"/>
+          </criteria>
+        </definition>
+        <definition id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:def:275978" version="7" class="compliance">
+          <metadata>
+            <title>The version of OneDrive running on the system must be a supported version.</title>
+            <description/>
+            <affected family="windows">
+              <product>MS OneDrive</product>
+            </affected>
+          </metadata>
+          <criteria operator="AND">
+            <criterion test_ref="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:tst:27597801" comment="The version of OneDrive running on the system must be a supported version."/>
+          </criteria>
+        </definition>
+      </definitions>
+      <tests>
+        <win-def:registry_test id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:tst:21552901" version="7" comment="Disabling of user name and password syntax from being used in URLs must be enforced." check="all">
+          <win-def:object object_ref="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:obj:21552901"/>
+          <win-def:state state_ref="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:ste:21552901"/>
+        </win-def:registry_test>
+        <win-def:registry_test id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:tst:21553101" version="7" comment="Saved from URL mark to assure Internet zone processing must be enforced." check="all">
+          <win-def:object object_ref="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:obj:21553101"/>
+          <win-def:state state_ref="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:ste:21553101"/>
+        </win-def:registry_test>
+        <win-def:registry_test id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:tst:21553201" version="7" comment="Navigation to URLs embedded in Office products must be blocked." check="all">
+          <win-def:object object_ref="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:obj:21553201"/>
+          <win-def:state state_ref="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:ste:21553201"/>
+        </win-def:registry_test>
+        <win-def:registry_test id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:tst:21553301" version="7" comment="Scripted Window Security must be enforced." check="all">
+          <win-def:object object_ref="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:obj:21553301"/>
+          <win-def:state state_ref="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:ste:21553301"/>
+        </win-def:registry_test>
+        <win-def:registry_test id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:tst:21553401" version="7" comment="Add-on Management functionality must be allowed." check="all">
+          <win-def:object object_ref="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:obj:21553401"/>
+          <win-def:state state_ref="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:ste:21553401"/>
+        </win-def:registry_test>
+        <win-def:registry_test id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:tst:21553501" version="7" comment="Links that invoke instances of Internet Explorer from within an Office product must be blocked." check="all">
+          <win-def:object object_ref="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:obj:21553501"/>
+          <win-def:state state_ref="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:ste:21553501"/>
+        </win-def:registry_test>
+        <win-def:registry_test id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:tst:21553601" version="7" comment="File Downloads must be configured for proper restrictions." check="all">
+          <win-def:object object_ref="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:obj:21553601"/>
+          <win-def:state state_ref="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:ste:21553601"/>
+        </win-def:registry_test>
+        <win-def:registry_test id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:tst:21553701" version="7" comment="Protection from zone elevation must be enforced." check="all">
+          <win-def:object object_ref="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:obj:21553701"/>
+          <win-def:state state_ref="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:ste:21553701"/>
+        </win-def:registry_test>
+        <win-def:registry_test id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:tst:21553801" version="7" comment="ActiveX Installs must be configured for proper restriction." check="all">
+          <win-def:object object_ref="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:obj:21553801"/>
+          <win-def:state state_ref="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:ste:21553801"/>
+        </win-def:registry_test>
+        <win-def:registry_test id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:tst:23056201" version="7" comment="OneDrive must only allow synchronizing of accounts for DoD organization instances." check_existence="at_least_one_exists" check="at least one">
+          <win-def:object object_ref="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:obj:23056201"/>
+          <win-def:state state_ref="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:ste:23056201"/>
+        </win-def:registry_test>
+        <win-def:ntuser_test id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:tst:23056401" version="7" comment="The use of personal accounts for OneDrive synchronization must be disabled." check="all">
+          <win-def:object object_ref="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:obj:23056401"/>
+          <win-def:state state_ref="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:ste:23056401"/>
+        </win-def:ntuser_test>
+        <win-def:file_test id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:tst:27597801" version="7" comment="The version of OneDrive running on the system must be a supported version." check="all">
+          <win-def:object object_ref="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:obj:27597801"/>
+          <win-def:state state_ref="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:ste:27597801"/>
+        </win-def:file_test>
+      </tests>
+      <objects>
+        <win-def:registry_object id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:obj:21552901" version="7" comment="groove.exe = 1">
+          <win-def:hive>HKEY_LOCAL_MACHINE</win-def:hive>
+          <win-def:key>Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_HTTP_USERNAME_PASSWORD_DISABLE</win-def:key>
+          <win-def:name>groove.exe</win-def:name>
+        </win-def:registry_object>
+        <win-def:registry_object id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:obj:21553101" version="7" comment="groove.exe = 1">
+          <win-def:hive>HKEY_LOCAL_MACHINE</win-def:hive>
+          <win-def:key>Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_UNC_SAVEDFILECHECK</win-def:key>
+          <win-def:name>groove.exe</win-def:name>
+        </win-def:registry_object>
+        <win-def:registry_object id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:obj:21553201" version="7" comment="groove.exe = 1">
+          <win-def:hive>HKEY_LOCAL_MACHINE</win-def:hive>
+          <win-def:key>Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_VALIDATE_NAVIGATE_URL</win-def:key>
+          <win-def:name>groove.exe</win-def:name>
+        </win-def:registry_object>
+        <win-def:registry_object id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:obj:21553301" version="7" comment="groove.exe = 1">
+          <win-def:hive>HKEY_LOCAL_MACHINE</win-def:hive>
+          <win-def:key>Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_WINDOW_RESTRICTIONS</win-def:key>
+          <win-def:name>groove.exe</win-def:name>
+        </win-def:registry_object>
+        <win-def:registry_object id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:obj:21553401" version="7" comment="groove.exe = 1">
+          <win-def:hive>HKEY_LOCAL_MACHINE</win-def:hive>
+          <win-def:key>Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_ADDON_MANAGEMENT</win-def:key>
+          <win-def:name>groove.exe</win-def:name>
+        </win-def:registry_object>
+        <win-def:registry_object id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:obj:21553501" version="7" comment="groove.exe = 1">
+          <win-def:hive>HKEY_LOCAL_MACHINE</win-def:hive>
+          <win-def:key>Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_WEBOC_POPUPMANAGEMENT</win-def:key>
+          <win-def:name>groove.exe</win-def:name>
+        </win-def:registry_object>
+        <win-def:registry_object id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:obj:21553601" version="7" comment="groove.exe = 1">
+          <win-def:hive>HKEY_LOCAL_MACHINE</win-def:hive>
+          <win-def:key>Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_RESTRICT_FILEDOWNLOAD</win-def:key>
+          <win-def:name>groove.exe</win-def:name>
+        </win-def:registry_object>
+        <win-def:registry_object id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:obj:21553701" version="7" comment="groove.exe = 1">
+          <win-def:hive>HKEY_LOCAL_MACHINE</win-def:hive>
+          <win-def:key>Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_ZONE_ELEVATION</win-def:key>
+          <win-def:name>groove.exe</win-def:name>
+        </win-def:registry_object>
+        <win-def:registry_object id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:obj:21553801" version="7" comment="groove.exe = 1">
+          <win-def:hive>HKEY_LOCAL_MACHINE</win-def:hive>
+          <win-def:key>Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_RESTRICT_ACTIVEXINSTALL</win-def:key>
+          <win-def:name>groove.exe</win-def:name>
+        </win-def:registry_object>
+        <win-def:registry_object id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:obj:23056201" version="7" comment="Allowed Tenant List(s)">
+          <win-def:hive>HKEY_LOCAL_MACHINE</win-def:hive>
+          <win-def:key>SOFTWARE\Policies\Microsoft\OneDrive\AllowTenantList</win-def:key>
+          <win-def:name operation="pattern match">[\w-]+</win-def:name>
+        </win-def:registry_object>
+        <win-def:ntuser_object id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:obj:23056401" version="7" comment="disallowattachmentcustomization = 1">
+          <win-def:key>Software\Policies\Microsoft\OneDrive</win-def:key>
+          <win-def:name>DisablePersonalSync</win-def:name>
+          <filter action="exclude">oval:navy.navwar.niwcatlantic.scc.ms.onedrive:ste:23056402</filter>
+        </win-def:ntuser_object>
+        <win-def:file_object id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:obj:27597801" version="7" comment="OneDrive.exe">
+          <win-def:path operation="pattern match">.*</win-def:path>
+          <win-def:filename>OneDrive.exe</win-def:filename>
+        </win-def:file_object>
+      </objects>
+      <states>
+        <win-def:registry_state id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:ste:21552901" version="7" comment="Registry key (groove.exe) type equals reg_dword and value equals 1">
+          <win-def:value>1</win-def:value>
+        </win-def:registry_state>
+        <win-def:registry_state id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:ste:21553101" version="7" comment="Registry key (groove.exe) type equals reg_dword and value equals 1">
+          <win-def:value>1</win-def:value>
+        </win-def:registry_state>
+        <win-def:registry_state id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:ste:21553201" version="7" comment="Registry key (groove.exe) type equals reg_dword and value equals 1">
+          <win-def:value>1</win-def:value>
+        </win-def:registry_state>
+        <win-def:registry_state id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:ste:21553301" version="7" comment="Registry key (groove.exe) type equals reg_dword and value equals 1">
+          <win-def:value>1</win-def:value>
+        </win-def:registry_state>
+        <win-def:registry_state id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:ste:21553401" version="7" comment="Registry key (groove.exe) type equals reg_dword and value equals 1">
+          <win-def:value>1</win-def:value>
+        </win-def:registry_state>
+        <win-def:registry_state id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:ste:21553501" version="7" comment="Registry key (groove.exe) type equals reg_dword and value equals 1">
+          <win-def:value>1</win-def:value>
+        </win-def:registry_state>
+        <win-def:registry_state id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:ste:21553601" version="7" comment="Registry key (groove.exe) type equals reg_dword and value equals 1">
+          <win-def:value>1</win-def:value>
+        </win-def:registry_state>
+        <win-def:registry_state id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:ste:21553701" version="7" comment="Registry key (groove.exe) type equals reg_dword and value equals 1">
+          <win-def:value>1</win-def:value>
+        </win-def:registry_state>
+        <win-def:registry_state id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:ste:21553801" version="7" comment="Registry key (groove.exe) type equals reg_dword and value equals 1">
+          <win-def:value>1</win-def:value>
+        </win-def:registry_state>
+        <win-def:registry_state id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:ste:23056201" version="7" comment="Registry key with letters, numbers and dashes of type reg_sz">
+          <win-def:type>reg_sz</win-def:type>
+          <win-def:value operation="pattern match">[\w-]+</win-def:value>
+        </win-def:registry_state>
+        <win-def:ntuser_state id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:ste:23056402" version="7" comment="Exclude Disabled Accounts">
+          <win-def:enabled datatype="boolean">false</win-def:enabled>
+        </win-def:ntuser_state>
+        <win-def:ntuser_state id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:ste:23056401" version="7" comment="Registry key type equals reg_dword and value equals 1">
+          <win-def:value>1</win-def:value>
+        </win-def:ntuser_state>
+        <win-def:file_state id="oval:navy.navwar.niwcatlantic.scc.ms.onedrive:ste:27597801" version="7" comment="OneDrive.exe must be version 25 or greater">
+          <win-def:version datatype="version" operation="greater than or equal">25</win-def:version>
+          <win-def:product_name>Microsoft OneDrive</win-def:product_name>
+        </win-def:file_state>
+      </states>
+    </oval_definitions>
+  </component>
+  <component id="scap_navy.navwar.niwcatlantic.scc_comp_U_MS_OneDrive_V2R4_STIG_SCAP_1-4_Benchmark-enhancedV7-ocil.xml" timestamp="2025-09-16T13:55:38.438416+00:00">
+    <ocil xmlns="http://scap.nist.gov/schema/ocil/2.0" xsi:schemaLocation="http://scap.nist.gov/schema/ocil/2.0 ocil-2.0.xsd">
+      <generator>
+        <schema_version>2.0</schema_version>
+        <timestamp>2025-09-16T13:55:38.438416+00:00</timestamp>
+      </generator>
+      <document>
+        <title>Microsoft OneDrive Security Technical Implementation Guide OCIL Questionnaires</title>
+        <description>This SCAP Benchmark was created based on the DISA Microsoft OneDrive Security Technical Implementation Guide, Version 2, Release 2, by NIWC Atlantic.  For questions/issues with the content please contact:  scc.fct@navy.mil</description>
+      </document>
+      <questionnaires>
+        <questionnaire id="ocil:navy.navwar.niwcatlantic.scc.onedrive:questionnaire:101">
+          <title>Disabling of user name and password syntax from being used in URLs must be enforced.
+</title>
+          <description>&lt;VulnDiscussion&gt;The Uniform Resource Locator (URL) standard allows user authentication to be included in URL strings in the form http://username:password@example.com. A malicious user might use this URL syntax to create a hyperlink that appears to open a legitimate website but actually opens a deceptive (spoofed) website. For example, the URL http://www.wingtiptoys.com@example.com appears to open http://www.wingtiptoys.com but actually opens http://example.com. To protect users from such attacks, Internet Explorer usually blocks any URLs using this syntax.
+
+This functionality can be controlled separately for instances of Internet Explorer spawned by Office applications (for example, if a user clicks a link in an Office document or selects a menu option that loads a website). If user names and passwords in URLs are allowed, users could be diverted to dangerous Web pages, which could pose a security risk.&lt;/VulnDiscussion&gt;&lt;FalsePositives&gt;&lt;/FalsePositives&gt;&lt;FalseNegatives&gt;&lt;/FalseNegatives&gt;&lt;Documentable&gt;false&lt;/Documentable&gt;&lt;Mitigations&gt;&lt;/Mitigations&gt;&lt;SeverityOverrideGuidance&gt;&lt;/SeverityOverrideGuidance&gt;&lt;PotentialImpacts&gt;&lt;/PotentialImpacts&gt;&lt;ThirdPartyTools&gt;&lt;/ThirdPartyTools&gt;&lt;MitigationControl&gt;&lt;/MitigationControl&gt;&lt;Responsibility&gt;&lt;/Responsibility&gt;&lt;IAControls&gt;&lt;/IAControls&gt;</description>
+          <actions operation="AND">
+            <test_action_ref>ocil:navy.navwar.niwcatlantic.scc.onedrive:testaction:101</test_action_ref>
+          </actions>
+        </questionnaire>
+        <questionnaire id="ocil:navy.navwar.niwcatlantic.scc.onedrive:questionnaire:301">
+          <title>Saved from URL mark to assure Internet zone processing must be enforced.
+</title>
+          <description>&lt;VulnDiscussion&gt;Typically, when Internet Explorer loads a web page from a Universal Naming Convention (UNC) share that contains a Mark of the Web (MOTW) comment, indicating the page was saved from a site on the Internet, Internet Explorer runs the page in the Internet security zone instead of the less restrictive Local Intranet security zone. This functionality can be controlled separately for instances of Internet Explorer spawned by Office applications (for example, if a user clicks a link in an Office document or selects a menu option that loads a web page). If Internet Explorer does not evaluate the page for a MOTW, potentially dangerous code could be allowed to run.&lt;/VulnDiscussion&gt;&lt;FalsePositives&gt;&lt;/FalsePositives&gt;&lt;FalseNegatives&gt;&lt;/FalseNegatives&gt;&lt;Documentable&gt;false&lt;/Documentable&gt;&lt;Mitigations&gt;&lt;/Mitigations&gt;&lt;SeverityOverrideGuidance&gt;&lt;/SeverityOverrideGuidance&gt;&lt;PotentialImpacts&gt;&lt;/PotentialImpacts&gt;&lt;ThirdPartyTools&gt;&lt;/ThirdPartyTools&gt;&lt;MitigationControl&gt;&lt;/MitigationControl&gt;&lt;Responsibility&gt;&lt;/Responsibility&gt;&lt;IAControls&gt;&lt;/IAControls&gt;</description>
+          <actions operation="AND">
+            <test_action_ref>ocil:navy.navwar.niwcatlantic.scc.onedrive:testaction:301</test_action_ref>
+          </actions>
+        </questionnaire>
+        <questionnaire id="ocil:navy.navwar.niwcatlantic.scc.onedrive:questionnaire:501">
+          <title>Navigation to URLs embedded in Office products must be blocked.
+</title>
+          <description>&lt;VulnDiscussion&gt;To protect users from attacks, Internet Explorer usually does not attempt to load malformed URLs. This functionality can be controlled separately for instances of Internet Explorer spawned by Office applications (for example, if a user clicks a link in an Office document or selects a menu option that loads a web page). If Internet Explorer attempts to load a malformed URL, a security risk could occur.&lt;/VulnDiscussion&gt;&lt;FalsePositives&gt;&lt;/FalsePositives&gt;&lt;FalseNegatives&gt;&lt;/FalseNegatives&gt;&lt;Documentable&gt;false&lt;/Documentable&gt;&lt;Mitigations&gt;&lt;/Mitigations&gt;&lt;SeverityOverrideGuidance&gt;&lt;/SeverityOverrideGuidance&gt;&lt;PotentialImpacts&gt;&lt;/PotentialImpacts&gt;&lt;ThirdPartyTools&gt;&lt;/ThirdPartyTools&gt;&lt;MitigationControl&gt;&lt;/MitigationControl&gt;&lt;Responsibility&gt;&lt;/Responsibility&gt;&lt;IAControls&gt;&lt;/IAControls&gt;</description>
+          <actions operation="AND">
+            <test_action_ref>ocil:navy.navwar.niwcatlantic.scc.onedrive:testaction:501</test_action_ref>
+          </actions>
+        </questionnaire>
+        <questionnaire id="ocil:navy.navwar.niwcatlantic.scc.onedrive:questionnaire:701">
+          <title>Scripted Window Security must be enforced.
+</title>
+          <description>&lt;VulnDiscussion&gt;Malicious websites often try to confuse or trick users into giving a site permission to perform an action allowing the site to take control of the users' computers in some manner. Disabling or not configuring this setting allows unknown websites to:
+-Create browser windows appearing to be from the local operating system.
+-Draw active windows displaying outside of the viewable areas of the screen capturing keyboard input.
+-Overlay parent windows with their own browser windows to hide important system information, choices or prompts.&lt;/VulnDiscussion&gt;&lt;FalsePositives&gt;&lt;/FalsePositives&gt;&lt;FalseNegatives&gt;&lt;/FalseNegatives&gt;&lt;Documentable&gt;false&lt;/Documentable&gt;&lt;Mitigations&gt;&lt;/Mitigations&gt;&lt;SeverityOverrideGuidance&gt;&lt;/SeverityOverrideGuidance&gt;&lt;PotentialImpacts&gt;&lt;/PotentialImpacts&gt;&lt;ThirdPartyTools&gt;&lt;/ThirdPartyTools&gt;&lt;MitigationControl&gt;&lt;/MitigationControl&gt;&lt;Responsibility&gt;&lt;/Responsibility&gt;&lt;IAControls&gt;&lt;/IAControls&gt;</description>
+          <actions operation="AND">
+            <test_action_ref>ocil:navy.navwar.niwcatlantic.scc.onedrive:testaction:701</test_action_ref>
+          </actions>
+        </questionnaire>
+        <questionnaire id="ocil:navy.navwar.niwcatlantic.scc.onedrive:questionnaire:901">
+          <title>Add-on Management functionality must be allowed.
+</title>
+          <description>&lt;VulnDiscussion&gt;Internet Explorer add-ons are pieces of code, run in Internet Explorer, to provide additional functionality. Rogue add-ons may contain viruses or other malicious code. Disabling or not configuring this setting could allow malicious code or users to become active on user computers or the network. For example, a malicious user can monitor and then use keystrokes users type into Internet Explorer. Even legitimate add-ons may demand resources, compromising the performance of Internet Explorer, and the operating systems for user computers.&lt;/VulnDiscussion&gt;&lt;FalsePositives&gt;&lt;/FalsePositives&gt;&lt;FalseNegatives&gt;&lt;/FalseNegatives&gt;&lt;Documentable&gt;false&lt;/Documentable&gt;&lt;Mitigations&gt;&lt;/Mitigations&gt;&lt;SeverityOverrideGuidance&gt;&lt;/SeverityOverrideGuidance&gt;&lt;PotentialImpacts&gt;&lt;/PotentialImpacts&gt;&lt;ThirdPartyTools&gt;&lt;/ThirdPartyTools&gt;&lt;MitigationControl&gt;&lt;/MitigationControl&gt;&lt;Responsibility&gt;&lt;/Responsibility&gt;&lt;IAControls&gt;&lt;/IAControls&gt;</description>
+          <actions operation="AND">
+            <test_action_ref>ocil:navy.navwar.niwcatlantic.scc.onedrive:testaction:901</test_action_ref>
+          </actions>
+        </questionnaire>
+        <questionnaire id="ocil:navy.navwar.niwcatlantic.scc.onedrive:questionnaire:1101">
+          <title>Links that invoke instances of Internet Explorer from within an Office product must be blocked.
+</title>
+          <description>&lt;VulnDiscussion&gt;The Pop-up Blocker feature in Internet Explorer can be used to block most unwanted pop-up and pop-under windows from appearing. This functionality can be controlled separately for instances of Internet Explorer spawned by Office applications (for example, if a user clicks a link in an Office document or selects a menu option that loads a web page). If the Pop-up Blocker is disabled, disruptive and potentially dangerous pop-up windows could load and present a security risk.&lt;/VulnDiscussion&gt;&lt;FalsePositives&gt;&lt;/FalsePositives&gt;&lt;FalseNegatives&gt;&lt;/FalseNegatives&gt;&lt;Documentable&gt;false&lt;/Documentable&gt;&lt;Mitigations&gt;&lt;/Mitigations&gt;&lt;SeverityOverrideGuidance&gt;&lt;/SeverityOverrideGuidance&gt;&lt;PotentialImpacts&gt;&lt;/PotentialImpacts&gt;&lt;ThirdPartyTools&gt;&lt;/ThirdPartyTools&gt;&lt;MitigationControl&gt;&lt;/MitigationControl&gt;&lt;Responsibility&gt;&lt;/Responsibility&gt;&lt;IAControls&gt;&lt;/IAControls&gt;</description>
+          <actions operation="AND">
+            <test_action_ref>ocil:navy.navwar.niwcatlantic.scc.onedrive:testaction:1101</test_action_ref>
+          </actions>
+        </questionnaire>
+        <questionnaire id="ocil:navy.navwar.niwcatlantic.scc.onedrive:questionnaire:1301">
+          <title>File Downloads must be configured for proper restrictions.
+</title>
+          <description>&lt;VulnDiscussion&gt;Disabling this setting allows websites to present file download prompts via code without the user specifically initiating the download. User preferences may also allow the download to occur without prompting or interaction with the user. Even if Internet Explorer prompts the user to accept the download, some websites abuse this functionality. Malicious websites may continually prompt users to download a file or present confusing dialog boxes to trick users into downloading or running a file. If the download occurs and it contains malicious code, the code could become active on user computers or the network.&lt;/VulnDiscussion&gt;&lt;FalsePositives&gt;&lt;/FalsePositives&gt;&lt;FalseNegatives&gt;&lt;/FalseNegatives&gt;&lt;Documentable&gt;false&lt;/Documentable&gt;&lt;Mitigations&gt;&lt;/Mitigations&gt;&lt;SeverityOverrideGuidance&gt;&lt;/SeverityOverrideGuidance&gt;&lt;PotentialImpacts&gt;&lt;/PotentialImpacts&gt;&lt;ThirdPartyTools&gt;&lt;/ThirdPartyTools&gt;&lt;MitigationControl&gt;&lt;/MitigationControl&gt;&lt;Responsibility&gt;&lt;/Responsibility&gt;&lt;IAControls&gt;&lt;/IAControls&gt;</description>
+          <actions operation="AND">
+            <test_action_ref>ocil:navy.navwar.niwcatlantic.scc.onedrive:testaction:1301</test_action_ref>
+          </actions>
+        </questionnaire>
+        <questionnaire id="ocil:navy.navwar.niwcatlantic.scc.onedrive:questionnaire:1501">
+          <title>Protection from zone elevation must be enforced.
+</title>
+          <description>&lt;VulnDiscussion&gt;Internet Explorer places restrictions on each web page users can use the browser to open. Web pages on a user's local computer have the fewest security restrictions and reside in the Local Machine zone, making this security zone a prime target for malicious users and code. Disabling or not configuring this setting could allow pages in the Internet zone to navigate to pages in the Local Machine zone to then run code to elevate privileges. This could allow malicious code or users to become active on user computers or the network.&lt;/VulnDiscussion&gt;&lt;FalsePositives&gt;&lt;/FalsePositives&gt;&lt;FalseNegatives&gt;&lt;/FalseNegatives&gt;&lt;Documentable&gt;false&lt;/Documentable&gt;&lt;Mitigations&gt;&lt;/Mitigations&gt;&lt;SeverityOverrideGuidance&gt;&lt;/SeverityOverrideGuidance&gt;&lt;PotentialImpacts&gt;&lt;/PotentialImpacts&gt;&lt;ThirdPartyTools&gt;&lt;/ThirdPartyTools&gt;&lt;MitigationControl&gt;&lt;/MitigationControl&gt;&lt;Responsibility&gt;&lt;/Responsibility&gt;&lt;IAControls&gt;&lt;/IAControls&gt;</description>
+          <actions operation="AND">
+            <test_action_ref>ocil:navy.navwar.niwcatlantic.scc.onedrive:testaction:1501</test_action_ref>
+          </actions>
+        </questionnaire>
+        <questionnaire id="ocil:navy.navwar.niwcatlantic.scc.onedrive:questionnaire:1701">
+          <title>ActiveX Installs must be configured for proper restriction.
+</title>
+          <description>&lt;VulnDiscussion&gt;Microsoft ActiveX controls allow unmanaged, unprotected code to run on the user computers. ActiveX controls do not run within a protected container in the browser like the other types of HTML or Microsoft Silverlight-based controls. Disabling or not configuring this setting does not block prompts for ActiveX control installations, and these prompts display to users. This could allow malicious code to become active on user computers or the network.&lt;/VulnDiscussion&gt;&lt;FalsePositives&gt;&lt;/FalsePositives&gt;&lt;FalseNegatives&gt;&lt;/FalseNegatives&gt;&lt;Documentable&gt;false&lt;/Documentable&gt;&lt;Mitigations&gt;&lt;/Mitigations&gt;&lt;SeverityOverrideGuidance&gt;&lt;/SeverityOverrideGuidance&gt;&lt;PotentialImpacts&gt;&lt;/PotentialImpacts&gt;&lt;ThirdPartyTools&gt;&lt;/ThirdPartyTools&gt;&lt;MitigationControl&gt;&lt;/MitigationControl&gt;&lt;Responsibility&gt;&lt;/Responsibility&gt;&lt;IAControls&gt;&lt;/IAControls&gt;</description>
+          <actions operation="AND">
+            <test_action_ref>ocil:navy.navwar.niwcatlantic.scc.onedrive:testaction:1701</test_action_ref>
+          </actions>
+        </questionnaire>
+        <questionnaire id="ocil:navy.navwar.niwcatlantic.scc.onedrive:questionnaire:1901">
+          <title>OneDrive must only allow synchronizing of accounts for DoD organization instances.</title>
+          <description>&lt;VulnDiscussion&gt;OneDrive provides access to external services for data storage, which must be restricted to authorized instances if enabled. Configuring this setting will restrict synchronizing of OneDrive accounts to DoD organization instances.&lt;/VulnDiscussion&gt;&lt;FalsePositives&gt;&lt;/FalsePositives&gt;&lt;FalseNegatives&gt;&lt;/FalseNegatives&gt;&lt;Documentable&gt;false&lt;/Documentable&gt;&lt;Mitigations&gt;&lt;/Mitigations&gt;&lt;SeverityOverrideGuidance&gt;&lt;/SeverityOverrideGuidance&gt;&lt;PotentialImpacts&gt;&lt;/PotentialImpacts&gt;&lt;ThirdPartyTools&gt;&lt;/ThirdPartyTools&gt;&lt;MitigationControl&gt;&lt;/MitigationControl&gt;&lt;Responsibility&gt;&lt;/Responsibility&gt;&lt;IAControls&gt;&lt;/IAControls&gt;</description>
+          <actions operation="AND">
+            <test_action_ref>ocil:navy.navwar.niwcatlantic.scc.onedrive:testaction:1901</test_action_ref>
+          </actions>
+        </questionnaire>
+        <questionnaire id="ocil:navy.navwar.niwcatlantic.scc.onedrive:questionnaire:2101">
+          <title>The use of personal accounts for OneDrive synchronization must be disabled.</title>
+          <description>&lt;VulnDiscussion&gt;OneDrive provides access to external services for data storage, which must be restricted to authorized instances. Enabling this setting will prevent the use of personal OneDrive accounts for synchronization.&lt;/VulnDiscussion&gt;&lt;FalsePositives&gt;&lt;/FalsePositives&gt;&lt;FalseNegatives&gt;&lt;/FalseNegatives&gt;&lt;Documentable&gt;false&lt;/Documentable&gt;&lt;Mitigations&gt;&lt;/Mitigations&gt;&lt;SeverityOverrideGuidance&gt;&lt;/SeverityOverrideGuidance&gt;&lt;PotentialImpacts&gt;&lt;/PotentialImpacts&gt;&lt;ThirdPartyTools&gt;&lt;/ThirdPartyTools&gt;&lt;MitigationControl&gt;&lt;/MitigationControl&gt;&lt;Responsibility&gt;&lt;/Responsibility&gt;&lt;IAControls&gt;&lt;/IAControls&gt;</description>
+          <actions operation="AND">
+            <test_action_ref>ocil:navy.navwar.niwcatlantic.scc.onedrive:testaction:2101</test_action_ref>
+          </actions>
+        </questionnaire>
+        <questionnaire id="ocil:navy.navwar.niwcatlantic.scc.onedrive:questionnaire:2301">
+          <title>The version of OneDrive running on the system must be a supported version.</title>
+          <description>&lt;VulnDiscussion&gt;Security flaws with software applications are discovered daily. Vendors are constantly updating and patching their products to address newly discovered security vulnerabilities. Organizations (including any contractor to the organization) are required to promptly install security-relevant software updates (e.g., patches, service packs, and hot fixes). Flaws discovered during security assessments, continuous monitoring, incident response activities, or information system error handling must also be addressed expeditiously.
+
+Organization-defined time periods for updating security-relevant software may vary based on a variety of factors including, for example, the security category of the information system or the criticality of the update (i.e., severity of the vulnerability related to the discovered flaw).
+
+This requirement will apply to software patch management solutions that are used to install patches across the enclave and also to applications themselves that are not part of that patch management solution. For example, many browsers today provide the capability to install their own patch software. Patch criticality, as well as system criticality will vary. Therefore, the tactical situations regarding the patch management process will also vary. This means that the time period used must be a configurable parameter. Time frames for application of security-relevant software updates may be dependent upon the Information Assurance Vulnerability Management (IAVM) process.
+
+The application will be configured to check for and install security-relevant software updates within an identified time period from the availability of the update. The specific time period will be defined by an authoritative source (e.g., IAVM, CTOs, DTMs, and STIGs).&lt;/VulnDiscussion&gt;&lt;FalsePositives&gt;&lt;/FalsePositives&gt;&lt;FalseNegatives&gt;&lt;/FalseNegatives&gt;&lt;Documentable&gt;false&lt;/Documentable&gt;&lt;Mitigations&gt;&lt;/Mitigations&gt;&lt;SeverityOverrideGuidance&gt;&lt;/SeverityOverrideGuidance&gt;&lt;PotentialImpacts&gt;&lt;/PotentialImpacts&gt;&lt;ThirdPartyTools&gt;&lt;/ThirdPartyTools&gt;&lt;MitigationControl&gt;&lt;/MitigationControl&gt;&lt;Responsibility&gt;&lt;/Responsibility&gt;&lt;IAControls&gt;&lt;/IAControls&gt;</description>
+          <actions operation="AND">
+            <test_action_ref>ocil:navy.navwar.niwcatlantic.scc.onedrive:testaction:2301</test_action_ref>
+          </actions>
+        </questionnaire>
+      </questionnaires>
+      <test_actions>
+        <choice_question_test_action question_ref="ocil:navy.navwar.niwcatlantic.scc.onedrive:question:101" id="ocil:navy.navwar.niwcatlantic.scc.onedrive:testaction:101">
+          <title>CAT II, V-215529, SV-215529r961092, SRG-APP-000210</title>
+          <when_choice>
+            <result>FAIL</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:1</choice_ref>
+          </when_choice>
+          <when_choice>
+            <result>PASS</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:2</choice_ref>
+          </when_choice>
+          <when_choice>
+            <result>NOT_APPLICABLE</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:3</choice_ref>
+          </when_choice>
+          <when_choice>
+            <result>NOT_TESTED</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:4</choice_ref>
+          </when_choice>
+        </choice_question_test_action>
+        <choice_question_test_action question_ref="ocil:navy.navwar.niwcatlantic.scc.onedrive:question:301" id="ocil:navy.navwar.niwcatlantic.scc.onedrive:testaction:301">
+          <title>CAT II, V-215531, SV-215531r961092, SRG-APP-000210</title>
+          <when_choice>
+            <result>FAIL</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:1</choice_ref>
+          </when_choice>
+          <when_choice>
+            <result>PASS</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:2</choice_ref>
+          </when_choice>
+          <when_choice>
+            <result>NOT_APPLICABLE</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:3</choice_ref>
+          </when_choice>
+          <when_choice>
+            <result>NOT_TESTED</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:4</choice_ref>
+          </when_choice>
+        </choice_question_test_action>
+        <choice_question_test_action question_ref="ocil:navy.navwar.niwcatlantic.scc.onedrive:question:501" id="ocil:navy.navwar.niwcatlantic.scc.onedrive:testaction:501">
+          <title>CAT II, V-215532, SV-215532r961092, SRG-APP-000210</title>
+          <when_choice>
+            <result>FAIL</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:1</choice_ref>
+          </when_choice>
+          <when_choice>
+            <result>PASS</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:2</choice_ref>
+          </when_choice>
+          <when_choice>
+            <result>NOT_APPLICABLE</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:3</choice_ref>
+          </when_choice>
+          <when_choice>
+            <result>NOT_TESTED</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:4</choice_ref>
+          </when_choice>
+        </choice_question_test_action>
+        <choice_question_test_action question_ref="ocil:navy.navwar.niwcatlantic.scc.onedrive:question:701" id="ocil:navy.navwar.niwcatlantic.scc.onedrive:testaction:701">
+          <title>CAT II, V-215533, SV-215533r960921, SRG-APP-000112</title>
+          <when_choice>
+            <result>FAIL</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:1</choice_ref>
+          </when_choice>
+          <when_choice>
+            <result>PASS</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:2</choice_ref>
+          </when_choice>
+          <when_choice>
+            <result>NOT_APPLICABLE</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:3</choice_ref>
+          </when_choice>
+          <when_choice>
+            <result>NOT_TESTED</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:4</choice_ref>
+          </when_choice>
+        </choice_question_test_action>
+        <choice_question_test_action question_ref="ocil:navy.navwar.niwcatlantic.scc.onedrive:question:901" id="ocil:navy.navwar.niwcatlantic.scc.onedrive:testaction:901">
+          <title>CAT II, V-215534, SV-215534r961086, SRG-APP-000207</title>
+          <when_choice>
+            <result>FAIL</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:1</choice_ref>
+          </when_choice>
+          <when_choice>
+            <result>PASS</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:2</choice_ref>
+          </when_choice>
+          <when_choice>
+            <result>NOT_APPLICABLE</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:3</choice_ref>
+          </when_choice>
+          <when_choice>
+            <result>NOT_TESTED</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:4</choice_ref>
+          </when_choice>
+        </choice_question_test_action>
+        <choice_question_test_action question_ref="ocil:navy.navwar.niwcatlantic.scc.onedrive:question:1101" id="ocil:navy.navwar.niwcatlantic.scc.onedrive:testaction:1101">
+          <title>CAT II, V-215535, SV-215535r961086, SRG-APP-000207</title>
+          <when_choice>
+            <result>FAIL</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:1</choice_ref>
+          </when_choice>
+          <when_choice>
+            <result>PASS</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:2</choice_ref>
+          </when_choice>
+          <when_choice>
+            <result>NOT_APPLICABLE</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:3</choice_ref>
+          </when_choice>
+          <when_choice>
+            <result>NOT_TESTED</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:4</choice_ref>
+          </when_choice>
+        </choice_question_test_action>
+        <choice_question_test_action question_ref="ocil:navy.navwar.niwcatlantic.scc.onedrive:question:1301" id="ocil:navy.navwar.niwcatlantic.scc.onedrive:testaction:1301">
+          <title>CAT II, V-215536, SV-215536r961089, SRG-APP-000209</title>
+          <when_choice>
+            <result>FAIL</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:1</choice_ref>
+          </when_choice>
+          <when_choice>
+            <result>PASS</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:2</choice_ref>
+          </when_choice>
+          <when_choice>
+            <result>NOT_APPLICABLE</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:3</choice_ref>
+          </when_choice>
+          <when_choice>
+            <result>NOT_TESTED</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:4</choice_ref>
+          </when_choice>
+        </choice_question_test_action>
+        <choice_question_test_action question_ref="ocil:navy.navwar.niwcatlantic.scc.onedrive:question:1501" id="ocil:navy.navwar.niwcatlantic.scc.onedrive:testaction:1501">
+          <title>CAT II, V-215537, SV-215537r960921, SRG-APP-000112</title>
+          <when_choice>
+            <result>FAIL</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:1</choice_ref>
+          </when_choice>
+          <when_choice>
+            <result>PASS</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:2</choice_ref>
+          </when_choice>
+          <when_choice>
+            <result>NOT_APPLICABLE</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:3</choice_ref>
+          </when_choice>
+          <when_choice>
+            <result>NOT_TESTED</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:4</choice_ref>
+          </when_choice>
+        </choice_question_test_action>
+        <choice_question_test_action question_ref="ocil:navy.navwar.niwcatlantic.scc.onedrive:question:1701" id="ocil:navy.navwar.niwcatlantic.scc.onedrive:testaction:1701">
+          <title>CAT II, V-215538, SV-215538r961779, SRG-APP-000488</title>
+          <when_choice>
+            <result>FAIL</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:1</choice_ref>
+          </when_choice>
+          <when_choice>
+            <result>PASS</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:2</choice_ref>
+          </when_choice>
+          <when_choice>
+            <result>NOT_APPLICABLE</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:3</choice_ref>
+          </when_choice>
+          <when_choice>
+            <result>NOT_TESTED</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:4</choice_ref>
+          </when_choice>
+        </choice_question_test_action>
+        <choice_question_test_action question_ref="ocil:navy.navwar.niwcatlantic.scc.onedrive:question:1901" id="ocil:navy.navwar.niwcatlantic.scc.onedrive:testaction:1901">
+          <title>CAT II, V-230562, SV-230562r961863, SRG-APP-000516</title>
+          <when_choice>
+            <result>FAIL</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:1</choice_ref>
+          </when_choice>
+          <when_choice>
+            <result>PASS</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:2</choice_ref>
+          </when_choice>
+          <when_choice>
+            <result>NOT_APPLICABLE</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:3</choice_ref>
+          </when_choice>
+          <when_choice>
+            <result>NOT_TESTED</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:4</choice_ref>
+          </when_choice>
+        </choice_question_test_action>
+        <choice_question_test_action question_ref="ocil:navy.navwar.niwcatlantic.scc.onedrive:question:2101" id="ocil:navy.navwar.niwcatlantic.scc.onedrive:testaction:2101">
+          <title>CAT II, V-230564, SV-230564r960963, SRG-APP-000141</title>
+          <when_choice>
+            <result>FAIL</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:1</choice_ref>
+          </when_choice>
+          <when_choice>
+            <result>PASS</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:2</choice_ref>
+          </when_choice>
+          <when_choice>
+            <result>NOT_APPLICABLE</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:3</choice_ref>
+          </when_choice>
+          <when_choice>
+            <result>NOT_TESTED</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:4</choice_ref>
+          </when_choice>
+        </choice_question_test_action>
+        <choice_question_test_action question_ref="ocil:navy.navwar.niwcatlantic.scc.onedrive:question:2301" id="ocil:navy.navwar.niwcatlantic.scc.onedrive:testaction:2301">
+          <title>CAT I, V-275978, SV-275978r1111822, SRG-APP-000456</title>
+          <when_choice>
+            <result>FAIL</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:1</choice_ref>
+          </when_choice>
+          <when_choice>
+            <result>PASS</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:2</choice_ref>
+          </when_choice>
+          <when_choice>
+            <result>NOT_APPLICABLE</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:3</choice_ref>
+          </when_choice>
+          <when_choice>
+            <result>NOT_TESTED</result>
+            <choice_ref>ocil:navy.navwar.niwcatlantic.scc:choice:4</choice_ref>
+          </when_choice>
+        </choice_question_test_action>
+      </test_actions>
+      <questions>
+        <choice_question id="ocil:navy.navwar.niwcatlantic.scc.onedrive:question:101" default_answer_ref="ocil:navy.navwar.niwcatlantic.scc:choice:4">
+          <question_text>Verify the policy value for Computer Configuration -&gt; Administrative Templates -&gt; Microsoft Office 2016 (Machine) -&gt; Security Settings -&gt; IE Security "Disable user name and password" is set to "Enabled" and 'groove.exe' is checked.
+
+Procedure: Use the Windows Registry Editor to navigate to the following key:
+HKLM\Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_HTTP_USERNAME_PASSWORD_DISABLE
+
+Criteria: If the value groove.exe is REG_DWORD = 1, this is not a finding.
+
+
+References:
+SV-85921
+V-71297
+CCI-001170</question_text>
+          <choice_group_ref>ocil:navy.navwar.niwcatlantic.scc:choicegroup:1</choice_group_ref>
+        </choice_question>
+        <choice_question id="ocil:navy.navwar.niwcatlantic.scc.onedrive:question:301" default_answer_ref="ocil:navy.navwar.niwcatlantic.scc:choice:4">
+          <question_text>Verify the policy value for Computer Configuration -&gt; Administrative Templates -&gt; Microsoft Office 2016 (Machine) -&gt; Security Settings -&gt; IE Security "Saved from URL" is set to "Enabled" and 'groove.exe' is checked.
+
+Procedure: Use the Windows Registry Editor to navigate to the following key: 
+
+HKLM\Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_UNC_SAVEDFILECHECK
+
+Criteria: If the value groove.exe is REG_DWORD = 1, this is not a finding.
+
+References:
+SV-85927
+V-71303
+CCI-001170</question_text>
+          <choice_group_ref>ocil:navy.navwar.niwcatlantic.scc:choicegroup:1</choice_group_ref>
+        </choice_question>
+        <choice_question id="ocil:navy.navwar.niwcatlantic.scc.onedrive:question:501" default_answer_ref="ocil:navy.navwar.niwcatlantic.scc:choice:4">
+          <question_text>Verify the policy value for Computer Configuration -&gt; Administrative Templates -&gt; Microsoft Office 2016 (Machine) -&gt; Security Settings -&gt; IE Security "Navigate URL" is set to "Enabled" and 'groove.exe' is checked.
+
+Procedure: Use the Windows Registry Editor to navigate to the following key: 
+
+HKLM\Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_VALIDATE_NAVIGATE_URL
+
+Criteria: If the value groove.exe is REG_DWORD = 1, this is not a finding.
+
+References:
+SV-85929
+V-71305
+CCI-001170</question_text>
+          <choice_group_ref>ocil:navy.navwar.niwcatlantic.scc:choicegroup:1</choice_group_ref>
+        </choice_question>
+        <choice_question id="ocil:navy.navwar.niwcatlantic.scc.onedrive:question:701" default_answer_ref="ocil:navy.navwar.niwcatlantic.scc:choice:4">
+          <question_text>Verify the policy value for Computer Configuration -&gt; Administrative Templates -&gt; Microsoft Office 2016 (Machine) -&gt; Security Settings -&gt; IE Security "Scripted Window Security Restrictions" is set to "Enabled" and 'groove.exe' is checked.
+
+Procedure: Use the Windows Registry Editor to navigate to the following key: 
+
+HKLM\Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_WINDOW_RESTRICTIONS
+
+Criteria: If the value groove.exe is REG_DWORD = 1, this is not a finding.
+
+References:
+SV-85933
+V-71309
+CCI-001695</question_text>
+          <choice_group_ref>ocil:navy.navwar.niwcatlantic.scc:choicegroup:1</choice_group_ref>
+        </choice_question>
+        <choice_question id="ocil:navy.navwar.niwcatlantic.scc.onedrive:question:901" default_answer_ref="ocil:navy.navwar.niwcatlantic.scc:choice:4">
+          <question_text>Verify the policy value for Computer Configuration -&gt; Administrative Templates -&gt; Microsoft Office 2016 (Machine) -&gt; Security Settings -&gt; IE Security "Add-on Management" is set to "Enabled" and 'groove.exe' is checked.
+
+Procedure: Use the Windows Registry Editor to navigate to the following key: 
+
+HKLM\Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_ADDON_MANAGEMENT
+
+Criteria: If the value groove.exe is REG_DWORD = 1, this is not a finding.
+
+References:
+SV-85935
+V-71311
+CCI-001662</question_text>
+          <choice_group_ref>ocil:navy.navwar.niwcatlantic.scc:choicegroup:1</choice_group_ref>
+        </choice_question>
+        <choice_question id="ocil:navy.navwar.niwcatlantic.scc.onedrive:question:1101" default_answer_ref="ocil:navy.navwar.niwcatlantic.scc:choice:4">
+          <question_text>Verify the policy value for Computer Configuration -&gt; Administrative Templates -&gt; Microsoft Office 2016 (Machine) -&gt; Security Settings -&gt; IE Security "Block popups" is set to "Enabled" and 'groove.exe' is checked.
+
+Procedure: Use the Windows Registry Editor to navigate to the following key: 
+
+HKLM\Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_WEBOC_POPUPMANAGEMENT
+
+Criteria: If the value groove.exe is REG_DWORD = 1, this is not a finding.
+
+References:
+SV-85937
+V-71313
+CCI-001662</question_text>
+          <choice_group_ref>ocil:navy.navwar.niwcatlantic.scc:choicegroup:1</choice_group_ref>
+        </choice_question>
+        <choice_question id="ocil:navy.navwar.niwcatlantic.scc.onedrive:question:1301" default_answer_ref="ocil:navy.navwar.niwcatlantic.scc:choice:4">
+          <question_text>Verify the policy value for Computer Configuration -&gt; Administrative Templates -&gt; Microsoft Office 2016 (Machine) -&gt; Security Settings -&gt; IE Security "Restrict File Download" is set to "Enabled" and 'groove.exe' is checked.
+
+Procedure: Use the Windows Registry Editor to navigate to the following key: 
+
+HKLM\Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_RESTRICT_FILEDOWNLOAD
+
+Criteria: If the value of groove.exe is REG_DWORD = 1, this is not a finding.
+
+
+References:
+SV-85941
+V-71317
+CCI-001169</question_text>
+          <choice_group_ref>ocil:navy.navwar.niwcatlantic.scc:choicegroup:1</choice_group_ref>
+        </choice_question>
+        <choice_question id="ocil:navy.navwar.niwcatlantic.scc.onedrive:question:1501" default_answer_ref="ocil:navy.navwar.niwcatlantic.scc:choice:4">
+          <question_text>Verify the policy value for Computer Configuration -&gt; Administrative Templates -&gt; Microsoft Office 2016 (Machine) -&gt; Security Settings -&gt; IE Security "Protection From Zone Elevation" is set to "Enabled" and 'groove.exe' is checked.
+
+Procedure: Use the Windows Registry Editor to navigate to the following key: 
+
+HKLM\Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_ZONE_ELEVATION
+
+Criteria: If the value groove.exe is REG_DWORD = 1, this is not a finding.
+
+References:
+SV-85943
+V-71319
+CCI-001695</question_text>
+          <choice_group_ref>ocil:navy.navwar.niwcatlantic.scc:choicegroup:1</choice_group_ref>
+        </choice_question>
+        <choice_question id="ocil:navy.navwar.niwcatlantic.scc.onedrive:question:1701" default_answer_ref="ocil:navy.navwar.niwcatlantic.scc:choice:4">
+          <question_text>Verify the policy value for Computer Configuration -&gt; Administrative Templates -&gt; Microsoft Office 2016 (Machine) -&gt; Security Settings -&gt; IE Security "Restrict ActiveX Install" is set to "Enabled" and 'groove.exe' is checked.
+
+Procedure: Use the Windows Registry Editor to navigate to the following key: 
+
+HKLM\Software\Microsoft\Internet Explorer\Main\FeatureControl\FEATURE_RESTRICT_ACTIVEXINSTALL
+
+Criteria: If the value groove.exe is REG_DWORD = 1, this is not a finding.
+
+References:
+SV-85945
+V-71321
+CCI-002460</question_text>
+          <choice_group_ref>ocil:navy.navwar.niwcatlantic.scc:choicegroup:1</choice_group_ref>
+        </choice_question>
+        <choice_question id="ocil:navy.navwar.niwcatlantic.scc.onedrive:question:1901" default_answer_ref="ocil:navy.navwar.niwcatlantic.scc:choice:4">
+          <question_text>If the organization is using a DoD instance of OneDrive, verify synchronizing is only allowed to the organization's DoD instance.
+
+If the organization does not have an instance of OneDrive, verify this is configured with the noted dummy entry to prevent synchronizing with other instances.
+
+If the following registry value does not exist or is not configured as specified, this is a finding.
+
+Registry Hive: HKEY_LOCAL_MACHINE
+Registry Path: \SOFTWARE\Policies\Microsoft\OneDrive\AllowTenantList\
+
+Value Name: Organization's Tenant GUID
+
+Value Type: REG_SZ
+Value: Organization's Tenant GUID
+
+If the organization does not have an instance of OneDrive, the Value Name and Value must be 1111-2222-3333-4444.
+
+If it is not, this is a finding.
+
+References:
+SV-98853
+V-88203
+CCI-000366</question_text>
+          <choice_group_ref>ocil:navy.navwar.niwcatlantic.scc:choicegroup:1</choice_group_ref>
+        </choice_question>
+        <choice_question id="ocil:navy.navwar.niwcatlantic.scc.onedrive:question:2101" default_answer_ref="ocil:navy.navwar.niwcatlantic.scc:choice:4">
+          <question_text>If the following registry value does not exist or is not configured as specified, this is a finding.
+
+Registry Hive: HKEY_CURRENT_USER
+Registry Path: \Software\Policies\Microsoft\OneDrive\
+
+Value Name: DisablePersonalSync
+
+Value Type: REG_DWORD
+Value: 0x00000001 (1)
+
+References:
+V-82137
+SV-96851
+CCI-000381</question_text>
+          <choice_group_ref>ocil:navy.navwar.niwcatlantic.scc:choicegroup:1</choice_group_ref>
+        </choice_question>
+        <choice_question id="ocil:navy.navwar.niwcatlantic.scc.onedrive:question:2301" default_answer_ref="ocil:navy.navwar.niwcatlantic.scc:choice:4">
+          <question_text>OneDrive version 24.x.x.x (and older) are no longer supported by the vendor. If the system is running OneDrive version 24.x.x.x (or older), this is a finding.
+
+References:
+CCI-002605</question_text>
+          <choice_group_ref>ocil:navy.navwar.niwcatlantic.scc:choicegroup:1</choice_group_ref>
+        </choice_question>
+        <choice_group id="ocil:navy.navwar.niwcatlantic.scc:choicegroup:1">
+          <choice id="ocil:navy.navwar.niwcatlantic.scc:choice:1">Finding</choice>
+          <choice id="ocil:navy.navwar.niwcatlantic.scc:choice:2">Not a Finding</choice>
+          <choice id="ocil:navy.navwar.niwcatlantic.scc:choice:3">Not Applicable</choice>
+          <choice id="ocil:navy.navwar.niwcatlantic.scc:choice:4">Not Reviewed</choice>
+        </choice_group>
+      </questions>
+    </ocil>
+  </component>
+<ds:Signature xmlns:ds="http://www.w3.org/2000/09/xmldsig#"><ds:SignedInfo><ds:CanonicalizationMethod Algorithm="http://www.w3.org/2006/12/xml-c14n11"/><ds:SignatureMethod Algorithm="http://www.w3.org/2001/04/xmldsig-more#rsa-sha256"/><ds:Reference URI=""><ds:Transforms><ds:Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/><ds:Transform Algorithm="http://www.w3.org/2006/12/xml-c14n11"/></ds:Transforms><ds:DigestMethod Algorithm="http://www.w3.org/2001/04/xmlenc#sha256"/><ds:DigestValue>UnuDvTC0knNnodJwnaLg8lJg3B70Zdfb2JAJoxK5WVQ=</ds:DigestValue></ds:Reference></ds:SignedInfo><ds:SignatureValue>gILa8GF/ZOAyijOqv+lCUZIrrsk6ANkwzBAAsPeB1ZamGwl1HDBAxX7Awjjg/aSZFNxQAXkhvVMOabG3/9w6WEpSGCqiLk1EmmNAzW8rScCN52Tefb8SUpHYVngA/LznQKpzIQJyXso4Xr4tHhlD3h3hQ7MZdiOIJFORJgd0d1IZKWHKNyP88HIPTXnREFBv/AFlsScQHi1EIu0FV6jO2NeCc+7/s8lgDfInVBG9Q1VMn3IPcXVtc3aKEvnHxQvUPplc5EM20Aspimvy1YeMXAeUj584dhrJkhRwCxr5VKVPW0/c98P+DiOzQhMW4ScoQIS7hb0uerC9bslPnIo4Pg==</ds:SignatureValue><ds:KeyInfo><ds:X509Data><ds:X509Certificate>MIIEdjCCA16gAwIBAgIDETyOMA0GCSqGSIb3DQEBCwUAMFoxCzAJBgNVBAYTAlVT
+MRgwFgYDVQQKEw9VLlMuIEdvdmVybm1lbnQxDDAKBgNVBAsTA0RvRDEMMAoGA1UE
+CxMDUEtJMRUwEwYDVQQDEwxET0QgSUQgQ0EtNzEwHhcNMjUwMjE4MDAwMDAwWhcN
+MjgwMjE3MjM1OTU5WjBwMQswCQYDVQQGEwJVUzEYMBYGA1UEChMPVS5TLiBHb3Zl
+cm5tZW50MQwwCgYDVQQLEwNEb0QxDDAKBgNVBAsTA1BLSTEMMAoGA1UECxMDVVNO
+MR0wGwYDVQQDExRDUy5OSVdDLUFUTEFOVElDLjAwMTCCASIwDQYJKoZIhvcNAQEB
+BQADggEPADCCAQoCggEBAPYLGN4Y/QTeMbgfqaTIFu9TymTvDgxhd3nhHdJDRCRW
+HKZGA9MDnfg03pBjOH1ibNb8A6XVU04NTBPE1kNN5V7MhkdH0TprI47mJFTpIufu
+rhtKIr4VmavcKOf4HbnAiXQtD1UZ1pOWlcBQOdZohyfdQrlUxug5qsw6egL96U9y
+ZK6xVQCZrGJydQtggKWxtcP5Ax3ZxyLCi1Msud3q3BdluL6WCVdSo7bNF261y9FT
+a/XsV55VuaCLeNWkbq4tFY9tAF8neN6Vhp8PNV73qNX8yhj5w0X3jKILYWW/eEaF
+pqcJaCI0tJEo5nlIUQ9v4gRSklTn0HSH9NfY72Eu3QMCAwEAAaOCAS0wggEpMB8G
+A1UdIwQYMBaAFJAlOZpZ/Ax1V7nNbkwSYXXZOulhMDcGA1UdHwQwMC4wLKAqoCiG
+Jmh0dHA6Ly9jcmwuZGlzYS5taWwvY3JsL0RPRElEQ0FfNzEuY3JsMA4GA1UdDwEB
+/wQEAwIHgDAWBgNVHSAEDzANMAsGCWCGSAFlAgELKjAdBgNVHQ4EFgQUM9o3yyNq
+qD7IX81R/xCmunTp+WIwZQYIKwYBBQUHAQEEWTBXMDMGCCsGAQUFBzAChidodHRw
+Oi8vY3JsLmRpc2EubWlsL3NpZ24vRE9ESURDQV83MS5jZXIwIAYIKwYBBQUHMAGG
+FGh0dHA6Ly9vY3NwLmRpc2EubWlsMB8GA1UdJQQYMBYGCisGAQQBgjcKAw0GCCsG
+AQUFBwMDMA0GCSqGSIb3DQEBCwUAA4IBAQAOeSxOWcf4Xxg/A7ErRjpD4N27nCeQ
+9PqkRXktArc9ec/jA/GRuRS02aHRhZ4jwbtkDKImrLVTrfqF8zcfCCLBXOkuOakk
+uFo509PFcsddfGjoNY8LA3RmggJbPjp1DFLRr3VWEZ9p9+ktoBQPGnajQCQ5X9t+
+o5R5/1Lhlpq+sXo397gaj8EuIcDlXs7fSGgUiYAO3oaCMcklj3/sgQIypunDYzVR
+TduLq7zHe0K+xhvL/H4ZzgifszJmuQ7Oz1/et+dw/GAPRcV1u/k2GdAYoSbz4KU3
+fC0HF+L6YpP0BD4uF2g4pc7ATmeT0Wgt21W4YY2GHT19SXhDWzUWCkFx
+</ds:X509Certificate></ds:X509Data></ds:KeyInfo></ds:Signature></data-stream-collection>

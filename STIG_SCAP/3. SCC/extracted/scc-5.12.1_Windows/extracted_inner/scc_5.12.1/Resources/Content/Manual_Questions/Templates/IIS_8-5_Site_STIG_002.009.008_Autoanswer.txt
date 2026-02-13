@@ -1,0 +1,1121 @@
+################################################################################
+DOCUMENT         : IIS_8-5_Site_STIG
+VERSION          : 002.009.008
+CHECKSUM         : bb6483c3a3000a5e91eaedd344b1277f466412fca4f55d59a52cb728d9c2aa59
+MANUAL QUESTIONS : 29
+
+IMPORTANT: Make sure to save the completed version of this file to: 
+<SCC Install>/Resources/Content/Manual_Questions/Completed_Files
+
+This file contains all of the non-automated STIG requirements found in the STIG.
+Results from this file will be combined with automated checks in SCC to provide
+complete STIG compliance results.
+
+This file will be programmaticaly imported, so do not modify anything in this file
+except for placing an '[X]' to select a Single answer, and entering text comments.
+
+The list of questions is printed in order of severity, listing CAT I (High), then CAT II, etc..
+
+################################################################################
+
+QUESTION         : 1 of 29
+TITLE            : CAT I, V-214461, SV-214461r879631, SRG-APP-000211-WSR-000031
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.site:testaction:3101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.site:question:3101
+RULE             : Anonymous IIS 8.5 website access accounts must be restricted.
+QUESTION_TEXT    : Check the account used for anonymous access to the website.
+
+Follow the procedures below for each site hosted on the IIS 8.5 web server:
+Open the IIS 8.5 Manager.
+
+Double-click "Authentication" in the IIS section of the website’s Home Pane.
+
+If Anonymous access is disabled, this is Not a Finding.
+
+If Anonymous access is enabled, click “Anonymous Authentication”.
+
+Click “Edit” in the "Actions" pane.
+
+If the “Specific user” radio button is enabled and an ID is specified in the adjacent control box, this is the ID being used for anonymous access. Note: account name.
+
+Check privileged groups that may allow the anonymous account inappropriate membership:
+Open “Server Manager” on the machine.
+
+Expand Configuration.
+
+Expand Local Users and Groups.
+
+Click “Groups”.
+
+Review members of any of the following privileged groups:
+
+Administrators
+Backup Operators
+Certificate Services (of any designation)
+Distributed COM Users
+Event Log Readers
+Network Configuration Operators
+Performance Log Users
+Performance Monitor Users
+Power Users
+Print Operators
+Remote Desktop Users
+Replicator
+
+Double-click each group and review its members.
+
+If the IUSR account or any account noted above used for anonymous access is a member of any group with privileged access, this is a finding.
+
+References:
+SV-91507
+V-76811
+CCI-001082
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 1 *******************************
+
+QUESTION         : 2 of 29
+TITLE            : CAT II, V-214444, SV-214444r879511, SRG-APP-000001-WSR-000002
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.site:testaction:101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.site:question:101
+RULE             : The IIS 8.5 website session state must be enabled.
+QUESTION_TEXT    : Follow the procedures below for each site hosted on the IIS 8.5 web server:
+
+Open the IIS 8.5 Manager.
+
+Click the site name.
+
+Under the "ASP.NET" section, select "Session State".
+
+Under "Session State Mode Settings", verify the "In Process" mode is selected.
+
+If the "Session State Mode Settings" is set to "In Process", this is not a finding.
+
+Alternative method:
+
+Click the site name.
+
+Select "Configuration Editor" under the "Management" section.
+
+From the "Section:" drop-down list at the top of the configuration editor, locate "system.web/sessionState".
+
+Verify the "mode" reflects "InProc".
+
+If the "mode" is not set to "InProc", this is a finding.
+
+If the system being reviewed is part of a Web Farm, interview the System Administrator to ensure Session State Tracking is enabled via a SQL server, or other means.  If Session State Tracking is enabled on the Web Farm, this is not a finding.
+
+References:
+V-76775
+SV-91471
+CCI-000054
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 2 *******************************
+
+QUESTION         : 3 of 29
+TITLE            : CAT II, V-214445, SV-214445r879511, SRG-APP-000001-WSR-000002
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.site:testaction:301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.site:question:301
+RULE             : The IIS 8.5 website session state cookie settings must be configured to Use Cookies mode.
+QUESTION_TEXT    : Follow the procedures below for each site hosted on the IIS 8.5 web server:
+Open the IIS 8.5 Manager.
+Click the site name.
+Under the "ASP.NET" section, select "Session State".
+Under "Cookie Settings", verify the "Use Cookies" mode is selected from the "Mode:" drop-down list.
+If the "Use Cookies" mode is selected, this is not a finding.
+
+Alternative method:
+Click the site name.
+Select "Configuration Editor" under the "Management" section.
+From the "Section:" drop-down list at the top of the configuration editor, locate "system.web/sessionState".
+Verify the "cookieless" is set to "UseCookies".
+If the "cookieless" is not set to "UseCookies", this is a finding.
+Note: If IIS 8.5 server/site is used only for system-to-system maintenance, does not allow users to connect to interface, and is restricted to specific system IPs, this is Not Applicable.
+
+References:
+SV-91473
+V-76777
+CCI-000054
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 3 *******************************
+
+QUESTION         : 4 of 29
+TITLE            : CAT II, V-214446, SV-214446r903081, SRG-APP-000014-WSR-000006
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.site:testaction:501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.site:question:501
+RULE             : A private IIS 8.5 website must only accept Secure Socket Layer connections.
+QUESTION_TEXT    : Note: If the server being reviewed is a public IIS 8.5 web server, this is Not Applicable.
+Note: If the server being reviewed is hosting SharePoint, this is Not Applicable.
+Note: If the server being reviewed is hosting WSUS, this is Not Applicable.
+Note: If SSL is installed on load balancer/proxy server through which traffic is routed to the IIS 8.5 server, and the IIS 8.5 server receives traffic from the load balancer/proxy server, the SSL requirement must be met on the load balancer/proxy server.
+
+Follow the procedures below for each site hosted on the IIS 8.5 web server:
+
+Open the IIS 8.5 Manager.
+Click the site name.
+Double-click the "SSL Settings" icon.
+Verify "Require SSL" check box is selected.
+
+If the "Require SSL" check box is not selected, this is a finding.
+
+References:
+SV-91475
+V-76779
+CCI-000068
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 4 *******************************
+
+QUESTION         : 5 of 29
+TITLE            : CAT II, V-214447, SV-214447r903084, SRG-APP-000014-WSR-000006
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.site:testaction:701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.site:question:701
+RULE             : A public IIS 8.5 website must only accept Secure Socket Layer connections when authentication is required.
+QUESTION_TEXT    : Note: If the server being reviewed is a private IIS 8.5 web server, this is Not Applicable.
+Note: If the server being reviewed is a public IIS 10.0 web server not requiring authentication, this is Not Applicable.
+Note: If the server being reviewed is hosting SharePoint, this is Not Applicable.
+Note: If the server being reviewed is hosting WSUS, this is Not Applicable.
+
+Follow the procedures below for each site hosted on the IIS 8.5 web server:
+
+Open the IIS 8.5 Manager.
+Click the site name.
+Double-click the "SSL Settings" icon.
+Verify "Require SSL" check box is selected.
+If the "Require SSL" check box is not selected, this is a finding.
+
+References:
+SV-91477
+V-76781
+CCI-000068
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 5 *******************************
+
+QUESTION         : 6 of 29
+TITLE            : CAT II, V-214450, SV-214450r879566, SRG-APP-000098-WSR-000060
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.site:testaction:1301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.site:question:1301
+RULE             : An IIS 8.5 website behind a load balancer or proxy server, must produce log records containing the source client IP and destination information.
+QUESTION_TEXT    : Interview the System Administrator to review the configuration of the IIS 8.5 architecture and determine if inbound web traffic is passed through a proxy.
+
+If the IIS 8.5 is receiving inbound web traffic through a proxy, the audit logs must be reviewed to determine if correct source information is being passed through by the proxy server.
+
+Follow the procedures below for each site hosted on the IIS 8.5 web server:
+
+Open the IIS 8.5 Manager.
+
+Click the site name.
+
+Click the "Logging" icon.
+
+Click on "View log file" button.
+
+When log file is displaced, review source IP information in log entries and verify entries do not reflect the IP address of the proxy server.
+
+If the website is not behind a load balancer or proxy server, this is Not Applicable.
+
+If the log entries in the log file(s) reflect the IP address of the proxy server as the source, this is a finding.
+
+If provisions have been made to log the client IP via another field (i.e., utilizing X-Forwarded-For), this is not a finding.
+
+References:
+SV-91483
+V-76787
+CCI-000133
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 6 *******************************
+
+QUESTION         : 7 of 29
+TITLE            : CAT II, V-214455, SV-214455r903087, SRG-APP-000141-WSR-000082
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.site:testaction:2101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.site:question:2101
+RULE             : Mappings to unused and vulnerable scripts on the IIS 8.5 website must be removed.
+QUESTION_TEXT    : Note: If the server being reviewed is hosting SharePoint, this is Not Applicable.
+
+For Request Filtering, the ISSO must document and approve all allowable scripts the website allows (white list) and denies (black list). The white list and black list will be compared to the Request Filtering in IIS 8.5. 
+
+Open the IIS 8.5 Manager.
+
+Click the site name under review.
+
+Double-click "Request Filtering".
+
+If any script file extensions from the black list are enabled, this is a finding.
+
+References:
+SV-91495
+V-76799
+CCI-000381
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 7 *******************************
+
+QUESTION         : 8 of 29
+TITLE            : CAT II, V-214456, SV-214456r903089, SRG-APP-000141-WSR-000083
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.site:testaction:2301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.site:question:2301
+RULE             : The IIS 8.5 website must have resource mappings set to disable the serving of certain file types.
+QUESTION_TEXT    : Note: If the server being reviewed is hosting SharePoint, this is Not Applicable.
+
+For Request Filtering, the ISSO must document and approve all allowable scripts the website allows (white list) and denies (black list). The white list and black list will be compared to the Request Filtering in IIS 8.5. Request Filtering at the site level take precedence over Request Filtering at the server level.
+
+Follow the procedures below for each site hosted on the IIS 8.5 web server: 
+
+Open the IIS 8.5 Manager.
+Click the site name to review.
+Double-click Request Filtering >> File Name Extensions Tab.
+
+If any script file extensions from the black list are not denied, this is a finding.
+
+References:
+SV-91497
+V-76801
+CCI-000381
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 8 *******************************
+
+QUESTION         : 9 of 29
+TITLE            : CAT II, V-214459, SV-214459r879588, SRG-APP-000142-WSR-000089
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.site:testaction:2701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.site:question:2701
+RULE             : Each IIS 8.5 website must be assigned a default host header.
+QUESTION_TEXT    : Note: If certificate handling is performed at the Proxy/Load Balancer, this is not a finding.
+Note: If HTTP/Port 80 is not being used, and isn’t configured as below, this is not a finding.
+Note: If the server is hosting SharePoint, this is Not Applicable.
+
+Follow the procedures below for each site hosted on the IIS 8.5 web server:
+
+Open the IIS 8.5 Manager.
+Right-click on the site name under review.
+Select “Edit Bindings”.
+
+Verify there are hostname entries and unique IP addresses assigned to port 80 for HTTP and port 443 for HTTPS. Other approved and documented ports may be used.
+
+If both hostname entries and unique IP addresses are not configure to port 80 for HTTP and port 443 for HTTPS (or other approved and documented port), this is a finding.
+
+References:
+SV-91503
+V-76807
+CCI-000382
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 9 *******************************
+
+QUESTION         : 10 of 29
+TITLE            : CAT II, V-214460, SV-214460r903091, SRG-APP-000172-WSR-000104
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.site:testaction:2901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.site:question:2901
+RULE             : A private websites authentication mechanism must use client certificates to transmit session identifier to assure integrity.
+QUESTION_TEXT    : Note: If the server being reviewed is a public IIS 8.5 web server, this is Not Applicable.
+Note: If the server being reviewed is hosting Exchange, this is Not Applicable.
+Note: If the server being reviewed is hosting SharePoint, this is Not Applicable.
+Note: If the server being reviewed is hosting WSUS, this is Not Applicable.
+Note: If certificate handling is performed at the Proxy/Load Balancer, this is not a finding.
+
+Follow the procedures below for each site hosted on the IIS 8.5 web server:
+
+Open the IIS 8.5 Manager.
+
+Double-click the "SSL Settings" icon.
+
+Verify the "Clients Certificate Required" check box is selected.
+
+If the "Clients Certificate Required" check box is not selected, this is a finding.
+
+References:
+SV-91505
+V-76809
+CCI-000197
+CCI-001188
+CCI-002470
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 10 *******************************
+
+QUESTION         : 11 of 29
+TITLE            : CAT II, V-214462, SV-214462r879639, SRG-APP-000224-WSR-000136
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.site:testaction:3301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.site:question:3301
+RULE             : The IIS 8.5 website must generate unique session identifiers that cannot be reliably reproduced.
+QUESTION_TEXT    : Follow the procedures below for each site hosted on the IIS 8.5 web server:
+
+Open the IIS 8.5 Manager.
+
+Click the site name.
+
+Under the "ASP.NET" section, select "Session State".
+
+Under "Session State" Mode Settings, verify the "In Process" mode is selected.
+
+If the "In Process" mode is selected, this is not a finding.
+
+Alternative method:
+
+Click the site name.
+
+Select "Configuration Editor" under the "Management" section.
+
+From the "Section:" drop-down list at the top of the configuration editor, locate "system.web/sessionState".
+
+Verify the "mode" reflects "InProc".
+
+If the "mode" is not set to "InProc", this is a finding.
+
+If the system being reviewed is part of a Web Farm, interview the System Administrator to ensure Session State Tracking is enabled via a SQL server, or other means.  If Session State Tracking is enabled on the Web Farm, this is not a finding.
+
+References:
+SV-91509
+V-76813
+CCI-001188
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 11 *******************************
+
+QUESTION         : 12 of 29
+TITLE            : CAT II, V-214469, SV-214469r903095, SRG-APP-000246-WSR-000149
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.site:testaction:4701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.site:question:4701
+RULE             : Unlisted file extensions in URL requests must be filtered by any IIS 8.5 website.
+QUESTION_TEXT    : Note: If the server being reviewed is hosting SharePoint, this is Not Applicable.
+Note: If the server being reviewed is hosting WSUS, this is Not Applicable.
+
+Follow the procedures below for each site hosted on the IIS 8.5 web server:
+
+Open the IIS 8.5 Manager.
+
+Click on the site name.
+
+Double-click the "Request Filtering" icon.
+
+Click “Edit Feature Settings” in the "Actions" pane.
+
+If "Allow unlisted file name extensions" check box is checked, this is a finding.
+
+Note: If this IIS 8.5 installation is supporting Microsoft Exchange, and not otherwise hosting any content, this requirement is Not Applicable.
+
+Note: If this IIS 8.5 installation is supporting Splunk, this requirement is Not Applicable.
+
+References:
+SV-91523
+V-76827
+CCI-001094
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 12 *******************************
+
+QUESTION         : 13 of 29
+TITLE            : CAT II, V-214474, SV-214474r879673, SRG-APP-000295-WSR-000012
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.site:testaction:5501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.site:question:5501
+RULE             : The Idle Time-out monitor for each IIS 8.5 website must be enabled.
+QUESTION_TEXT    : If this IIS 8.5 installation is supporting Microsoft Exchange, and not otherwise hosting any content, this requirement is Not Applicable.
+
+Follow the procedures below for each site hosted on the IIS 8.5 web server:
+
+Open the IIS 8.5 Manager.
+
+Click the Application Pools.
+
+Highlight an Application Pool to review and click "Advanced Settings" in the "Actions" pane.
+
+Scroll down to the "Process Model" section and verify the value for "Idle Time-out" is set to "20".
+
+If the "Idle Time-out" is not set to "20" or less, this is a finding.
+
+If the "Idle Time-out" is set to "0", this is a finding.
+
+References:
+SV-91535
+V-76839
+CCI-002361
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 13 *******************************
+
+QUESTION         : 14 of 29
+TITLE            : CAT II, V-214476, SV-214476r879693, SRG-APP-000316-WSR-000170
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.site:testaction:5901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.site:question:5901
+RULE             : The IIS 8.5 website must provide the capability to immediately disconnect or disable remote access to the hosted applications.
+QUESTION_TEXT    : Interview the System Administrator and Web Manager.
+
+Ask for documentation for the IIS 8.5 web server administration.
+
+Verify there are documented procedures for shutting down an IIS 8.5 website in the event of an attack. The procedure should, at a minimum, provide the following steps:
+
+Determine the respective website for the application at risk of an attack.
+
+Access the IIS 8.5 web server IIS 8.5 Manager.
+
+Select the respective website.
+
+In the "Actions" pane, under "Manage Website", click on "Stop".
+
+If necessary, stop all websites.
+
+If necessary, stop the IIS 8.5 web server by selecting the web server in the IIS 8.5 Manager.
+
+In the "Actions" pane, under "Manage Server", click on "Stop".
+
+If there are not documented procedures with, at a minimum, the mentioned steps for stopping a website, this is a finding.
+
+References:
+SV-91539
+V-76843
+CCI-002322
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 14 *******************************
+
+QUESTION         : 15 of 29
+TITLE            : CAT II, V-214477, SV-214477r879730, SRG-APP-000357-WSR-000150
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.site:testaction:6101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.site:question:6101
+RULE             : The IIS 8.5 website must use a logging mechanism that is configured to allocate log record storage capacity large enough to accommodate the logging requirements of the IIS 8.5 website.
+QUESTION_TEXT    : Follow the procedures below for each site hosted on the IIS 8.5 web server:
+
+Access the IIS 8.5 web server IIS 8.5 Manager.
+
+Under "IIS" double-click on the "Logging" icon.
+
+In the "Logging" configuration box, determine the "Directory:" to which the "W3C" logging is being written.
+
+Confirm with the System Administrator that the designated log path is of sufficient size to maintain the logging.
+
+Under "Log File Rollover", verify the "Do not create new log files" is not selected.
+
+Verify a schedule is configured to rollover log files on a regular basis.
+
+Consult with the System Administrator to determine if there is a documented process for moving the log files off of the IIS 8.5 web server to another logging device.
+
+If the designated logging path device is not of sufficient space to maintain all log files and there is not a schedule to rollover files on a regular basis, this is a finding.
+
+References:
+V-76845
+SV-91541
+CCI-001849
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 15 *******************************
+
+QUESTION         : 16 of 29
+TITLE            : CAT II, V-214478, SV-214478r879756, SRG-APP-000383-WSR-000175
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.site:testaction:6301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.site:question:6301
+RULE             : The IIS 8.5 websites must utilize ports, protocols, and services according to PPSM guidelines.
+QUESTION_TEXT    : Review the website to determine if HTTP and HTTPs (e.g., 80 and 443) are used in accordance with those ports and services registered and approved for use by the DoD PPSM. Any variation in PPS will be documented, registered, and approved by the PPSM.
+
+Follow the procedures below for each site hosted on the IIS 8.5 web server:
+
+Open the IIS 8.5 Manager.
+
+Click the site name under review.
+
+In the “Action” Pane, click “Bindings”.
+
+Review the ports and protocols. If unknown ports or protocols are used, then this is a finding.
+
+References:
+SV-91543
+V-76847
+CCI-001762
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 16 *******************************
+
+QUESTION         : 17 of 29
+TITLE            : CAT II, V-214479, SV-214479r879798, SRG-APP-000427-WSR-000186
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.site:testaction:6501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.site:question:6501
+RULE             : The IIS 8.5 private website have a server certificate issued by DoD PKI or DoD-approved PKI Certification Authorities (CAs).
+QUESTION_TEXT    : Follow the procedures below for each site hosted on the IIS 8.5 web server:
+
+Open the IIS 8.5 Manager.
+
+Click the site name under review.
+
+Click “Bindings” in the “Action” Pane.
+
+Click the “HTTPS type” from the box.
+
+Click “Edit”.
+
+Click “View” and then review and verify the certificate path.
+
+If the list of CAs in the trust hierarchy does not lead to the DoD PKI Root CA, DoD-approved external certificate authority (ECA), or DoD-approved external partner, this is a finding.
+
+If HTTPS is not an available type under site bindings, this is a finding.
+
+If HTTPS is not an available type under site bindings, and the Web Server ONLY communicates directly with a load balancer/proxy server, with IP address and Domain Restrictions in place, this is not a finding.
+
+For systems with load balancers that perform SSL offloading, this is Not Applicable.
+
+References:
+SV-91545
+V-76849
+CCI-002470
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 17 *******************************
+
+QUESTION         : 18 of 29
+TITLE            : CAT II, V-214480, SV-214480r879800, SRG-APP-000429-WSR-000113
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.site:testaction:6701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.site:question:6701
+RULE             : The IIS 8.5 private website must employ cryptographic mechanisms (TLS) and require client certificates.
+QUESTION_TEXT    : Note: If this is a public facing web server, this requirement is Not Applicable.
+Note: If the server is hosting SharePoint, this is Not Applicable.
+Note: If this server is hosting WSUS, this requirement is Not Applicable.
+Note: If SSL is installed on load balancer/proxy server through which traffic is routed to the IIS 8.5 server, and the IIS 8.5 server receives traffic from the load balancer/proxy server, the SSL requirement must be met on the load balancer/proxy server.
+
+Follow the procedures below for each site hosted on the IIS 8.5 web server:
+
+Open the IIS 8.5 Manager.
+
+Double-click the "SSL Settings" icon under the "IIS" section.
+
+Verify "Require SSL" is checked.
+
+Verify "Client Certificates Required" is selected.
+
+Click the site under review.
+
+Select "Configuration Editor" under the "Management" section.
+
+From the "Section:" drop-down list at the top of the configuration editor, locate "system.webServer/security/access".
+
+The value for "sslFlags" set must include "ssl128".
+
+If the "Require SSL" is not selected, this is a finding.
+
+If the "Client Certificates Required" is not selected, this is a finding.
+
+If the "sslFlags" is not set to "ssl128", this is a finding.
+
+References:
+SV-91547
+V-76851
+CCI-002476
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 18 *******************************
+
+QUESTION         : 19 of 29
+TITLE            : CAT II, V-214482, SV-214482r903100, SRG-APP-000439-WSR-000154
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.site:testaction:7101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.site:question:7101
+RULE             : Cookies exchanged between the IIS 8.5 website and the client must use SSL/TLS, have cookie properties set to prohibit client-side scripts from reading the cookie data and must not be compressed.
+QUESTION_TEXT    : Note: If the server being reviewed is a public IIS 8.5 web server, this is Not Applicable.
+Note: If the server being reviewed is hosting WSUS, this is Not Applicable.
+Note: If the server being reviewed is hosting SharePoint, this is Not Applicable.
+Note: If SSL is installed on load balancer/proxy server through which traffic is routed to the IIS 8.5 server, and the IIS 8.5 server receives traffic from the load balancer/proxy server, the SSL requirement must be met on the load balancer/proxy server.
+
+Follow the procedures below for each site hosted on the IIS 8.5 web server:
+
+Access the IIS 8.5 Manager.
+Under the "Management" section, double-click the "Configuration Editor" icon.
+From the "Section:" drop-down list, select "system.web/httpCookies".
+Verify the "require SSL" is set to "True".
+From the "Section:" drop-down list, select "system.web/sessionState".
+Verify the "compressionEnabled" is set to "False".
+
+If both the "system.web/httpCookies:require SSL" is set to "True" and the "system.web/sessionState:compressionEnabled" is set to "False", this is not a finding.
+
+References:
+SV-91555
+V-76859
+CCI-002418
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 19 *******************************
+
+QUESTION         : 20 of 29
+TITLE            : CAT II, V-214483, SV-214483r903103, SRG-APP-000441-WSR-000181
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.site:testaction:7301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.site:question:7301
+RULE             : The IIS 8.5 website must maintain the confidentiality and integrity of information during preparation for transmission and during reception.
+QUESTION_TEXT    : Note: If the server being reviewed is a public IIS 8.5 web server, this is Not Applicable.
+Note: If the server being reviewed is hosting SharePoint, this is Not Applicable.
+Note: If SSL is installed on load balancer/proxy server through which traffic is routed to the IIS 8.5 server, and the IIS 8.5 server receives traffic from the load balancer/proxy server, the SSL requirement must be met on the load balancer/proxy server.
+
+Follow the procedures below for each site hosted on the IIS 8.5 web server:
+
+Open the IIS 8.5 Manager.
+Double-click the "SSL Settings" icon under the "IIS" section.
+Verify "Require SSL" is checked.
+Verify "Client Certificates Required" is selected.
+Click the site under review.
+Select "Configuration Editor" under the "Management" section.
+From the "Section:" drop-down list at the top of the configuration editor, locate “system.webServer/security/access”.
+The value for "sslFlags" should be “ssl128”.
+
+If the "Require SSL" is not selected, this is a finding.
+If the "Client Certificates Required" is not selected, this is a finding.
+If the "sslFlags" is not set to "ssl128", this is a finding.
+
+References:
+SV-91557
+V-76861
+CCI-002420
+CCI-002422
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 20 *******************************
+
+QUESTION         : 21 of 29
+TITLE            : CAT II, V-214484, SV-214484r879887, SRG-APP-000516-WSR-000174
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.site:testaction:7501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.site:question:7501
+RULE             : The IIS 8.5 website must have a unique application pool.
+QUESTION_TEXT    : Note: If the IIS Application Pool is hosting Microsoft SharePoint, this is Not Applicable.
+
+If this IIS 8.5 installation is supporting Microsoft Exchange and not otherwise hosting any content, this requirement is Not Applicable.
+
+Open the IIS 8.5 Manager.
+
+Expand "Sites" from the "Connections" pane. For every Site listed:
+
+Highlight Site name. Click "Basic Settings" and document the name of the Application Pool.
+
+If any Application Pools are being used for more than one website, this is a finding.
+
+References:
+SV-91561
+V-76865
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 21 *******************************
+
+QUESTION         : 22 of 29
+TITLE            : CAT II, V-214485, SV-214485r879887, SRG-APP-000516-WSR-000174
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.site:testaction:7701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.site:question:7701
+RULE             : The maximum number of requests an application pool can process for each IIS 8.5 website must be explicitly set.
+QUESTION_TEXT    : Note: If the IIS Application Pool is hosting Microsoft SharePoint, this is Not Applicable.
+
+If this IIS 8.5 installation is supporting Microsoft Exchange, and not otherwise hosting any content, this requirement is Not Applicable.
+
+Open the IIS 8.5 Manager.
+
+Perform for each Application Pool.
+
+Click "Application Pools".
+
+Highlight an Application Pool and click "Advanced Settings" in the "Action" Pane.
+
+Scroll down to the "Recycling section" and verify the value for "Request Limit" is set to a value other than "0".
+
+If the "Request Limit" is set to a value of "0", this is a finding.
+
+References:
+SV-91563
+V-76867
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 22 *******************************
+
+QUESTION         : 23 of 29
+TITLE            : CAT II, V-214488, SV-214488r881088, SRG-APP-000516-WSR-000174
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.site:testaction:7901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.site:question:7901
+RULE             : The application pool for each IIS 8.5 website must have a recycle time explicitly set.
+QUESTION_TEXT    : Note: Recycling Application Pools can create an unstable environment in a 64-bit SharePoint environment. If operational issues arise, with supporting documentation from the ISSO this check can be downgraded to a CAT III.
+
+Note: If the IIS Application Pool is hosting Microsoft SharePoint, this is Not Applicable.
+
+Note: If the IIS Application Pool is hosting Microsoft Exchange and not otherwise hosting any content, this is Not Applicable.
+
+Open the IIS 8.5 Manager.
+
+Click the "Application Pools".
+
+Perform the following for each Application Pool:
+
+Highlight an Application Pool and click "Recycling" in the "Actions" pane.
+
+In the Recycling Conditions window, verify at least one condition is checked as desired by the organization. 
+
+If no conditions are checked, this is a finding.
+
+Click "Next".
+
+In the "Recycling Events to Log" window, verify both the "Regular time interval" and "Scheduled time" boxes are selected.
+
+If both the "Regular time interval" and "Scheduled time" options are not selected, this is a finding.
+
+Click "Cancel".
+
+References:
+SV-91569
+V-76873
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 23 *******************************
+
+QUESTION         : 24 of 29
+TITLE            : CAT II, V-214489, SV-214489r879887, SRG-APP-000516-WSR-000174
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.site:testaction:8101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.site:question:8101
+RULE             : The maximum queue length for HTTP.sys for each IIS 8.5 website must be explicitly configured.
+QUESTION_TEXT    : If this IIS 8.5 installation is supporting Microsoft Exchange, and not otherwise hosting any content, this requirement is Not Applicable.
+
+Open the IIS 8.5 Manager.
+
+Perform for each Application Pool.
+
+Click the "Application Pools".
+
+Highlight an Application Pool to review and click "Advanced Settings" in the "Actions" pane.
+
+Scroll down to the "General" section and verify the value for "Queue Length" is set to 1000.
+
+If the "Queue Length" is set to "1000" or less, this is not a finding.
+
+References:
+SV-91571
+V-76875
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 24 *******************************
+
+QUESTION         : 25 of 29
+TITLE            : CAT II, V-214490, SV-214490r879887, SRG-APP-000516-WSR-000174
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.site:testaction:8301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.site:question:8301
+RULE             : The application pools pinging monitor for each IIS 8.5 website must be enabled.
+QUESTION_TEXT    : If this IIS 8.5 installation is supporting Microsoft Exchange, and not otherwise hosting any content, this requirement is Not Applicable.
+
+Open the Internet Information Services (IIS) Manager.
+
+Click the "Application Pools".
+
+Perform for each Application Pool.
+
+Highlight an Application Pool to review and click "Advanced Settings" in the "Actions" pane.
+
+Scroll down to the "Process Model" section and verify the value for "Ping Enabled" is set to "True".
+
+If the value for "Ping Enabled" is not set to "True", this is a finding.
+
+References:
+SV-91573
+V-76877
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 25 *******************************
+
+QUESTION         : 26 of 29
+TITLE            : CAT II, V-214491, SV-214491r879887, SRG-APP-000516-WSR-000174
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.site:testaction:8501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.site:question:8501
+RULE             : The application pools rapid fail protection for each IIS 8.5 website must be enabled.
+QUESTION_TEXT    : If this IIS 8.5 installation is supporting Microsoft Exchange, and not otherwise hosting any content, this requirement is Not Applicable.
+
+Open the IIS 8.5 Manager.
+
+Click the "Application Pools".
+
+Perform for each Application Pool.
+
+Highlight an Application Pool to review and click "Advanced Settings" in the "Actions" pane.
+
+Scroll down to the "Rapid Fail Protection" section and verify the value for "Enabled" is set to "True".
+
+If the "Rapid Fail Protection:Enabled" is not set to "True", this is a finding.
+
+References:
+SV-91575
+V-76879
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 26 *******************************
+
+QUESTION         : 27 of 29
+TITLE            : CAT II, V-214493, SV-214493r879587, SRG-APP-000141-WSR-000087
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.site:testaction:8901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.site:question:8901
+RULE             : Interactive scripts on the IIS 8.5 web server must be located in unique and designated folders.
+QUESTION_TEXT    : Determine whether scripts are used on the web server for the target website. Common file extensions include, but are not limited to: .cgi, .pl, .vbs, .class, .c, .php, and .asp. 
+
+All interactive programs must be placed in unique designated folders based on CGI or ASP script type. For modular and/or third-party applications, it is permissible to have script files in multiple folders.
+
+Open the IIS 8.5 Manager.
+
+Right-click the IIS 8.5 web site name and select "Explore".
+
+Search for the listed script extensions. Each script type must be in its unique designated folder.
+
+If scripts are not segregated from web content and in their own unique folders, this is a finding.
+
+References:
+SV-91581
+V-76885
+CCI-000381
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 27 *******************************
+
+QUESTION         : 28 of 29
+TITLE            : CAT II, V-214494, SV-214494r879587, SRG-APP-000141-WSR-000087
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.site:testaction:9101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.site:question:9101
+RULE             : Interactive scripts on the IIS 8.5 web server must have restrictive access controls.
+QUESTION_TEXT    : Determine whether scripts are used on the web server for the subject website. Common file extensions include, but are not limited to: .cgi, .pl, .vb, .class, .c, .php, .asp, and .aspx.
+
+If the website does not utilize CGI, this finding is Not Applicable.
+
+All interactive programs must have restrictive permissions.
+
+Open the IIS 8.5 Manager.
+
+Right-click the IIS 8.5 web site name and select “Explore”.
+
+Search for the listed script extensions.
+
+Review the permissions to the CGI scripts and verify only the permissions listed, or more restrictive permissions are assigned.
+
+Administrators: FULL
+Web Administrators: FULL
+TrustedInstaller: FULL
+ALL APPLICATION PACKAGES: Read
+SYSTEM: FULL
+ApplicationPoolId: READ
+Custom Service Account: READ
+Users: READ
+
+If the permissions are less restrictive than listed above, this is a finding.
+
+References:
+SV-91583
+V-76887
+CCI-000381
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 28 *******************************
+
+QUESTION         : 29 of 29
+TITLE            : CAT II, V-214496, SV-214496r879887, SRG-APP-000516-WSR-000174
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.8.5.site:testaction:9501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.8.5.site:question:9501
+RULE             : The required DoD banner page must be displayed to authenticated users accessing a DoD private website.
+QUESTION_TEXT    : Note: This requirement is only applicable for private DoD websites.
+
+If a banner is required, the following banner page must be in place: 
+
+“You are accessing a U.S. Government (USG) Information System (IS) that is provided for USG-authorized use only. 
+
+By using this IS (which includes any device attached to this IS), you consent to the following conditions: 
+
+-The USG routinely intercepts and monitors communications on this IS for purposes including, but not limited to, penetration testing, COMSEC monitoring, network operations and defense, personnel misconduct (PM), law enforcement (LE), and counterintelligence (CI) investigations. 
+
+- At any time, the USG may inspect and seize data stored on this IS. 
+
+- Communications using, or data stored on, this IS are not private, are subject to routine monitoring, interception, and search, and may be disclosed or used for any USG-authorized purpose. 
+
+- This IS includes security measures (e.g., authentication and access controls) to protect USG interests—not for your personal benefit or privacy. 
+
+- Notwithstanding the above, using this IS does not constitute consent to PM, LE or CI investigative searching or monitoring of the content of privileged communications, or work product, related to personal representation or services by attorneys, psychotherapists, or clergy, and their assistants. Such communications and work product are private and confidential. See User Agreement for details.” 
+
+OR 
+
+If your system cannot meet the character limits to store this amount of text in the banner, the following is another option for the warning banner: 
+
+"I've read & consent to terms in IS user agreem't." 
+
+NOTE: While DoDI 8500.01 does not contain a copy of the banner to be used, it does point to the RMF Knowledge Service for a copy of the required text. It is also noted that the banner is to be displayed only once when the individual enters the site and not for each page. 
+
+If the access-controlled website does not display this banner page before entry, this is a finding.
+
+References:
+SV-91587
+V-76891
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 29 *******************************
+

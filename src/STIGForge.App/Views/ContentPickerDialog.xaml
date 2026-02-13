@@ -12,7 +12,7 @@
       <RowDefinition Height="Auto"/>
     </Grid.RowDefinitions>
 
-    <TextBlock Grid.Row="0" Text="Select the content packs to include in this mission. Check one or more from each applicable category."
+    <TextBlock Grid.Row="0" Text="Select STIGs for this mission. Matching SCAP benchmarks are auto-selected. ADMX/GPO packs are auto-included."
                Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,12" TextWrapping="Wrap"/>
 
     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">

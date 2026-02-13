@@ -10,6 +10,8 @@ using Microsoft.Extensions.Logging;
 using STIGForge.Build;
 using STIGForge.Content.Import;
 using STIGForge.Core.Abstractions;
+using BundlePaths = STIGForge.Core.Constants.BundlePaths;
+using ControlStatusStrings = STIGForge.Core.Constants.ControlStatus;
 using STIGForge.Core.Models;
 using STIGForge.Core.Services;
 
@@ -127,7 +129,7 @@ internal static class BuildCommands
       logger.LogInformation("build-bundle completed: bundleRoot={BundleRoot}", result.BundleRoot);
       Console.WriteLine("Bundle created: " + result.BundleRoot);
       Console.WriteLine("Manifest: " + result.ManifestPath);
-      var gatePath = Path.Combine(result.BundleRoot, "Reports", "automation_gate.json");
+      var gatePath = Path.Combine(result.BundleRoot, BundlePaths.ReportsDirectory, "automation_gate.json");
       if (File.Exists(gatePath)) Console.WriteLine("Automation gate: " + gatePath);
       await host.StopAsync();
     });
@@ -150,11 +152,14 @@ internal static class BuildCommands
     var scapOpt = new Option<string>("--scap-cmd", () => string.Empty, "SCAP/SCC command path");
     var scapArgsOpt = new Option<string>("--scap-args", () => string.Empty, "SCAP args");
     var scapLabelOpt = new Option<string>("--scap-label", () => string.Empty, "Label for SCAP tool");
+    var dscScanOpt = new Option<bool>("--dsc-scan", "Enable read-only DSC compliance scan via Test-DscConfiguration");
+    var dscScanVOpt = new Option<bool>("--dsc-scan-verbose", "Verbose DSC scan output");
+    var dscScanLabelOpt = new Option<string>("--dsc-scan-label", () => string.Empty, "Label for DSC scan tool");
     var skipSnapOpt = new Option<bool>("--skip-snapshot", "Skip pre-apply snapshot during orchestration (high risk)");
     var breakGlassAckOpt = new Option<bool>(BreakGlassAckOptionName, "Acknowledge high-risk break-glass use for --skip-snapshot");
     var breakGlassReasonOpt = new Option<string>(BreakGlassReasonOptionName, "Reason for break-glass use (required with --skip-snapshot)");
 
-    foreach (var o in new Option[] { bOpt, dscOpt, dscVOpt, psModOpt, psDataOpt, psOutOpt, psVOpt, evalOpt, evalArgsOpt, scapOpt, scapArgsOpt, scapLabelOpt, skipSnapOpt, breakGlassAckOpt, breakGlassReasonOpt })
+    foreach (var o in new Option[] { bOpt, dscOpt, dscVOpt, psModOpt, psDataOpt, psOutOpt, psVOpt, evalOpt, evalArgsOpt, scapOpt, scapArgsOpt, scapLabelOpt, dscScanOpt, dscScanVOpt, dscScanLabelOpt, skipSnapOpt, breakGlassAckOpt, breakGlassReasonOpt })
       cmd.AddOption(o);
 
     cmd.SetHandler(async (InvocationContext ctx) =>
@@ -188,7 +193,10 @@ internal static class BuildCommands
         PowerStigOutputPath = NullIfEmpty(ctx, psOutOpt), PowerStigVerbose = ctx.ParseResult.GetValueForOption(psVOpt),
         EvaluateStigRoot = NullIfEmpty(ctx, evalOpt), EvaluateStigArgs = NullIfEmpty(ctx, evalArgsOpt),
         ScapCommandPath = NullIfEmpty(ctx, scapOpt), ScapArgs = NullIfEmpty(ctx, scapArgsOpt),
-        ScapToolLabel = NullIfEmpty(ctx, scapLabelOpt)
+        ScapToolLabel = NullIfEmpty(ctx, scapLabelOpt),
+        DscScanEnabled = ctx.ParseResult.GetValueForOption(dscScanOpt),
+        DscScanVerbose = ctx.ParseResult.GetValueForOption(dscScanVOpt),
+        DscScanToolLabel = NullIfEmpty(ctx, dscScanLabelOpt)
       }, CancellationToken.None);
       logger.LogInformation("orchestrate completed: bundle={Bundle}", bundle);
       await host.StopAsync();
@@ -304,7 +312,7 @@ internal static class BuildCommands
     var evalOpt = new Option<string>("--evaluate-stig", () => string.Empty, "Evaluate-STIG root folder");
     var evalArgsOpt = new Option<string>("--evaluate-args", () => string.Empty, "Evaluate-STIG arguments");
     var scapOpt = new Option<string>("--scap-cmd", () => string.Empty, "SCAP/SCC command path");
-    var scapArgsOpt = new Option<string>("--scap-args", () => "-u -s -r -f", "SCAP/SCC arguments");
+    var scapArgsOpt = new Option<string>("--scap-args", () => string.Empty, "SCAP/SCC arguments (e.g. -s load,scan -r <dir> -u -o results,ckl)");
     var scapLabelOpt = new Option<string>("--scap-label", () => "DISA SCAP", "SCAP tool label");
 
     var skipSnapOpt = new Option<bool>("--skip-snapshot", "Skip snapshot generation for image pipeline scenarios (high risk)");
@@ -508,16 +516,16 @@ internal static class BuildCommands
         ScapToolLabel = NullIfEmpty(ctx, scapLabelOpt)
       }, CancellationToken.None);
 
-      var manualTemplatePath = Path.Combine(buildResult.BundleRoot, "Manual", "answerfile.template.json");
-      var manualAnswersPath = Path.Combine(buildResult.BundleRoot, "Manual", "answers.json");
+      var manualTemplatePath = Path.Combine(buildResult.BundleRoot, BundlePaths.ManualDirectory, "answerfile.template.json");
+      var manualAnswersPath = Path.Combine(buildResult.BundleRoot, BundlePaths.ManualDirectory, BundlePaths.AnswersFileName);
       Console.WriteLine("Mission autopilot completed.");
       Console.WriteLine("Bundle: " + buildResult.BundleRoot);
       Console.WriteLine("Manifest: " + buildResult.ManifestPath);
       Console.WriteLine("Manual template: " + manualTemplatePath);
       Console.WriteLine("Manual answers: " + manualAnswersPath);
       Console.WriteLine("Auto-NA seeded answers: " + autoNaSeeded);
-      Console.WriteLine("Verify outputs: " + Path.Combine(buildResult.BundleRoot, "Verify"));
-      Console.WriteLine("Coverage reports: " + Path.Combine(buildResult.BundleRoot, "Reports"));
+      Console.WriteLine("Verify outputs: " + Path.Combine(buildResult.BundleRoot, BundlePaths.VerifyDirectory));
+      Console.WriteLine("Coverage reports: " + Path.Combine(buildResult.BundleRoot, BundlePaths.ReportsDirectory));
       if (downloadedArtifacts.Count > 0)
       {
         Console.WriteLine("Air-gap transfer cache: " + airGapTransferRoot);
@@ -666,7 +674,7 @@ internal static class BuildCommands
         {
           RuleId = compiledControl.Control.ExternalIds.RuleId,
           VulnId = compiledControl.Control.ExternalIds.VulnId,
-          Status = "NotApplicable",
+          Status = ControlStatusStrings.NotApplicable,
           Reason = reason,
           Comment = "Auto-generated by mission-autopilot"
         },

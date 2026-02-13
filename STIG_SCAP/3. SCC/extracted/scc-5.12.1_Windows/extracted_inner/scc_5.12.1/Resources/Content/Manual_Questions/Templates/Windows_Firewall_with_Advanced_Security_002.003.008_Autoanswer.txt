@@ -1,0 +1,49 @@
+################################################################################
+DOCUMENT         : Windows_Firewall_with_Advanced_Security
+VERSION          : 002.003.008
+CHECKSUM         : 742c5d2924eaac9d296dcd2e5d93dfe24e8b8515d1bd8133f33be22b9aa344e5
+MANUAL QUESTIONS : 1
+
+IMPORTANT: Make sure to save the completed version of this file to: 
+<SCC Install>/Resources/Content/Manual_Questions/Completed_Files
+
+This file contains all of the non-automated STIG requirements found in the STIG.
+Results from this file will be combined with automated checks in SCC to provide
+complete STIG compliance results.
+
+This file will be programmaticaly imported, so do not modify anything in this file
+except for placing an '[X]' to select a Single answer, and entering text comments.
+
+The list of questions is printed in order of severity, listing CAT I (High), then CAT II, etc..
+
+################################################################################
+
+QUESTION         : 1 of 1
+TITLE            : CAT II, V-242009, SV-242009r922967, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:4101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:4101
+RULE             : Inbound exceptions to the firewall on domain workstations must only allow authorized remote management hosts.
+QUESTION_TEXT    : This requirement is NA for servers and non domain workstations.
+
+Verify firewall exceptions for inbound connections on domain workstations only allow authorized management systems and remote management hosts.
+
+Review inbound firewall exception rules in Microsoft Defender Firewall with Advanced Security. Firewall rules can be complex and should be reviewed with the firewall administrator.
+
+One method for restricting inbound connections is to only allow exceptions for a specific scope of remote IP addresses.
+
+If allowed inbound exceptions are not limited to authorized management systems and remote management hosts, this is a finding.
+
+References:
+V-36440
+SV-55086
+CCI-000067
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 1 *******************************
+

@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using STIGForge.Core.Abstractions;
+using STIGForge.Core.Constants;
 using STIGForge.Core.Models;
 using STIGForge.Verify;
 
@@ -91,7 +92,7 @@ public sealed class EmassExporter
     var indexPath = Path.Combine(indexDir, "control_evidence_index.csv");
     WriteControlEvidenceIndex(indexPath, consolidated, evidenceDir, scansDir, naMap);
 
-    var naReportSrc = Path.Combine(bundleRoot, "Reports", "na_scope_filter_report.csv");
+    var naReportSrc = Path.Combine(bundleRoot, BundlePaths.ReportsDirectory, "na_scope_filter_report.csv");
     if (File.Exists(naReportSrc))
       File.Copy(naReportSrc, Path.Combine(indexDir, "na_scope_filter_report.csv"), true);
 
@@ -159,7 +160,7 @@ public sealed class EmassExporter
 
   private static void CopyScans(string bundleRoot, string scansDir)
   {
-    var src = Path.Combine(bundleRoot, "Verify");
+    var src = Path.Combine(bundleRoot, BundlePaths.VerifyDirectory);
     if (!Directory.Exists(src)) return;
 
     var raw = Path.Combine(scansDir, "raw");
@@ -169,7 +170,7 @@ public sealed class EmassExporter
 
   private static void CopyChecklists(string bundleRoot, string checklistsDir)
   {
-    var verify = Path.Combine(bundleRoot, "Verify");
+    var verify = Path.Combine(bundleRoot, BundlePaths.VerifyDirectory);
     if (Directory.Exists(verify))
     {
       foreach (var ckl in Directory.GetFiles(verify, "*.ckl", SearchOption.AllDirectories))
@@ -179,7 +180,7 @@ public sealed class EmassExporter
       }
     }
 
-    var manual = Path.Combine(bundleRoot, "Manual");
+    var manual = Path.Combine(bundleRoot, BundlePaths.ManualDirectory);
     if (Directory.Exists(manual))
     {
       var dest = Path.Combine(checklistsDir, "AnswerFiles");
@@ -190,7 +191,7 @@ public sealed class EmassExporter
 
   private static void CopyEvidence(string bundleRoot, string evidenceDir)
   {
-    var src = Path.Combine(bundleRoot, "Evidence");
+    var src = Path.Combine(bundleRoot, BundlePaths.EvidenceDirectory);
     if (!Directory.Exists(src)) return;
 
     CopyDirectory(src, evidenceDir);
@@ -200,7 +201,7 @@ public sealed class EmassExporter
 
   private static ConsolidatedLoadResult LoadConsolidatedResults(string bundleRoot)
   {
-    var verifyRoot = Path.Combine(bundleRoot, "Verify");
+    var verifyRoot = Path.Combine(bundleRoot, BundlePaths.VerifyDirectory);
     if (!Directory.Exists(verifyRoot))
     {
       return new ConsolidatedLoadResult
@@ -210,7 +211,7 @@ public sealed class EmassExporter
       };
     }
 
-    var reports = Directory.GetFiles(verifyRoot, "consolidated-results.json", SearchOption.AllDirectories)
+    var reports = Directory.GetFiles(verifyRoot, BundlePaths.ConsolidatedResultsFileName, SearchOption.AllDirectories)
       .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
       .ToList();
     var all = new List<ControlResult>();
@@ -220,16 +221,27 @@ public sealed class EmassExporter
       all.AddRange(report.Results);
     }
 
+    // Deduplicate by VulnId/RuleId — keep the latest result per control
+    var deduped = new Dictionary<string, ControlResult>(StringComparer.OrdinalIgnoreCase);
+    for (int i = 0; i < all.Count; i++)
+    {
+      var r = all[i];
+      var key = !string.IsNullOrWhiteSpace(r.RuleId) ? "RULE:" + r.RuleId
+              : !string.IsNullOrWhiteSpace(r.VulnId) ? "VULN:" + r.VulnId
+              : "IDX:" + i.ToString();
+      deduped[key] = r; // last one wins (most recent tool result)
+    }
+
     return new ConsolidatedLoadResult
     {
-      Results = all,
+      Results = deduped.Values.ToList(),
       SourceReports = reports
     };
   }
 
   private static IReadOnlyList<ManualAnswer> LoadManualAnswers(string bundleRoot)
   {
-    var path = Path.Combine(bundleRoot, "Manual", "answers.json");
+    var path = Path.Combine(bundleRoot, BundlePaths.ManualDirectory, BundlePaths.AnswersFileName);
     if (!File.Exists(path)) return Array.Empty<ManualAnswer>();
 
     var json = File.ReadAllText(path);
@@ -438,7 +450,7 @@ public sealed class EmassExporter
 
   private static BundleManifestDto ReadBundleManifest(string bundleRoot)
   {
-    var manifestPath = Path.Combine(bundleRoot, "Manifest", "manifest.json");
+    var manifestPath = Path.Combine(bundleRoot, BundlePaths.ManifestDirectory, "manifest.json");
     if (!File.Exists(manifestPath))
       throw new FileNotFoundException("Bundle manifest not found", manifestPath);
 
@@ -456,7 +468,7 @@ public sealed class EmassExporter
 
   private static IReadOnlyDictionary<string, string> LoadNaScopeReport(string bundleRoot)
   {
-    var path = Path.Combine(bundleRoot, "Reports", "na_scope_filter_report.csv");
+    var path = Path.Combine(bundleRoot, BundlePaths.ReportsDirectory, "na_scope_filter_report.csv");
     if (!File.Exists(path)) return new Dictionary<string, string>();
 
     var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);

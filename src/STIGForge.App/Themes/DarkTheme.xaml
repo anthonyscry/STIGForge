@@ -55,4 +55,64 @@
   <SolidColorBrush x:Key="ToolTipBgBrush" Color="#2A2E37"/>
   <SolidColorBrush x:Key="ToolTipBorderBrush" Color="#4A5060"/>
 
+  <!-- DataGrid -->
+  <SolidColorBrush x:Key="DataGridBgBrush" Color="#22262E"/>
+  <SolidColorBrush x:Key="DataGridAltRowBrush" Color="#1E2128"/>
+  <SolidColorBrush x:Key="DataGridHeaderBgBrush" Color="#1E2128"/>
+  <SolidColorBrush x:Key="DataGridHeaderBorderBrush" Color="#363B44"/>
+  <SolidColorBrush x:Key="DataGridSelectedRowBrush" Color="#1A3A5C"/>
+  <SolidColorBrush x:Key="DataGridGridLineBrush" Color="#2A2E37"/>
+
+  <!-- ListBox -->
+  <Style TargetType="ListBox">
+    <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+  </Style>
+
+  <Style TargetType="ListBoxItem">
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+    <Setter Property="Padding" Value="6,4"/>
+    <Style.Triggers>
+      <Trigger Property="IsMouseOver" Value="True">
+        <Setter Property="Background" Value="{DynamicResource ListItemHoverBrush}"/>
+      </Trigger>
+      <Trigger Property="IsSelected" Value="True">
+        <Setter Property="Background" Value="{DynamicResource ListItemSelectedBrush}"/>
+        <Setter Property="Foreground" Value="{DynamicResource ListItemSelectedTextBrush}"/>
+      </Trigger>
+    </Style.Triggers>
+  </Style>
+
+  <Style TargetType="DataGrid">
+    <Setter Property="Background" Value="{DynamicResource SurfaceBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}"/>
+    <Setter Property="HorizontalGridLinesBrush" Value="{DynamicResource DataGridGridLineBrush}"/>
+    <Setter Property="VerticalGridLinesBrush" Value="{DynamicResource DataGridGridLineBrush}"/>
+    <Setter Property="RowHeaderWidth" Value="0"/>
+  </Style>
+
+  <Style TargetType="DataGridColumnHeader">
+    <Setter Property="Background" Value="{DynamicResource DataGridHeaderBgBrush}"/>
+    <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+    <Setter Property="FontWeight" Value="SemiBold"/>
+    <Setter Property="Padding" Value="6,4"/>
+    <Setter Property="BorderBrush" Value="{DynamicResource DataGridHeaderBorderBrush}"/>
+    <Setter Property="BorderThickness" Value="0,0,1,1"/>
+  </Style>
+
+  <Style TargetType="DataGridCell">
+    <Setter Property="Padding" Value="4,2"/>
+    <Setter Property="BorderBrush" Value="Transparent"/>
+    <Setter Property="BorderThickness" Value="0"/>
+    <Setter Property="Foreground" Value="{Binding RelativeSource={RelativeSource AncestorType=DataGridRow}, Path=Foreground}"/>
+    <Style.Triggers>
+      <Trigger Property="IsSelected" Value="True">
+        <Setter Property="Background" Value="{DynamicResource DataGridSelectedRowBrush}"/>
+        <Setter Property="Foreground" Value="White"/>
+      </Trigger>
+    </Style.Triggers>
+  </Style>
+
 </ResourceDictionary>

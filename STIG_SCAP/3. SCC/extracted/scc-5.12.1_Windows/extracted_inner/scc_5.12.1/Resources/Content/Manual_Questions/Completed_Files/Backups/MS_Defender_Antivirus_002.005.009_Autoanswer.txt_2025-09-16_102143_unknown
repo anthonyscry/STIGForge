@@ -1,0 +1,725 @@
+################################################################################
+DOCUMENT         : MS_Defender_Antivirus
+VERSION          : 002.005.009
+CHECKSUM         : ccad22344b66371fc007ed62a10108a7284f4d91cc9ba9997adc5a3e496b5d5d
+MANUAL QUESTIONS : 35
+
+IMPORTANT: Make sure to save the completed version of this file to: 
+<SCC Install>/Resources/Content/Manual_Questions/Completed_Files
+
+This file contains all of the non-automated STIG requirements found in the STIG.
+Results from this file will be combined with automated checks in SCC to provide
+complete STIG compliance results.
+
+This file will be programmaticaly imported, so do not modify anything in this file
+except for placing an '[X]' to select a Single answer, and entering text comments.
+
+The list of questions is printed in order of severity, listing CAT I (High), then CAT II, etc..
+
+################################################################################
+
+QUESTION         : 1 of 35
+TITLE            : CAT II, V-278647, SV-278647r1134293, SRG-APP-000210
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:testaction:8301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:question:8301
+RULE             : Microsoft Defender AV must block Adobe Reader from creating child processes.
+QUESTION_TEXT    : Verify the policy value for Computer Configuration >> Administrative Templates >> Windows Components >> Microsoft Defender Antivirus >> Microsoft Defender Exploit Guard >> Attack Surface Reduction >> Configure Attack Surface Reduction rules is set to "Enabled".
+
+Under the policy option "Set the state for each ASR rule:", then click "Show".
+
+Verify GUID "7674ba52-37eb-4a4f-a9a1-f0f9a1619a2c" is in the "Value name" column with a value of "1"; otherwise, this is a finding.
+
+References:
+CCI-001170
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 1 *******************************
+
+QUESTION         : 2 of 35
+TITLE            : CAT II, V-278648, SV-278648r1134295, SRG-APP-000210
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:testaction:8501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:question:8501
+RULE             : Microsoft Defender AV must block credential stealing from the Windows local security authority subsystem.
+QUESTION_TEXT    : Verify the policy value for Computer Configuration >> Administrative Templates >> Windows Components >> Microsoft Defender Antivirus >> Microsoft Defender Exploit Guard >> Attack Surface Reduction >> Configure Attack Surface Reduction rules is set to "Enabled".
+
+Under the policy option "Set the state for each ASR rule:", then click "Show".
+
+Verify GUID "9e6c4e1f-7d60-472f-ba1a-a39ef669e4b2" is in the "Value name" column with a value of "1"; otherwise, this is a finding.
+
+References:
+CCI-001170
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 2 *******************************
+
+QUESTION         : 3 of 35
+TITLE            : CAT II, V-278649, SV-278649r1134297, SRG-APP-000210
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:testaction:8701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:question:8701
+RULE             : Microsoft Defender AV must block untrusted and unsigned processes that run from USB.
+QUESTION_TEXT    : Verify the policy value for Computer Configuration >> Administrative Templates >> Windows Components >> Microsoft Defender Antivirus >> Microsoft Defender Exploit Guard >> Attack Surface Reduction >> Configure Attack Surface Reduction rules is set to "Enabled".
+
+Under the policy option "Set the state for each ASR rule:", then click "Show".
+
+Verify GUID "b2b3f03d-6a65-4f7b-a9c7-1c7ef74a9ba4" is in the "Value name" column with a value of "1"; otherwise, this is a finding.
+
+References:
+CCI-001170
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 3 *******************************
+
+QUESTION         : 4 of 35
+TITLE            : CAT II, V-278650, SV-278650r1134276, SRG-APP-000210
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:testaction:8901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:question:8901
+RULE             : Microsoft Defender AV must use advanced protection against ransomware.
+QUESTION_TEXT    : Verify the policy value for Computer Configuration >> Administrative Templates >> Windows Components >> Microsoft Defender Antivirus >> Microsoft Defender Exploit Guard >> Attack Surface Reduction >> Configure Attack Surface Reduction rules is set to "Enabled".
+
+Under the policy option "Set the state for each ASR rule:", then click "Show".
+
+Verify GUID "c1db55ab-c21a-4637-bb3f-a12568109d35" is in the "Value name" column with a value of "1", otherwise, this is a finding.
+
+References:
+CCI-001170
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 4 *******************************
+
+QUESTION         : 5 of 35
+TITLE            : CAT II, V-278651, SV-278651r1134279, SRG-APP-000210
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:testaction:9101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:question:9101
+RULE             : Microsoft Defender AV must block process creations originating from PSExec and WMI commands.
+QUESTION_TEXT    : Verify the policy value for Computer Configuration >> Administrative Templates >> Windows Components >> Microsoft Defender Antivirus >> Microsoft Defender Exploit Guard >> Attack Surface Reduction >> Configure Attack Surface Reduction rules is set to "Enabled".
+
+Under the policy option "Set the state for each ASR rule:", then click "Show".
+
+Verify GUID "d1e49aac-8f56-4280-b9ba-993a6d77406c" is in the "Value name" column with a value of "1", otherwise, this is a finding.
+
+References:
+CCI-001170
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 5 *******************************
+
+QUESTION         : 6 of 35
+TITLE            : CAT II, V-278652, SV-278652r1134282, SRG-APP-000210
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:testaction:9301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:question:9301
+RULE             : Microsoft Defender AV must block persistence through WMI event subscription.
+QUESTION_TEXT    : Verify the policy value for Computer Configuration >> Administrative Templates >> Windows Components >> Microsoft Defender Antivirus >> Microsoft Defender Exploit Guard >> Attack Surface Reduction >> Configure Attack Surface Reduction rules is set to "Enabled".
+
+Under the policy option "Set the state for each ASR rule:", then click "Show".
+
+Verify GUID "e6db77e5-3df2-4cf1-b95a-636979351e5b" is in the "Value name" column with a value of "1", otherwise, this is a finding.
+
+References:
+CCI-001170
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 6 *******************************
+
+QUESTION         : 7 of 35
+TITLE            : CAT II, V-278653, SV-278653r1134285, SRG-APP-000210
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:testaction:9501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:question:9501
+RULE             : Microsoft Defender AV must block executable files from running unless they meet a prevalence, age, or trusted list criterion.
+QUESTION_TEXT    : Verify the policy value for Computer Configuration >> Administrative Templates >> Windows Components >> Microsoft Defender Antivirus >> Microsoft Defender Exploit Guard >> Attack Surface Reduction >> Configure Attack Surface Reduction rules is set to "Enabled".
+
+Under the policy option "Set the state for each ASR rule:", then click "Show".
+
+Verify GUID "01443614-cd74-433a-b99e-2ecdc07bfc25" is in the "Value name" column with a value of "1", otherwise, this is a finding.
+
+References:
+CCI-001170
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 7 *******************************
+
+QUESTION         : 8 of 35
+TITLE            : CAT II, V-278654, SV-278654r1134288, SRG-APP-000210
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:testaction:9701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:question:9701
+RULE             : Microsoft Defender AV must block Office communication application from creating child processes.
+QUESTION_TEXT    : Verify the policy value for Computer Configuration >> Administrative Templates >> Windows Components >> Microsoft Defender Antivirus >> Microsoft Defender Exploit Guard >> Attack Surface Reduction >> Configure Attack Surface Reduction rules is set to "Enabled".
+
+Under the policy option "Set the state for each ASR rule:", then click "Show".
+
+Verify GUID "26190899-1602-49e8-8b27-eb1d0a1ce869" is in the "Value name" column with a value of "1", otherwise, this is a finding.
+
+References:
+CCI-001170
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 8 *******************************
+
+QUESTION         : 9 of 35
+TITLE            : CAT II, V-278655, SV-278655r1134291, SRG-APP-000210
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:testaction:9901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:question:9901
+RULE             : Microsoft Defender AV must block abuse of exploited vulnerable signed drivers.
+QUESTION_TEXT    : Verify the policy value for Computer Configuration >> Administrative Templates >> Windows Components >> Microsoft Defender Antivirus >> Microsoft Defender Exploit Guard >> Attack Surface Reduction >> Configure Attack Surface Reduction rules is set to "Enabled".
+
+Under the policy option "Set the state for each ASR rule:", then click "Show".
+
+Verify GUID "56a863a9-875e-4185-98a7-b882c64b5ce5" is in the "Value name" column with a value of "1", otherwise, this is a finding.
+
+References:
+CCI-001170
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 9 *******************************
+
+QUESTION         : 10 of 35
+TITLE            : CAT II, V-278656, SV-278656r1134248, SRG-APP-000210
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:testaction:10101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:question:10101
+RULE             : Microsoft Defender AV must configure local administrator merge behavior for lists.
+QUESTION_TEXT    : Verify the policy value for Computer Configuration >> Administrative Templates >> Windows Components >> Microsoft Defender Antivirus >> Configure local administrator merge behavior for lists is set to "Enabled"; otherwise, this is a finding.
+
+References:
+CCI-001170
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 10 *******************************
+
+QUESTION         : 11 of 35
+TITLE            : CAT II, V-278657, SV-278657r1134249, SRG-APP-000210
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:testaction:10301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:question:10301
+RULE             : Microsoft Defender AV must enable routine remediation.
+QUESTION_TEXT    : Verify the policy value for Computer Configuration >> Administrative Templates >> Windows Components >> Microsoft Defender Antivirus >> Turn off routine remediation is set to "Disabled"; otherwise, this is a finding.
+
+References:
+CCI-001170
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 11 *******************************
+
+QUESTION         : 12 of 35
+TITLE            : CAT II, V-278658, SV-278658r1134250, SRG-APP-000210
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:testaction:10501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:question:10501
+RULE             : Microsoft Defender AV must control whether exclusions are visible to Local Admins.
+QUESTION_TEXT    : Verify the policy value for Computer Configuration >> Administrative Templates >> Windows Components >> Microsoft Defender Antivirus >> Control whether or not exclusions are visible to Local Admins is set to "Enabled"; otherwise, this is a finding.
+
+References:
+CCI-001170
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 12 *******************************
+
+QUESTION         : 13 of 35
+TITLE            : CAT II, V-278659, SV-278659r1134251, SRG-APP-000278
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:testaction:10701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:question:10701
+RULE             : Microsoft Defender AV must randomize scheduled task times.
+QUESTION_TEXT    : Verify the policy value for Computer Configuration >> Administrative Templates >> Windows Components >> Microsoft Defender Antivirus >> Randomize scheduled task times is set to "Enabled"; otherwise, this is a finding.
+
+References:
+CCI-001242
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 13 *******************************
+
+QUESTION         : 14 of 35
+TITLE            : CAT II, V-278660, SV-278660r1134252, SRG-APP-000210
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:testaction:10901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:question:10901
+RULE             : Microsoft Defender AV must hide the Family options area.
+QUESTION_TEXT    : Verify the policy value for Computer Configuration >> Administrative Templates >> Windows Components >> Windows Security >> Family Options >> Hide the Family options area is set to "Enabled"; otherwise, this is a finding.
+
+References:
+CCI-001170
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 14 *******************************
+
+QUESTION         : 15 of 35
+TITLE            : CAT II, V-278661, SV-278661r1134253, SRG-APP-000210
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:testaction:11101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:question:11101
+RULE             : Microsoft Defender AV must enable the file hash computation feature.
+QUESTION_TEXT    : Verify the policy value for Computer Configuration >> Administrative Templates >> Windows Components >> Microsoft Defender Antivirus >> MpEngine >> Enable file hash computation feature is set to "Enabled"; otherwise, this is a finding.
+
+References:
+CCI-001170
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 15 *******************************
+
+QUESTION         : 16 of 35
+TITLE            : CAT II, V-278662, SV-278662r1134254, SRG-APP-000210
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:testaction:11301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:question:11301
+RULE             : Microsoft Defender AV must enable extended cloud check.
+QUESTION_TEXT    : Verify the policy value for Computer Configuration >> Administrative Templates >> Windows Components >> Microsoft Defender Antivirus >> MpEngine >> Configure extended cloud check is set to "Enabled" with a Policy Option value of "50"; otherwise, this is a finding.
+
+References:
+CCI-001170
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 16 *******************************
+
+QUESTION         : 17 of 35
+TITLE            : CAT II, V-278663, SV-278663r1134255, SRG-APP-000210
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:testaction:11501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:question:11501
+RULE             : Microsoft Defender AV must enable behavior monitoring.
+QUESTION_TEXT    : Verify the policy value for Computer Configuration >> Administrative Templates >> Windows Components >> Microsoft Defender Antivirus >> Turn on behavior monitoring is set to "Enabled"; otherwise, this is a finding.
+
+References:
+CCI-001170
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 17 *******************************
+
+QUESTION         : 18 of 35
+TITLE            : CAT II, V-278664, SV-278664r1134256, SRG-APP-000278
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:testaction:11701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:question:11701
+RULE             : Microsoft Defender AV must scan all downloaded files and attachments.
+QUESTION_TEXT    : Verify the policy value for Computer Configuration >> Administrative Templates >> Windows Components >> Microsoft Defender Antivirus >> Real-time Protection >> Scan all downloaded files and attachments is set to "Enabled"; otherwise, this is a finding.
+
+References:
+CCI-001242
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 18 *******************************
+
+QUESTION         : 19 of 35
+TITLE            : CAT II, V-278665, SV-278665r1134257, SRG-APP-000278
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:testaction:11901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:question:11901
+RULE             : Microsoft Defender AV must monitor file and program activity.
+QUESTION_TEXT    : Verify the policy value for Computer Configuration >> Administrative Templates >> Windows Components >> Microsoft Defender Antivirus >> Real-time Protection >> Monitor file and program activity on your computer is set to "Enabled"; otherwise, this is a finding.
+
+References:
+CCI-001242
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 19 *******************************
+
+QUESTION         : 20 of 35
+TITLE            : CAT II, V-278666, SV-278666r1134258, SRG-APP-000278
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:testaction:12101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:question:12101
+RULE             : Microsoft Defender AV must enable real-time protection.
+QUESTION_TEXT    : Verify the policy value for Computer Configuration >> Administrative Templates >> Windows Components >> Microsoft Defender Antivirus >> Real-time Protection >> Turn off real-time protection is set to "Disabled"; otherwise, this is a finding.
+
+References:
+CCI-001242
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 20 *******************************
+
+QUESTION         : 21 of 35
+TITLE            : CAT II, V-278667, SV-278667r1134259, SRG-APP-000278
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:testaction:12301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:question:12301
+RULE             : Microsoft Defender AV must enable process scanning whenever real-time protection is enabled.
+QUESTION_TEXT    : Verify the policy value for Computer Configuration >> Administrative Templates >> Windows Components >> Microsoft Defender Antivirus >> Real-time Protection >> Turn on process scanning whenever real-time protection is enabled is set to "Enabled"; otherwise, this is a finding.
+
+References:
+CCI-001242
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 21 *******************************
+
+QUESTION         : 22 of 35
+TITLE            : CAT II, V-278668, SV-278668r1134260, SRG-APP-000278
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:testaction:12501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:question:12501
+RULE             : Microsoft Defender AV must enable script scanning.
+QUESTION_TEXT    : Verify the policy value for Computer Configuration >> Administrative Templates >> Windows Components >> Microsoft Defender Antivirus >> Real-time Protection >> Turn on script scanning is set to "Enabled"; otherwise, this is a finding.
+
+References:
+CCI-001242
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 22 *******************************
+
+QUESTION         : 23 of 35
+TITLE            : CAT II, V-278669, SV-278669r1134261, SRG-APP-000278
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:testaction:12701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:question:12701
+RULE             : Microsoft Defender AV must enable real-time protection and Security Intelligence Updates during OOBE.
+QUESTION_TEXT    : Verify the policy value for Computer Configuration >> Administrative Templates >> Windows Components >> Microsoft Defender Antivirus >> Real-time Protection >> Configure real-time protection and Security Intelligence Updates during OOBE is set to "Enabled"; otherwise, this is a finding.
+
+References:
+CCI-001242
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 23 *******************************
+
+QUESTION         : 24 of 35
+TITLE            : CAT II, V-278670, SV-278670r1134262, SRG-APP-000278
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:testaction:12901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:question:12901
+RULE             : Microsoft Defender AV must enable monitoring for incoming and outgoing file and program activity.
+QUESTION_TEXT    : Verify the policy value for Computer Configuration >> Administrative Templates >> Windows Components >> Microsoft Defender Antivirus >> Real-time Protection >> Configure monitoring for incoming and outgoing file and program activity is set to "Enabled" with a policy option of "bi-directional (full on-access)"; otherwise, this is a finding.
+
+References:
+CCI-001242
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 24 *******************************
+
+QUESTION         : 25 of 35
+TITLE            : CAT II, V-278671, SV-278671r1134263, SRG-APP-000210
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:testaction:13101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:question:13101
+RULE             : Microsoft Defender AV must control folder access.
+QUESTION_TEXT    : Verify the policy value for Computer Configuration >> Administrative Templates >> Windows Components >> Microsoft Defender Antivirus >> Microsoft Defender Exploit Guard >> Controlled Folder Access >> Configure Controlled folder access is set to "Enabled" with a policy option of "Audit Mode". 
+
+All other policy options aside from "Disable" are allowed.
+
+If the policy option for "Configure Controlled folder access" is set to "Disable", this is a finding.
+
+References:
+CCI-001170
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 25 *******************************
+
+QUESTION         : 26 of 35
+TITLE            : CAT II, V-278672, SV-278672r1134264, SRG-APP-000210
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:testaction:13301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:question:13301
+RULE             : Microsoft Defender AV must enable network protection to be configured into block or audit mode on Windows Server.
+QUESTION_TEXT    : Verify the policy value for Computer Configuration >> Administrative Templates >> Windows Components >> Microsoft Defender Antivirus >> Microsoft Defender Exploit Guard >> Network Protection >> This settings controls whether Network Protection is allowed to be configured into block or audit mode on Windows Server is set to "Enabled" with a policy option of "Audit Mode"; otherwise, this is a finding.
+
+References:
+CCI-001170
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 26 *******************************
+
+QUESTION         : 27 of 35
+TITLE            : CAT II, V-278673, SV-278673r1134265, SRG-APP-000210
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:testaction:13501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:question:13501
+RULE             : Microsoft Defender AV must disable auto exclusions.
+QUESTION_TEXT    : Verify the policy value for Computer Configuration >> Administrative Templates >> Windows Components >> Microsoft Defender Antivirus >> Exclusions >> Turn off Auto Exclusions is set to "Disabled"; otherwise, this is a finding.
+
+References:
+CCI-001170
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 27 *******************************
+
+QUESTION         : 28 of 35
+TITLE            : CAT II, V-278674, SV-278674r1134266, SRG-APP-000210
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:testaction:13701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:question:13701
+RULE             : Microsoft Defender AV must enable EDR in block mode.
+QUESTION_TEXT    : Verify the policy value for Computer Configuration >> Administrative Templates >> Windows Components >> Microsoft Defender Antivirus >> Features >> Enable EDR in block mode is set to "Enabled"; otherwise, this is a finding.
+
+References:
+CCI-001170
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 28 *******************************
+
+QUESTION         : 29 of 35
+TITLE            : CAT II, V-278675, SV-278675r1134267, SRG-APP-000210
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:testaction:13901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:question:13901
+RULE             : Microsoft Defender AV must report Dynamic Signature dropped events.
+QUESTION_TEXT    : Verify the policy value for Computer Configuration >> Administrative Templates >> Windows Components >> Microsoft Defender Antivirus >> Reporting >> Configure whether to report Dynamic Signature dropped events is set to "Enabled"; otherwise, this is a finding.
+
+References:
+CCI-001170
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 29 *******************************
+
+QUESTION         : 30 of 35
+TITLE            : CAT II, V-278676, SV-278676r1134268, SRG-APP-000278
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:testaction:14101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:question:14101
+RULE             : Microsoft Defender AV must scan excluded files and directories during quick scans.
+QUESTION_TEXT    : Verify the policy value for Computer Configuration >> Administrative Templates >> Windows Components >> Microsoft Defender Antivirus >> Scan >> Scan excluded files and directories during quick scans is set to "Enabled"; otherwise, this is a finding.
+
+References:
+CCI-001242
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 30 *******************************
+
+QUESTION         : 31 of 35
+TITLE            : CAT II, V-278677, SV-278677r1134269, SRG-APP-000210
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:testaction:14301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:question:14301
+RULE             : Microsoft Defender AV must convert warn verdict to block.
+QUESTION_TEXT    : Verify the policy value for Computer Configuration >> Administrative Templates >> Windows Components >> Microsoft Defender Antivirus >> Network Inspection System >> Convert warn verdict to block is set to "Enabled"; otherwise, this is a finding.
+
+References:
+CCI-001170
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 31 *******************************
+
+QUESTION         : 32 of 35
+TITLE            : CAT II, V-278678, SV-278678r1134270, SRG-APP-000210
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:testaction:14501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:question:14501
+RULE             : Microsoft Defender AV must enable asynchronous inspection.
+QUESTION_TEXT    : Verify the policy value for Computer Configuration >> Administrative Templates >> Windows Components >> Microsoft Defender Antivirus >> Network Inspection System >> Turn on asynchronous inspection is set to "Enabled"; otherwise, this is a finding.
+
+References:
+CCI-001170
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 32 *******************************
+
+QUESTION         : 33 of 35
+TITLE            : CAT II, V-278679, SV-278679r1134271, SRG-APP-000278
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:testaction:14701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:question:14701
+RULE             : Microsoft Defender AV must scan packed executables.
+QUESTION_TEXT    : Verify the policy value for Computer Configuration >> Administrative Templates >> Windows Components >> Microsoft Defender Antivirus >> Scan >> Scan packed executables is set to "Enabled"; otherwise, this is a finding.
+
+References:
+CCI-001242
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 33 *******************************
+
+QUESTION         : 34 of 35
+TITLE            : CAT II, V-278680, SV-278680r1134272, SRG-APP-000278
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:testaction:14901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:question:14901
+RULE             : Microsoft Defender AV must enable heuristics.
+QUESTION_TEXT    : Verify the policy value for Computer Configuration >> Administrative Templates >> Windows Components >> Microsoft Defender Antivirus >> Scan >> Turn on heuristics is set to "Enabled"; otherwise, this is a finding.
+
+References:
+CCI-001242
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 34 *******************************
+
+QUESTION         : 35 of 35
+TITLE            : CAT II, V-278863, SV-278863r1134300, SRG-APP-000210
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:testaction:15101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.defenderantivirus:question:15101
+RULE             : Microsoft Defender AV must set cloud protection level to High.
+QUESTION_TEXT    : Verify the policy value for Computer Configuration >> Administrative Templates >> Windows Components >> Microsoft Defender Antivirus >> MpEngine >> Select cloud protection level is set to "Enabled". Verify the policy value for "Select cloud blocking level" is set to "High"; otherwise, this is a finding.
+
+References:
+CCI-001170
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 35 *******************************
+

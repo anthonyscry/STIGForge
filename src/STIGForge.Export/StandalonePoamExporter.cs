@@ -1,4 +1,5 @@
 using System.Text.Json;
+using STIGForge.Core.Constants;
 using STIGForge.Verify;
 
 namespace STIGForge.Export;
@@ -27,7 +28,7 @@ public static class StandalonePoamExporter
     var package = PoamGenerator.GeneratePoam(results, systemName, bundleId);
 
     string outputDir = string.IsNullOrWhiteSpace(request.OutputDirectory)
-      ? Path.Combine(request.BundleRoot, "Export", "POAM")
+      ? Path.Combine(request.BundleRoot, BundlePaths.ExportDirectory, "POAM")
       : request.OutputDirectory!;
 
     PoamGenerator.WritePoamFiles(package, outputDir);
@@ -45,10 +46,10 @@ public static class StandalonePoamExporter
 
   private static List<NormalizedVerifyResult> LoadAndNormalize(string bundleRoot)
   {
-    var verifyRoot = Path.Combine(bundleRoot, "Verify");
+    var verifyRoot = Path.Combine(bundleRoot, BundlePaths.VerifyDirectory);
     if (!Directory.Exists(verifyRoot)) return new List<NormalizedVerifyResult>();
 
-    var reports = Directory.GetFiles(verifyRoot, "consolidated-results.json", SearchOption.AllDirectories);
+    var reports = Directory.GetFiles(verifyRoot, BundlePaths.ConsolidatedResultsFileName, SearchOption.AllDirectories);
     var all = new List<NormalizedVerifyResult>();
     foreach (var reportPath in reports)
     {
@@ -77,7 +78,7 @@ public static class StandalonePoamExporter
 
   private static string? ReadSystemName(string bundleRoot)
   {
-    var manifestPath = Path.Combine(bundleRoot, "Manifest", "manifest.json");
+    var manifestPath = Path.Combine(bundleRoot, BundlePaths.ManifestDirectory, "manifest.json");
     if (!File.Exists(manifestPath)) return null;
     try
     {
@@ -93,7 +94,7 @@ public static class StandalonePoamExporter
 
   private static string? ReadBundleId(string bundleRoot)
   {
-    var manifestPath = Path.Combine(bundleRoot, "Manifest", "manifest.json");
+    var manifestPath = Path.Combine(bundleRoot, BundlePaths.ManifestDirectory, "manifest.json");
     if (!File.Exists(manifestPath)) return null;
     try
     {

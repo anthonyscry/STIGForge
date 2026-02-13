@@ -2,6 +2,9 @@ using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Windows.Media;
+using BundlePaths = STIGForge.Core.Constants.BundlePaths;
+using ControlStatusStrings = STIGForge.Core.Constants.ControlStatus;
+using PackTypes = STIGForge.Core.Constants.PackTypes;
 using STIGForge.Core.Models;
 using STIGForge.Core.Services;
 using STIGForge.Evidence;
@@ -13,6 +16,7 @@ public partial class ManualCheckWizardViewModel : ObservableObject
   private readonly string _bundleRoot;
   private readonly List<ControlRecord> _controls;
   private readonly ManualAnswerService _answerService;
+  private readonly ControlAnnotationService _annotationService;
   private readonly EvidenceAutopilot _evidenceAutopilot;
   private int _currentIndex = -1;
 
@@ -25,6 +29,8 @@ public partial class ManualCheckWizardViewModel : ObservableObject
   [ObservableProperty] private int _notApplicableCount;
   [ObservableProperty] private string _progressText = string.Empty;
   [ObservableProperty] private string _completionText = string.Empty;
+  [ObservableProperty] private double _progressPercentage;
+  [ObservableProperty] private string _currentStigGroup = string.Empty;
 
   // Current control display
   [ObservableProperty] private string _currentControlId = string.Empty;
@@ -41,6 +47,7 @@ public partial class ManualCheckWizardViewModel : ObservableObject
   [ObservableProperty] private bool _isNotReviewed = true;
   [ObservableProperty] private string _answerReason = string.Empty;
   [ObservableProperty] private string _answerComment = string.Empty;
+  [ObservableProperty] private string _controlNotes = string.Empty;
   [ObservableProperty] private string _evidenceStatus = string.Empty;
 
   // Screen visibility
@@ -50,11 +57,12 @@ public partial class ManualCheckWizardViewModel : ObservableObject
   public bool HasUnansweredControls => _controls.Count > 0;
   public bool AllControlsAnswered => _controls.Count == 0;
 
-  public ManualCheckWizardViewModel(string bundleRoot, List<ControlRecord> manualControls)
+  public ManualCheckWizardViewModel(string bundleRoot, List<ControlRecord> manualControls, ManualAnswerService answerService, ControlAnnotationService annotationService)
   {
     _bundleRoot = bundleRoot;
-    _answerService = new ManualAnswerService();
-    _evidenceAutopilot = new EvidenceAutopilot(Path.Combine(bundleRoot, "Evidence"));
+    _answerService = answerService;
+    _annotationService = annotationService;
+    _evidenceAutopilot = new EvidenceAutopilot(Path.Combine(bundleRoot, BundlePaths.EvidenceDirectory));
     
     // Get unanswered controls
     _controls = _answerService.GetUnansweredControls(bundleRoot, manualControls);
@@ -125,6 +133,11 @@ public partial class ManualCheckWizardViewModel : ObservableObject
     };
 
     _answerService.SaveAnswer(_bundleRoot, answer, requireReasonForDecision: true);
+
+    var annotationRuleId = GetAnnotationRuleId(control);
+    if (!string.IsNullOrWhiteSpace(ControlNotes) && !string.IsNullOrWhiteSpace(annotationRuleId))
+      _annotationService.SaveNotes(_bundleRoot, annotationRuleId, control.ExternalIds.VulnId, ControlNotes);
+
     EvidenceStatus = string.Empty;
 
     // Remove from unanswered list
@@ -160,13 +173,63 @@ public partial class ManualCheckWizardViewModel : ObservableObject
 
       var status = "Collected " + result.EvidenceFiles.Count + " file(s).";
       if (result.Errors.Count > 0)
+      {
         status += " Errors: " + result.Errors.Count + ".";
+        if (result.EvidenceFiles.Count == 0)
+          status += " " + string.Join("; ", result.Errors.Take(3));
+      }
 
       EvidenceStatus = status + " Folder: " + controlDir;
     }
     catch (Exception ex)
     {
       EvidenceStatus = "Evidence collection failed: " + ex.Message;
+    }
+  }
+
+  [RelayCommand]
+  private void ExportAnswers()
+  {
+    try
+    {
+      var sfd = new Microsoft.Win32.SaveFileDialog
+      {
+        Filter = "JSON Answer Files (*.json)|*.json|All Files (*.*)|*.*",
+        Title = "Export answers to file",
+        FileName = "manual_answers.json"
+      };
+
+      if (sfd.ShowDialog() != true) return;
+
+      _answerService.ExportAnswerFile(_bundleRoot, sfd.FileName);
+      EvidenceStatus = "Exported answers to " + sfd.FileName;
+    }
+    catch (Exception ex)
+    {
+      EvidenceStatus = "Export failed: " + ex.Message;
+    }
+  }
+
+  [RelayCommand]
+  private void ImportAnswers()
+  {
+    try
+    {
+      var ofd = new Microsoft.Win32.OpenFileDialog
+      {
+        Filter = "JSON Answer Files (*.json)|*.json|All Files (*.*)|*.*",
+        Title = "Import answers from file"
+      };
+
+      if (ofd.ShowDialog() != true) return;
+
+      var count = _answerService.ImportAnswerFile(_bundleRoot, ofd.FileName, overwriteExisting: false);
+      LoadStats();
+      EvidenceStatus = $"Imported {count} answer(s) from {System.IO.Path.GetFileName(ofd.FileName)}";
+    }
+    catch (Exception ex)
+    {
+      EvidenceStatus = "Import failed: " + ex.Message;
     }
   }
 
@@ -187,6 +250,7 @@ public partial class ManualCheckWizardViewModel : ObservableObject
     SeverityColor = GetSeverityBrush(control.Severity);
     CurrentCheckText = control.CheckText ?? "No check text available.";
     CurrentFixText = control.FixText ?? "No fix text available.";
+    CurrentStigGroup = control.Revision?.PackName ?? "Unknown";
 
     // Reset answer inputs
     IsPass = false;
@@ -196,6 +260,10 @@ public partial class ManualCheckWizardViewModel : ObservableObject
     AnswerReason = string.Empty;
     AnswerComment = string.Empty;
     EvidenceStatus = string.Empty;
+    var annotationRuleId = GetAnnotationRuleId(control);
+    ControlNotes = string.IsNullOrWhiteSpace(annotationRuleId)
+      ? string.Empty
+      : _annotationService.GetNotes(_bundleRoot, annotationRuleId) ?? string.Empty;
 
     UpdateProgress();
   }
@@ -212,46 +280,88 @@ public partial class ManualCheckWizardViewModel : ObservableObject
     NotApplicableCount = stats.NotApplicableCount;
 
     CompletionText = $"{stats.PercentComplete:F1}% Complete";
+    ProgressPercentage = stats.TotalControls > 0 
+      ? (double)stats.AnsweredControls / stats.TotalControls * 100.0 
+      : 0;
   }
 
   private List<ControlRecord> LoadAllManualControls()
   {
-    var controlsPath = Path.Combine(_bundleRoot, "Manifest", "pack_controls.json");
-    if (!File.Exists(controlsPath)) return new List<ControlRecord>();
+    var allControls = PackControlsReader.Load(_bundleRoot);
 
-    var json = File.ReadAllText(controlsPath);
-    var allControls = System.Text.Json.JsonSerializer.Deserialize<List<ControlRecord>>(json,
-      new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true }) 
-      ?? new List<ControlRecord>();
-
-    return allControls.Where(c => c.IsManual).ToList();
+    // Filter out ADMX/GPO/Template packs to match BuildManualScopeControls() in MainViewModel
+    return allControls
+      .Where(c =>
+      {
+        var packName = (c.Revision.PackName ?? string.Empty).Trim();
+        return packName.IndexOf(PackTypes.Admx, StringComparison.OrdinalIgnoreCase) < 0
+          && packName.IndexOf(PackTypes.Gpo, StringComparison.OrdinalIgnoreCase) < 0
+          && packName.IndexOf(PackTypes.Template, StringComparison.OrdinalIgnoreCase) < 0;
+      })
+      .ToList();
   }
 
   private void UpdateBundleInfo()
   {
-    var manifestPath = Path.Combine(_bundleRoot, "Manifest", "manifest.json");
-    if (File.Exists(manifestPath))
+    var manifestPath = Path.Combine(_bundleRoot, BundlePaths.ManifestDirectory, "manifest.json");
+    if (!File.Exists(manifestPath))
     {
-      try
+      BundleInfo = "Bundle information not available (manifest.json missing).";
+      return;
+    }
+
+    try
+    {
+      var json = File.ReadAllText(manifestPath);
+      using var doc = System.Text.Json.JsonDocument.Parse(json);
+
+      if (!TryGetPropertyCaseInsensitive(doc.RootElement, "run", out var runElement))
       {
-        var json = File.ReadAllText(manifestPath);
-        using var doc = System.Text.Json.JsonDocument.Parse(json);
-        var systemName = doc.RootElement.GetProperty("run").GetProperty("systemName").GetString();
-        var profileName = doc.RootElement.GetProperty("run").GetProperty("profileName").GetString();
-        BundleInfo = $"System: {systemName}\nProfile: {profileName}";
+        BundleInfo = "Bundle information not available (manifest missing run section).";
+        return;
       }
-      catch
+
+      string? systemName = null;
+      string? profileName = null;
+
+      if (TryGetPropertyCaseInsensitive(runElement, "systemName", out var systemElement))
+        systemName = systemElement.GetString();
+      if (TryGetPropertyCaseInsensitive(runElement, "profileName", out var profileElement))
+        profileName = profileElement.GetString();
+
+      BundleInfo = $"System: {systemName ?? "Unknown"}\nProfile: {profileName ?? "Unknown"}";
+    }
+    catch (Exception ex)
+    {
+      BundleInfo = "Bundle information not available.";
+      System.Diagnostics.Debug.WriteLine("[ManualCheckWizard] failed to read manifest: " + ex.Message);
+    }
+  }
+
+  private static bool TryGetPropertyCaseInsensitive(System.Text.Json.JsonElement element, string propertyName, out System.Text.Json.JsonElement value)
+  {
+    if (element.TryGetProperty(propertyName, out value))
+      return true;
+
+    foreach (var prop in element.EnumerateObject())
+    {
+      if (string.Equals(prop.Name, propertyName, StringComparison.OrdinalIgnoreCase))
       {
-        BundleInfo = "Bundle information not available.";
+        value = prop.Value;
+        return true;
       }
     }
+
+    value = default;
+    return false;
   }
 
   private void UpdateProgress()
   {
-    var remaining = _controls.Count;
-    var completed = TotalControls - remaining;
-    ProgressText = $"Control {completed + 1} of {TotalControls}";
+    ProgressText = $"Control {_currentIndex + 1} of {_controls.Count}";
+    ProgressPercentage = _controls.Count > 0 
+      ? (double)(_currentIndex + 1) / _controls.Count * 100.0 
+      : 0;
   }
 
   private void ShowCompletionScreen()
@@ -265,17 +375,25 @@ public partial class ManualCheckWizardViewModel : ObservableObject
 
   private string GetSelectedStatus()
   {
-    if (IsPass) return "Pass";
-    if (IsFail) return "Fail";
-    if (IsNotApplicable) return "NotApplicable";
-    return "Open";
+    if (IsPass) return ControlStatusStrings.Pass;
+    if (IsFail) return ControlStatusStrings.Fail;
+    if (IsNotApplicable) return ControlStatusStrings.NotApplicable;
+    return ControlStatusStrings.Open;
   }
 
   private string GetControlEvidenceDirectory(ControlRecord control)
   {
     var controlId = control.ExternalIds.VulnId ?? control.ExternalIds.RuleId ?? control.ControlId;
     var safeId = string.Join("_", controlId.Split(Path.GetInvalidFileNameChars()));
-    return Path.Combine(_bundleRoot, "Evidence", "by_control", safeId);
+    return Path.Combine(_bundleRoot, BundlePaths.EvidenceDirectory, "by_control", safeId);
+  }
+
+  private static string GetAnnotationRuleId(ControlRecord control)
+  {
+    if (!string.IsNullOrWhiteSpace(control.ExternalIds.RuleId))
+      return control.ExternalIds.RuleId;
+
+    return control.ExternalIds.VulnId ?? string.Empty;
   }
 
   private static Brush GetSeverityBrush(string severity)

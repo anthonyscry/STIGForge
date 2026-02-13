@@ -1,5 +1,6 @@
 using System.Text;
 using System.Xml.Linq;
+using STIGForge.Core.Constants;
 using STIGForge.Verify;
 
 namespace STIGForge.Export;
@@ -24,7 +25,7 @@ public static class CklExporter
     if (results.Count == 0)
       return new CklExportResult { OutputPath = string.Empty, ControlCount = 0, Message = "No verification results found." };
 
-    var outputDir = string.IsNullOrWhiteSpace(request.OutputDirectory) ? Path.Combine(request.BundleRoot, "Export") : request.OutputDirectory;
+    var outputDir = string.IsNullOrWhiteSpace(request.OutputDirectory) ? Path.Combine(request.BundleRoot, BundlePaths.ExportDirectory) : request.OutputDirectory;
     Directory.CreateDirectory(outputDir);
 
     var cklPath = Path.Combine(outputDir, request.FileName ?? "stigforge_checklist.ckl");
@@ -107,17 +108,27 @@ public static class CklExporter
 
   private static List<ControlResult> LoadResults(string bundleRoot)
   {
-    var verifyRoot = Path.Combine(bundleRoot, "Verify");
+    var verifyRoot = Path.Combine(bundleRoot, BundlePaths.VerifyDirectory);
     if (!Directory.Exists(verifyRoot)) return new List<ControlResult>();
 
-    var reports = Directory.GetFiles(verifyRoot, "consolidated-results.json", SearchOption.AllDirectories);
+    var reports = Directory.GetFiles(verifyRoot, BundlePaths.ConsolidatedResultsFileName, SearchOption.AllDirectories);
     var all = new List<ControlResult>();
     foreach (var reportPath in reports)
     {
       var report = VerifyReportReader.LoadFromJson(reportPath);
       all.AddRange(report.Results);
     }
-    return all;
+
+    var deduped = new Dictionary<string, ControlResult>(StringComparer.OrdinalIgnoreCase);
+    for (int i = 0; i < all.Count; i++)
+    {
+      var r = all[i];
+      var key = !string.IsNullOrWhiteSpace(r.RuleId) ? "RULE:" + r.RuleId
+              : !string.IsNullOrWhiteSpace(r.VulnId) ? "VULN:" + r.VulnId
+              : "IDX:" + i.ToString();
+      deduped[key] = r;
+    }
+    return deduped.Values.ToList();
   }
 }
 

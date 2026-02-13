@@ -1,0 +1,438 @@
+################################################################################
+DOCUMENT         : Microsoft_Windows_11_STIG
+VERSION          : 002.005.012
+CHECKSUM         : 86abe65c00f33dc41ba6ca48316189758cfa75cf8df108d542c6a55cda13ae24
+MANUAL QUESTIONS : 13
+
+IMPORTANT: Make sure to save the completed version of this file to: 
+<SCC Install>/Resources/Content/Manual_Questions/Completed_Files
+
+This file contains all of the non-automated STIG requirements found in the STIG.
+Results from this file will be combined with automated checks in SCC to provide
+complete STIG compliance results.
+
+This file will be programmaticaly imported, so do not modify anything in this file
+except for placing an '[X]' to select a Single answer, and entering text comments.
+
+The list of questions is printed in order of severity, listing CAT I (High), then CAT II, etc..
+
+################################################################################
+
+QUESTION         : 1 of 13
+TITLE            : CAT I, V-253269, SV-253269r958702, SRG-OS-000312-GPOS-00123
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows11:testaction:3101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows11:question:3101
+RULE             : Only accounts responsible for the administration of a system must have Administrator rights on the system.
+QUESTION_TEXT    : Run "Computer Management".
+Navigate to System Tools >> Local Users and Groups >> Groups.
+Review the members of the Administrators group.
+Only the appropriate administrator groups or accounts responsible for administration of the system may be members of the group.
+
+For domain-joined workstations, the Domain Admins group must be replaced by a domain workstation administrator group.
+
+Standard user accounts must not be members of the local administrator group.
+
+If prohibited accounts are members of the local administrators group, this is a finding.
+
+The built-in Administrator account or other required administrative accounts would not be a finding.
+
+References:
+CCI-002165
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 1 *******************************
+
+QUESTION         : 2 of 13
+TITLE            : CAT I, V-253294, SV-253294r991589, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows11:testaction:8101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows11:question:8101
+RULE             : Administrative accounts must not be used with applications that access the internet, such as web browsers, or with potential internet sources, such as email.
+QUESTION_TEXT    : Determine whether administrative accounts are prevented from using applications that access the internet, such as web browsers, or with potential internet sources, such as email, except as necessary for local service administration.
+
+The organization must have a policy that prohibits administrative accounts from using applications that access the internet, such as web browsers, or with potential internet sources, such as email, except as necessary for local service administration. The policy must define specific exceptions for local service administration. These exceptions may include HTTP(S)-based tools that are used for the administration of the local system, services, or attached devices.
+
+Technical measures such as the removal of applications or application allowlisting must be used where feasible to prevent the use of applications that access the internet. 
+
+If accounts with administrative privileges are not prevented from using applications that access the internet or with potential internet sources, this is a finding.
+
+References:
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 2 *******************************
+
+QUESTION         : 3 of 13
+TITLE            : CAT II, V-253258, SV-253258r1000099, SRG-OS-000191-GPOS-00080
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows11:testaction:901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows11:question:901
+RULE             : Windows 11 must employ automated mechanisms to determine the state of system components with regard to flaw remediation using the following frequency: Continuously, where ESS is used; 30 days, for any additional internal network scans not covered by ESS; and annually, for external scans by Computer Network Defense Service Provider (CNDSP).
+QUESTION_TEXT    : Verify DOD-approved ESS software is installed and properly operating. Ask the site information system security manager (ISSM) for documentation of the ESS software installation and configuration.
+
+If the ISSM is not able to provide a documented configuration for an installed ESS or if the ESS software is not properly maintained or used, this is a finding.
+
+Note: Example of documentation can be a copy of the site's CCB approved Software Baseline with version of software noted or a memo from the ISSM stating current ESS software and version.
+
+References:
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 3 *******************************
+
+QUESTION         : 4 of 13
+TITLE            : CAT II, V-253262, SV-253262r958808, SRG-OS-000370-GPOS-00155
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows11:testaction:1701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows11:question:1701
+RULE             : The operating system must employ a deny-all, permit-by-exception policy to allow the execution of authorized software programs.
+QUESTION_TEXT    : Verify the operating system employs a deny-all, permit-by-exception policy to allow the execution of authorized software programs. This must include packaged apps such as the universal apps installed by default on systems.
+
+If an application allowlisting program is not in use on the system, this is a finding.
+
+Configuration of allowlisting applications will vary by the program.
+
+AppLocker is an allowlisting application built into Windows 11 Enterprise. A deny-by-default implementation is initiated by enabling any AppLocker rules within a category, only allowing what is specified by defined rules.
+
+If AppLocker is used, perform the following to view the configuration of AppLocker:
+Run "PowerShell".
+
+Execute the following command, substituting [c:\temp\file.xml] with a location and file name appropriate for the system:
+Get-AppLockerPolicy -Effective -XML > c:\temp\file.xml
+
+This will produce an xml file with the effective settings that can be viewed in a browser or opened in a program such as Excel for review.
+
+Implementation guidance for AppLocker is available at the following link:
+
+https://docs.microsoft.com/en-us/windows/security/threat-protection/windows-defender-application-control/applocker/applocker-policies-deployment-guide
+
+References:
+CCI-001774
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 4 *******************************
+
+QUESTION         : 5 of 13
+TITLE            : CAT II, V-253267, SV-253267r958524, SRG-OS-000138-GPOS-00069
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows11:testaction:2701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows11:question:2701
+RULE             : Non-system-created file shares on a system must limit access to groups that require it.
+QUESTION_TEXT    : Non-system-created shares must not exist on workstations.
+
+If only system-created shares exist on the system, this is NA.
+
+Run "Computer Management".
+Navigate to System Tools >> Shared Folders >> Shares.
+
+If the only shares listed are "ADMIN$", "C$" and "IPC$", this is NA.
+(Selecting Properties for system-created shares will display a message that it has been shared for administrative purposes.)
+
+Right-click any non-system-created shares.
+Select "Properties".
+Select the "Share Permissions" tab.
+
+Verify the necessity of any shares found.
+If the file shares have not been reconfigured to restrict permissions to the specific groups or accounts that require access, this is a finding.
+
+Select the "Security" tab.
+
+If the NTFS permissions have not been reconfigured to restrict permissions to the specific groups or accounts that require access, this is a finding.
+
+References:
+CCI-001090
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 5 *******************************
+
+QUESTION         : 6 of 13
+TITLE            : CAT II, V-253270, SV-253270r991589, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows11:testaction:3301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows11:question:3301
+RULE             : Only accounts responsible for the backup operations must be members of the Backup Operators group.
+QUESTION_TEXT    : Run "Computer Management".
+Navigate to System Tools >> Local Users and Groups >> Groups.
+Review the members of the Backup Operators group.
+
+If the group contains no accounts, this is not a finding.
+
+If the group contains any accounts, the accounts must be specifically for backup functions.
+
+If the group contains any standard user accounts used for performing normal user tasks, this is a finding.
+
+References:
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 6 *******************************
+
+QUESTION         : 7 of 13
+TITLE            : CAT II, V-253271, SV-253271r958702, SRG-OS-000312-GPOS-00124
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows11:testaction:3501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows11:question:3501
+RULE             : Only authorized user accounts must be allowed to create or run virtual machines on Windows 11 systems.
+QUESTION_TEXT    : If a hosted hypervisor (Hyper-V, VMware Workstation, etc.) is installed on the system, verify only authorized user accounts are allowed to run virtual machines.
+
+For Hyper-V, run "Computer Management".
+Navigate to System Tools >> Local Users and Groups >> Groups.
+Double click on "Hyper-V Administrators".
+
+If any unauthorized groups or user accounts are listed in "Members:", this is a finding.
+
+For hosted hypervisors other than Hyper-V, verify only authorized user accounts have access to run the virtual machines. Restrictions may be enforced by access to the physical system, software restriction policies, or access restrictions built into the application.
+
+If any unauthorized groups or user accounts have access to create or run virtual machines, this is a finding.
+
+All users authorized to create or run virtual machines must be documented with the ISSM/ISSO. Accounts nested within group accounts must be documented as individual accounts and not the group accounts.
+
+References:
+CCI-002165
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 7 *******************************
+
+QUESTION         : 8 of 13
+TITLE            : CAT II, V-253282, SV-253282r991593, SRG-OS-000480-GPOS-00232
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows11:testaction:5701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows11:question:5701
+RULE             : Inbound exceptions to the firewall on Windows 11 domain workstations must only allow authorized remote management hosts.
+QUESTION_TEXT    : Verify firewall exceptions to inbound connections on domain workstations include only authorized remote management hosts.
+
+If allowed inbound exceptions are not limited to authorized remote management hosts, this is a finding.
+
+Review inbound firewall exceptions.
+Computer Configuration >> Windows Settings >> Security Settings >> Windows Defender Firewall with Advanced Security >> Windows Defender Firewall with Advanced Security >> Inbound Rules (this link will be in the right pane)
+
+For any inbound rules that allow connections view the Scope for Remote IP address. This may be defined as an IP address, subnet, or range. The rule must apply to all firewall profiles.
+
+If a third-party firewall is used, ensure comparable settings are in place.
+
+References:
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 8 *******************************
+
+QUESTION         : 9 of 13
+TITLE            : CAT II, V-253295, SV-253295r958552, SRG-OS-000185-GPOS-00079
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows11:testaction:8301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows11:question:8301
+RULE             : Windows 11 nonpersistent VM sessions must not exceed 24 hours.
+QUESTION_TEXT    : Verify there is a documented policy or procedure in place that nonpersistent VM sessions do not exceed 24 hours.                                                                                                                                                                                                                                                                                                  
+
+If the system is NOT a nonpersistent VM, this is Not Applicable. 
+
+For Azure Virtual Desktop (AVD) implementations with no data at rest, this is Not Applicable.
+
+If there is no such documented policy or procedure in place, this is a finding.
+
+References:
+CCI-001199
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 9 *******************************
+
+QUESTION         : 10 of 13
+APPLICABILITY    : camerainstallation
+TITLE            : CAT II, V-253351, SV-253351r1106508, SRG-OS-000095-GPOS-00049
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows11:testaction:19501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows11:question:19501
+RULE             : Windows 11 must cover or disable the built-in or attached camera when not in use.
+QUESTION_TEXT    : If the device or operating system does not have a camera installed, this requirement is not applicable.
+
+This requirement is not applicable to mobile devices (smartphones and tablets), where the use of the camera is a local authorizing official (AO) decision.
+
+This requirement is not applicable to dedicated VTC suites located in approved VTC locations that are centrally managed.
+
+For an external camera, if there is not a method for the operator to manually disconnect camera at the end of collaborative computing sessions, this is a finding.
+
+For a built-in camera, the camera must be protected by a camera cover (e.g. laptop camera cover slide) when not in use. If the built-in camera is not protected with a camera cover, or if the built-in
+camera is not disabled in the bios, this is a finding.
+
+If the camera is not disconnected or covered, the following registry entry is required:
+
+Registry Hive: HKEY_LOCAL_MACHINE
+RegistryPath\SOFTWARE\Microsoft\Windows\CurrentVersion\CapabilityAccessManager\ConsentStore\webcam
+
+Value Name: Value                                                                             Value Data: Deny
+
+If "Value Name" is set to a value other than "Deny" and the collaborative computing device has not been authorized for use, this is a finding.
+
+References:
+CCI-000381
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 10 *******************************
+
+QUESTION         : 11 of 13
+TITLE            : CAT II, V-253476, SV-253476r1051060, SRG-OS-000076-GPOS-00044
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows11:testaction:44501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows11:question:44501
+RULE             : Passwords for enabled local Administrator accounts must be changed at least every 60 days.
+QUESTION_TEXT    : If there are no enabled local Administrator accounts, this is Not Applicable.
+
+Review the password last set date for the enabled local Administrator account.
+
+On the standalone or domain-joined workstation:
+
+Open "PowerShell".
+
+Enter "Get-LocalUser -Name * | Select-Object *".
+
+If the "PasswordLastSet" date is greater than "60" days old for the local Administrator account for administering the computer/domain, this is a finding.
+
+Verify LAPS is configured and operational. 
+
+Navigate to Local Computer Policy >> Computer Configuration >> Administrative Templates >> System >> LAPS >> Password Settings >> Set to enabled. Password Complexity, large letters + small letters + numbers + special, Password Length 14, Password Age 60. If not configured as shown, this is a finding. 
+
+Verify LAPS Operational logs >> Event Viewer >> Applications and Services Logs >> Microsoft >> Windows >> LAPS >> Operational. Verify LAPS policy process is completing. If it is not, this is a finding.
+
+References:
+CCI-004066
+CCI-000199
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 11 *******************************
+
+QUESTION         : 12 of 13
+TITLE            : CAT III, V-253268, SV-253268r1051039, SRG-OS-000468-GPOS-00212
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows11:testaction:2901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows11:question:2901
+RULE             : Unused accounts must be disabled or removed from the system after 35 days of inactivity.
+QUESTION_TEXT    : Run "PowerShell".
+Copy the lines below to the PowerShell window and enter.
+
+"([ADSI]('WinNT://{0}' -f $env:COMPUTERNAME)).Children | Where { $_.SchemaClassName -eq 'user' } | ForEach {
+  $user = ([ADSI]$_.Path)
+  $lastLogin = $user.Properties.LastLogin.Value
+  $enabled = ($user.Properties.UserFlags.Value -band 0x2) -ne 0x2
+  if ($lastLogin -eq $null) {
+   $lastLogin = 'Never'
+  }
+  Write-Host $user.Name $lastLogin $enabled 
+}"
+
+This will return a list of local accounts with the account name, last logon, and if the account is enabled (True/False).
+For example: User1 10/31/2015 5:49:56 AM True
+
+Review the list to determine the finding validity for each account reported.
+
+Exclude the following accounts:
+Built-in administrator account (Disabled, SID ending in 500)
+Built-in guest account (Disabled, SID ending in 501)
+Built-in DefaultAccount (Disabled, SID ending in 503)
+Local administrator account
+
+If any enabled accounts have not been logged on to within the past 35 days, this is a finding.
+
+Inactive accounts that have been reviewed and deemed to be required must be documented with the information system security officer (ISSO).
+
+References:
+CCI-000172
+CCI-003627
+CCI-000795
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 12 *******************************
+
+QUESTION         : 13 of 13
+TITLE            : CAT III, V-253272, SV-253272r991589, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows11:testaction:3701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows11:question:3701
+RULE             : Standard local user accounts must not exist on a system in a domain.
+QUESTION_TEXT    : Run "Computer Management".
+Navigate to System Tools >> Local Users and Groups >> Users.
+
+If local users other than the accounts listed below exist on a workstation in a domain, this is a finding. 
+
+For standalone or nondomain-joined systems, this is Not Applicable.
+
+Built-in Administrator account (Disabled)
+Built-in Guest account (Disabled)
+Built-in DefaultAccount (Disabled)
+Built-in defaultuser0 (Disabled)
+Built-in WDAGUtilityAccount (Disabled)
+Local administrator account(s)
+
+All of the built-in accounts may not exist on a system, depending on the Windows 11 version.
+
+References:
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 13 *******************************
+

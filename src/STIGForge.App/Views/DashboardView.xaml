@@ -8,7 +8,7 @@
             <RowDefinition Height="*"/>
           </Grid.RowDefinitions>
 
-          <Border Grid.Row="0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="12" Margin="0,0,0,8" Background="{StaticResource SurfaceMutedBrush}">
+          <Border Grid.Row="0" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="12" Margin="0,0,0,8" Background="{DynamicResource SurfaceMutedBrush}">
             <Grid>
               <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
@@ -19,15 +19,15 @@
                 <TextBlock Text="Active Bundle" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                   <TextBlock Text="Bundle:" FontWeight="SemiBold" Width="80"/>
-                  <TextBlock Text="{Binding DashBundleLabel}" Foreground="{StaticResource TextMutedBrush}"/>
+                   <TextBlock Text="{Binding DashBundleLabel}" Foreground="{DynamicResource TextMutedBrush}"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                   <TextBlock Text="Pack:" FontWeight="SemiBold" Width="80"/>
-                  <TextBlock Text="{Binding DashPackLabel}" Foreground="{StaticResource TextMutedBrush}"/>
+                   <TextBlock Text="{Binding DashPackLabel}" Foreground="{DynamicResource TextMutedBrush}"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
                   <TextBlock Text="Profile:" FontWeight="SemiBold" Width="80"/>
-                  <TextBlock Text="{Binding DashProfileLabel}" Foreground="{StaticResource TextMutedBrush}"/>
+                   <TextBlock Text="{Binding DashProfileLabel}" Foreground="{DynamicResource TextMutedBrush}"/>
                 </StackPanel>
               </StackPanel>
               <Button Grid.Column="1" Content="Refresh" Width="80" Height="28" VerticalAlignment="Top" TabIndex="10"
@@ -47,11 +47,11 @@
               <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
 
-            <Border Grid.Column="0" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="12" Background="{StaticResource SurfaceBrush}">
+             <Border Grid.Column="0" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="12" Background="{DynamicResource SurfaceBrush}">
               <StackPanel>
                 <TextBlock Text="Controls" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
-                <TextBlock Text="{Binding DashTotalControls}" FontSize="36" FontWeight="Bold" Foreground="{StaticResource AccentBrush}"/>
-                <TextBlock Text="Total Controls" Foreground="{StaticResource TextMutedBrush}" Margin="0,4,0,12"/>
+                 <TextBlock Text="{Binding DashTotalControls}" FontSize="36" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"/>
+                 <TextBlock Text="Total Controls" Foreground="{DynamicResource TextMutedBrush}" Margin="0,4,0,12"/>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                   <TextBlock Text="Automated:" FontWeight="SemiBold" Width="90"/>
                   <TextBlock Text="{Binding DashAutoControls}"/>
@@ -63,54 +63,129 @@
               </StackPanel>
             </Border>
 
-            <Border Grid.Column="2" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="12" Background="{StaticResource SurfaceBrush}">
+             <Border Grid.Column="2" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="12" Background="{DynamicResource SurfaceBrush}">
               <StackPanel>
                 <TextBlock Text="Automated Verification" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
-                <TextBlock Text="{Binding DashVerifyPercent}" FontSize="36" FontWeight="Bold" Foreground="{StaticResource SuccessBrush}"/>
-                <TextBlock Text="Compliance Rate" Foreground="{StaticResource TextMutedBrush}" Margin="0,4,0,12"/>
+                 <TextBlock Text="{Binding DashVerifyPercent}" FontSize="36" FontWeight="Bold" Foreground="{DynamicResource SuccessBrush}"/>
+                 <TextBlock Text="Compliance Rate" Foreground="{DynamicResource TextMutedBrush}" Margin="0,4,0,12"/>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                   <TextBlock Text="Closed:" FontWeight="SemiBold" Width="90"/>
-                  <TextBlock Text="{Binding DashVerifyClosed}" Foreground="{StaticResource SuccessBrush}"/>
+                   <TextBlock Text="{Binding DashVerifyClosed}" Foreground="{DynamicResource SuccessBrush}"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                   <TextBlock Text="Open:" FontWeight="SemiBold" Width="90"/>
-                  <TextBlock Text="{Binding DashVerifyOpen}" Foreground="{StaticResource DangerBrush}"/>
+                   <TextBlock Text="{Binding DashVerifyOpen}" Foreground="{DynamicResource DangerBrush}"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
                   <TextBlock Text="Last run:" FontWeight="SemiBold" Width="90"/>
-                  <TextBlock Text="{Binding DashLastVerify}" Foreground="{StaticResource TextMutedBrush}"/>
+                   <TextBlock Text="{Binding DashLastVerify}" Foreground="{DynamicResource TextMutedBrush}"/>
                 </StackPanel>
               </StackPanel>
             </Border>
 
-            <Border Grid.Column="4" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="12" Background="{StaticResource SurfaceBrush}">
+             <Border Grid.Column="4" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="12" Background="{DynamicResource SurfaceBrush}">
               <StackPanel>
                 <TextBlock Text="Manual Review" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
-                <TextBlock Text="{Binding DashManualPercent}" FontSize="36" FontWeight="Bold" Foreground="{StaticResource WarningBrush}"/>
-                <TextBlock Text="Answered Rate" Foreground="{StaticResource TextMutedBrush}" Margin="0,4,0,12"/>
+                 <TextBlock Text="{Binding DashManualPercent}" FontSize="36" FontWeight="Bold" Foreground="{DynamicResource WarningBrush}"/>
+                 <TextBlock Text="Answered Rate" Foreground="{DynamicResource TextMutedBrush}" Margin="0,4,0,12"/>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                   <TextBlock Text="Pass:" FontWeight="SemiBold" Width="90"/>
-                  <TextBlock Text="{Binding DashManualPass}" Foreground="{StaticResource SuccessBrush}"/>
+                   <TextBlock Text="{Binding DashManualPass}" Foreground="{DynamicResource SuccessBrush}"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                   <TextBlock Text="Fail:" FontWeight="SemiBold" Width="90"/>
-                  <TextBlock Text="{Binding DashManualFail}" Foreground="{StaticResource DangerBrush}"/>
+                   <TextBlock Text="{Binding DashManualFail}" Foreground="{DynamicResource DangerBrush}"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
                   <TextBlock Text="N/A:" FontWeight="SemiBold" Width="90"/>
-                  <TextBlock Text="{Binding DashManualNa}" Foreground="{StaticResource TextMutedBrush}"/>
+                   <TextBlock Text="{Binding DashManualNa}" Foreground="{DynamicResource TextMutedBrush}"/>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
                   <TextBlock Text="Open:" FontWeight="SemiBold" Width="90"/>
-                  <TextBlock Text="{Binding DashManualOpen}" Foreground="{StaticResource WarningBrush}"/>
+                   <TextBlock Text="{Binding DashManualOpen}" Foreground="{DynamicResource WarningBrush}"/>
                 </StackPanel>
               </StackPanel>
             </Border>
-          </Grid>
+           </Grid>
 
-          <Border Grid.Row="2" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="12" Background="{StaticResource SurfaceBrush}"
-                  Visibility="{Binding DashHasBundle, Converter={StaticResource BoolToVisibility}}">
+          <TextBlock Grid.Row="1" Text="No active bundle. Select or build a bundle to see compliance metrics."
+                     VerticalAlignment="Center" HorizontalAlignment="Center" TextAlignment="Center"
+                     Foreground="{DynamicResource TextMutedBrush}" FontSize="14" TextWrapping="Wrap" MaxWidth="500" Margin="0,20,0,20">
+            <TextBlock.Style>
+              <Style TargetType="TextBlock">
+                <Setter Property="Visibility" Value="Collapsed"/>
+                <Style.Triggers>
+                  <DataTrigger Binding="{Binding DashHasBundle}" Value="False">
+                    <Setter Property="Visibility" Value="Visible"/>
+                  </DataTrigger>
+                </Style.Triggers>
+              </Style>
+            </TextBlock.Style>
+          </TextBlock>
+
+            <Border Grid.Row="2" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="12" Background="{DynamicResource SurfaceBrush}"
+                    Visibility="{Binding DashHasBundle, Converter={StaticResource BoolToVisibility}}">
             <StackPanel>
+              <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="12" Background="{DynamicResource SurfaceMutedBrush}" Margin="0,0,0,12">
+                <StackPanel>
+                  <TextBlock Text="Compliance Trend" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                  <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <Rectangle Width="12" Height="12" Fill="{DynamicResource SuccessBrush}" Margin="0,0,4,0"/>
+                    <TextBlock Text="Pass" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,12,0"/>
+                    <Rectangle Width="12" Height="12" Fill="{DynamicResource DangerBrush}" Margin="0,0,4,0"/>
+                    <TextBlock Text="Fail" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,12,0"/>
+                    <Rectangle Width="12" Height="12" Fill="{DynamicResource TextMutedBrush}" Margin="0,0,4,0"/>
+                    <TextBlock Text="Open" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,12,0"/>
+                    <Rectangle Width="12" Height="12" Fill="{DynamicResource AccentBrush}" Margin="0,0,4,0"/>
+                    <TextBlock Text="N/A" Foreground="{DynamicResource TextMutedBrush}"/>
+                  </StackPanel>
+                  <TextBlock Text="No trend data yet. Refresh the dashboard to capture a snapshot."
+                             Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,8" HorizontalAlignment="Center">
+                    <TextBlock.Style>
+                      <Style TargetType="TextBlock">
+                        <Setter Property="Visibility" Value="Collapsed"/>
+                        <Style.Triggers>
+                          <DataTrigger Binding="{Binding TrendSnapshots.Count}" Value="0">
+                            <Setter Property="Visibility" Value="Visible"/>
+                          </DataTrigger>
+                        </Style.Triggers>
+                      </Style>
+                    </TextBlock.Style>
+                  </TextBlock>
+                  <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                    <ItemsControl ItemsSource="{Binding TrendSnapshots}">
+                      <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                          <StackPanel Orientation="Horizontal" VerticalAlignment="Bottom"/>
+                        </ItemsPanelTemplate>
+                      </ItemsControl.ItemsPanel>
+                      <ItemsControl.ItemTemplate>
+                        <DataTemplate>
+                          <StackPanel Margin="0,0,8,0" VerticalAlignment="Bottom">
+                            <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Background="{DynamicResource SurfaceBrush}" Padding="4" Height="210">
+                              <Grid Width="28" Height="200" VerticalAlignment="Bottom">
+                                <Grid.RowDefinitions>
+                                  <RowDefinition Height="{Binding NotApplicableCount, StringFormat={}{0}*}"/>
+                                  <RowDefinition Height="{Binding OpenCount, StringFormat={}{0}*}"/>
+                                  <RowDefinition Height="{Binding FailCount, StringFormat={}{0}*}"/>
+                                  <RowDefinition Height="{Binding PassCount, StringFormat={}{0}*}"/>
+                                </Grid.RowDefinitions>
+                                <Rectangle Grid.Row="0" Fill="{DynamicResource AccentBrush}"/>
+                                <Rectangle Grid.Row="1" Fill="{DynamicResource TextMutedBrush}"/>
+                                <Rectangle Grid.Row="2" Fill="{DynamicResource DangerBrush}"/>
+                                <Rectangle Grid.Row="3" Fill="{DynamicResource SuccessBrush}"/>
+                              </Grid>
+                            </Border>
+                            <TextBlock Text="{Binding Timestamp, StringFormat={}{0:MM-dd}}" HorizontalAlignment="Center" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" Margin="0,4,0,0"/>
+                            <TextBlock Text="{Binding Timestamp, StringFormat={}{0:HH:mm}}" HorizontalAlignment="Center" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                          </StackPanel>
+                        </DataTemplate>
+                      </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                  </ScrollViewer>
+                </StackPanel>
+              </Border>
+
               <TextBlock Text="Quick Actions" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
               <StackPanel Orientation="Horizontal">
                 <Button Content="Run Apply" Width="120" Height="32" TabIndex="20" Command="{Binding ApplyRunCommand}" IsEnabled="{Binding ActionsEnabled}" Margin="0,0,8,0"
@@ -130,11 +205,11 @@
                         ToolTipService.ToolTip="Compare two content packs to see added, removed, or changed controls."/>
               </StackPanel>
               <StackPanel Orientation="Horizontal" Margin="0,12,0,0">
-                <TextBlock Text="Last eMASS export:" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,8,0"/>
-                <TextBlock Text="{Binding DashLastExport}" Foreground="{StaticResource TextMutedBrush}"/>
+               <TextBlock Text="Last eMASS export:" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,8,0"/>
+                 <TextBlock Text="{Binding DashLastExport}" Foreground="{DynamicResource TextMutedBrush}"/>
               </StackPanel>
-              <TextBlock Text="{Binding DashMissionSeverity}" Margin="0,8,0,0" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap"/>
-              <TextBlock Text="{Binding DashRecoveryGuidance}" Margin="0,4,0,0" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap"/>
+               <TextBlock Text="{Binding DashMissionSeverity}" Margin="0,8,0,0" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+               <TextBlock Text="{Binding DashRecoveryGuidance}" Margin="0,4,0,0" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
             </StackPanel>
           </Border>
         </Grid>

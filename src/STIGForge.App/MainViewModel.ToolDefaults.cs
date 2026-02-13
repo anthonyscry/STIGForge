@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using STIGForge.App.Helpers;
 using STIGForge.Infrastructure.System;
 
 namespace STIGForge.App;
@@ -122,7 +123,7 @@ public partial class MainViewModel
             var target = !string.IsNullOrWhiteSpace(entry.IpAddress) ? entry.IpAddress : entry.HostName;
             using var ping = new System.Net.NetworkInformation.Ping();
             var reply = ping.Send(target, 3000);
-            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+            _ = System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
             {
               entry.WinRmStatus = reply.Status == System.Net.NetworkInformation.IPStatus.Success ? "Ping OK" : "No Ping";
               entry.LastCheckLabel = DateTimeOffset.Now.ToString("HH:mm");
@@ -130,7 +131,7 @@ public partial class MainViewModel
           }
           catch
           {
-            System.Windows.Application.Current.Dispatcher.Invoke(() =>
+            _ = System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
             {
               entry.WinRmStatus = "Error";
               entry.LastCheckLabel = DateTimeOffset.Now.ToString("HH:mm");
@@ -384,19 +385,17 @@ public partial class MainViewModel
 
       if (entries == null) return;
 
-      System.Windows.Application.Current.Dispatcher.Invoke(() =>
+      _ = System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
       {
-        FleetInventoryItems.Clear();
-        foreach (var entry in entries)
+        var fleetItems = entries.Select(entry => new FleetInventoryEntry
         {
-          FleetInventoryItems.Add(new FleetInventoryEntry
-          {
-            HostName = entry.HostName ?? "",
-            IpAddress = entry.IpAddress ?? "",
-            WinRmStatus = "—",
-            LastCheckLabel = "never"
-          });
-        }
+          HostName = entry.HostName ?? "",
+          IpAddress = entry.IpAddress ?? "",
+          WinRmStatus = "—",
+          LastCheckLabel = "never"
+        });
+
+        FleetInventoryItems.ReplaceAll(fleetItems);
       });
 
       var targetStrings = new List<string>();

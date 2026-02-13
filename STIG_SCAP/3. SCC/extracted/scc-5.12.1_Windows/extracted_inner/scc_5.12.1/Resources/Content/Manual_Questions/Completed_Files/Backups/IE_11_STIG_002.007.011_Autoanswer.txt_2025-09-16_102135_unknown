@@ -1,0 +1,43 @@
+################################################################################
+DOCUMENT         : IE_11_STIG
+VERSION          : 002.007.011
+CHECKSUM         : e5515ff8598d7ed362cbc8e76e5293577b193b9903384af27b0b07eee98f8161
+MANUAL QUESTIONS : 1
+
+IMPORTANT: Make sure to save the completed version of this file to: 
+<SCC Install>/Resources/Content/Manual_Questions/Completed_Files
+
+This file contains all of the non-automated STIG requirements found in the STIG.
+Results from this file will be combined with automated checks in SCC to provide
+complete STIG compliance results.
+
+This file will be programmaticaly imported, so do not modify anything in this file
+except for placing an '[X]' to select a Single answer, and entering text comments.
+
+The list of questions is printed in order of severity, listing CAT I (High), then CAT II, etc..
+
+################################################################################
+
+QUESTION         : 1 of 1
+TITLE            : CAT I, V-252910, SV-252910r942486, SRG-APP-000456
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.ie:testaction:27301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.ie:question:27301
+RULE             : The version of Internet Explorer running on the system must be a supported version.
+QUESTION_TEXT    : Internet Explorer 11 is no longer supported on Windows 10 General Availability Channel.
+
+If Internet Explorer 11 is installed and enabled on Windows 10 General Availability Channel, this is a finding.
+
+If Internet Explorer 11 is installed and enabled on an unsupported OS, this is a finding.
+
+References:
+CCI-002605
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 1 *******************************
+

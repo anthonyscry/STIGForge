@@ -1,6 +1,7 @@
 using System.Xml.Linq;
 using System.Globalization;
 using System.Xml;
+using PackTypes = STIGForge.Core.Constants.PackTypes;
 
 namespace STIGForge.Verify.Adapters;
 
@@ -10,9 +11,57 @@ namespace STIGForge.Verify.Adapters;
 /// </summary>
 public sealed class ScapResultAdapter : IVerifyResultAdapter
 {
-  private static readonly XNamespace XccdfNs = "http://checklists.nist.gov/xccdf/1.2";
+  private static readonly XNamespace Xccdf12Ns = "http://checklists.nist.gov/xccdf/1.2";
+  private static readonly XNamespace Xccdf11Ns = "http://checklists.nist.gov/xccdf/1.1";
+  private static readonly string[] SearchPatterns =
+  {
+    "*.xccdf.xml",
+    "*.xccdf",
+    "XCCDF_Results*.xml",
+    "SCC_Results/**/*.xccdf.xml",
+    "SCC_Results/**/*.xccdf",
+    "SCC_Results/**/XCCDF_Results*.xml"
+  };
 
-  public string ToolName => "SCAP";
+  public string ToolName => PackTypes.Scap;
+
+  public static IReadOnlyList<string> GetSearchPatterns()
+  {
+    return SearchPatterns;
+  }
+
+  public static IReadOnlyList<string> EnumerateCandidateFiles(string rootPath)
+  {
+    if (string.IsNullOrWhiteSpace(rootPath) || !Directory.Exists(rootPath))
+      return Array.Empty<string>();
+
+    var candidates = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+    AddMatches(candidates, rootPath, "*.xccdf.xml");
+    AddMatches(candidates, rootPath, "*.xccdf");
+    AddMatches(candidates, rootPath, "XCCDF_Results*.xml");
+
+    string[] sccResultsDirs;
+    try
+    {
+      sccResultsDirs = Directory.GetDirectories(rootPath, "SCC_Results", SearchOption.AllDirectories);
+    }
+    catch
+    {
+      sccResultsDirs = Array.Empty<string>();
+    }
+
+    foreach (var sccResultsDir in sccResultsDirs)
+    {
+      AddMatches(candidates, sccResultsDir, "*.xccdf.xml");
+      AddMatches(candidates, sccResultsDir, "*.xccdf");
+      AddMatches(candidates, sccResultsDir, "XCCDF_Results*.xml");
+    }
+
+    return candidates
+      .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
+      .ToList();
+  }
 
   public bool CanHandle(string filePath)
   {
@@ -20,17 +69,22 @@ public sealed class ScapResultAdapter : IVerifyResultAdapter
       return false;
 
     var ext = Path.GetExtension(filePath);
-    if (!ext.Equals(".xml", StringComparison.OrdinalIgnoreCase))
+    if (!ext.Equals(".xml", StringComparison.OrdinalIgnoreCase)
+        && !ext.Equals(".xccdf", StringComparison.OrdinalIgnoreCase))
       return false;
 
     try
     {
       var doc = LoadSecureXml(filePath);
       var root = doc.Root;
+      if (root == null)
+        return false;
 
-      // SCAP results use XCCDF namespace with TestResult element
-      return root?.Name.LocalName == "Benchmark" && root.Name.Namespace == XccdfNs
-             || root?.Name.LocalName == "TestResult" && root.Name.Namespace == XccdfNs;
+      var ns = root.Name.Namespace;
+      var localName = root.Name.LocalName;
+
+      return (localName == "Benchmark" || localName == "TestResult")
+             && (ns == Xccdf12Ns || ns == Xccdf11Ns);
     }
     catch
     {
@@ -46,8 +100,9 @@ public sealed class ScapResultAdapter : IVerifyResultAdapter
     var doc = LoadSecureXml(outputPath);
     var diagnostics = new List<string>();
 
-    // SCAP results can be in Benchmark/TestResult or standalone TestResult
-    var testResult = doc.Descendants(XccdfNs + "TestResult").FirstOrDefault();
+    var xccdfNs = ResolveXccdfNamespace(doc);
+
+    var testResult = doc.Descendants(xccdfNs + "TestResult").FirstOrDefault();
     if (testResult == null)
     {
       diagnostics.Add("No TestResult element found in SCAP output");
@@ -66,22 +121,22 @@ public sealed class ScapResultAdapter : IVerifyResultAdapter
     }
 
     var toolVersion = testResult.Attribute("version")?.Value ?? "unknown";
-    var startTimeStr = testResult.Element(XccdfNs + "start-time")?.Value;
-    var endTimeStr = testResult.Element(XccdfNs + "end-time")?.Value;
+    var startTimeStr = testResult.Element(xccdfNs + "start-time")?.Value;
+    var endTimeStr = testResult.Element(xccdfNs + "end-time")?.Value;
 
     var startFallback = new DateTimeOffset(File.GetCreationTimeUtc(outputPath), TimeSpan.Zero);
     var endFallback = new DateTimeOffset(File.GetLastWriteTimeUtc(outputPath), TimeSpan.Zero);
     var startTime = ParseTimestamp(startTimeStr, startFallback);
     var endTime = ParseTimestamp(endTimeStr, endFallback);
 
-    var ruleResults = testResult.Elements(XccdfNs + "rule-result").ToList();
+    var ruleResults = testResult.Elements(xccdfNs + "rule-result").ToList();
     var results = new List<NormalizedVerifyResult>(ruleResults.Count);
 
     foreach (var ruleResult in ruleResults)
     {
       try
       {
-        var result = ParseRuleResult(ruleResult, outputPath, endTime);
+        var result = ParseRuleResult(ruleResult, xccdfNs, outputPath, endTime);
         results.Add(result);
       }
       catch (Exception ex)
@@ -105,21 +160,20 @@ public sealed class ScapResultAdapter : IVerifyResultAdapter
     };
   }
 
-  private NormalizedVerifyResult ParseRuleResult(XElement ruleResult, string sourcePath, DateTimeOffset verifiedAt)
+  private NormalizedVerifyResult ParseRuleResult(XElement ruleResult, XNamespace xccdfNs, string sourcePath, DateTimeOffset verifiedAt)
   {
     var ruleIdAttr = ruleResult.Attribute("idref")?.Value;
     var timeAttr = ruleResult.Attribute("time")?.Value;
-    var resultElement = ruleResult.Element(XccdfNs + "result");
+    var resultElement = ruleResult.Element(xccdfNs + "result");
     var statusText = resultElement?.Value?.Trim();
     var itemVerifiedAt = ParseTimestamp(timeAttr, verifiedAt);
 
-    // Extract VulnId and Title from check-content-ref or ident elements
-    var identElements = ruleResult.Elements(XccdfNs + "ident").ToList();
+    var identElements = ruleResult.Elements(xccdfNs + "ident").ToList();
     var vulnId = identElements.FirstOrDefault(i => i.Attribute("system")?.Value?.Contains("cce") == false)?.Value?.Trim();
     var cceId = identElements.FirstOrDefault(i => i.Attribute("system")?.Value?.Contains("cce") == true)?.Value?.Trim();
 
-    var checkElement = ruleResult.Element(XccdfNs + "check");
-    var checkContentRef = checkElement?.Element(XccdfNs + "check-content-ref");
+    var checkElement = ruleResult.Element(xccdfNs + "check");
+    var checkContentRef = checkElement?.Element(xccdfNs + "check-content-ref");
     var checkHref = checkContentRef?.Attribute("href")?.Value;
     var checkName = checkContentRef?.Attribute("name")?.Value;
 
@@ -135,12 +189,10 @@ public sealed class ScapResultAdapter : IVerifyResultAdapter
     if (!string.IsNullOrWhiteSpace(timeAttr))
       metadata["check_time"] = timeAttr!;
 
-    // Extract severity from weight attribute if present
     var weight = ruleResult.Attribute("weight")?.Value;
     var severity = MapWeightToSeverity(weight);
 
-    // Extract finding details from message elements
-    var messages = ruleResult.Elements(XccdfNs + "message").Select(m => m.Value?.Trim()).Where(m => !string.IsNullOrWhiteSpace(m)).ToList();
+    var messages = ruleResult.Elements(xccdfNs + "message").Select(m => m.Value?.Trim()).Where(m => !string.IsNullOrWhiteSpace(m)).ToList();
     var findingDetails = messages.Count > 0 ? string.Join("\n", messages) : null;
 
     return new NormalizedVerifyResult
@@ -259,6 +311,24 @@ public sealed class ScapResultAdapter : IVerifyResultAdapter
     return fallback;
   }
 
+  private static XNamespace ResolveXccdfNamespace(XDocument doc)
+  {
+    var rootNs = doc.Root?.Name.Namespace;
+    if (rootNs == Xccdf11Ns)
+      return Xccdf11Ns;
+
+    if (rootNs == Xccdf12Ns)
+      return Xccdf12Ns;
+
+    if (doc.Descendants(Xccdf12Ns + "TestResult").Any())
+      return Xccdf12Ns;
+
+    if (doc.Descendants(Xccdf11Ns + "TestResult").Any())
+      return Xccdf11Ns;
+
+    return Xccdf12Ns;
+  }
+
   private static XDocument LoadSecureXml(string filePath)
   {
     var settings = new XmlReaderSettings
@@ -279,6 +349,18 @@ public sealed class ScapResultAdapter : IVerifyResultAdapter
     catch (XmlException ex)
     {
       throw new InvalidDataException($"[VERIFY-SCAP-XML-001] Failed to parse SCAP XML '{filePath}': {ex.Message}", ex);
+    }
+  }
+
+  private static void AddMatches(HashSet<string> candidates, string rootPath, string pattern)
+  {
+    try
+    {
+      foreach (var file in Directory.GetFiles(rootPath, pattern, SearchOption.AllDirectories))
+        candidates.Add(file);
+    }
+    catch
+    {
     }
   }
 }

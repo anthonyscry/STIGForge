@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json;
 using STIGForge.Core.Abstractions;
+using BundlePaths = STIGForge.Core.Constants.BundlePaths;
 using STIGForge.Core.Models;
 using STIGForge.Apply.Snapshot;
 using STIGForge.Apply.Dsc;
@@ -11,8 +12,10 @@ using Microsoft.Extensions.Logging;
  
 public sealed class ApplyRunner
 {
+    private const string AdmxImportStepName = "admx_import";
     private const string PowerStigStepName = "powerstig_compile";
     private const string ScriptStepName = "apply_script";
+    private const string LgpoApplyStepName = "lgpo_apply";
     private const string DscStepName = "apply_dsc";
 
     private readonly ILogger<ApplyRunner> _logger;
@@ -47,7 +50,7 @@ public sealed class ApplyRunner
     if (!Directory.Exists(root))
       throw new DirectoryNotFoundException("Bundle root not found: " + root);
 
-    var applyRoot = Path.Combine(root, "Apply");
+    var applyRoot = Path.Combine(root, BundlePaths.ApplyDirectory);
     var logsDir = Path.Combine(applyRoot, "Logs");
     var snapshotsDir = Path.Combine(applyRoot, "Snapshots");
     Directory.CreateDirectory(applyRoot);
@@ -96,9 +99,9 @@ public sealed class ApplyRunner
       var steps = new List<ApplyStepOutcome>();
       SnapshotResult? snapshot = null;
 
-      // LCM workflow
+      // LCM workflow — skip entirely for AuditOnly (read-only scan should never touch LCM)
       LcmState? originalLcm = null;
-      if (!string.IsNullOrWhiteSpace(request.DscMofPath))
+      if (!string.IsNullOrWhiteSpace(request.DscMofPath) && mode != HardeningMode.AuditOnly)
       {
         try
         {
@@ -109,7 +112,7 @@ public sealed class ApplyRunner
           // Configure LCM for apply
           var lcmConfig = new LcmConfig
           {
-            ConfigurationMode = mode == HardeningMode.AuditOnly ? "ApplyOnly" : "ApplyAndMonitor",
+            ConfigurationMode = "ApplyAndMonitor",
             RebootNodeIfNeeded = true,
             ConfigurationModeFrequencyMins = 15,
             AllowModuleOverwrite = true
@@ -141,6 +144,47 @@ public sealed class ApplyRunner
         }
       }
 
+    if (!string.IsNullOrWhiteSpace(request.AdmxSourcePath))
+    {
+      if (completedSteps.Contains(AdmxImportStepName))
+      {
+        _logger.LogInformation("Skipping previously completed step: {StepName}", AdmxImportStepName);
+      }
+      else
+      {
+        var outcome = await RunAdmxImportAsync(
+          request.AdmxSourcePath!,
+          logsDir,
+          ct).ConfigureAwait(false);
+        steps.Add(outcome);
+      }
+
+      if (mode != HardeningMode.AuditOnly && await _rebootCoordinator.DetectRebootRequired(ct).ConfigureAwait(false))
+      {
+        _logger.LogInformation("Reboot required after ADMX import");
+        var context = new RebootContext
+        {
+          BundleRoot = root,
+          CurrentStepIndex = steps.Count,
+          CompletedSteps = steps.Select(s => s.StepName).ToList(),
+          RebootScheduledAt = DateTimeOffset.UtcNow
+        };
+        await _rebootCoordinator.ScheduleReboot(context, ct).ConfigureAwait(false);
+        return new ApplyResult
+        {
+          BundleRoot = root,
+          Mode = mode,
+          LogPath = string.Empty,
+          Steps = steps,
+          SnapshotId = snapshot?.SnapshotId ?? string.Empty,
+          RollbackScriptPath = snapshot?.RollbackScriptPath ?? string.Empty,
+          IsMissionComplete = false,
+          IntegrityVerified = false,
+          RecoveryArtifactPaths = GetRecoveryArtifactPaths(snapshot, snapshotsDir, string.Empty)
+        };
+      }
+    }
+
     if (!string.IsNullOrWhiteSpace(request.PowerStigModulePath))
     {
       if (completedSteps.Contains(PowerStigStepName))
@@ -164,8 +208,7 @@ public sealed class ApplyRunner
         steps.Add(outcome);
       }
 
-      // Check for reboot after PowerSTIG compile
-      if (await _rebootCoordinator.DetectRebootRequired(ct).ConfigureAwait(false))
+      if (mode != HardeningMode.AuditOnly && await _rebootCoordinator.DetectRebootRequired(ct).ConfigureAwait(false))
       {
          _logger.LogInformation("Reboot required after PowerSTIG compile");
          var context = new RebootContext
@@ -203,8 +246,7 @@ public sealed class ApplyRunner
         steps.Add(outcome);
       }
 
-      // Check for reboot after script execution
-      if (await _rebootCoordinator.DetectRebootRequired(ct).ConfigureAwait(false))
+      if (mode != HardeningMode.AuditOnly && await _rebootCoordinator.DetectRebootRequired(ct).ConfigureAwait(false))
       {
          _logger.LogInformation("Reboot required after script execution");
          var context = new RebootContext
@@ -227,10 +269,53 @@ public sealed class ApplyRunner
              IntegrityVerified = false,
              RecoveryArtifactPaths = GetRecoveryArtifactPaths(snapshot, snapshotsDir, string.Empty)
           };
-       }
+        }
+     }
+
+    if (!string.IsNullOrWhiteSpace(request.LgpoGpoBackupPath))
+    {
+      if (completedSteps.Contains(LgpoApplyStepName))
+      {
+        _logger.LogInformation("Skipping previously completed step: {StepName}", LgpoApplyStepName);
+      }
+      else
+      {
+        var outcome = await RunLgpoApplyAsync(
+          request.LgpoExePath,
+          request.LgpoGpoBackupPath!,
+          logsDir,
+          request.LgpoVerbose,
+          ct).ConfigureAwait(false);
+        steps.Add(outcome);
+      }
+
+      if (mode != HardeningMode.AuditOnly && await _rebootCoordinator.DetectRebootRequired(ct).ConfigureAwait(false))
+      {
+        _logger.LogInformation("Reboot required after LGPO apply");
+        var context = new RebootContext
+        {
+          BundleRoot = root,
+          CurrentStepIndex = steps.Count,
+          CompletedSteps = steps.Select(s => s.StepName).ToList(),
+          RebootScheduledAt = DateTimeOffset.UtcNow
+        };
+        await _rebootCoordinator.ScheduleReboot(context, ct).ConfigureAwait(false);
+        return new ApplyResult
+        {
+          BundleRoot = root,
+          Mode = mode,
+          LogPath = string.Empty,
+          Steps = steps,
+          SnapshotId = snapshot?.SnapshotId ?? string.Empty,
+          RollbackScriptPath = snapshot?.RollbackScriptPath ?? string.Empty,
+          IsMissionComplete = false,
+          IntegrityVerified = false,
+          RecoveryArtifactPaths = GetRecoveryArtifactPaths(snapshot, snapshotsDir, string.Empty)
+        };
+      }
     }
 
-   if (!string.IsNullOrWhiteSpace(request.DscMofPath))
+   if (!string.IsNullOrWhiteSpace(request.DscMofPath) && mode != HardeningMode.AuditOnly)
       {
         if (completedSteps.Contains(DscStepName))
         {
@@ -242,7 +327,6 @@ public sealed class ApplyRunner
           steps.Add(outcome);
         }
 
-       // Reset LCM after DSC application (optional)
        if (originalLcm != null && request.ResetLcmAfterApply)
        {
          try
@@ -256,6 +340,12 @@ public sealed class ApplyRunner
           _logger.LogWarning(ex, "Failed to reset LCM to original state. This is non-critical and apply continues.");
          }
        }
+     }
+     else if (!string.IsNullOrWhiteSpace(request.DscMofPath) && mode == HardeningMode.AuditOnly)
+     {
+       _logger.LogInformation(
+         "AuditOnly mode: skipping LCM configuration, DSC apply (Start-DscConfiguration), and reboot scheduling. " +
+         "Use DscScanRunner with Test-DscConfiguration for read-only compliance checks against the compiled MOFs.");
      }
 
      var logPath = Path.Combine(applyRoot, "apply_run.json");
@@ -333,7 +423,7 @@ public sealed class ApplyRunner
 
   private static HardeningMode? TryReadModeFromManifest(string bundleRoot)
   {
-    var manifestPath = Path.Combine(bundleRoot, "Manifest", "manifest.json");
+    var manifestPath = Path.Combine(bundleRoot, BundlePaths.ManifestDirectory, "manifest.json");
     if (!File.Exists(manifestPath)) return null;
 
     using var stream = File.OpenRead(manifestPath);
@@ -381,6 +471,8 @@ public sealed class ApplyRunner
     var arguments = "-NoProfile -ExecutionPolicy Bypass -File \"" + scriptPath + "\"";
     if (!string.IsNullOrWhiteSpace(args))
       arguments += " " + args;
+    if (mode == HardeningMode.AuditOnly)
+      arguments += " -SkipLcm";
 
     var psi = new ProcessStartInfo
     {
@@ -418,6 +510,150 @@ public sealed class ApplyRunner
     return new ApplyStepOutcome
     {
       StepName = ScriptStepName,
+      ExitCode = process.ExitCode,
+      StartedAt = started,
+      FinishedAt = DateTimeOffset.Now,
+      StdOutPath = stdout,
+      StdErrPath = stderr
+    };
+  }
+
+  private Task<ApplyStepOutcome> RunAdmxImportAsync(
+    string admxSourcePath,
+    string logsDir,
+    CancellationToken ct)
+  {
+    ct.ThrowIfCancellationRequested();
+    if (!Directory.Exists(admxSourcePath))
+      throw new DirectoryNotFoundException("ADMX source path not found: " + admxSourcePath);
+
+    var stepId = DateTimeOffset.Now.ToString("yyyyMMdd_HHmmss");
+    var started = DateTimeOffset.Now;
+    var stdout = Path.Combine(logsDir, "admx_import_" + stepId + ".out.log");
+    var stderr = Path.Combine(logsDir, "admx_import_" + stepId + ".err.log");
+    var output = new System.Text.StringBuilder();
+    var errors = new System.Text.StringBuilder();
+    var hadCopyFailure = false;
+
+    var windowsDir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+    var policyDefinitionsDir = Path.Combine(windowsDir, "PolicyDefinitions");
+    var policyDefinitionsEnUsDir = Path.Combine(policyDefinitionsDir, "en-US");
+    Directory.CreateDirectory(policyDefinitionsDir);
+    Directory.CreateDirectory(policyDefinitionsEnUsDir);
+
+    var admxFiles = Directory.GetFiles(admxSourcePath, "*.admx", SearchOption.TopDirectoryOnly);
+    var admlSourceDir = Path.Combine(admxSourcePath, "en-US");
+
+    foreach (var admxFile in admxFiles)
+    {
+      ct.ThrowIfCancellationRequested();
+      var admxFileName = Path.GetFileName(admxFile);
+      var admxDestinationPath = Path.Combine(policyDefinitionsDir, admxFileName);
+      try
+      {
+        File.Copy(admxFile, admxDestinationPath, overwrite: true);
+        var copyMessage = "Copied ADMX: " + admxFile + " -> " + admxDestinationPath;
+        _logger.LogInformation(copyMessage);
+        output.AppendLine(copyMessage);
+      }
+      catch (Exception ex)
+      {
+        hadCopyFailure = true;
+        var copyError = "Failed ADMX copy: " + admxFile + " -> " + admxDestinationPath + " | " + ex.Message;
+        _logger.LogError(ex, "ADMX copy failed from {Source} to {Destination}", admxFile, admxDestinationPath);
+        errors.AppendLine(copyError);
+      }
+
+      var admlSourcePath = Path.Combine(admlSourceDir, Path.ChangeExtension(admxFileName, ".adml"));
+      if (!File.Exists(admlSourcePath))
+      {
+        continue;
+      }
+
+      var admlDestinationPath = Path.Combine(policyDefinitionsEnUsDir, Path.GetFileName(admlSourcePath));
+      try
+      {
+        File.Copy(admlSourcePath, admlDestinationPath, overwrite: true);
+        var copyMessage = "Copied ADML: " + admlSourcePath + " -> " + admlDestinationPath;
+        _logger.LogInformation(copyMessage);
+        output.AppendLine(copyMessage);
+      }
+      catch (Exception ex)
+      {
+        hadCopyFailure = true;
+        var copyError = "Failed ADML copy: " + admlSourcePath + " -> " + admlDestinationPath + " | " + ex.Message;
+        _logger.LogError(ex, "ADML copy failed from {Source} to {Destination}", admlSourcePath, admlDestinationPath);
+        errors.AppendLine(copyError);
+      }
+    }
+
+    File.WriteAllText(stdout, output.ToString());
+    File.WriteAllText(stderr, errors.ToString());
+
+    return Task.FromResult(new ApplyStepOutcome
+    {
+      StepName = AdmxImportStepName,
+      ExitCode = hadCopyFailure ? 1 : 0,
+      StartedAt = started,
+      FinishedAt = DateTimeOffset.Now,
+      StdOutPath = stdout,
+      StdErrPath = stderr
+    });
+  }
+
+  private static async Task<ApplyStepOutcome> RunLgpoApplyAsync(
+    string? lgpoExePath,
+    string gpoBackupPath,
+    string logsDir,
+    bool verbose,
+    CancellationToken ct)
+  {
+    ct.ThrowIfCancellationRequested();
+
+    if (!Directory.Exists(gpoBackupPath))
+      throw new DirectoryNotFoundException("LGPO GPO backup path not found: " + gpoBackupPath);
+
+    var lgpoPath = ResolveLgpoExePath(lgpoExePath);
+
+    var stepId = DateTimeOffset.Now.ToString("yyyyMMdd_HHmmss");
+    var stdout = Path.Combine(logsDir, "lgpo_apply_" + stepId + ".out.log");
+    var stderr = Path.Combine(logsDir, "lgpo_apply_" + stepId + ".err.log");
+
+    var arguments = "/g \"" + gpoBackupPath + "\"";
+    if (verbose)
+      arguments += " /v";
+
+    var psi = new ProcessStartInfo
+    {
+      FileName = lgpoPath,
+      Arguments = arguments,
+      WorkingDirectory = gpoBackupPath,
+      RedirectStandardOutput = true,
+      RedirectStandardError = true,
+      UseShellExecute = false,
+      CreateNoWindow = true
+    };
+
+    var started = DateTimeOffset.Now;
+    using var process = Process.Start(psi);
+    if (process == null)
+      throw new InvalidOperationException("Failed to start LGPO apply.");
+
+    var outputTask = process.StandardOutput.ReadToEndAsync();
+    var errorTask = process.StandardError.ReadToEndAsync();
+    await Task.WhenAll(outputTask, errorTask).ConfigureAwait(false);
+    if (!process.WaitForExit(30000))
+    {
+      process.Kill();
+      throw new TimeoutException("Process did not exit within 30 seconds.");
+    }
+
+    File.WriteAllText(stdout, await outputTask.ConfigureAwait(false));
+    File.WriteAllText(stderr, await errorTask.ConfigureAwait(false));
+
+    return new ApplyStepOutcome
+    {
+      StepName = LgpoApplyStepName,
       ExitCode = process.ExitCode,
       StartedAt = started,
       FinishedAt = DateTimeOffset.Now,
@@ -513,7 +749,38 @@ public sealed class ApplyRunner
     var v = verbose ? " -Verbose" : string.Empty;
     var dataArg = string.IsNullOrWhiteSpace(dataFile) ? string.Empty : " -StigDataFile \"" + dataFile + "\"";
 
+    // Resolve the PowerSTIG module directory and its parent so PowerShell can
+    // auto-resolve RequiredModules (AuditPolicyDsc, SecurityPolicyDsc, etc.).
+    // Also include the bundle's Apply/Modules directory for user-staged deps.
+    var moduleDir = Directory.Exists(modulePath) ? modulePath : Path.GetDirectoryName(modulePath) ?? modulePath;
+    var moduleParent = Path.GetDirectoryName(moduleDir) ?? moduleDir;
+    var bundleModules = Path.Combine(bundleRoot, BundlePaths.ApplyDirectory, "Modules");
+    Directory.CreateDirectory(bundleModules);
+
+    var psMod = "$env:PSModulePath = '" + moduleParent.Replace("'", "''") + "' + ';' + '"
+      + bundleModules.Replace("'", "''") + "' + ';' + $env:PSModulePath; ";
+
+    // If modulePath is a .psd1 file, use it directly; otherwise treat it as a directory.
+    var psdFilePath = modulePath.EndsWith(".psd1", StringComparison.OrdinalIgnoreCase)
+      ? modulePath
+      : Path.Combine(modulePath, "PowerStig.psd1");
+
+    var installDeps =
+      "try { " +
+        "$psd = Import-PowerShellDataFile '" + psdFilePath.Replace("'", "''") + "'; " +
+        "foreach ($dep in $psd.RequiredModules) { " +
+          "$modName = if ($dep -is [string]) { $dep } else { $dep.ModuleName }; " +
+          "$modDir = Join-Path '" + bundleModules.Replace("'", "''") + "' $modName; " +
+          "if (-not (Test-Path $modDir)) { " +
+            "Write-Host \"[STIGFORGE] Installing dependency: $modName\"; " +
+            "Save-Module -Name $modName -Path '" + bundleModules.Replace("'", "''") + "' -Force -ErrorAction SilentlyContinue; " +
+          "} " +
+        "} " +
+      "} catch { Write-Host \"[STIGFORGE] Dependency install note: $_\"; }; ";
+
     var command =
+      psMod +
+      installDeps +
       "Import-Module \"" + modulePath + "\"; " +
       "$ErrorActionPreference='Stop'; " +
       "New-StigDscConfiguration" + dataArg + " -OutputPath \"" + outputPath + "\"" + v + ";";
@@ -533,6 +800,8 @@ public sealed class ApplyRunner
     psi.Environment["STIGFORGE_APPLY_LOG_DIR"] = logsDir;
     psi.Environment["STIGFORGE_SNAPSHOT_DIR"] = snapshotsDir;
     psi.Environment["STIGFORGE_HARDENING_MODE"] = mode.ToString();
+    psi.Environment["PSModulePath"] = moduleParent + ";" + bundleModules + ";"
+      + (Environment.GetEnvironmentVariable("PSModulePath") ?? string.Empty);
 
     var started = DateTimeOffset.Now;
     using var process = Process.Start(psi);
@@ -565,10 +834,51 @@ public sealed class ApplyRunner
   private static IReadOnlyList<string> BuildPlannedStepNames(ApplyRequest request)
   {
     var planned = new List<string>();
+    if (!string.IsNullOrWhiteSpace(request.AdmxSourcePath)) planned.Add(AdmxImportStepName);
     if (!string.IsNullOrWhiteSpace(request.PowerStigModulePath)) planned.Add(PowerStigStepName);
     if (!string.IsNullOrWhiteSpace(request.ScriptPath)) planned.Add(ScriptStepName);
+    if (!string.IsNullOrWhiteSpace(request.LgpoGpoBackupPath)) planned.Add(LgpoApplyStepName);
     if (!string.IsNullOrWhiteSpace(request.DscMofPath)) planned.Add(DscStepName);
     return planned;
+  }
+
+  private static string ResolveLgpoExePath(string? requestedLgpoExePath)
+  {
+    var providedPath = requestedLgpoExePath;
+    if (providedPath != null)
+    {
+      var trimmed = providedPath.Trim();
+      if (trimmed.Length > 0)
+      {
+        if (!File.Exists(trimmed))
+          throw new FileNotFoundException("LGPO executable not found: " + trimmed, trimmed);
+        return trimmed;
+      }
+    }
+
+    var resolved = TryFindExecutableInPath("LGPO.exe");
+    if (resolved != null && resolved.Length > 0)
+      return resolved;
+
+    throw new FileNotFoundException("LGPO.exe not found in PATH.");
+  }
+
+  private static string? TryFindExecutableInPath(string fileName)
+  {
+    var pathVar = Environment.GetEnvironmentVariable("PATH");
+    if (string.IsNullOrWhiteSpace(pathVar))
+      return null;
+
+    var normalizedPathVar = pathVar ?? string.Empty;
+
+    foreach (var pathEntry in normalizedPathVar.Split(new[] { Path.PathSeparator }, StringSplitOptions.RemoveEmptyEntries))
+    {
+      var candidate = Path.Combine(pathEntry, fileName);
+      if (File.Exists(candidate))
+        return candidate;
+    }
+
+    return null;
   }
 
   private static void ValidateResumeContext(RebootContext context, IReadOnlyList<string> plannedSteps, string bundleRoot)

@@ -10,6 +10,8 @@ public static class GpoParser
     if (!File.Exists(admxPath))
       throw new FileNotFoundException("ADMX file not found", admxPath);
 
+    var osTarget = DetectOsTargetFromContext(packName, admxPath);
+
     var settings = new XmlReaderSettings
     {
       DtdProcessing = DtdProcessing.Prohibit,
@@ -34,7 +36,7 @@ public static class GpoParser
           currentNamespace = reader.GetAttribute("namespace")?.Trim();
           break;
         case "policy":
-          var record = ParsePolicy(reader, currentNamespace, packName);
+          var record = ParsePolicy(reader, currentNamespace, packName, osTarget);
           if (record != null)
             records.Add(record);
           break;
@@ -44,7 +46,59 @@ public static class GpoParser
     return records;
   }
 
-  private static ControlRecord? ParsePolicy(XmlReader reader, string? policyNamespace, string packName)
+  /// <summary>
+  /// Detect OS target from the pack name and file path context.
+  /// DISA GPO bundles use folder names like "Windows 11", "Windows Server 2019", etc.
+  /// The importer creates packs named "Local Policy – Windows 11", etc.
+  /// </summary>
+  internal static OsTarget DetectOsTargetFromContext(string packName, string filePath)
+  {
+    // Check pack name first (most reliable — set by importer from folder name)
+    var context = (packName + " " + filePath).Replace('_', ' ');
+
+    if (context.IndexOf("Windows 11", StringComparison.OrdinalIgnoreCase) >= 0
+        || context.IndexOf("Win11", StringComparison.OrdinalIgnoreCase) >= 0)
+      return OsTarget.Win11;
+
+    if (context.IndexOf("Windows 10", StringComparison.OrdinalIgnoreCase) >= 0
+        || context.IndexOf("Win10", StringComparison.OrdinalIgnoreCase) >= 0)
+      return OsTarget.Win10;
+
+    if (context.IndexOf("Server 2022", StringComparison.OrdinalIgnoreCase) >= 0)
+      return OsTarget.Server2022;
+
+    if (context.IndexOf("Server 2019", StringComparison.OrdinalIgnoreCase) >= 0)
+      return OsTarget.Server2019;
+
+    // Check parent directory names in the file path
+    try
+    {
+      var dir = Path.GetDirectoryName(filePath);
+      while (!string.IsNullOrWhiteSpace(dir))
+      {
+        var dirName = new DirectoryInfo(dir).Name;
+        if (dirName.IndexOf("Windows 11", StringComparison.OrdinalIgnoreCase) >= 0
+            || dirName.IndexOf("Win11", StringComparison.OrdinalIgnoreCase) >= 0)
+          return OsTarget.Win11;
+        if (dirName.IndexOf("Server 2022", StringComparison.OrdinalIgnoreCase) >= 0)
+          return OsTarget.Server2022;
+        if (dirName.IndexOf("Server 2019", StringComparison.OrdinalIgnoreCase) >= 0)
+          return OsTarget.Server2019;
+        if (dirName.IndexOf("Windows 10", StringComparison.OrdinalIgnoreCase) >= 0
+            || dirName.IndexOf("Win10", StringComparison.OrdinalIgnoreCase) >= 0)
+          return OsTarget.Win10;
+        dir = Path.GetDirectoryName(dir);
+      }
+    }
+    catch (Exception ex)
+    {
+      System.Diagnostics.Trace.TraceWarning("GPO path detection failed: " + ex.Message);
+    }
+
+    return OsTarget.Unknown;
+  }
+
+  private static ControlRecord? ParsePolicy(XmlReader reader, string? policyNamespace, string packName, OsTarget osTarget)
   {
     var policyName = reader.GetAttribute("name")?.Trim();
     if (string.IsNullOrWhiteSpace(policyName))
@@ -74,10 +128,10 @@ public static class GpoParser
       IsManual = false,
       Applicability = new Applicability
       {
-        OsTarget = OsTarget.Win11,
+        OsTarget = osTarget,
         RoleTags = Array.Empty<RoleTemplate>(),
         ClassificationScope = ScopeTag.Unknown,
-        Confidence = Confidence.Medium
+        Confidence = osTarget == OsTarget.Unknown ? Confidence.Low : Confidence.Medium
       },
       Revision = new RevisionInfo
       {

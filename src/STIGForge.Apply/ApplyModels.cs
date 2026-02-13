@@ -17,7 +17,11 @@ public sealed class ApplyRequest
    public bool PowerStigVerbose { get; set; }
    public string? PowerStigDataGeneratedPath { get; set; }
    public bool ResetLcmAfterApply { get; set; } = false;
-}
+   public string? AdmxSourcePath { get; set; }
+   public string? LgpoExePath { get; set; }
+   public string? LgpoGpoBackupPath { get; set; }
+   public bool LgpoVerbose { get; set; }
+ }
 
 public sealed class ApplyStepOutcome
 {

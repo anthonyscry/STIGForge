@@ -31,7 +31,7 @@ public partial class OverlayEditorViewModel : ObservableObject
   {
     if (string.IsNullOrWhiteSpace(PowerStigRuleId)) return;
 
-    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+    _ = System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
     {
       PowerStigOverrides.Add(new PowerStigOverride
       {
@@ -59,7 +59,7 @@ public partial class OverlayEditorViewModel : ObservableObject
     if (ofd.ShowDialog() != true) return;
 
     var rows = ReadPowerStigCsv(ofd.FileName);
-    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+    _ = System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
     {
       foreach (var r in rows)
         PowerStigOverrides.Add(r);

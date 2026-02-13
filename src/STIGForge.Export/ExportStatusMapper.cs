@@ -1,3 +1,4 @@
+using STIGForge.Core.Constants;
 using STIGForge.Verify;
 
 namespace STIGForge.Export;
@@ -32,11 +33,11 @@ public static class ExportStatusMapper
   {
     return MapToVerifyStatus(status) switch
     {
-      VerifyStatus.Pass => "NotAFinding",
-      VerifyStatus.NotApplicable => "Not_Applicable",
-      VerifyStatus.Fail => "Open",
-      VerifyStatus.Error => "Open",
-      _ => "Not_Reviewed"
+      VerifyStatus.Pass => ControlStatus.NotAFinding,
+      VerifyStatus.NotApplicable => ControlStatus.NotApplicableAlt,
+      VerifyStatus.Fail => ControlStatus.Open,
+      VerifyStatus.Error => ControlStatus.Open,
+      _ => ControlStatus.NotReviewed
     };
   }
 
@@ -45,18 +46,18 @@ public static class ExportStatusMapper
     var mapped = statuses.Select(MapToVerifyStatus).ToList();
 
     if (mapped.Any(s => s == VerifyStatus.Fail || s == VerifyStatus.Error))
-      return "Fail";
+      return ControlStatus.Fail;
 
     if (mapped.Any(s => s == VerifyStatus.NotReviewed || s == VerifyStatus.Unknown))
-      return "Open";
+      return ControlStatus.Open;
 
     if (mapped.Any(s => s == VerifyStatus.NotApplicable))
       return "NA";
 
     if (mapped.Any(s => s == VerifyStatus.Pass || s == VerifyStatus.Informational))
-      return "Pass";
+      return ControlStatus.Pass;
 
-    return "Open";
+    return ControlStatus.Open;
   }
 
   public static bool IsOpenStatus(string? status)

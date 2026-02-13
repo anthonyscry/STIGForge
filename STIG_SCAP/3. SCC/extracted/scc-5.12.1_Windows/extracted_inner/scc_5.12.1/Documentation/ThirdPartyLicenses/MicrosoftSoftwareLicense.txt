@@ -1,0 +1,135 @@
+It is important to read the entire section to understand how developer tools are licensed. This section starts out being 
+very general and becomes more specific towards the end. The Microsoft developer tools covered by this section are listed 
+below. We may add to this list from time to time as new products are made available.
+
+· For Project 2000 templates and Project 98 redistributables, see the Applications section.
+
+· For the Interix developer tool, see the Servers section.
+
+· For Mobile Information Server Testing Edition, VBA, IEAK, TechNet, TechNet Plus and Windows NT Option Pack (licensed within 
+the Visual Studio Enterprise Edition), see the end of this section.
+
+1. BizTalk Server 2000 Developer Edition
+
+2. Commerce Server 2000 Developer Edition
+
+3. Internet Explorer Administration Kit (“IEAK”)
+
+4. Microsoft Office XP Developer (“MOD”)
+
+5. MSDN
+
+6. SQL Server 2000 Developer Edition
+
+7. Visual Basic (Learning, Professional and Enterprise Editions)
+
+8. Visual Basic for Applications (“VBA”)
+
+9. Visual C++ (Standard, Professional and Enterprise Editions)
+
+10. Visual FoxPro
+
+11. Visual Interdev
+
+12. Visual J++
+
+13. Visual SourceSafe
+
+14. Visual Studio (Professional and Enterprise Editions)
+
+I. Except as otherwise noted, for all products listed above, these rights and restrictions apply:
+
+A. General License Grant. For each license acquired, you must designate one individual within your organization (the “Designated 
+User”) who will have the personal, nonexclusive license to make and use copies of the Software for the sole purpose of designing, 
+developing, and testing your Application (as defined in General Requirements in Distribution Requirements below). The Designated 
+User may install copies of the Software on any number of computers provided that such individual is the only person who 
+uses each such copy of the Software.
+
+Documentation. In addition, Microsoft grants you a worldwide, nonexclusive, nontransferable, royalty-free right to make, 
+use, and install any number of copies of the documentation solely for internal use by any number of end users so long as:
+
+a. Such end users are persons who are generally granted access to your internal network; and
+
+b. Such copies are used only for internal purposes and are not to be republished or distributed (either in hard copy or 
+electronic form) beyond your premises.
+
+B. Redistributable Code License Grant.
+
+1. Sample Code. Microsoft grants you the right to use and modify the source code version of those portions of the Software 
+identified as “Samples” in REDIST.TXT or elsewhere in the Software (“Sample Code”) for the sole purposes of designing, developing, 
+testing and demonstrating your software product(s), and to reproduce and distribute the Sample Code, along with any modifications, 
+only in object code form.
+
+2. Redistributable Code—Standard. Microsoft grants you a nonexclusive, royalty-free right to reproduce and distribute the 
+object code form of any portion of the Software listed in REDIST.TXT (“Redistributable Code”). Note: Certain Redistributable 
+Code may be subject to additional restrictions below if it is also identified as “Limited Use Redistributable Code” or “Extended 
+Use Redistributable Code.”
+
+3. Visual C++ and Visual Studio—Microsoft Foundation Classes (MFC), Template Libraries (ATL), and C Runtimes (CRTs). In 
+addition, Microsoft grants you the right to use and modify the source code version of those portions of the Software that 
+are identified as MFC, ATL, or CRTs (the “VC Redistributables”), for the sole purposes of designing, developing, and testing 
+your Application. Microsoft further grants you a nonexclusive, royalty-free right to reproduce and distribute the object 
+code version of the VC Redistributables, including any modifications (or enhancements to the functionality of the VC Redistributables), 
+so long as you rename any files created by you that are included in your Application.
+
+C. Distribution Requirements.
+
+1. General Requirements. If you are authorized and choose to redistribute Sample Code, Redistributable Code, Limited Use 
+Redistributable Code, or Extended Use Redistributable Code (collectively, the “Redistributables”), you agree to:
+
+a. Distribute the Redistributables in object code form and only in conjunction with and as a part of a software application 
+product developed by you that adds significant and primary functionality to the Redistributables (“Application”);
+
+b. In the Application, the Redistributables only operate in conjunction with other Microsoft products;
+
+c. Not use Microsoft’s name, logo, or trademarks to market the Application;
+
+d. Include a valid copyright notice in your name on the Application;
+
+e. Indemnify, hold harmless, and defend Microsoft from and against any claims or lawsuits, including attorney’s fees, that 
+arise or result from the use or distribution of the Application;
+
+f. Otherwise comply with these terms and conditions;
+
+g. Agree that Microsoft reserves all rights not expressly granted; and
+
+h. You also agree not to permit further distribution of the Redistributables by your end users except you may permit further 
+redistribution of the Redistributables by your distributors to your end-user customers if your distributors only distribute 
+the Redistributables in conjunction with, and as part of, the Application and you and your distributors comply with all 
+other terms of this license agreement. (Note: see exception regarding “Extended Use Code” below.)
+
+2. Additional Rights or Restrictions
+
+a. Extended Use Redistributable Code. You may permit your end users to reproduce and distribute the object code form of 
+certain portions of the Software (as listed in REDIST.TXT as “Extended Use Redistributable Code”) only in conjunction with 
+and as a part of your Application or Web page that adds significant and primary functionality to the Extended Use Redistributable 
+Code. You are authorized to exercise the foregoing rights provided that you and your end users agree to comply with all 
+terms and conditions of Section (I)(C)(1) above. b. Limited Use Redistributable Code. The Software may include a set of 
+software files associated with the Microsoft Jet database engine (the “Jet files”) and the Microsoft SQL Server Desktop 
+Engine (“MSDE”). These files are included in the list of redistributable components for the Software. For simplicity, these 
+files will be referred to in this section as the “MS DB Files.” In addition to the rights and restrictions described above 
+in (B) and (C) of this Section I, the following additional restrictions apply to you:
+
+(a) You cannot distribute the MS DB Files with an application or web page that substantially duplicates the capabilities 
+of Microsoft Access or, in the reasonable opinion of Microsoft, competes with the same product; and
+
+(b) you must require your customers to have the number of licenses for Microsoft Access or Microsoft Office that are equivalent 
+to the number of licenses that such customers have acquired for your application or web page.
+
+Furthermore, you cannot reproduce or distribute any of the MS DB Files with a commercial application or web page in conjunction 
+with a general purpose word processing, spreadsheet or database management software product, or an integrated work or product 
+suite whose components include a general purpose word processing, spreadsheet, or database management software product except 
+for the exclusive use of importing data to the various formats supported by Microsoft Access.
+
+Note: a product that includes limited word processing, spreadsheet or database components along with other components that 
+provide significant and primary value, such an accounting product with limited spreadsheet capability, is not considered 
+to be a “general purpose” product for purposes of this section.
+
+3. Microsoft Platform Software Development Kit (“Platform SDK”). If you are authorized and choose to redistribute Redistributables 
+found in the Platform SDK, in addition to compliance with Section C.1. above, you also agree:
+
+a. That in your Application the Redistributables only operate in conjunction with a Microsoft operating system product; 
+and
+
+b. To distribute your Application containing the Redistributables pursuant to an End-User License Agreement (which may be 
+“break-the-seal”, “click-wrap” or signed), with terms no less protective than these terms.

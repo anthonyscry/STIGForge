@@ -4,9 +4,15 @@ using System.ComponentModel;
 using System.IO;
 using System.Threading;
 using System.Windows.Data;
+using Microsoft.Extensions.Logging;
+using STIGForge.App.Helpers;
+using STIGForge.App.Services;
+using STIGForge.App.ViewModels;
 using STIGForge.Build;
 using STIGForge.Content.Import;
 using STIGForge.Core.Abstractions;
+using ControlStatusStrings = STIGForge.Core.Constants.ControlStatus;
+using PackTypes = STIGForge.Core.Constants.PackTypes;
 using STIGForge.Core.Models;
 using STIGForge.Core.Services;
 using STIGForge.Evidence;
@@ -14,7 +20,7 @@ using STIGForge.Verify;
 
 namespace STIGForge.App;
 
-public partial class MainViewModel : ObservableObject, IDisposable
+public partial class MainViewModel : ObservableObject, IDisposable, IMainSharedState
 {
   private readonly ContentPackImporter _importer;
   private readonly IContentPackRepository _packs;
@@ -28,17 +34,28 @@ public partial class MainViewModel : ObservableObject, IDisposable
   private readonly IPathBuilder _paths;
   private readonly EvidenceCollector _evidence;
   private readonly ManualAnswerService _manualAnswerService;
+  private readonly ComplianceTrendService _trendService = new();
+  private readonly ControlAnnotationService _annotationService;
+  private readonly NotificationService _notifications = new();
+  private readonly ILogger<MainViewModel>? _logger;
+  private static ILogger<MainViewModel>? _titleBarLogger;
   private readonly IBundleMissionSummaryService _bundleMissionSummary;
   private readonly VerificationArtifactAggregationService _artifactAggregation;
-  private readonly IAuditTrailService? _audit;
-  private readonly STIGForge.Infrastructure.System.ScheduledTaskService? _scheduledTaskService;
-  private readonly STIGForge.Infrastructure.System.FleetService? _fleetService;
-  private readonly CancellationTokenSource _cts = new();
-  private bool _disposed;
+   private readonly IAuditTrailService? _audit;
+   private readonly STIGForge.Infrastructure.System.ScheduledTaskService? _scheduledTaskService;
+   private readonly STIGForge.Infrastructure.System.FleetService? _fleetService;
+    private readonly CancellationTokenSource _cts = new();
+    private System.Threading.Timer? _saveDebounceTimer;
+    private readonly AnswerUndoService _answerUndo = new();
+    private System.Threading.Timer? _autoSaveTimer;
+    private bool _suppressManualAutoSave;
+    private bool _disposed;
   private ICollectionView? _manualView;
 
   [ObservableProperty] private string statusText = "Ready.";
   [ObservableProperty] private bool isDarkTheme = true;
+  [ObservableProperty] private List<double>? manualReviewColumnWidths;
+  [ObservableProperty] private List<double>? fullReviewColumnWidths;
   public string ThemeToggleLabel => IsDarkTheme ? "\u2600\uFE0F" : "\uD83C\uDF19";
 
   partial void OnIsDarkThemeChanged(bool value)
@@ -76,7 +93,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
       // DWMWA_USE_IMMERSIVE_DARK_MODE = 20
       DwmSetWindowAttribute(hwnd, 20, ref useDark, sizeof(int));
     }
-    catch { /* Silently ignore on older Windows versions */ }
+    catch (Exception ex)
+    {
+      _titleBarLogger?.LogDebug(ex, "DWM title bar styling not supported");
+    }
   }
   [ObservableProperty] private string importHint = "Import single ZIPs, consolidated bundles, or GPO/LGPO ZIPs (ADMX auto-import enabled).";
   [ObservableProperty] private string buildGateStatus = "";
@@ -101,10 +121,16 @@ public partial class MainViewModel : ObservableObject, IDisposable
   [ObservableProperty] private string powerStigDataFile = "";
   [ObservableProperty] private string powerStigOutputPath = "";
   [ObservableProperty] private bool powerStigVerbose;
+  [ObservableProperty] private string admxSourcePath = "";
+  [ObservableProperty] private string lgpoExePath = "";
+  [ObservableProperty] private string lgpoGpoBackupPath = "";
+  [ObservableProperty] private bool lgpoVerbose;
   [ObservableProperty] private string localToolkitRoot = "STIG_SCAP";
   [ObservableProperty] private string toolkitActivationStatus = "Toolkit activation pending.";
   [ObservableProperty] private string importLibraryStatus = "Library not loaded.";
   [ObservableProperty] private string machineApplicabilityStatus = "";
+  [ObservableProperty] private string machineApplicablePacks = "";
+  [ObservableProperty] private string machineRecommendations = "";
   [ObservableProperty] private bool isScanExpanded = true;
   [ObservableProperty] private string selectedContentSummary = "No content selected. Import or select packs above.";
   [ObservableProperty] private string selectedMissionPreset = "Workstation/VM Compliance";
@@ -133,6 +159,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
   [ObservableProperty] private bool dashHasBundle;
   [ObservableProperty] private string dashLastVerify = "";
   [ObservableProperty] private string dashLastExport = "";
+  [ObservableProperty] private ObservableCollection<TrendSnapshot> _trendSnapshots = new();
 
   // Orchestrate
   [ObservableProperty] private bool orchRunApply = true;
@@ -142,6 +169,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
   [ObservableProperty] private string orchLog = "";
 
   public bool ActionsEnabled => !IsBusy;
+  public bool HasManualControls => ManualControls.Count > 0;
+  public NotificationService Notifications => _notifications;
+  public DashboardViewModel DashboardVm { get; }
+  public ImportViewModel ImportVm { get; }
+  public ManualReviewViewModel ManualVm { get; }
 
   public IReadOnlyList<string> MissionPresets { get; } = new[]
   {
@@ -158,6 +190,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
   public ObservableCollection<ManualControlItem> ManualControls { get; } = new();
    public ObservableCollection<ImportedLibraryItem> StigLibraryItems { get; } = new();
    public ObservableCollection<ImportedLibraryItem> ScapLibraryItems { get; } = new();
+   public ObservableCollection<ImportedLibraryItem> GpoLibraryItems { get; } = new();
    public ObservableCollection<ImportedLibraryItem> OtherLibraryItems { get; } = new();
    public ObservableCollection<ImportedLibraryItem> AllLibraryItems { get; } = new();
     public HashSet<string> ApplicablePackIds { get; } = new(StringComparer.OrdinalIgnoreCase);
@@ -205,13 +238,20 @@ public partial class MainViewModel : ObservableObject, IDisposable
   [ObservableProperty] private ManualControlItem? selectedManualControl;
   [ObservableProperty] private ImportedLibraryItem? selectedStigLibraryItem;
   [ObservableProperty] private ImportedLibraryItem? selectedScapLibraryItem;
+  [ObservableProperty] private ImportedLibraryItem? selectedGpoLibraryItem;
   [ObservableProperty] private ImportedLibraryItem? selectedOtherLibraryItem;
-  [ObservableProperty] private string manualStatus = "Open";
+  [ObservableProperty] private string manualStatus = ControlStatusStrings.Open;
   [ObservableProperty] private string manualReason = "";
   [ObservableProperty] private string manualComment = "";
   [ObservableProperty] private string manualFilterText = "";
   [ObservableProperty] private string manualStatusFilter = "All";
+  [ObservableProperty] private string manualReviewStatusFilter = ControlStatusStrings.NotReviewed;
+  [ObservableProperty] private string manualCatFilter = "All";
+  [ObservableProperty] private string manualStigGroupFilter = "All";
   [ObservableProperty] private string manualSummary = "";
+  [ObservableProperty] private string _controlNotes = string.Empty;
+  [ObservableProperty] private string _autoSaveStatus = string.Empty;
+  [ObservableProperty] private bool _canUndoAnswer;
 
   public IReadOnlyList<string> EvidenceTypes { get; } = new[]
   {
@@ -225,28 +265,32 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
   public IReadOnlyList<string> ManualStatuses { get; } = new[]
   {
-    "Pass",
-    "Fail",
-    "NotApplicable",
-    "Open"
+    ControlStatusStrings.Pass,
+    ControlStatusStrings.Fail,
+    ControlStatusStrings.NotApplicable,
+    ControlStatusStrings.Open
   };
 
    public IReadOnlyList<string> ManualStatusFilters { get; } = new[]
    {
      "All",
-     "Pass",
-     "Fail",
-     "NotApplicable",
-     "Open"
+      ControlStatusStrings.Pass,
+      ControlStatusStrings.Fail,
+      ControlStatusStrings.NotApplicable,
+      ControlStatusStrings.Open,
+      ControlStatusStrings.NotReviewed
    };
+
+   public IReadOnlyList<string> ManualCatFilters { get; } = new[] { "All", "CAT I", "CAT II", "CAT III" };
+   public ObservableCollection<string> ManualStigGroupFilters { get; } = new() { "All" };
 
    // Content Library Filter Properties
    public bool IsFilterAll { get => ContentLibraryFilter == "All"; set { if (value) ContentLibraryFilter = "All"; } }
-   public bool IsFilterStig { get => ContentLibraryFilter == "STIG"; set { if (value) ContentLibraryFilter = "STIG"; } }
-   public bool IsFilterScap { get => ContentLibraryFilter == "SCAP"; set { if (value) ContentLibraryFilter = "SCAP"; } }
-   public bool IsFilterGpo { get => ContentLibraryFilter == "GPO"; set { if (value) ContentLibraryFilter = "GPO"; } }
+   public bool IsFilterStig { get => ContentLibraryFilter == PackTypes.Stig; set { if (value) ContentLibraryFilter = PackTypes.Stig; } }
+   public bool IsFilterScap { get => ContentLibraryFilter == PackTypes.Scap; set { if (value) ContentLibraryFilter = PackTypes.Scap; } }
+   public bool IsFilterGpo { get => ContentLibraryFilter == PackTypes.Gpo; set { if (value) ContentLibraryFilter = PackTypes.Gpo; } }
 
-   public MainViewModel(ContentPackImporter importer, IContentPackRepository packs, IProfileRepository profiles, IControlRepository controls, IOverlayRepository overlays, BundleBuilder builder, STIGForge.Apply.ApplyRunner applyRunner, IVerificationWorkflowService verificationWorkflow, STIGForge.Export.EmassExporter emassExporter, IPathBuilder paths, EvidenceCollector evidence, IBundleMissionSummaryService bundleMissionSummary, VerificationArtifactAggregationService artifactAggregation, IAuditTrailService? audit = null, STIGForge.Infrastructure.System.ScheduledTaskService? scheduledTaskService = null, STIGForge.Infrastructure.System.FleetService? fleetService = null)
+   public MainViewModel(ContentPackImporter importer, IContentPackRepository packs, IProfileRepository profiles, IControlRepository controls, IOverlayRepository overlays, BundleBuilder builder, STIGForge.Apply.ApplyRunner applyRunner, IVerificationWorkflowService verificationWorkflow, STIGForge.Export.EmassExporter emassExporter, IPathBuilder paths, EvidenceCollector evidence, IBundleMissionSummaryService bundleMissionSummary, VerificationArtifactAggregationService artifactAggregation, ManualAnswerService manualAnswers, ControlAnnotationService annotations, IAuditTrailService? audit = null, STIGForge.Infrastructure.System.ScheduledTaskService? scheduledTaskService = null, STIGForge.Infrastructure.System.FleetService? fleetService = null, ILogger<MainViewModel>? logger = null)
   {
     _importer = importer;
     _packs = packs;
@@ -261,10 +305,16 @@ public partial class MainViewModel : ObservableObject, IDisposable
     _evidence = evidence;
     _bundleMissionSummary = bundleMissionSummary;
     _artifactAggregation = artifactAggregation;
+    _manualAnswerService = manualAnswers;
+    _annotationService = annotations;
+    _logger = logger;
+    _titleBarLogger = logger;
     _audit = audit;
-    _manualAnswerService = new ManualAnswerService(_audit);
     _scheduledTaskService = scheduledTaskService;
     _fleetService = fleetService;
+    DashboardVm = new DashboardViewModel(this, _controls, _overlays, _bundleMissionSummary, _paths, _audit, logger: null);
+    ImportVm = new ImportViewModel(this, _importer, _packs, _profiles, _controls, _overlays, _builder, _paths);
+    ManualVm = new ManualReviewViewModel(this, _manualAnswerService, _annotationService, _evidence);
     _ = LoadAsync().ContinueWith(t =>
     {
       if (t.IsFaulted)
@@ -281,7 +331,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
       var profiles = await _profiles.ListAsync(CancellationToken.None);
       var overlays = await _overlays.ListAsync(CancellationToken.None);
 
-      System.Windows.Application.Current.Dispatcher.Invoke(() =>
+      await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
       {
         ContentPacks.Clear();
         foreach (var p in list) ContentPacks.Add(p);
@@ -311,15 +361,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
         if (SelectedProfile != null)
           LoadProfileFields(SelectedProfile);
 
-        OverlayItems.Clear();
-        foreach (var o in overlays) OverlayItems.Add(new OverlayItem(o));
+        OverlayItems.ReplaceAll(overlays.Select(o => new OverlayItem(o)));
         OnPropertyChanged(nameof(OverlayItems));
 
         if (SelectedProfile != null)
           ApplyOverlaySelection(SelectedProfile);
       });
 
-      LoadUiState();
+      await LoadUiStateAsync();
       AutoFillHostnameDefaults();
       LoadFleetInventory();
 
@@ -329,6 +378,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
       if (string.IsNullOrWhiteSpace(EvaluateStigRoot) && string.IsNullOrWhiteSpace(ScapCommandPath))
         await TryActivateToolkitAsync(userInitiated: false, _cts.Token);
+
+      await AutoPopulateApplicablePacksAsync();
+
       LoadCoverageOverlap();
       LoadManualControls();
       ConfigureManualView();
@@ -367,17 +419,52 @@ public partial class MainViewModel : ObservableObject, IDisposable
     public ManualControlItem(ControlRecord control)
     {
       Control = control;
-      _status = "Open";
+      _status = ControlStatusStrings.Open;
     }
 
     public ControlRecord Control { get; }
+
+    public string StigGroup => Control.Revision?.PackName ?? "Unknown";
+    public string CatLevel => MapSeverityToCat(Control.Severity);
+    public string VulnId => Control.ExternalIds?.VulnId ?? string.Empty;
+    public string RuleId => Control.ExternalIds?.RuleId ?? string.Empty;
+
+    private static string MapSeverityToCat(string? severity)
+    {
+      var s = (severity ?? string.Empty).Trim().ToLowerInvariant();
+      if (s == "high") return "CAT I";
+      if (s == "medium") return "CAT II";
+      if (s == "low") return "CAT III";
+      return "Unknown";
+    }
 
     private string _status;
     public string Status
     {
       get => _status;
-      set => SetProperty(ref _status, value);
+      set
+      {
+        if (SetProperty(ref _status, value))
+          OnPropertyChanged(nameof(ChangeDescription));
+      }
     }
+
+    private string? _previousStatus;
+    public string? PreviousStatus
+    {
+      get => _previousStatus;
+      set
+      {
+        if (SetProperty(ref _previousStatus, value))
+        {
+          OnPropertyChanged(nameof(HasChanged));
+          OnPropertyChanged(nameof(ChangeDescription));
+        }
+      }
+    }
+
+    public bool HasChanged => PreviousStatus != null;
+    public string ChangeDescription => HasChanged ? $"{PreviousStatus} \u2192 {Status}" : string.Empty;
 
     private string? _reason;
     public string? Reason
@@ -392,6 +479,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
       get => _comment;
       set => SetProperty(ref _comment, value);
     }
+
+    public string? Notes { get; set; }
   }
 
   public sealed class OverlapItem
@@ -436,15 +525,25 @@ public partial class MainViewModel : ObservableObject, IDisposable
     public string? EvaluateStigPreset { get; set; }
     public List<string>? RecentBundles { get; set; }
     public bool IsDarkTheme { get; set; } = true;
+    public List<double>? ManualReviewColumnWidths { get; set; }
+    public List<double>? FullReviewColumnWidths { get; set; }
   }
 
-  public void Dispose()
-  {
-    if (_disposed)
-      return;
+   public void Dispose()
+   {
+     if (_disposed)
+       return;
 
-    _disposed = true;
-    _cts.Cancel();
-    _cts.Dispose();
-  }
-}
+     _disposed = true;
+
+     // Flush any pending UI state save
+      _saveDebounceTimer?.Dispose();
+      _saveDebounceTimer = null;
+      _autoSaveTimer?.Dispose();
+      _autoSaveTimer = null;
+      FlushUiState();
+
+     _cts.Cancel();
+     _cts.Dispose();
+   }
+ }

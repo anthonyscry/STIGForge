@@ -1,0 +1,166 @@
+################################################################################
+DOCUMENT         : MS_Edge_STIG
+VERSION          : 002.003.010
+CHECKSUM         : 85e7c1d731a7523a31542ebc28746a3c9ac8f20d562681a8875ea5113632d847
+MANUAL QUESTIONS : 5
+
+IMPORTANT: Make sure to save the completed version of this file to: 
+<SCC Install>/Resources/Content/Manual_Questions/Completed_Files
+
+This file contains all of the non-automated STIG requirements found in the STIG.
+Results from this file will be combined with automated checks in SCC to provide
+complete STIG compliance results.
+
+This file will be programmaticaly imported, so do not modify anything in this file
+except for placing an '[X]' to select a Single answer, and entering text comments.
+
+The list of questions is printed in order of severity, listing CAT I (High), then CAT II, etc..
+
+################################################################################
+
+QUESTION         : 1 of 5
+TITLE            : CAT I, V-235758, SV-235758r961683, SRG-APP-000456
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.edge:testaction:7701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.edge:question:7701
+RULE             : The version of Microsoft Edge running on the system must be a supported version.
+QUESTION_TEXT    : Cross-reference the build information displayed with the Microsoft Edge site to identify, at minimum, the oldest supported build available. 
+
+If the installed version of Edge is not supported by Microsoft, this is a finding.
+
+References:
+CCI-002605
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 1 *******************************
+
+QUESTION         : 2 of 5
+TITLE            : CAT III, V-235722, SV-235722r960852, SRG-APP-000073
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.edge:testaction:701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.edge:question:701
+RULE             : The list of domains for which Microsoft Defender SmartScreen will not trigger warnings must be allowlisted if used.
+QUESTION_TEXT    : If this machine is on SIPRNet, this is Not Applicable.
+
+This requirement for "SmartScreenAllowListDomains" is not required; this is optional.
+
+The policy value for "Computer Configuration/Administrative Templates/Microsoft Edge/SmartScreen settings/Configure the list of domains for which Microsoft Defender SmartScreen won't trigger warnings" may be set to "allow" for allowlisted domains.
+
+Use the Windows Registry Editor to navigate to the following key:
+HKLM\SOFTWARE\Policies\Microsoft\Edge
+
+SmartScreenAllowListDomains may be set as follows:
+HKLM\SOFTWARE\Policies\Microsoft\Edge\SmartScreenAllowListDomains\1 = mydomain.com
+HKLM\SOFTWARE\Policies\Microsoft\Edge\SmartScreenAllowListDomains\2 = myagency.mil
+
+If configured, the list of domains for which Microsoft Defender SmartScreen will not trigger warnings may be allowlisted.
+
+References:
+CCI-000870
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 2 *******************************
+
+QUESTION         : 3 of 5
+TITLE            : CAT III, V-235753, SV-235753r1015297, SRG-APP-000378
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.edge:testaction:6901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.edge:question:6901
+RULE             : URLs must be allowlisted for plugin use if used.
+QUESTION_TEXT    : This requirement for "Allow pop-up windows on specific sites" is not required; this is optional.
+
+The policy value for "Computer Configuration/Administrative Templates/Microsoft Edge/Content settings/Allow pop-up windows on specific sites" must be set to "Enabled".
+
+Use the Windows Registry Editor to navigate to the following key:
+HKLM\SOFTWARE\Policies\Microsoft\Edge
+
+"PopupsAllowedForUrls" must be set as follows:
+HKLM\SOFTWARE\Policies\Microsoft\Edge\PopupsAllowedForUrls\1 = mydomain.com
+HKLM\SOFTWARE\Policies\Microsoft\Edge\PopupsAllowedForUrls\2 = myagency.mil
+
+If configured, the list of domains for which Microsoft Edge allows pop-ups may be allowlisted.
+
+References:
+CCI-003980
+CCI-001812
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 3 *******************************
+
+QUESTION         : 4 of 5
+TITLE            : CAT III, V-235755, SV-235755r961479, SRG-APP-000386
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.edge:testaction:7301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.edge:question:7301
+RULE             : Extensions that are approved for use must be allowlisted if used.
+QUESTION_TEXT    : This requirement for "Allow specific extensions to be installed" is not required; this is optional.
+
+The policy value for "Computer Configuration/Administrative Templates/Microsoft Edge/Extensions/Allow specific extensions to be installed" must be set to "Enabled".
+
+Use the Windows Registry Editor to navigate to the following key:
+HKLM\SOFTWARE\Policies\Microsoft\Edge
+
+"ExtensionInstallAllowlist" must be set as follows:
+HKLM\SOFTWARE\Policies\Microsoft\Edge\ExtensionInstallAllowlist\1 = "extension_id1"
+HKLM\SOFTWARE\Policies\Microsoft\Edge\ExtensionInstallAllowlist\2 = "extension_id2"
+
+If configured, the list of extensions for which Microsoft Edge allows to be installed may be allowlisted.
+
+References:
+CCI-001774
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 4 *******************************
+
+QUESTION         : 5 of 5
+TITLE            : CAT III, V-251694, SV-251694r960963, SRG-APP-000141
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.edge:testaction:10901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.edge:question:10901
+RULE             : The list of domains media autoplay allows must be allowlisted if used.
+QUESTION_TEXT    : If this machine is on SIPRNet, this is Not Applicable.
+
+This requirement for "AutoplayAllowlist" is not required; this is optional.
+
+The policy value for "Computer Configuration/Administrative Templates/Microsoft Edge/Allow media autoplay on specific sites" may be set to "allow" for allowlisted domains.
+
+Use the Windows Registry Editor to navigate to the following key:
+HKLM\SOFTWARE\Policies\Microsoft\Edge
+
+AutoplayAllowlist may be set as follows:
+HKLM\SOFTWARE\Policies\Microsoft\Edge\AutoplayAllowlist\1 = mydomain.com
+HKLM\SOFTWARE\Policies\Microsoft\Edge\AutoplayAllowlist\2 = myagency.mil
+
+If configured, the list of domains for which autoplay is allowed may be allowlisted.
+
+References:
+CCI-000381
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 5 *******************************
+

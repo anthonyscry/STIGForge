@@ -1,0 +1,53 @@
+################################################################################
+DOCUMENT         : MS_Office_365_ProPlus_STIG
+VERSION          : 003.005.005
+CHECKSUM         : 2206fdf35b40e79769b1e6eea5ec7c92359431fb7de2ba73b4d9824452636e90
+MANUAL QUESTIONS : 1
+
+IMPORTANT: Make sure to save the completed version of this file to: 
+<SCC Install>/Resources/Content/Manual_Questions/Completed_Files
+
+This file contains all of the non-automated STIG requirements found in the STIG.
+Results from this file will be combined with automated checks in SCC to provide
+complete STIG compliance results.
+
+This file will be programmaticaly imported, so do not modify anything in this file
+except for placing an '[X]' to select a Single answer, and entering text comments.
+
+The list of questions is printed in order of severity, listing CAT I (High), then CAT II, etc..
+
+################################################################################
+
+QUESTION         : 1 of 1
+TITLE            : CAT II, V-223351, SV-223351r961863, SRG-APP-000516
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.office365:testaction:14101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.office365:question:14101
+RULE             : The junk email protection level must be set to No Automatic Filtering.
+QUESTION_TEXT    : Note: If the Outlook client application is not used to access Office 365 email (i.e., email is only accessed via Outlook Web Access [OWA]), this check is not applicable.  
+
+Verify Outlook Junk E-mail protection is set to "No Automatic Filtering".
+
+In Outlook, click Home tab >> Delete group >> Junk >> Junk E-mail Options.
+
+Verify Junk E-mail protection is set to "No Automatic Filtering".
+ 
+If the system being inspected is not behind EEMSG, CBII, or O365 EOP, the Junk E-mail protection level must be set to "High".
+
+If Junk E-mail protection is not set to "No Automatic Filtering", this is a finding.
+
+If the system is not behind enterprise-level capabilities such as EEMSG, CBII, or O365 EOP and the Junk E-mail protection is not set to "High", this is a  finding.
+
+References:
+SV-108881
+V-99777
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 1 *******************************
+

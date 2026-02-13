@@ -1,0 +1,695 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified">
+  <xs:element name="options">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:element ref="sccConfigProfile"/>
+		<xs:element ref="sccConfigProfileMetaData"/>
+		<xs:element ref="selectedConfigProfile"/>
+		<xs:element ref="reviewType"/>
+        <xs:element ref="offlineConfigPath"/>
+        <xs:element ref="hostName"/>
+        <xs:element ref="hostFile"/>
+		<xs:element ref="multiRemoteMode"/>
+		<xs:element ref="remoteWindowsOU"/>
+        <xs:element ref="remoteWMIEnabled"/>
+		<xs:element ref="alternateWMICredentials"/>
+        <xs:element ref="ignoreCPEOVALResults"/>
+		<xs:element ref="answerOCILwithSCAP"/>
+		<xs:element ref="warnMissingOCILResults"/>
+		<xs:element ref="filterSCAPContentPerFamily"/>
+        <xs:element ref="downloadExternalFiles"/>
+        <xs:element ref="forceOVAL510"/>
+		<xs:element ref="saveResultsForNotApplicableContent"/>
+        <xs:element ref="ignoreRemoteFileSystems"/>
+        <xs:element ref="ignoreCase"/>
+        <xs:element ref="itemCreationThresholdEnabled"/>
+        <xs:element ref="itemCreationThreshold"/>
+        <xs:element ref="maskPasswords"/>
+        <xs:element ref="useGetpwent"/>
+        <xs:element ref="ignoreFileExtendedACL"/>
+        <xs:element ref="onlyCollectSecurityPrinciplesThatHavePrivilegesAssigned"/>
+		<xs:element ref="sortOCILQuestionsByDISACAT"/>
+		<xs:element ref="customManualQuestionAutoAnswerDirectoryValue"/>
+		<xs:element ref="customManualQuestionAutoAnswerDirectory"/>
+		<xs:element ref="backupManualQuestionResults"/>
+		<xs:element ref="ignoreManualQuestionVersionChangesOnUpgrade"/>
+        <xs:element ref="allSettingsHTMLReport"/>
+        <xs:element ref="allSettingsTextReport"/>
+        <xs:element ref="nonComplianceHTMLReport"/>
+        <xs:element ref="nonComplianceTextReport"/>
+        <xs:element ref="allSettingsSummaryHTMLReport"/>
+        <xs:element ref="allSettingsSummaryTextReport"/>
+        <xs:element ref="nonComplianceSummaryHTMLReport"/>
+        <xs:element ref="nonComplianceSummaryTextReport"/>
+		<xs:element ref="sortReportsBySeverity"/>
+		<xs:element ref="limitCollectedItemsInReports"/>
+		<xs:element ref="maxOVALCollectedItemsDefPass"/>
+		<xs:element ref="maxOVALCollectedItemsDefFail"/>
+        <xs:element ref="keepXCCDFXML"/>
+		<xs:element ref="maxOVALCollectedItemsPerXCCDFResult"/>
+        <xs:element ref="keepOVALXML"/>
+        <xs:element ref="keepOCILXML"/>
+        <xs:element ref="keepARFXML"/>
+		<xs:element ref="saveDISACKL"/>
+		<xs:element ref="saveDISACKLB"/>
+		<xs:element ref="cklReportStyle"/>
+		<xs:element ref="CKLMarking"/>
+		<xs:element ref="CKLClassification"/>
+		<xs:element ref="primaryIPAddressPrefix"/>
+        <xs:element ref="keepCPEXML"/>
+        <xs:element ref="enableSummaryViewer"/>
+        <xs:element ref="summaryViewerMaxReports"/>
+        <xs:element ref="summaryViewerSort1"/>
+        <xs:element ref="summaryViewerSort2"/>
+        <xs:element ref="summaryViewerSort3"/>
+		<xs:element ref="enableScanSessionDB"/>
+		<xs:element ref="openWithSCC"/>
+        <xs:element ref="keepScreenLogs"/>
+        <xs:element ref="debugEnabled"/>
+        <xs:element ref="suppress_warnings"/>
+        <xs:element ref="sharedOptions"/>
+        <xs:element minOccurs='0' ref="userResultsDirectory"/>
+        <xs:element minOccurs='0' ref="userResultsDirectoryValue"/>
+        <xs:element minOccurs='0' ref="userConfigDirectory"/>
+        <xs:element minOccurs='0' ref="userConfigDirectoryValue"/>
+        <xs:element ref="setRestrictedPermissions"/>
+		<xs:element ref="customPathLocal"/>
+		<xs:element ref="dirApplicationLogsEnabled"/>
+        <xs:element ref="dirAllSessionsEnabled"/>
+        <xs:element ref="dirSessionEnabled"/>
+        <xs:element ref="dirSessionResultsEnabled"/>
+        <xs:element ref="dirSessionLogsEnabled"/>
+        <xs:element ref="dirContentTypeEnabled"/>
+		<xs:element ref="dirTargetNameEnabled"/>
+        <xs:element ref="dirStreamNameEnabled"/>
+		<xs:element ref="dirXMLEnabled"/>
+        <xs:element ref="fileTargetNameEnabled"/>
+		<xs:element ref="fileTargetDNSDomainEnabled"/>
+        <xs:element ref="fileSCCVersionEnabled"/>
+        <xs:element ref="fileTimestampEnabled"/>
+        <xs:element ref="fileContentVersionEnabled"/>
+		<xs:element ref="newerContentInstall"/>
+        <xs:element ref="contentDevModeSkipValidation"/>
+        <xs:element ref="validateContent"/>
+        <xs:element ref="validateContentOnInstall"/>
+        <xs:element ref="validateDigitalSignature"/>
+        <xs:element ref="failOnXMLDSig"/>
+        <xs:element ref="validateXMLResults"/>
+        <xs:element ref="sshEnabled"/>
+        <xs:element ref="deleteOnTransferSession"/>
+        <xs:element ref="sshServer"/>
+        <xs:element ref="sshPortNumber"/>
+        <xs:element ref="sshConnectionType"/>
+        <xs:element ref="username"/>
+        <xs:element ref="sshUserPassword"/>
+        <xs:element ref="sshPrivateKey"/>
+        <xs:element ref="sshUserKeyFile"/>
+        <xs:element ref="sshKeyPassphrase"/>
+        <xs:element ref="sshServerDirectory"/>
+		<xs:element ref="sshHostKey"/>
+        <xs:element ref="summarySourceDirectory"/>
+        <xs:element ref="summaryDestinationDirectory"/>
+        <xs:element ref="openSummaryDestinationDirectory"/>
+        <xs:element ref="computerListHistoricalHTMLReport"/>
+        <xs:element ref="computerListHistoricalExcelReport"/>
+        <xs:element ref="computerListHTMLReport"/>
+        <xs:element ref="computerListExcelReport"/>
+        <xs:element ref="siteSummaryHTMLReport"/>
+        <xs:element ref="siteSummaryNonComplianceHTMLReport"/>
+        <xs:element ref="siteSummaryExcelReport"/>
+        <xs:element ref="siteSummaryNonComplianceExcelReport"/>
+        <xs:element ref="detailSummarySourceDirectory"/>
+        <xs:element ref="detailSummaryDestinationDirectory"/>
+        <xs:element ref="openDetailSummaryDestinationDirectory"/>
+        <xs:element ref="detailSummaryOVALSourceDirectory"/>
+        <xs:element ref="detailSummaryOVALDestinationDirectory"/>
+        <xs:element ref="openDetailSummaryOVALDestinationDirectory"/>
+        <xs:element ref="allSettingsHTMLReportDetailSummary"/>
+        <xs:element ref="allSettingsTextReportDetailSummary"/>
+        <xs:element ref="nonComplianceHTMLReportDetailSummary"/>
+        <xs:element ref="nonComplianceTextReportDetailSummary"/>
+        <xs:element ref="allSettingsSummaryHTMLReportDetailSummary"/>
+        <xs:element ref="allSettingsSummaryTextReportDetailSummary"/>
+        <xs:element ref="nonComplianceSummaryHTMLReportDetailSummary"/>
+        <xs:element ref="nonComplianceSummaryTextReportDetailSummary"/>
+        <xs:element ref="deviationsEnabled"/>
+        <xs:element ref="thresholdsEnabled"/>
+        <xs:element ref="thresholdsProfile"/>
+        <xs:element ref="thresholdsUnlockCode"/>
+        <xs:element ref="frequency"/>
+        <xs:element ref="schedule"/>
+        <xs:element ref="randomizeSSHTransfer"/>
+        <xs:element ref="randomizeValue"/>
+        <xs:element ref="timeout"/>
+        <xs:element ref="lastServiceScan"/>
+        <xs:element ref="nextServiceScan"/>
+        <xs:element ref="remoteScanHostCooldown"/>
+		<xs:element ref="remoteBaseLocation_unix"/>
+		<xs:element ref="remoteStartupTimeout"/>
+        <xs:element ref="remoteMaxThreads"/>
+        <xs:element ref="remoteMaxThreads32"/>
+		<xs:element ref="remoteSSHAppWhitelist"/>
+		<xs:element ref="httpProxyType"/>
+		<xs:element ref="httpProxyURL"/>
+		<xs:element ref="appCheckForUpdates"/>
+		<xs:element ref="appUpdateCheckFrequency"/>
+		<xs:element ref="appUpdateLastCheck"/>
+		<xs:element ref="appUpdateURL"/>
+		<xs:element ref="contentCheckForUpdates"/>
+		<xs:element ref="contentUpdateCheckFrequency"/>
+		<xs:element ref="contentUpdateLastCheck"/>
+		<xs:element ref="includeDraftContent"/>
+		<xs:element ref="httpIgnoreSSLErrors"/>
+		<xs:element minOccurs='0' maxOccurs="unbounded" ref="contentRepository"/>
+        <xs:element ref="debugExcludeDateTime"/>
+        <xs:element ref="debugTraceEnabled"/>
+        <xs:element ref="maxLogFileSize"/>
+        <xs:element ref="maximumRecentReports"/>
+        <xs:element ref="freeSpaceThreshold"/>
+        <xs:element ref="validationThreshold"/>
+        <xs:element ref="externalCmdTimeout"/>
+        <xs:element ref="version"/>
+        <xs:element ref="timeStamp"/>
+		<xs:element ref="newInstall"/>
+		<xs:element ref="registeredEmail"/>
+		<xs:element ref="registeredCode"/>
+		<xs:element ref="load"/>
+		<xs:element ref="scan"/>
+        <xs:element ref="expignore"/>
+		<xs:element ref="showSeverityRoleTailoring"/>
+        <xs:element ref="scap12DBFilepath"/>
+        <xs:element ref="iaControlDBFilepath"/>
+        <xs:element ref="nvdcceFile"/>
+        <xs:element ref="cciFile"/>
+		<xs:element ref="xCoordinate"/>
+		<xs:element ref="yCoordinate"/>
+		<xs:element ref="windowHeight"/>
+		<xs:element ref="windowWidth"/>
+        <xs:element minOccurs='0' maxOccurs="unbounded" ref="recentReport"/>
+        <xs:element ref="contents"/>
+        <xs:element ref="ovalContents"/>
+        <xs:element ref="ocilContents"/>
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+  <!-- #region named types -->
+
+ <xs:simpleType name="anyURI">
+ <xs:annotation>
+      <xs:appinfo>Any URI.</xs:appinfo>
+    </xs:annotation>
+        <xs:union>
+      <xs:simpleType>
+        <xs:restriction base='xs:string'>
+          <xs:length value="0"></xs:length>
+        </xs:restriction>
+      </xs:simpleType>
+      <xs:simpleType>
+        <xs:restriction base="xs:anyURI">
+          <xs:pattern value="((http://|https://)|(www.))+(([a-zA-Z0-9\.\-/]+\.[a-zA-Z]{2,4})|([0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}))(:[0-9]{1,5})?(/[a-zA-Z0-9%:/\-_\?\.'~]*)?"  />
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:union>
+    </xs:simpleType>
+
+
+    
+
+  <xs:simpleType name="reviewType">
+    <xs:annotation>
+      <xs:appinfo>local, remote, multiremote, cisco, or cisco-remote.</xs:appinfo>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:pattern value="(local|remote|multiremote|cisco|cisco-remote|unix-remote|windows-unix-remote)"></xs:pattern>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="summaryViewerSort">
+    <xs:annotation>
+      <xs:appinfo>Host, Session, or Stream.</xs:appinfo>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:pattern value="(Host|Session|Stream)"></xs:pattern>
+    </xs:restriction>
+  </xs:simpleType>
+
+
+
+  <xs:simpleType name="xccdfFileAgeAction">
+    <xs:annotation>
+      <xs:appinfo>Ignore, Warn, or Exclude.</xs:appinfo>
+    </xs:annotation>
+    <xs:restriction base="xs:string">
+      <xs:pattern value="(Ignore|Warn|Exclude)"></xs:pattern>
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="itemCreationThreshold">
+    <xs:annotation>
+      <xs:appinfo>An integer between 0 and 999999.</xs:appinfo>
+    </xs:annotation>
+    <xs:union>
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:length value="0"></xs:length>
+        </xs:restriction>
+      </xs:simpleType>
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:pattern value="[0-9]{1,6}"></xs:pattern>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:union>
+  </xs:simpleType>
+
+  <xs:simpleType name="hostName">
+    <xs:annotation>
+      <xs:appinfo>A well formed hostname.</xs:appinfo>
+    </xs:annotation>
+    <xs:union>
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:pattern value="[a-zA-Z0-9]{1}[a-zA-Z0-9\.:\-]{0,254}"></xs:pattern>
+        </xs:restriction>
+      </xs:simpleType>
+      <xs:simpleType>
+        <xs:restriction base='xs:string'>
+          <xs:length value="0"></xs:length>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:union>
+  </xs:simpleType>
+
+  <xs:simpleType name="ip">
+    <xs:annotation>
+      <xs:appinfo>A well formed public or private ipv4 address.</xs:appinfo>
+    </xs:annotation>
+    <xs:union>
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:pattern value="\w((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)"></xs:pattern>
+        </xs:restriction>
+      </xs:simpleType>
+      <xs:simpleType>
+        <xs:restriction base='xs:string'>
+          <xs:length value="0"></xs:length>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:union>
+  </xs:simpleType>
+
+
+  <xs:simpleType name="less_than_512_chars">
+    <xs:annotation>
+      <xs:appinfo>Data less than 512 characters.</xs:appinfo>
+    </xs:annotation>
+    <xs:union>
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:pattern value=".{1,512}"></xs:pattern>
+        </xs:restriction>
+      </xs:simpleType>
+      <xs:simpleType>
+        <xs:restriction base='xs:string'>
+          <xs:length value="0"></xs:length>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:union>
+  </xs:simpleType>
+
+  <xs:simpleType name="hostName_or_ip">
+    <xs:annotation>
+      <xs:appinfo>a hostname or an ipv4 or ipv6.</xs:appinfo>
+    </xs:annotation>
+    <xs:union>
+      <xs:simpleType>
+        <xs:restriction base="xs:string">
+          <xs:pattern value="(\w((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?))|([a-zA-Z0-9]{1}[a-zA-Z0-9\.\-]{0,254})|(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))"></xs:pattern>
+        </xs:restriction>
+      </xs:simpleType>
+      <xs:simpleType>
+        <xs:restriction base='xs:string'>
+          <xs:length value="0"></xs:length>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:union>
+  </xs:simpleType>
+
+  <xs:simpleType name="username">
+    <xs:annotation>
+      <xs:appinfo>A well formed username.</xs:appinfo>
+    </xs:annotation>
+    <xs:union>
+      <xs:simpleType>
+        <xs:restriction base='xs:string'>
+          <xs:length value="0"></xs:length>
+        </xs:restriction>
+      </xs:simpleType>
+      <xs:simpleType>
+        <xs:restriction base='xs:string'>
+          <xs:pattern value="[a-zA-Z0-9@\._-]{1,254}"></xs:pattern>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:union>
+  </xs:simpleType>
+
+  <xs:simpleType name="portNumber">
+    <xs:annotation>
+      <xs:appinfo>A port number between 0 and 65536.</xs:appinfo>
+    </xs:annotation>
+    <xs:union>
+      <xs:simpleType>
+        <xs:restriction base='xs:string'>
+          <xs:length value="0"></xs:length>
+        </xs:restriction>
+      </xs:simpleType>
+      <xs:simpleType>
+        <xs:restriction base='xs:string'>
+          <xs:pattern value="([0-9]{1,4}|[1-5][0-9]{4}|6[0-4][0-9]{3}|65[0-4][0-9]{2}|655[0-2][0-9]|6553[0-5])"></xs:pattern>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:union>
+  </xs:simpleType>
+
+  <xs:simpleType name="abs_dirpath">
+    <xs:annotation>
+      <xs:appinfo>A well formed absolute directory path. Windows Style</xs:appinfo>
+    </xs:annotation>
+    <xs:union>
+      <xs:simpleType>
+        <xs:restriction base='xs:string'>
+          <xs:length value="0"></xs:length>
+        </xs:restriction>
+      </xs:simpleType>
+      <xs:simpleType>
+        <xs:restriction base='xs:string'>
+          <xs:pattern value="(([a-zA-Z]:(\\|/))|(/)|(\\\\)){1}([a-zA-Z0-9\s\._()-@$]+(\\|/)?)*"></xs:pattern>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:union>
+  </xs:simpleType>
+  
+  <xs:simpleType name="unix_dirpath">
+    <xs:annotation>
+      <xs:appinfo>A well formed absolute directory path. UNIX Style</xs:appinfo>
+    </xs:annotation>
+    <xs:union>
+      <xs:simpleType>
+        <xs:restriction base='xs:string'>
+          <xs:length value="0"></xs:length>
+        </xs:restriction>
+      </xs:simpleType>
+      <xs:simpleType>
+        <xs:restriction base='xs:string'>
+          <xs:pattern value="/+([a-zA-Z0-9\t \._()@$-]+/*)*"></xs:pattern>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:union>
+  </xs:simpleType>
+
+  <xs:simpleType name="path">
+    <xs:annotation>
+      <xs:appinfo>A well formed path.</xs:appinfo>
+    </xs:annotation>
+    <xs:union>
+      <xs:simpleType>
+        <xs:restriction base='xs:string'>
+          <xs:length value="0"></xs:length>
+        </xs:restriction>
+      </xs:simpleType>
+      <xs:simpleType>
+        <xs:restriction base='xs:string'>
+          <xs:pattern value="((([a-zA-Z]:(\\|/))|(/)|(\\\\)){1}([a-zA-Z0-9\s\._()-]+(\\|/)?)*)|(/.*)|([a-zA-Z0-9\s\._()-]+(\\|/)?)*"></xs:pattern>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:union>
+  </xs:simpleType>
+
+  <xs:simpleType name="abs_filepath">
+    <xs:annotation>
+      <xs:appinfo>A well formed absolute file path.</xs:appinfo>
+    </xs:annotation>
+    <xs:union>
+      <xs:simpleType>
+        <xs:restriction base='xs:string'>
+          <xs:length value="0"></xs:length>
+        </xs:restriction>
+      </xs:simpleType>
+      <xs:simpleType>
+        <xs:restriction base='xs:string'>
+          <xs:pattern value="(([a-zA-Z]:(\\|/))|(/)|(\\\\)){1}([a-zA-Z0-9\s\._()-]+(\\|/)?)*\.([Xx][Mm][Ll]|[Zz][Ii][Pp]|[Pp][Ee][Mm]|[Pp][Pp][Kk]|[Hh][Tt][Mm][Ll]|[Hh][Tt][Mm]|[Tt][Xx][Tt]|[Dd][Bb])"></xs:pattern>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:union>
+  </xs:simpleType>
+
+  <xs:simpleType name="rel_dirpath">
+    <xs:annotation>
+      <xs:appinfo>A well formed relative directory path.</xs:appinfo>
+    </xs:annotation>
+    <xs:union>
+      <xs:simpleType>
+        <xs:restriction base='xs:string'>
+          <xs:length value="0"></xs:length>
+        </xs:restriction>
+      </xs:simpleType>
+      <xs:simpleType>
+        <xs:restriction base='xs:string'>
+          <xs:pattern value="([a-zA-Z0-9\s\._()-:]+(\\|/)?)*"></xs:pattern>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:union>
+  </xs:simpleType>
+
+  <xs:simpleType name="rel_filepath">
+    <xs:annotation>
+      <xs:appinfo>A well formed relative file path.</xs:appinfo>
+    </xs:annotation>
+    <xs:union>
+      <xs:simpleType>
+        <xs:restriction base='xs:string'>
+          <xs:length value="0"></xs:length>
+        </xs:restriction>
+      </xs:simpleType>
+      <xs:simpleType>
+        <xs:restriction base='xs:string'>
+          <xs:pattern value="([a-zA-Z0-9\s\._()-:]+(\\|/)?)*\.([Xx][Mm][Ll]|[Zz][Ii][Pp]|[Pp][Ee][Mm]|[Pp][Pp][Kk]|[Hh][Tt][Mm][Ll]|[Hh][Tt][Mm]|[Tt][Xx][Tt]|[Dd][Bb])"></xs:pattern>
+        </xs:restriction>
+      </xs:simpleType>
+    </xs:union>
+  </xs:simpleType>
+
+  <!-- #endregion named types -->
+  <xs:element name="sccConfigProfile" type="xs:string"/>
+  <xs:element name="sccConfigProfileMetaData" type="xs:string"/>
+  <xs:element name="selectedConfigProfile" type="xs:string"/>
+  <xs:element name="reviewType" type="reviewType"/>
+  <xs:element name="offlineConfigPath" type="abs_filepath"/>
+  <xs:element name="hostName" type="hostName_or_ip"/>
+  <xs:element name="hostFile" type="abs_filepath"/>
+  <xs:element name="multiRemoteMode" type="xs:string"/>
+  <xs:element name="remoteWindowsOU" type="xs:string"/>
+  <xs:element name="remoteWMIEnabled" type="xs:boolean"/>
+  <xs:element name="alternateWMICredentials" type="xs:boolean"/>
+  <xs:element name="ignoreCPEOVALResults" type="xs:boolean"/>
+  <xs:element name="answerOCILwithSCAP" type="xs:boolean"/>
+  <xs:element name="warnMissingOCILResults" type="xs:boolean"/>
+  <xs:element name="filterSCAPContentPerFamily" type="xs:boolean"/>
+  <xs:element name="downloadExternalFiles" type="xs:boolean"/>
+  <xs:element name="forceOVAL510" type="xs:boolean"/>
+  <xs:element name="saveResultsForNotApplicableContent" type="xs:boolean"/>
+  <xs:element name="ignoreRemoteFileSystems" type="xs:boolean"/>
+  <xs:element name="ignoreCase" type="xs:boolean"/>
+  <xs:element name="itemCreationThresholdEnabled" type="xs:boolean"/>
+  <xs:element name="itemCreationThreshold" type="itemCreationThreshold"/>
+  <xs:element name="maskPasswords" type="xs:boolean"/>
+  <xs:element name="useGetpwent" type="xs:boolean"/>
+  <xs:element name="ignoreFileExtendedACL" type="xs:boolean"/>
+  <xs:element name="onlyCollectSecurityPrinciplesThatHavePrivilegesAssigned" type="xs:boolean"/>
+  <xs:element name="sortOCILQuestionsByDISACAT" type="xs:boolean"/>
+  <xs:element name="customManualQuestionAutoAnswerDirectoryValue" type="xs:boolean"/>
+  <xs:element name="customManualQuestionAutoAnswerDirectory" type="abs_dirpath"/>
+  <xs:element name="backupManualQuestionResults" type="xs:boolean"/>
+  <xs:element name="ignoreManualQuestionVersionChangesOnUpgrade" type="xs:boolean"/>
+  <xs:element name="allSettingsHTMLReport" type="xs:boolean"/>
+  <xs:element name="allSettingsTextReport" type="xs:boolean"/>
+  <xs:element name="nonComplianceHTMLReport" type="xs:boolean"/>
+  <xs:element name="nonComplianceTextReport" type="xs:boolean"/>
+  <xs:element name="allSettingsSummaryHTMLReport" type="xs:boolean"/>
+  <xs:element name="allSettingsSummaryTextReport" type="xs:boolean"/>
+  <xs:element name="nonComplianceSummaryHTMLReport" type="xs:boolean"/>
+  <xs:element name="nonComplianceSummaryTextReport" type="xs:boolean"/>
+  <xs:element name="sortReportsBySeverity" type="xs:boolean"/>
+  <xs:element name="limitCollectedItemsInReports" type="xs:boolean"/>
+  <xs:element name="maxOVALCollectedItemsDefPass" type="xs:integer"/>
+  <xs:element name="maxOVALCollectedItemsDefFail" type="xs:integer"/>
+  <xs:element name="keepXCCDFXML" type="xs:boolean"/>
+  <xs:element name="maxOVALCollectedItemsPerXCCDFResult" type="xs:integer"/>
+  <xs:element name="keepOVALXML" type="xs:integer"/>
+  <xs:element name="keepOCILXML" type="xs:boolean"/>
+  <xs:element name="keepARFXML" type="xs:boolean"/>
+  <xs:element name="saveDISACKL" type="xs:boolean"/>
+  <xs:element name="saveDISACKLB" type="xs:boolean"/>
+  <xs:element name="cklReportStyle" type="xs:boolean"/>
+  <xs:element name="CKLMarking" type="less_than_512_chars"/>
+  <xs:element name="CKLClassification" type="less_than_512_chars"/>
+  <xs:element name="primaryIPAddressPrefix" type="less_than_512_chars"/>
+  <xs:element name="keepCPEXML" type="xs:boolean"/>
+  <xs:element name="enableSummaryViewer" type="xs:boolean"/>
+  <xs:element name="summaryViewerMaxReports" type="xs:integer"/>
+  <xs:element name="summaryViewerSort1" type="summaryViewerSort"/>
+  <xs:element name="summaryViewerSort2" type="summaryViewerSort"/>
+  <xs:element name="summaryViewerSort3" type="summaryViewerSort"/>
+  <xs:element name="enableScanSessionDB" type="xs:boolean"/>
+  <xs:element name="openWithSCC" type="xs:boolean"/>
+  <xs:element name="keepScreenLogs" type="xs:boolean"/>
+  <xs:element name="debugEnabled" type="xs:boolean"/>
+  <xs:element name="suppress_warnings" type="xs:boolean"/>
+  <xs:element name="sharedOptions" type="xs:integer"/>
+  <xs:element name="userResultsDirectory" type="abs_dirpath"/>
+  <xs:element name="userResultsDirectoryValue" type="xs:integer"/>
+  <xs:element name="userConfigDirectory" type="abs_dirpath"/>
+  <xs:element name="userConfigDirectoryValue" type="xs:integer"/>
+  <xs:element name="setRestrictedPermissions" type="xs:boolean"/>
+  <xs:element name="customPathLocal" type="abs_dirpath"/>
+  <xs:element name="dirAllSessionsEnabled" type="xs:boolean"/>
+  <xs:element name="dirApplicationLogsEnabled" type="xs:boolean"/>
+  <xs:element name="dirTargetNameEnabled" type="xs:boolean"/>
+  <xs:element name="dirXMLEnabled" type="xs:boolean"/>
+  <xs:element name="dirStreamNameEnabled" type="xs:boolean"/>
+  <xs:element name="dirContentTypeEnabled" type="xs:boolean"/>
+  <xs:element name="dirSessionEnabled" type="xs:boolean"/>
+  <xs:element name="dirSessionResultsEnabled" type="xs:boolean"/>
+  <xs:element name="dirSessionLogsEnabled" type="xs:boolean"/>
+  <xs:element name="fileTargetNameEnabled" type="xs:boolean"/>
+  <xs:element name="fileTargetDNSDomainEnabled" type="xs:boolean"/>
+  <xs:element name="fileSCCVersionEnabled" type="xs:boolean"/>
+  <xs:element name="fileContentVersionEnabled" type="xs:boolean"/>
+  <xs:element name="fileTimestampEnabled" type="xs:boolean"/>
+  <xs:element name="newerContentInstall" type="xs:integer"/>
+  <xs:element name="contentDevModeSkipValidation" type="xs:boolean"/>
+  <xs:element name="validateContent" type="xs:boolean"/>
+  <xs:element name="validateContentOnInstall" type="xs:boolean"/>
+  <xs:element name="validateDigitalSignature" type="xs:boolean"/>
+  <xs:element name="failOnXMLDSig" type="xs:boolean"/>
+  <xs:element name="validateXMLResults" type="xs:boolean"/>
+  <xs:element name="sshEnabled" type="xs:boolean"/>
+  <xs:element name="deleteOnTransferSession" type="xs:boolean"/>
+  <xs:element name="sshServer" type="hostName_or_ip"/>
+  <xs:element name="sshPortNumber" type="portNumber"/>
+  <xs:element name="sshConnectionType" type="xs:integer"/>
+  <xs:element name="username" type="username"/>
+  <xs:element name="sshUserPassword" type="less_than_512_chars"/>
+  <xs:element name="sshPrivateKey" type="xs:string"/>
+  <xs:element name="sshUserKeyFile" type="xs:string"/>
+  <xs:element name="sshKeyPassphrase" type="xs:string"/>
+  <xs:element name="sshServerDirectory" type="unix_dirpath"/>
+  <xs:element name="sshHostKey" type="xs:string"/>
+  <xs:element name="summarySourceDirectory" type="abs_dirpath"/>
+  <xs:element name="summaryDestinationDirectory" type="abs_dirpath"/>
+  <xs:element name="openSummaryDestinationDirectory" type="xs:boolean"/>
+  <xs:element name="computerListHistoricalHTMLReport" type="xs:boolean"/>
+  <xs:element name="computerListHistoricalExcelReport" type="xs:boolean"/>
+  <xs:element name="computerListHTMLReport" type="xs:boolean"/>
+  <xs:element name="computerListExcelReport" type="xs:boolean"/>
+  <xs:element name="siteSummaryHTMLReport" type="xs:boolean"/>
+  <xs:element name="siteSummaryNonComplianceHTMLReport" type="xs:boolean"/>
+  <xs:element name="siteSummaryExcelReport" type="xs:boolean"/>
+  <xs:element name="siteSummaryNonComplianceExcelReport" type="xs:boolean"/>
+  <xs:element name="detailSummarySourceDirectory" type="abs_dirpath"/>
+  <xs:element name="detailSummaryDestinationDirectory" type="abs_dirpath"/>
+  <xs:element name="openDetailSummaryDestinationDirectory" type="xs:boolean"/>
+  <xs:element name="detailSummaryOVALSourceDirectory" type="abs_dirpath"/>
+  <xs:element name="detailSummaryOVALDestinationDirectory" type="abs_dirpath"/>
+  <xs:element name="openDetailSummaryOVALDestinationDirectory" type="xs:integer"/>
+  <xs:element name="allSettingsHTMLReportDetailSummary" type="xs:integer"/>
+  <xs:element name="allSettingsTextReportDetailSummary" type="xs:integer"/>
+  <xs:element name="nonComplianceHTMLReportDetailSummary" type="xs:integer"/>
+  <xs:element name="nonComplianceTextReportDetailSummary" type="xs:integer"/>
+  <xs:element name="allSettingsSummaryHTMLReportDetailSummary" type="xs:integer"/>
+  <xs:element name="allSettingsSummaryTextReportDetailSummary" type="xs:integer"/>
+  <xs:element name="nonComplianceSummaryHTMLReportDetailSummary" type="xs:integer"/>
+  <xs:element name="nonComplianceSummaryTextReportDetailSummary" type="xs:integer"/>
+  <xs:element name="deviationsEnabled" type="xs:boolean"/>
+  <xs:element name="thresholdsEnabled" type="xs:boolean"/>
+  <xs:element name="thresholdsProfile" type="xs:string"/>
+  <xs:element name="thresholdsUnlockCode">
+    <xs:complexType/>
+  </xs:element>
+  <xs:element name="frequency" type="xs:integer"/>
+  <xs:element name="schedule" type="xs:decimal"/>
+  <xs:element name="randomizeSSHTransfer" type="xs:integer"/>
+  <xs:element name="randomizeValue" type="xs:integer"/>
+  <xs:element name="timeout" type="xs:integer"/>
+  <xs:element name="lastServiceScan" type="xs:integer"/>
+  <xs:element name="nextServiceScan" type="xs:integer"/>
+  <xs:element name="remoteScanHostCooldown" type="xs:integer"/>
+  <xs:element name="remoteBaseLocation_unix" type="unix_dirpath"/>
+  <xs:element name="remoteStartupTimeout" type="xs:integer"/>
+  <xs:element name="remoteMaxThreads" type="xs:integer"/>
+  <xs:element name="remoteSSHAppWhitelist" type="xs:boolean"/>
+  <xs:element name="remoteMaxThreads32" type="xs:integer"/>
+  <xs:element name="debugExcludeDateTime" type="xs:integer"/>
+  <xs:element name="debugTraceEnabled" type="xs:integer"/>
+  <xs:element name="maxLogFileSize" type="xs:integer"/>
+  <xs:element name="maximumRecentReports" type="xs:integer"/>
+  <xs:element name="freeSpaceThreshold" type="xs:integer"/>
+  <xs:element name="validationThreshold" type="xs:integer"/>
+  <xs:element name="externalCmdTimeout" type="xs:integer"/>
+  <xs:element name="version" type="xs:string"/>
+  <xs:element name="timeStamp" type="xs:dateTime"/>
+  <xs:element name="newInstall" type="xs:boolean"/>
+  <xs:element name="registeredEmail" type="less_than_512_chars"/>
+  <xs:element name="registeredCode" type="less_than_512_chars"/>
+  <xs:element name="load" type="xs:integer"/>
+  <xs:element name="scan" type="xs:integer"/>
+  <xs:element name="expignore" type="xs:integer"/>
+  <xs:element name="showSeverityRoleTailoring" type="xs:boolean"/>
+  <xs:element name="scap12DBFilepath" type="rel_dirpath"/>
+  <xs:element name="iaControlDBLoaded" type="xs:integer"/>
+  <xs:element name="iaControlDBFilepath" type="rel_filepath"/>
+  <xs:element name="nvdcceFile" type="xs:string"/>
+  <xs:element name="cciFile" type="xs:string"/>
+  <xs:element name="xCoordinate" type="xs:integer"/>
+  <xs:element name="yCoordinate" type="xs:integer"/>
+  <xs:element name="windowHeight" type="xs:integer"/>
+  <xs:element name="windowWidth" type="xs:integer"/>
+  <xs:element name="httpProxyType" type="xs:integer"/>
+  <xs:element name="httpProxyURL" type="anyURI"/>
+  <xs:element name="appCheckForUpdates" type="xs:integer"/>
+  <xs:element name="appUpdateCheckFrequency" type="xs:integer"/>
+  <xs:element name="appUpdateLastCheck" type="xs:integer"/>
+  <xs:element name="appUpdateURL" type="xs:string"/>
+  <xs:element name="contentCheckForUpdates" type="xs:integer"/>
+  <xs:element name="contentUpdateCheckFrequency" type="xs:integer"/>
+  <xs:element name="contentUpdateLastCheck" type="xs:integer"/>
+  <xs:element name="includeDraftContent" type="xs:boolean"/>
+  <xs:element name="httpIgnoreSSLErrors" type="xs:boolean"/> 
+  <xs:element name="recentReport" type="xs:string"/>
+  <xs:element name="contentRepository" type="anyURI"/>
+  <xs:element name="contents">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:any processContents='skip' minOccurs='0' maxOccurs="unbounded" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ovalContents">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:any processContents='skip' minOccurs='0' maxOccurs="unbounded" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+  <xs:element name="ocilContents">
+    <xs:complexType>
+      <xs:sequence>
+        <xs:any processContents='skip' minOccurs='0' maxOccurs="unbounded" />
+      </xs:sequence>
+    </xs:complexType>
+  </xs:element>
+
+
+</xs:schema>

@@ -8,6 +8,11 @@
         FocusManager.FocusedElement="{Binding ElementName=MainTabControl}">
   <!-- Resources moved to App.xaml Application.Resources -->
 
+  <Window.InputBindings>
+    <KeyBinding Key="S" Modifiers="Ctrl" Command="{Binding SaveManualAnswerCommand}"/>
+    <KeyBinding Key="Z" Modifiers="Ctrl" Command="{Binding UndoAnswerCommand}"/>
+  </Window.InputBindings>
+
   <Grid Margin="12">
     <Grid.RowDefinitions>
       <RowDefinition Height="Auto"/>
@@ -92,5 +97,9 @@
         <views:FleetView />
       </TabItem>
     </TabControl>
+
+    <views:NotificationPanel Grid.Row="1" DataContext="{Binding Notifications}"
+                             VerticalAlignment="Top" HorizontalAlignment="Right"
+                             Panel.ZIndex="100"/>
   </Grid>
 </Window>

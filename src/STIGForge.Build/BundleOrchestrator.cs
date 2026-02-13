@@ -1,6 +1,8 @@
 using STIGForge.Apply;
 using STIGForge.Apply.PowerStig;
 using STIGForge.Core.Abstractions;
+using BundlePaths = STIGForge.Core.Constants.BundlePaths;
+using PackTypes = STIGForge.Core.Constants.PackTypes;
 using STIGForge.Core.Models;
 using STIGForge.Core.Services;
 using STIGForge.Verify;
@@ -39,11 +41,11 @@ public sealed class BundleOrchestrator
       throw new DirectoryNotFoundException("Bundle root not found: " + root);
 
     var verifyRoot = string.IsNullOrWhiteSpace(request.VerifyOutputRoot)
-      ? Path.Combine(root, "Verify")
+      ? Path.Combine(root, BundlePaths.VerifyDirectory)
       : request.VerifyOutputRoot!;
 
     Directory.CreateDirectory(verifyRoot);
-    Directory.CreateDirectory(Path.Combine(root, "Reports"));
+    Directory.CreateDirectory(Path.Combine(root, BundlePaths.ReportsDirectory));
 
     if (request.SkipSnapshot)
     {
@@ -54,7 +56,7 @@ public sealed class BundleOrchestrator
     var psd1Path = request.PowerStigDataFile;
     if (!string.IsNullOrWhiteSpace(request.PowerStigModulePath) && string.IsNullOrWhiteSpace(psd1Path))
     {
-      var generated = Path.Combine(root, "Apply", "PowerStigData", "stigdata.psd1");
+      var generated = Path.Combine(root, BundlePaths.ApplyDirectory, "PowerStigData", "stigdata.psd1");
       Directory.CreateDirectory(Path.GetDirectoryName(generated)!);
       var data = PowerStigDataGenerator.CreateDefault(request.PowerStigModulePath!, request.BundleRoot);
       var controls = LoadBundleControls(root);
@@ -80,7 +82,7 @@ public sealed class BundleOrchestrator
       PowerStigDataGeneratedPath = psd1Path
     }, ct).ConfigureAwait(false);
 
-    WritePhaseMarker(Path.Combine(root, "Apply", "apply.complete"), applyResult.LogPath);
+    WritePhaseMarker(Path.Combine(root, BundlePaths.ApplyDirectory, "apply.complete"), applyResult.LogPath);
 
     var coverageInputs = new List<VerificationCoverageInput>();
 
@@ -95,8 +97,7 @@ public sealed class BundleOrchestrator
         {
           Enabled = true,
           ToolRoot = request.EvaluateStigRoot!,
-          Arguments = request.EvaluateStigArgs ?? string.Empty,
-          WorkingDirectory = request.EvaluateStigRoot
+          Arguments = request.EvaluateStigArgs ?? string.Empty
         }
       }, ct).ConfigureAwait(false);
 
@@ -113,8 +114,8 @@ public sealed class BundleOrchestrator
 
     if (!string.IsNullOrWhiteSpace(request.ScapCommandPath))
     {
-      var scapOutput = Path.Combine(verifyRoot, "SCAP");
-      var toolName = string.IsNullOrWhiteSpace(request.ScapToolLabel) ? "SCAP" : request.ScapToolLabel!;
+      var scapOutput = Path.Combine(verifyRoot, PackTypes.Scap);
+      var toolName = string.IsNullOrWhiteSpace(request.ScapToolLabel) ? PackTypes.Scap : request.ScapToolLabel!;
       var scapWorkflow = await _verificationWorkflow.RunAsync(new VerificationWorkflowRequest
       {
         OutputRoot = scapOutput,
@@ -128,7 +129,7 @@ public sealed class BundleOrchestrator
         }
       }, ct).ConfigureAwait(false);
 
-      var scapRun = scapWorkflow.ToolRuns.FirstOrDefault(r => string.Equals(r.Tool, toolName, StringComparison.OrdinalIgnoreCase) || r.Tool.IndexOf("SCAP", StringComparison.OrdinalIgnoreCase) >= 0);
+      var scapRun = scapWorkflow.ToolRuns.FirstOrDefault(r => string.Equals(r.Tool, toolName, StringComparison.OrdinalIgnoreCase) || r.Tool.IndexOf(PackTypes.Scap, StringComparison.OrdinalIgnoreCase) >= 0);
       if (scapRun == null || !scapRun.Executed)
         throw new InvalidOperationException(toolName + " execution did not run successfully.");
 
@@ -139,8 +140,40 @@ public sealed class BundleOrchestrator
       });
     }
 
+    var dscScanEnabled = request.DscScanEnabled;
+    if (!dscScanEnabled && !string.IsNullOrWhiteSpace(ResolveDscMofPath(request)))
+      dscScanEnabled = true;
+
+    if (dscScanEnabled)
+    {
+      var dscMofPath = ResolveDscMofPath(request);
+      if (!string.IsNullOrWhiteSpace(dscMofPath))
+      {
+        var dscOutput = Path.Combine(verifyRoot, "DSC-Scan");
+        var dscToolLabel = string.IsNullOrWhiteSpace(request.DscScanToolLabel) ? "PowerSTIG-DSC" : request.DscScanToolLabel!;
+        var dscWorkflow = await _verificationWorkflow.RunAsync(new VerificationWorkflowRequest
+        {
+          OutputRoot = dscOutput,
+          ConsolidatedToolLabel = dscToolLabel,
+          DscScan = new DscScanWorkflowOptions
+          {
+            Enabled = true,
+            MofPath = dscMofPath!,
+            Verbose = request.DscScanVerbose,
+            ToolLabel = dscToolLabel
+          }
+        }, ct).ConfigureAwait(false);
+
+        coverageInputs.Add(new VerificationCoverageInput
+        {
+          ToolLabel = dscToolLabel,
+          ReportPath = dscWorkflow.ConsolidatedJsonPath
+        });
+      }
+    }
+
     if (coverageInputs.Count > 0)
-      _artifactAggregation.WriteCoverageArtifacts(Path.Combine(root, "Reports"), coverageInputs);
+      _artifactAggregation.WriteCoverageArtifacts(Path.Combine(root, BundlePaths.ReportsDirectory), coverageInputs);
 
     if (_audit != null)
     {
@@ -166,22 +199,15 @@ public sealed class BundleOrchestrator
 
   private static IReadOnlyList<STIGForge.Core.Models.ControlRecord> LoadBundleControls(string bundleRoot)
   {
-    var manifestPath = Path.Combine(bundleRoot, "Manifest", "manifest.json");
+    var manifestPath = Path.Combine(bundleRoot, BundlePaths.ManifestDirectory, "manifest.json");
     if (!File.Exists(manifestPath)) return Array.Empty<STIGForge.Core.Models.ControlRecord>();
 
-    var packDir = Path.Combine(bundleRoot, "Manifest", "pack_controls.json");
-    if (!File.Exists(packDir)) return Array.Empty<STIGForge.Core.Models.ControlRecord>();
-
-    var json = File.ReadAllText(packDir);
-    var controls = System.Text.Json.JsonSerializer.Deserialize<List<STIGForge.Core.Models.ControlRecord>>(json,
-      new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-    if (controls == null) return Array.Empty<STIGForge.Core.Models.ControlRecord>();
-    return controls;
+    return PackControlsReader.Load(bundleRoot);
   }
 
   private static IReadOnlyList<STIGForge.Core.Models.PowerStigOverride> LoadBundlePowerStigOverrides(string bundleRoot)
   {
-    var overlaysPath = Path.Combine(bundleRoot, "Manifest", "overlays.json");
+    var overlaysPath = Path.Combine(bundleRoot, BundlePaths.ManifestDirectory, "overlays.json");
     if (!File.Exists(overlaysPath)) return Array.Empty<STIGForge.Core.Models.PowerStigOverride>();
 
     var json = File.ReadAllText(overlaysPath);
@@ -199,7 +225,7 @@ public sealed class BundleOrchestrator
   private static string? ResolveApplyScript(string bundleRoot, string? overridePath)
   {
     if (!string.IsNullOrWhiteSpace(overridePath)) return overridePath;
-    var candidate = Path.Combine(bundleRoot, "Apply", "RunApply.ps1");
+    var candidate = Path.Combine(bundleRoot, BundlePaths.ApplyDirectory, "RunApply.ps1");
     return File.Exists(candidate) ? candidate : null;
   }
 
@@ -214,10 +240,10 @@ public sealed class BundleOrchestrator
     if (!string.IsNullOrWhiteSpace(request.PowerStigModulePath))
     {
       args.Add("-ModulesPath");
-      args.Add(Quote(Path.Combine(bundleRoot, "Apply", "Modules")));
+      args.Add(Quote(Path.Combine(bundleRoot, BundlePaths.ApplyDirectory, "Modules")));
     }
 
-    var preflight = Path.Combine(bundleRoot, "Apply", "Preflight", "Preflight.ps1");
+    var preflight = Path.Combine(bundleRoot, BundlePaths.ApplyDirectory, "Preflight", "Preflight.ps1");
     if (File.Exists(preflight))
     {
       args.Add("-PreflightScript");
@@ -270,6 +296,21 @@ public sealed class BundleOrchestrator
       Machine = Environment.MachineName,
       Timestamp = DateTimeOffset.Now
     }, ct).ConfigureAwait(false);
+  }
+
+  private static string? ResolveDscMofPath(OrchestrateRequest request)
+  {
+    if (!string.IsNullOrWhiteSpace(request.DscMofPath) && Directory.Exists(request.DscMofPath))
+      return request.DscMofPath;
+
+    if (!string.IsNullOrWhiteSpace(request.PowerStigOutputPath) && Directory.Exists(request.PowerStigOutputPath))
+      return request.PowerStigOutputPath;
+
+    var defaultDscDir = Path.Combine(request.BundleRoot, BundlePaths.ApplyDirectory, "Dsc");
+    if (Directory.Exists(defaultDscDir) && Directory.GetFiles(defaultDscDir, "*.mof", SearchOption.AllDirectories).Length > 0)
+      return defaultDscDir;
+
+    return null;
   }
 
   private static void WritePhaseMarker(string path, string logPath)

@@ -32,10 +32,10 @@ public sealed class EvaluateStigRunner
 
     var output = process.StandardOutput.ReadToEnd();
     var error = process.StandardError.ReadToEnd();
-    if (!process.WaitForExit(30000))
+    if (!process.WaitForExit(600000))
     {
       process.Kill();
-      throw new TimeoutException("Process did not exit within 30 seconds.");
+      throw new TimeoutException("Evaluate-STIG process did not exit within 10 minutes.");
     }
 
     return new VerifyRunResult

@@ -2,6 +2,7 @@ using System.IO;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Serilog;
 using STIGForge.Build;
 using STIGForge.Content.Import;
@@ -76,7 +77,9 @@ public partial class App : Application
           services.AddSingleton<STIGForge.Apply.Reboot.RebootCoordinator>();
           services.AddSingleton<STIGForge.Apply.ApplyRunner>();
           services.AddSingleton<EvaluateStigRunner>();
+          services.AddSingleton<IScapRunner, ScapRunner>();
           services.AddSingleton<ScapRunner>();
+          services.AddSingleton<DscScanRunner>();
           services.AddSingleton<IVerificationWorkflowService, VerificationWorkflowService>();
           services.AddSingleton<VerificationArtifactAggregationService>();
           services.AddSingleton<IBundleMissionSummaryService, BundleMissionSummaryService>();
@@ -91,6 +94,8 @@ public partial class App : Application
           services.AddSingleton<FleetService>(sp =>
             new FleetService(sp.GetRequiredService<ICredentialStore>()));
           services.AddSingleton<OverlayEditorViewModel>();
+          services.AddSingleton<ManualAnswerService>();
+          services.AddSingleton<ControlAnnotationService>();
 
           services.AddSingleton<MainViewModel>(sp => new MainViewModel(
             sp.GetRequiredService<ContentPackImporter>(),
@@ -106,9 +111,12 @@ public partial class App : Application
             sp.GetRequiredService<STIGForge.Evidence.EvidenceCollector>(),
             sp.GetRequiredService<IBundleMissionSummaryService>(),
             sp.GetRequiredService<VerificationArtifactAggregationService>(),
+            sp.GetRequiredService<ManualAnswerService>(),
+            sp.GetRequiredService<ControlAnnotationService>(),
             sp.GetRequiredService<IAuditTrailService>(),
             sp.GetRequiredService<ScheduledTaskService>(),
-            sp.GetRequiredService<FleetService>()));
+            sp.GetRequiredService<FleetService>(),
+            sp.GetService<ILogger<MainViewModel>>()));
           services.AddSingleton<MainWindow>();
         })
         .Build();

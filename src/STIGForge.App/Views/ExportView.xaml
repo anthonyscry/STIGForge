@@ -148,11 +148,21 @@
                         ToolTipService.ToolTip="Open the bundle folder in Windows Explorer."/>
               </WrapPanel>
               <TextBlock Text="Recent Bundles" Margin="0,0,0,4"/>
+              <ListBox ItemsSource="{Binding RecentBundles}" SelectedItem="{Binding SelectedRecentBundle}"
+                       MaxHeight="120" MinHeight="28" Margin="0,0,0,4"
+                       Background="{DynamicResource SurfaceBrush}"
+                       BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                       AutomationProperties.Name="Recent bundles"
+                       ToolTipService.ToolTip="Click a bundle, then press Use.">
+                <ListBox.ItemTemplate>
+                  <DataTemplate>
+                    <TextBlock Text="{Binding}" TextTrimming="CharacterEllipsis"
+                               ToolTipService.ToolTip="{Binding}"/>
+                  </DataTemplate>
+                </ListBox.ItemTemplate>
+              </ListBox>
               <WrapPanel Margin="0,0,0,8">
-                <ComboBox Width="520" ItemsSource="{Binding RecentBundles}" SelectedItem="{Binding SelectedRecentBundle}"
-                          AutomationProperties.Name="Recent bundles"
-                          ToolTipService.ToolTip="Pick a bundle you built earlier without having to rebuild it."/>
-                <Button Content="Use" MinWidth="80" Height="28" Padding="14,0" Margin="6,0,0,0"
+                <Button Content="Use Selected" MinWidth="110" Height="28" Padding="14,0"
                         Command="{Binding UseRecentBundleCommand}" AutomationProperties.Name="Use recent bundle"
                         ToolTipService.ToolTip="Load the selected recent bundle as the active bundle."/>
               </WrapPanel>
@@ -248,19 +258,22 @@
                         ToolTipService.ToolTip="Verify that the audit log hasn't been tampered with. Each entry is chained so any edits would be detected."/>
               </WrapPanel>
               <TextBlock Text="{Binding AuditVerifyResult}" FontWeight="SemiBold" Margin="0,0,0,8"/>
-              <ListView ItemsSource="{Binding AuditEntries}" MaxHeight="260" MinHeight="80">
-                <ListView.View>
-                  <GridView>
-                    <GridViewColumn Header="Id" DisplayMemberBinding="{Binding Id}"/>
-                    <GridViewColumn Header="Time" DisplayMemberBinding="{Binding Timestamp}" Width="140"/>
-                    <GridViewColumn Header="Act" DisplayMemberBinding="{Binding Action}"/>
-                    <GridViewColumn Header="Target" DisplayMemberBinding="{Binding Target}" Width="180"/>
-                    <GridViewColumn Header="Res" DisplayMemberBinding="{Binding Result}"/>
-                    <GridViewColumn Header="User" DisplayMemberBinding="{Binding User}"/>
-                    <GridViewColumn Header="Detail" DisplayMemberBinding="{Binding Detail}" Width="260"/>
-                  </GridView>
-                </ListView.View>
-              </ListView>
+               <ListView ItemsSource="{Binding AuditEntries}" MaxHeight="260" MinHeight="80"
+                         VirtualizingPanel.IsVirtualizing="True"
+                         VirtualizingPanel.VirtualizationMode="Recycling"
+                         ScrollViewer.CanContentScroll="True">
+                 <ListView.View>
+                   <GridView>
+                     <GridViewColumn Header="Id" DisplayMemberBinding="{Binding Id}"/>
+                     <GridViewColumn Header="Time" DisplayMemberBinding="{Binding Timestamp}" Width="140"/>
+                     <GridViewColumn Header="Act" DisplayMemberBinding="{Binding Action}"/>
+                     <GridViewColumn Header="Target" DisplayMemberBinding="{Binding Target}" Width="180"/>
+                     <GridViewColumn Header="Res" DisplayMemberBinding="{Binding Result}"/>
+                     <GridViewColumn Header="User" DisplayMemberBinding="{Binding User}"/>
+                     <GridViewColumn Header="Detail" DisplayMemberBinding="{Binding Detail}" Width="260"/>
+                   </GridView>
+                 </ListView.View>
+               </ListView>
             </StackPanel>
           </ScrollViewer>
         </TabItem>

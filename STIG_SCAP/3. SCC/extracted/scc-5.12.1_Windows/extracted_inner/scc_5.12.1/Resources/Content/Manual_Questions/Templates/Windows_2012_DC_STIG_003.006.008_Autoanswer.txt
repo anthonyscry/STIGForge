@@ -1,0 +1,3758 @@
+################################################################################
+DOCUMENT         : Windows_2012_DC_STIG
+VERSION          : 003.006.008
+CHECKSUM         : bdb2978e87373f9102942a317e98dc072988b6e8c795601a3aba9ae97cd6bbbe
+MANUAL QUESTIONS : 106
+
+IMPORTANT: Make sure to save the completed version of this file to: 
+<SCC Install>/Resources/Content/Manual_Questions/Completed_Files
+
+This file contains all of the non-automated STIG requirements found in the STIG.
+Results from this file will be combined with automated checks in SCC to provide
+complete STIG compliance results.
+
+This file will be programmaticaly imported, so do not modify anything in this file
+except for placing an '[X]' to select a Single answer, and entering text comments.
+
+The list of questions is printed in order of severity, listing CAT I (High), then CAT II, etc..
+
+################################################################################
+
+QUESTION         : 1 of 106
+TITLE            : CAT I, V-226031, SV-226031r794370, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:501
+RULE             : Users with Administrative privileges must have separate accounts for administrative duties and normal operational tasks.
+QUESTION_TEXT    : Verify each user with administrative privileges has been assigned a unique administrative account separate from their standard user account. 
+
+If users with administrative privileges do not have separate accounts for administrative functions and standard user functions, this is a finding.
+
+References:
+SV-51576
+V-36659
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 1 *******************************
+
+QUESTION         : 2 of 106
+TITLE            : CAT I, V-226034, SV-226034r794692, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:1101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:1101
+RULE             : Administrative accounts must not be used with applications that access the Internet, such as web browsers, or with potential Internet sources, such as email.
+QUESTION_TEXT    : Determine whether administrative accounts are prevented from using applications that access the Internet, such as web browsers, or with potential Internet sources, such as email, except as necessary for local service administration.
+
+The organization must have a policy that prohibits administrative accounts from using applications that access the Internet, such as web browsers, or with potential Internet sources, such as email, except as necessary for local service administration.  The policy should define specific exceptions for local service administration. These exceptions may include HTTP(S)-based tools that are used for the administration of the local system, services, or attached devices.
+
+Technical measures such as the removal of applications or application whitelisting must be used where feasible to prevent the use of applications that access the Internet.  
+
+If accounts with administrative privileges are not prevented from using applications that access the Internet or with potential Internet sources, this is a finding.
+
+References:
+SV-51578
+V-36451
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 2 *******************************
+
+QUESTION         : 3 of 106
+TITLE            : CAT I, V-226048, SV-226048r794379, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:3901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:3901
+RULE             : The Windows 2012 / 2012 R2 system must use an anti-virus program.
+QUESTION_TEXT    : Verify an anti-virus solution is installed on the system. The anti-virus solution may be bundled with an approved host-based security solution.
+
+If there is no anti-virus solution installed on the system, this is a finding.
+
+References:
+SV-52103
+V-1074
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 3 *******************************
+
+QUESTION         : 4 of 106
+TITLE            : CAT I, V-226071, SV-226071r877392, SRG-OS-000324-GPOS-00125
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:8501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:8501
+RULE             : The Active Directory SYSVOL directory must have the proper access control permissions.
+QUESTION_TEXT    : Verify the permissions on the SYSVOL directory.
+
+Open a command prompt.
+Run "net share".
+Make note of the directory location of the SYSVOL share.  
+
+By default this will be \Windows\SYSVOL\sysvol.  For this requirement, permissions will be verified at the first SYSVOL directory level.
+
+Alternately, use Icacls.exe to view the permissions of the SYSVOL directory.
+Open a command prompt.
+Run "icacls c:\Windows\SYSVOL
+The following results should be displayed:
+
+NT AUTHORITY\Authenticated Users:(RX)
+NT AUTHORITY\Authenticated Users:(OI)(CI)(IO)(GR,GE)
+BUILTIN\Server Operators:(RX)
+BUILTIN\Server Operators:(OI)(CI)(IO)(GR,GE)
+BUILTIN\Administrators:(M,WDAC,WO)
+BUILTIN\Administrators:(OI)(CI)(IO)(F)
+NT AUTHORITY\SYSTEM:(F)
+NT AUTHORITY\SYSTEM:(OI)(CI)(IO)(F)
+BUILTIN\Administrators:(M,WDAC,WO)
+CREATOR OWNER:(OI)(CI)(IO)(F)
+
+(RX) - Read & execute 
+Run "icacls /help" to view definitions of other permission codes.
+
+If the above results are not displayed, this is a finding.
+
+References:
+SV-51176
+V-39331
+CCI-002235
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 4 *******************************
+
+QUESTION         : 5 of 106
+TITLE            : CAT I, V-226072, SV-226072r877392, SRG-OS-000324-GPOS-00125
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:8701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:8701
+RULE             : Active Directory Group Policy objects must have proper access control permissions.
+QUESTION_TEXT    : Verify the permissions on Group Policy objects.
+
+Open "Group Policy Management".  (Available from various menus or run "gpmc.msc".)
+Navigate to "Group Policy Objects" in the domain being reviewed (Forest > Domains > Domain). 
+
+For each Group Policy object: 
+Select the Group Policy object item in the left pane.
+Select the Delegation tab in the right pane.
+Select the Advanced button.
+
+If any standard user accounts or groups have greater than Allow permissions of Read and Apply group policy, this is a finding.  
+
+Other access permissions that allow the objects to be updated are considered findings unless specifically documented by the ISSO.
+
+The default permissions noted below meet this requirement. 
+
+The permissions shown are at the summary level.  More detailed permissions can be viewed by selecting the next Advanced button, selecting the desired Permission entry, and the Edit button.
+
+Authenticated Users - Read, Apply group policy, Special permissions
+
+The Special permissions for Authenticated Users are for Read type Properties.  If detailed permissions include any Create, Delete, Modify, or Write Permissions or Properties, this is a finding.
+
+The Special permissions for the following default groups are not the focus of this requirement and may include a wide range of permissions and properties.
+
+CREATOR OWNER - Special permissions
+
+SYSTEM - Read, Write, Create all child objects, Delete all child objects, Special permissions
+
+Domain Admins - Read, Write, Create all child objects, Delete all child objects, Special permissions
+
+Enterprise Admins - Read, Write, Create all child objects, Delete all child objects, Special permissions
+
+ENTERPRISE DOMAIN CONTROLLERS - Read, Special permissions
+
+The Domain Admins and Enterprise Admins will not have the "Delete all child objects" permission on the two default group policy objects: Default Domain Policy and Default Domain Controllers Policy.  They will have this permission on created group policy objects.
+
+The Anonymous Logon, Guests, or any group that contains those groups (in which users are not uniquely identified and authenticated) must not have any access permissions unless the group and justification is explicitly documented with the ISSO.
+
+References:
+SV-51177
+V-33673
+CCI-002235
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 5 *******************************
+
+QUESTION         : 6 of 106
+TITLE            : CAT I, V-226073, SV-226073r877392, SRG-OS-000324-GPOS-00125
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:8901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:8901
+RULE             : The Active Directory Domain Controllers Organizational Unit (OU) object must have the proper access control permissions.
+QUESTION_TEXT    : Verify the permissions on the Domain Controllers OU.
+
+Open "Active Directory Users and Computers". (Available from various menus or run "dsa.msc".)
+
+Select Advanced Features in the View menu if not previously selected.
+
+Navigate to the Domain Controllers OU (folder in folder icon).
+
+Right click the OU and select Properties.
+
+Select the Security tab.
+
+If the permissions on the Domain Controllers OU do not restrict changes to System, Domain Admins, Enterprise Admins and Administrators, this is a finding.
+	
+The default permissions listed below satisfy this requirement.
+
+Domains supporting Microsoft Exchange will have additional Exchange related permissions on the Domain Controllers OU.  These may include some change related permissions and are not a finding.
+
+The permissions shown are at the summary level. More detailed permissions can be viewed by selecting the Advanced button, selecting the desired Permission entry, and the Edit button.
+
+SELF - Special permissions
+
+Authenticated Users - Read, Special permissions
+The Special permissions for Authenticated Users are Read types. If detailed permissions include any Create, Delete, Modify, or Write Permissions or Properties, this is a finding.
+
+SYSTEM - Full Control
+
+Domain Admins - Read, Write, Create all child objects, Generate resultant set of policy (logging), Generate resultant set of policy (planning), Special permissions
+
+Enterprise Admins - Full Control
+
+Administrators - Read, Write, Create all child objects, Generate resultant set of policy (logging), Generate resultant set of policy (planning), Special permissions
+
+Pre-Windows 2000 Compatible Access - Special permissions
+The Special permissions for Pre-Windows 2000 Compatible Access are Read types. If detailed permissions include any Create, Delete, Modify, or Write Permissions or Properties, this is a finding.
+
+ENTERPRISE DOMAIN CONTROLLERS - Read, Special permissions
+
+References:
+SV-51178
+V-39332
+CCI-002235
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 6 *******************************
+
+QUESTION         : 7 of 106
+TITLE            : CAT I, V-226074, SV-226074r877392, SRG-OS-000324-GPOS-00125
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:9101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:9101
+RULE             : Domain created Active Directory Organizational Unit (OU) objects must have proper access control permissions.
+QUESTION_TEXT    : Verifying the permissions on domain defined OUs.
+
+Open "Active Directory Users and Computers".  (Available from various menus or run "dsa.msc".)
+Ensure Advanced Features is selected in the View menu.
+
+For each OU that is defined (folder in folder icon) excluding the Domain Controllers OU:
+Right click the OU and select Properties.
+Select the Security tab.
+
+If the permissions on the OU are not at least as restrictive as those below, this is a finding.
+
+The permissions shown are at the summary level.  More detailed permissions can be viewed by selecting the next Advanced button, selecting the desired Permission entry and the Edit button.
+
+Self - Special permissions
+
+Authenticated Users - Read, Special permissions
+The Special permissions for Authenticated Users are Read type.  If detailed permissions include any Create, Delete, Modify, or Write Permissions or Properties, this is a finding.
+
+SYSTEM - Full Control
+
+Domain Admins - Full Control
+
+Enterprise Admins - Full Control
+
+Administrators - Read, Write, Create all child objects, Generate resultant set of policy (logging), Generate resultant set of policy (planning), Special permissions
+
+Pre-Windows 2000 Compatible Access - Special permissions
+The Special permissions for Pre-Windows 2000 Compatible Access are for Read types.  If detailed permissions include any Create, Delete, Modify, or Write Permissions or Properties, this is a finding.
+
+ENTERPRISE DOMAIN CONTROLLERS - Read, Special permissions
+
+If an ISSO-approved distributed administration model (help desk or other user support staff) is implemented, permissions above Read may be allowed for groups documented by the ISSO.
+
+References:
+SV-51179
+V-39333
+CCI-002235
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 7 *******************************
+
+QUESTION         : 8 of 106
+TITLE            : CAT I, V-226082, SV-226082r794802, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:10701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:10701
+RULE             : Directory data (outside the root DSE) of a non-public directory must be configured to prevent anonymous access.
+QUESTION_TEXT    : Verify anonymous access is not allowed to the AD domain naming context.
+
+Open a command prompt (not elevated).
+Run "ldp.exe".
+From the Connection menu, select Bind.
+Clear the User, Password, and Domain fields.
+Select Simple bind for the Bind type, Click OK.
+
+Confirmation of anonymous access will be displayed at the end:
+res = ldap_simple_bind_s
+Authenticated as: 'NT AUTHORITY\ANONYMOUS LOGON'
+
+From the Browse menu, select Search.
+In the Search dialog, enter the DN of the domain naming context (generally something like "dc=disaost,dc=mil") in the Base DN field.
+Clear the Attributes field and select Run.
+
+Error messages should display related to bind and user not authenticated.
+
+If attribute data is displayed, anonymous access is enabled to the domain naming context and this is a finding.
+
+References:
+SV-51187
+V-14798
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 8 *******************************
+
+QUESTION         : 9 of 106
+TITLE            : CAT I, V-226237, SV-226237r921967, SRG-OS-000191-GPOS-00080
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:40301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:40301
+RULE             : Systems must be maintained at a supported OS or service pack level.
+QUESTION_TEXT    : Run "winver.exe".
+
+If the "About Windows" displays "Microsoft Windows Server Version 6.3 (Build 9600)" or less, this is a finding.
+
+Windows Server 2012 and 2012 R2 support ended on October 10, 2023. If Extended Security Updates (ESUs up to three years) have not been acquired, this is a finding.
+
+References:
+V-1073
+SV-53189
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 9 *******************************
+
+QUESTION         : 10 of 106
+TITLE            : CAT I, V-226238, SV-226238r877392, SRG-OS-000324-GPOS-00125
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:40501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:40501
+RULE             : Only administrators responsible for the domain controller must have Administrator rights on the system.
+QUESTION_TEXT    : Review the Administrators group. Only the appropriate administrator groups or accounts responsible for administration of the system may be members of the group.
+
+Standard user accounts must not be members of the local administrator group.
+
+If prohibited accounts are members of the local administrators group, this is a finding.
+
+The built-in Administrator account or other required administrative accounts would not be a finding.
+
+References:
+SV-51157
+V-1127
+CCI-002235
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 10 *******************************
+
+QUESTION         : 11 of 106
+TITLE            : CAT I, V-226239, SV-226239r794530, SRG-OS-000080-GPOS-00048
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:40701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:40701
+RULE             : Local volumes must use a format that supports NTFS attributes.
+QUESTION_TEXT    : Open "Computer Management".
+
+Select "Disk Management" under "Storage".
+
+For each local volume, if the file system does not indicate "NTFS", this is a finding.
+
+"ReFS" (Resilient File System) is also acceptable and would not be a finding.
+
+“CSV” (Cluster Share Volumes) is also acceptable and would not be a finding.
+
+This does not apply to system partitions such as the Recovery and EFI System Partition.
+
+References:
+SV-52843
+V-1081
+CCI-000213
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 11 *******************************
+
+QUESTION         : 12 of 106
+TITLE            : CAT I, V-226246, SV-226246r794535, SRG-OS-000104-GPOS-00051
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:42101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:42101
+RULE             : Windows 2012/2012 R2 accounts must be configured to require passwords.
+QUESTION_TEXT    : Review the password required status for enabled user accounts.
+
+Open "Windows PowerShell".
+
+Domain Controllers:
+
+Enter "Get-ADUser -Filter * -Properties PasswordNotRequired | Where PasswordNotRequired -eq True | FT Name, PasswordNotRequired, Enabled".
+
+Exclude disabled accounts (e.g., Guest) and Trusted Domain Objects (TDOs).
+
+If "PasswordNotRequired" is "True" for any enabled user account, this is a finding.
+
+Member servers and standalone systems:
+
+Enter 'Get-CimInstance -Class Win32_Useraccount -Filter "PasswordRequired=False and LocalAccount=True" | FT Name, PasswordRequired, Disabled, LocalAccount'.
+
+Exclude disabled accounts (e.g., Guest).
+
+If any enabled user accounts are returned with a "PasswordRequired" status of "False", this is a finding.
+
+References:
+SV-52940
+V-7002
+CCI-000764
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 12 *******************************
+
+QUESTION         : 13 of 106
+TITLE            : CAT I, V-226258, SV-226258r794579, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:44301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:44301
+RULE             : File Transfer Protocol (FTP) servers must be configured to prevent access to the system drive.
+QUESTION_TEXT    : If FTP is not installed on the system, this is NA.
+
+Determine the IP address and port number assigned to FTP sites from documentation or configuration.
+
+If Microsoft FTP is used, open "Internet Information Services (IIS) Manager".
+
+Select "Sites" under the server name.
+
+For any sites that reference FTP, view the Binding information for IP address and port.  The standard port for FTP is 21, however this may be changed.
+
+Open a "Command Prompt".
+
+Access the FTP site and review accessible directories with the following commands: 
+
+Note: Returned results may vary depending on the FTP server software.
+
+C:\> "ftp"
+ftp> "Open IP Address Port"
+(Substituting [IP Address] and [Port] with the information previously identified.  If no IP Address was listed in the Binding, attempt using "localhost".)
+(Connected to IP Address
+220 Microsoft FTP Service)
+
+User (IP Address): "FTP User"
+(Substituting [FTP User] with an account identified that is allowed access.  If it was determined that anonymous access was allowed to the site [see V-1120], also review access using "anonymous".)
+ (331 Password required)
+
+Password: "Password"
+(Substituting [Password] with password for the account attempting access.)
+(230 User ftpuser logged in.)
+
+ftp> "Dir"
+
+If the FTP session indicates access to areas of the system other than the specific folder for FTP data, such as the root of the drive, Program Files or Windows directories, this is a finding.
+
+References:
+SV-52212
+V-1121
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 13 *******************************
+
+QUESTION         : 14 of 106
+TITLE            : CAT I, V-226265, SV-226265r794525, SRG-OS-000066-GPOS-00034
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:45701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:45701
+RULE             : Domain Controller PKI certificates must be issued by the DoD PKI or an approved External Certificate Authority (ECA).
+QUESTION_TEXT    : Verify the source of the domain controller's server certificate.
+
+Run "mmc".
+Select "Add/Remove Snap-in" from the File menu.
+Select "Certificates" in the left pane and click the "Add >" button.
+Select "Computer Account", click "Next".
+Select the appropriate option for "Select the computer you want this snap-in to manage.", click "Finish".
+Click "OK".
+Select and expand the Certificates (Local Computer) entry in the left pane.
+Select and expand the Personal entry in the left pane.
+Select the Certificates entry in the left pane.
+In the right pane, examine the Issued By field for the certificate to determine the issuing CA.
+
+If the Issued By field of the PKI certificate being used by the domain controller does not indicate the issuing Certificate Authority (CA) is part of the DoD PKI or an approved ECA, this is a finding.
+
+
+There are multiple sources from which lists of valid DoD CAs and approved ECAs can be obtained: 
+
+The Global Directory Service (GDS) website provides an online source. The address for this site is https://crl.gds.disa.mil.
+
+DoD Public Key Enablement (PKE) Engineering Support maintains the InstallRoot utility to manage DoD supported root certificates on Windows computers which includes a list of authorized CAs.  The utility package can be downloaded from the PKI and PKE Tools page on IASE.  
+http://iase.disa.mil/pki-pke/function_pages/tools.html
+
+References:
+V-14820
+SV-51190
+CCI-000185
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 14 *******************************
+
+QUESTION         : 15 of 106
+TITLE            : CAT I, V-226266, SV-226266r794526, SRG-OS-000066-GPOS-00034
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:45901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:45901
+RULE             : PKI certificates associated with user accounts must be issued by the DoD PKI or an approved External Certificate Authority (ECA).
+QUESTION_TEXT    : Open "PowerShell" as Administrator.
+
+Enter "Get-ADUser -Filter * | FT Name, UserPrincipalName, Enabled -AutoSize".
+
+Review the User Principal Name (UPN) of user accounts, including administrators. 
+
+Exclude the built-in accounts such as Administrator and Guest.
+
+If the User Principal Name (UPN) is not in the format of an individual's identifier for the certificate type and for the appropriate domain suffix, this is a finding.
+
+For standard NIPRNET certificates the individual's identifier is in the format of an Electronic Data Interchange - Personnel Identifier (EDI-PI).
+
+Alt Tokens and other certificates may use a different UPN format than the EDI-PI, which vary by organization.  Verify these with the organization.
+
+NIPRNET Example: 
+Name - User Principal Name
+User1 - 1234567890@mil
+
+See PKE documentation for other network domain suffixes.
+
+If the mappings are to certificates issued by a CA authorized by the Component's CIO, this is a CAT II finding.
+
+References:
+SV-51191
+V-26683
+CCI-000185
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 15 *******************************
+
+QUESTION         : 16 of 106
+TITLE            : CAT I, V-226314, SV-226314r794600, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:55501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:55501
+RULE             : Anonymous SID/Name translation must not be allowed.
+QUESTION_TEXT    : Verify the effective setting in Local Group Policy Editor.
+Run "gpedit.msc".
+
+Navigate to Local Computer Policy -> Computer Configuration -> Windows Settings -> Security Settings -> Local Policies -> Security Options.
+
+If the value for "Network access: Allow anonymous SID/Name translation" is not set to "Disabled", this is a finding.
+
+References:
+SV-52882
+V-3337
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 16 *******************************
+
+QUESTION         : 17 of 106
+TITLE            : CAT II, V-226029, SV-226029r877377, SRG-OS-000480-GPOS-00229
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:101
+RULE             : Server systems must be located in a controlled access area, accessible only to authorized personnel.
+QUESTION_TEXT    : Verify servers are located in controlled access areas that are accessible only to authorized personnel.  If systems are not adequately protected, this is a finding.
+
+References:
+SV-52838
+V-1070
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 17 *******************************
+
+QUESTION         : 18 of 106
+TITLE            : CAT II, V-226030, SV-226030r794369, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:301
+RULE             : Users with administrative privilege must be documented.
+QUESTION_TEXT    : Review the necessary documentation that identifies the members of the Administrators group.  If a list of all users belonging to the Administrators group is not maintained with the ISSO, this is a finding.
+
+References:
+SV-51575
+V-36658
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 18 *******************************
+
+QUESTION         : 19 of 106
+TITLE            : CAT II, V-226032, SV-226032r794371, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:701
+RULE             : Policy must require that system administrators (SAs) be trained for the operating systems used by systems under their control.
+QUESTION_TEXT    : Determine whether the site has a policy that requires SAs be trained for all operating systems running on systems under their control.  If  the site does not have a policy requiring SAs be trained for all operating systems under their control, this is a finding.
+
+References:
+SV-51577
+V-36666
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 19 *******************************
+
+QUESTION         : 20 of 106
+TITLE            : CAT II, V-226033, SV-226033r794811, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:901
+RULE             : Windows 2012/2012 R2 password for the built-in Administrator account must be changed at least annually or when a member of the administrative team leaves the organization.
+QUESTION_TEXT    : Review the password last set date for the built-in Administrator account.
+
+Domain controllers:
+
+Open "Windows PowerShell".
+
+Enter "Get-ADUser -Filter * -Properties SID, PasswordLastSet | Where SID -Like "*-500" | FL Name, SID, PasswordLastSet".
+
+If the "PasswordLastSet" date is greater than one year old, this is a finding.
+
+Member servers and standalone systems:
+
+Open "Windows PowerShell" or "Command Prompt".
+
+Enter 'Net User [account name] | Find /i "Password Last Set"', where [account name] is the name of the built-in administrator account.
+
+(The name of the built-in Administrator account must be changed to something other than "Administrator" per STIG requirements.)
+
+If the "PasswordLastSet" date is greater than one year old, this is a finding.
+
+References:
+SV-52942
+V-14225
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 20 *******************************
+
+QUESTION         : 21 of 106
+TITLE            : CAT II, V-226035, SV-226035r794374, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:1301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:1301
+RULE             : Members of the Backup Operators group must be documented.
+QUESTION_TEXT    : If no accounts are members of the Backup Operators group, this is NA.
+
+Any accounts that are members of the Backup Operators group, including application accounts, must be documented with the ISSO.  If documentation of accounts that are members of the Backup Operators group is not maintained this is a finding.
+
+References:
+SV-52156
+V-1168
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 21 *******************************
+
+QUESTION         : 22 of 106
+TITLE            : CAT II, V-226036, SV-226036r794375, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:1501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:1501
+RULE             : Members of the Backup Operators group must have separate accounts for backup duties and normal operational tasks.
+QUESTION_TEXT    : If no accounts are members of the Backup Operators group, this is NA.
+
+Verify users with accounts in the Backup Operators group have a separate user account for backup functions and for performing normal user tasks.  If users with accounts in the Backup Operators group do not have separate accounts for backup functions and standard user functions, this is a finding.
+
+References:
+SV-52157
+V-40198
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 22 *******************************
+
+QUESTION         : 23 of 106
+TITLE            : CAT II, V-226037, SV-226037r794297, SRG-OS-000078-GPOS-00046
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:1701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:1701
+RULE             : Policy must require application account passwords be at least 15 characters in length.
+QUESTION_TEXT    : Verify the site has a policy to ensure passwords for manually managed application/service accounts are at least 15 characters in length.  If such a policy does not exist or has not been implemented, this is a finding.
+
+References:
+V-36661
+SV-51579
+CCI-000205
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 23 *******************************
+
+QUESTION         : 24 of 106
+TITLE            : CAT II, V-226038, SV-226038r794376, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:1901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:1901
+RULE             : Windows 2012/2012 R2 manually managed application account passwords must be changed at least annually or when a system administrator with knowledge of the password leaves the organization.
+QUESTION_TEXT    : Determine if manually managed application/service accounts exist. If none exist, this is NA.
+
+If passwords for manually managed application/service accounts are not changed at least annually or when an administrator with knowledge of the password leaves the organization, this is a finding.
+
+Identify manually managed application/service accounts.
+
+To determine the date a password was last changed:
+
+Domain controllers:
+
+Open "Windows PowerShell".
+
+Enter "Get-ADUser -Identity [application account name] -Properties PasswordLastSet | FL Name, PasswordLastSet", where [application account name] is the name of the manually managed application/service account.
+
+If the "PasswordLastSet" date is more than one year old, this is a finding.
+
+Member servers and standalone systems:
+
+Open "Windows PowerShell" or "Command Prompt".
+
+Enter 'Net User [application account name] | Find /i "Password Last Set"', where [application account name] is the name of the manually managed application/service account.
+
+If the "Password Last Set" date is more than one year old, this is a finding.
+
+References:
+SV-51580
+V-36662
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 24 *******************************
+
+QUESTION         : 25 of 106
+TITLE            : CAT II, V-226039, SV-226039r794694, SRG-OS-000104-GPOS-00051
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:2101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:2101
+RULE             : Shared user accounts must not be permitted on the system.
+QUESTION_TEXT    : Determine whether any shared accounts exist. If no shared accounts exist, this is NA.
+
+Shared accounts, such as required by an application, may be approved by the organization.  This must be documented with the ISSO. Documentation must include the reason for the account, who has access to the account, and how the risk of using the shared account is mitigated to include monitoring account activity.
+
+If unapproved shared accounts exist, this is a finding.
+
+References:
+V-1072
+SV-52839
+CCI-000764
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 25 *******************************
+
+QUESTION         : 26 of 106
+TITLE            : CAT II, V-226045, SV-226045r890474, SRG-OS-000370-GPOS-00155
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:3301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:3301
+RULE             : The operating system must employ a deny-all, permit-by-exception policy to allow the execution of authorized software programs.
+QUESTION_TEXT    : Verify the operating system employs a deny-all, permit-by-exception policy to allow the execution of authorized software programs.
+
+If an application allowlisting program is not in use on the system, this is a finding.
+
+Configuration of allowlisting applications will vary by the program.
+
+AppLocker is an allowlisting application built into Windows Server 2012. A deny-by-default implementation is initiated by enabling any AppLocker rules within a category, only allowing what is specified by defined rules.
+
+If AppLocker is used, perform the following to view the configuration of AppLocker:
+Open PowerShell.
+
+If the AppLocker PowerShell module has not been previously imported, execute the following first:
+Import-Module AppLocker
+
+Execute the following command, substituting [c:\temp\file.xml] with a location and file name appropriate for the system:
+Get-AppLockerPolicy -Effective -XML > c:\temp\file.xml
+
+This will produce an xml file with the effective settings that can be viewed in a browser or opened in a program such as Excel for review.
+
+Implementation guidance for AppLocker is available at the following link:
+
+https://docs.microsoft.com/en-us/windows/security/threat-protection/windows-defender-application-control/applocker/applocker-policies-deployment-guide
+
+References:
+SV-72047
+V-57637
+CCI-001774
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 26 *******************************
+
+QUESTION         : 27 of 106
+TITLE            : CAT II, V-226046, SV-226046r852052, SRG-OS-000425-GPOS-00189
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:3501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:3501
+RULE             : Protection methods such as TLS, encrypted VPNs, or IPSEC must be implemented if the data owner has a strict requirement for ensuring data integrity and confidentiality is maintained at every step of the data transfer and handling process.
+QUESTION_TEXT    : If the data owner has a strict requirement for ensuring data integrity and confidentiality is maintained at every step of the data transfer and handling process, verify protection methods such as TLS, encrypted VPNs, or IPSEC have been implemented.  If protection methods have not been implemented, this is a finding.
+
+References:
+SV-72051
+V-57641
+CCI-002420
+CCI-002422
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 27 *******************************
+
+QUESTION         : 28 of 106
+TITLE            : CAT II, V-226047, SV-226047r852053, SRG-OS-000185-GPOS-00079
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:3701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:3701
+RULE             : Systems requiring data at rest protections must employ cryptographic mechanisms to prevent unauthorized disclosure and modification of the information at rest.
+QUESTION_TEXT    : Verify systems that require additional protections due to factors such as inadequate physical protection or sensitivity of the data employ encryption to protect the confidentiality and integrity of all information at rest.  If it does not, this is a finding.
+
+References:
+SV-72055
+V-57645
+CCI-001199
+CCI-002475
+CCI-002476
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 28 *******************************
+
+QUESTION         : 29 of 106
+TITLE            : CAT II, V-226052, SV-226052r794380, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:4701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:4701
+RULE             : Orphaned security identifiers (SIDs) must be removed from user rights on Windows 2012 / 2012 R2.
+QUESTION_TEXT    : Review the effective User Rights setting in Local Group Policy Editor.
+Run "gpedit.msc".
+
+Navigate to Local Computer Policy >> Computer Configuration >> Windows Settings >> Security Settings >> Local Policies >> User Rights Assignment.
+
+Review each User Right listed for any unresolved SIDs to determine whether they are valid, such as due to being temporarily disconnected from the domain. (Unresolved SIDs have the format of "*S-1-…".)
+
+If any unresolved SIDs exist and are not for currently valid accounts or groups, this is a finding.
+
+References:
+SV-90603
+V-75915
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 29 *******************************
+
+QUESTION         : 30 of 106
+TITLE            : CAT II, V-226053, SV-226053r794790, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:4901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:4901
+RULE             : Windows PowerShell must be updated to a version that supports script block logging on Windows 2012/2012 R2.
+QUESTION_TEXT    : Open "Windows PowerShell".
+
+Enter "$PSVersionTable".
+
+If the value for "PSVersion" is not 4.0 or 5.x, this is a finding.
+
+Windows 2012 R2 includes PowerShell 4.0 by default. Windows 2012 must be updated. If PowerShell 4.0 is used, the required patch for script block logging will be verified with the requirement to have that enabled.
+
+References:
+SV-95179
+V-80473
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 30 *******************************
+
+QUESTION         : 31 of 106
+TITLE            : CAT II, V-226054, SV-226054r794758, SRG-OS-000042-GPOS-00020
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:5101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:5101
+RULE             : PowerShell script block logging must be enabled on Windows 2012/2012 R2.
+QUESTION_TEXT    : If the following registry value does not exist or is not configured as specified, this is a finding.
+
+Registry Hive: HKEY_LOCAL_MACHINE 
+Registry Path: \SOFTWARE\Policies\Microsoft\Windows\PowerShell\ScriptBlockLogging\
+
+Value Name: EnableScriptBlockLogging
+
+Value Type: REG_DWORD
+Value: 0x00000001 (1)
+
+PowerShell 4.0 requires the installation of patch KB3000850 on Windows 2012 R2 or KB3119938 on Windows 2012. 
+
+If the patch is not installed on systems with PowerShell 4.0, this is a finding.
+
+PowerShell 5.x does not require the installation of an additional patch.
+
+References:
+SV-95183
+V-80475
+CCI-000135
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 31 *******************************
+
+QUESTION         : 32 of 106
+TITLE            : CAT II, V-226075, SV-226075r794310, SRG-OS-000134-GPOS-00068
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:9301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:9301
+RULE             : Data files owned by users must be on a different logical partition from the directory server data files.
+QUESTION_TEXT    : Refer to the AD database location obtained in check V-8316.  Note the logical drive (e.g., C:) on which the files are located.
+
+Determine if the server is currently providing file sharing services to users with the following command.
+Enter "net share" at a command prompt.
+
+Note the logical drive(s) or file system partition for any site-created data shares.
+Ignore all system shares (e.g., Windows NETLOGON, SYSVOL, and administrative shares ending in $). User shares that are hidden (ending with $) should not be ignored.
+
+If user shares are located on the same logical partition as the directory server data files, this is a finding.
+
+References:
+SV-51180
+V-8317
+CCI-001082
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 32 *******************************
+
+QUESTION         : 33 of 106
+TITLE            : CAT II, V-226076, SV-226076r877038, SRG-OS-000355-GPOS-00143
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:9501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:9501
+RULE             : Time synchronization must be enabled on the domain controller.
+QUESTION_TEXT    : Determine if a time synchronization tool has been implemented on the Windows domain controller.
+
+If  the Windows Time Service is used, verify the following registry values.  If they are not configured as specified, this is a finding.
+
+Registry Hive: HKEY_LOCAL_MACHINE
+
+Registry Path: \System\CurrentControlSet\Services\W32Time\TimeProviders\NtpClient\
+Value Name: Enabled
+Type: REG_DWORD
+Value: 1
+
+Registry Path: \System\CurrentControlSet\Services\W32Time\Parameters\
+Value Name: Type
+Type: REG_SZ
+Value: NT5DS (preferred), NTP or Allsync
+
+If these Windows checks indicate a finding because the NtpClient is not enabled, determine if an alternate time synchronization tool is installed and enabled.
+
+If the Windows Time Service is not enabled and no alternate tool is enabled, this is a finding.
+
+References:
+SV-51181
+V-8322
+CCI-001891
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 33 *******************************
+
+QUESTION         : 34 of 106
+TITLE            : CAT II, V-226078, SV-226078r794311, SRG-OS-000134-GPOS-00068
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:9901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:9901
+RULE             : The directory server supporting (directly or indirectly) system access or resource authorization must run on a machine dedicated to that function.
+QUESTION_TEXT    : Review the roles and services the domain controller is running.
+Run "services.msc" to display the Services console.
+
+Determine if any running services are application components.
+
+Examples of services indicating the presence of applications are: 
+-DHCP Server for DHCP server
+-IIS Admin Service for IIS web server
+-Microsoft Exchange System Attendant for Exchange
+-MSSQLServer for SQL Server.
+
+If any application-related components have the "Started" status, this is a finding.
+
+Installed roles can be displayed by viewing Server Roles in the Add (or Remove) Roles and Features wizard.  (Cancel before any changes are made.)
+
+Determine if any additional server roles are installed.  A basic domain controller set up will include the following:
+-Active Directory Domain Services
+-DNS Server
+-File and Storage Services
+
+If any roles not requiring installation on a domain controller are installed, this is a finding. 
+
+Supplemental Notes:
+A Domain Name System (DNS) server integrated with the directory server (e.g., AD-integrated DNS) is an acceptable application.  However, the DNS server must comply with the DNS STIG security requirements.
+
+Some directory servers utilize specialized web servers for administrative functions and databases for data management.  These web and database servers are permitted as long as they are dedicated to directory server support and only administrative users have access to them.
+
+References:
+SV-51183
+V-8326
+CCI-001082
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 34 *******************************
+
+QUESTION         : 35 of 106
+TITLE            : CAT II, V-226079, SV-226079r794798, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:10101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:10101
+RULE             : Windows services that are critical for directory server operation must be configured for automatic startup.
+QUESTION_TEXT    : Run "services.msc" to display the Services console.
+
+Verify the Startup Type for the following Windows services: 
+- Active Directory Domain Services
+- DFS Replication
+- DNS Client
+- DNS server
+- Group Policy Client
+- Intersite Messaging
+- Kerberos Key Distribution Center
+- NetLogon 
+- Windows Time (not required if another time synchronization tool is implemented to start automatically)
+
+If the Startup Type for any of these services is not Automatic, this is a finding.
+
+References:
+SV-51184
+V-8327
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 35 *******************************
+
+QUESTION         : 36 of 106
+TITLE            : CAT II, V-226080, SV-226080r877380, SRG-OS-000396-GPOS-00176
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:10301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:10301
+RULE             : Separate, NSA-approved (Type 1) cryptography must be used to protect the directory data-in-transit for directory service implementations at a classified confidentiality level when replication data traverses a network cleared to a lower level than the data
+QUESTION_TEXT    : With the assistance of the SA, NSO, or network reviewer as required, review the site network diagram(s) or documentation to determine the level of classification for the network(s) over which replication data is transmitted.
+
+Determine the classification level of the Windows domain controller.
+
+If the classification level of the Windows domain controller is higher than the level of the networks, review the site network diagram(s) and directory implementation documentation to determine if NSA-approved encryption is used to protect the replication network traffic.
+
+If the classification level of the Windows domain controller is higher than the level of the network traversed and NSA-approved encryption is not used, this is a finding.
+
+References:
+SV-51185
+V-14783
+CCI-002450
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 36 *******************************
+
+QUESTION         : 37 of 106
+TITLE            : CAT II, V-226084, SV-226084r794809, SRG-OS-000191-GPOS-00080
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:11101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:11101
+RULE             : The password for the krbtgt account on a domain must be reset at least every 180 days.
+QUESTION_TEXT    : This requirement is applicable to domain controllers; it is NA for other systems.
+
+Open "Windows PowerShell".
+
+Enter "Get-ADUser krbtgt -Property PasswordLastSet".
+
+If the "PasswordLastSet" date is more than 180 days old, this is a finding.
+
+References:
+SV-101879
+V-91777
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 37 *******************************
+
+QUESTION         : 38 of 106
+TITLE            : CAT II, V-226103, SV-226103r794362, SRG-OS-000474-GPOS-00219
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:14501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:14501
+RULE             : The system must be configured to audit Object Access - Central Access Policy Staging successes.
+QUESTION_TEXT    : Security Option "Audit: Force audit policy subcategory settings (Windows Vista or later) to override audit policy category settings" must be set to "Enabled" (V-14230) for the detailed auditing subcategories to be effective. 
+
+Use the AuditPol tool to review the current Audit Policy configuration:
+-Open a Command Prompt with elevated privileges ("Run as Administrator").
+-Enter "AuditPol /get /category:*".
+
+Compare the AuditPol settings with the following.  If the system does not audit the following, this is a finding.
+
+Object Access -> Central Policy Staging - Success
+
+References:
+SV-52161
+V-40202
+CCI-000172
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 38 *******************************
+
+QUESTION         : 39 of 106
+TITLE            : CAT II, V-226104, SV-226104r794363, SRG-OS-000474-GPOS-00219
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:14701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:14701
+RULE             : The system must be configured to audit Object Access - Central Access Policy Staging failures.
+QUESTION_TEXT    : Security Option "Audit: Force audit policy subcategory settings (Windows Vista or later) to override audit policy category settings" must be set to "Enabled" (V-14230) for the detailed auditing subcategories to be effective. 
+
+Use the AuditPol tool to review the current Audit Policy configuration:
+-Open a Command Prompt with elevated privileges ("Run as Administrator").
+-Enter "AuditPol /get /category:*".
+
+Compare the AuditPol settings with the following.  If the system does not audit the following, this is a finding.
+
+Object Access -> Central Policy Staging - Failure
+
+References:
+SV-52159
+V-40200
+CCI-000172
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 39 *******************************
+
+QUESTION         : 40 of 106
+TITLE            : CAT II, V-226105, SV-226105r794364, SRG-OS-000474-GPOS-00219
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:14901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:14901
+RULE             : The system must be configured to audit Object Access - Removable Storage successes.
+QUESTION_TEXT    : Security Option "Audit: Force audit policy subcategory settings (Windows Vista or later) to override audit policy category settings" must be set to "Enabled" (V-14230) for the detailed auditing subcategories to be effective. 
+
+Use the AuditPol tool to review the current Audit Policy configuration:
+-Open a Command Prompt with elevated privileges ("Run as Administrator").
+-Enter "AuditPol /get /category:*"
+
+Compare the AuditPol settings with the following.  If the system does not audit the following, this is a finding.
+
+Object Access >> Removable Storage - Success
+
+Virtual machines or systems that use network attached storage may generate excessive audit events for secondary virtual drives or the network attached storage when this setting is enabled.  This may be set to Not Configured in such cases and would not be a finding.
+
+References:
+SV-51601
+V-36668
+CCI-000172
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 40 *******************************
+
+QUESTION         : 41 of 106
+TITLE            : CAT II, V-226106, SV-226106r794365, SRG-OS-000474-GPOS-00219
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:15101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:15101
+RULE             : The system must be configured to audit Object Access - Removable Storage failures.
+QUESTION_TEXT    : Security Option "Audit: Force audit policy subcategory settings (Windows Vista or later) to override audit policy category settings" must be set to "Enabled" (V-14230) for the detailed auditing subcategories to be effective. 
+
+Use the AuditPol tool to review the current Audit Policy configuration:
+-Open a Command Prompt with elevated privileges ("Run as Administrator").
+-Enter "AuditPol /get /category:*"
+
+Compare the AuditPol settings with the following.  If the system does not audit the following, this is a finding.
+
+Object Access >> Removable Storage - Failure
+
+Virtual machines or systems that use network attached storage may generate excessive audit events for secondary virtual drives or the network attached storage when this setting is enabled.  This may be set to Not Configured in such cases and would not be a finding.
+
+References:
+SV-51604
+V-36667
+CCI-000172
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 41 *******************************
+
+QUESTION         : 42 of 106
+TITLE            : CAT II, V-226121, SV-226121r794316, SRG-OS-000255-GPOS-00096
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:18101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:18101
+RULE             : Audit data must be reviewed on a regular basis.
+QUESTION_TEXT    : Determine whether audit logs are reviewed on a predetermined schedule.  If audit logs are not reviewed on a regular basis, this is a finding.
+
+References:
+SV-51561
+V-36670
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 42 *******************************
+
+QUESTION         : 43 of 106
+TITLE            : CAT II, V-226122, SV-226122r794317, SRG-OS-000255-GPOS-00096
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:18301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:18301
+RULE             : Audit data must be retained for at least one year.
+QUESTION_TEXT    : Determine whether audit data is retained for at least one year.  If the audit data is not retained for at least a year, this is a finding.
+
+References:
+SV-51563
+V-36671
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 43 *******************************
+
+QUESTION         : 44 of 106
+TITLE            : CAT II, V-226123, SV-226123r877390, SRG-OS-000342-GPOS-00133
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:18501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:18501
+RULE             : Audit records must be backed up onto a different system or media than the system being audited.
+QUESTION_TEXT    : Determine if a process to back up log data to a different system or media than the system being audited has been implemented.  If it has not, this is a finding.
+
+References:
+SV-51566
+V-36672
+CCI-001851
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 44 *******************************
+
+QUESTION         : 45 of 106
+TITLE            : CAT II, V-226124, SV-226124r877390, SRG-OS-000342-GPOS-00133
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:18701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:18701
+RULE             : The operating system must, at a minimum, off-load audit records of interconnected systems in real time and off-load standalone systems weekly.
+QUESTION_TEXT    : Verify the operating system, at a minimum, off-loads audit records of interconnected systems in real time and off-loads standalone systems weekly.  If it does not, this is a finding.
+
+References:
+SV-72133
+V-57719
+CCI-001851
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 45 *******************************
+
+QUESTION         : 46 of 106
+TITLE            : CAT II, V-226125, SV-226125r794760, SRG-OS-000057-GPOS-00027
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:18901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:18901
+RULE             : Permissions for the Application event log must prevent access by nonprivileged accounts.
+QUESTION_TEXT    : Verify the permissions on the Application event log (Application.evtx).  Standard user accounts or groups must not have greater than Read access.  The default permissions listed below satisfy this requirement:
+
+Eventlog - Full Control
+SYSTEM - Full Control
+Administrators - Full Control
+
+The default location is the "%SystemRoot%\SYSTEM32\WINEVT\LOGS" directory.  They may have been moved to another folder.
+
+If the permissions for these files are not as restrictive as the ACLs listed, this is a finding.
+
+References:
+SV-51569
+V-36722
+CCI-000162
+CCI-000163
+CCI-000164
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 46 *******************************
+
+QUESTION         : 47 of 106
+TITLE            : CAT II, V-226126, SV-226126r794762, SRG-OS-000057-GPOS-00027
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:19101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:19101
+RULE             : Permissions for the Security event log must prevent access by nonprivileged accounts.
+QUESTION_TEXT    : Verify the permissions on the Security event log (Security.evtx).  Standard user accounts or groups must not have access.  The default permissions listed below satisfy this requirement:
+
+Eventlog - Full Control
+SYSTEM - Full Control
+Administrators - Full Control
+
+The default location is the "%SystemRoot%\SYSTEM32\WINEVT\LOGS" directory.  They may have been moved to another folder.
+
+If the permissions for these files are not as restrictive as the ACLs listed, this is a finding.
+
+References:
+V-36723
+SV-51571
+CCI-000162
+CCI-000163
+CCI-000164
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 47 *******************************
+
+QUESTION         : 48 of 106
+TITLE            : CAT II, V-226127, SV-226127r794764, SRG-OS-000057-GPOS-00027
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:19301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:19301
+RULE             : Permissions for the System event log must prevent access by nonprivileged accounts.
+QUESTION_TEXT    : Verify the permissions on the System event log (System.evtx).  Standard user accounts or groups must not have greater than Read access.  The default permissions listed below satisfy this requirement:
+
+Eventlog - Full Control
+SYSTEM - Full Control
+Administrators - Full Control
+
+The default location is the "%SystemRoot%\SYSTEM32\WINEVT\LOGS" directory.  They may have been moved to another folder.
+
+If the permissions for these files are not as restrictive as the ACLs listed, this is a finding.
+
+References:
+V-36724
+SV-51572
+CCI-000162
+CCI-000163
+CCI-000164
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 48 *******************************
+
+QUESTION         : 49 of 106
+TITLE            : CAT II, V-226128, SV-226128r852085, SRG-OS-000470-GPOS-00214
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:19501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:19501
+RULE             : Active Directory Group Policy objects must be configured with proper audit settings.
+QUESTION_TEXT    : Review the auditing configuration for all Group Policy objects.
+
+Open "Group Policy Management". (Available from various menus, or run "gpmc.msc".)
+
+Navigate to "Group Policy Objects" in the domain being reviewed (Forest >> Domains >> Domain). 
+
+For each Group Policy object: 
+
+Select the Group Policy Object item in the left pane.
+
+Select the "Delegation" tab in the right pane.
+
+Select the "Advanced" button.
+
+Select the "Advanced" button again and then the "Auditing" tab.
+
+If the audit settings for any Group Policy object are not at least as inclusive as those below, this is a finding.
+
+Type - Fail
+Principal - Everyone
+Access - Full Control
+Applies to - This object and all descendant objects or Descendant groupPolicyContainer objects
+
+The three Success types listed below are defaults inherited from the Parent Object. Where Special is listed in the summary screens for Access, detailed Permissions are provided for reference.
+
+Type - Success
+Principal - Everyone
+Access - Special (Permissions: Write all properties, Modify permissions; Properties: all "Write" type selected)
+Inherited from - Parent Object
+Applies to - Descendant groupPolicyContainer objects
+
+Two instances with the following summary information will be listed.
+Type - Success
+Principal - Everyone
+Access - blank (Permissions: none selected; Properties: one instance - Write gPLink, one instance - Write gPOptions)
+Inherited from - Parent Object
+Applies to - Descendant Organization Unit Objects
+
+References:
+SV-51169
+V-39325
+CCI-000172
+CCI-002234
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 49 *******************************
+
+QUESTION         : 50 of 106
+TITLE            : CAT II, V-226129, SV-226129r852086, SRG-OS-000470-GPOS-00214
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:19701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:19701
+RULE             : The Active Directory Domain object must be configured with proper audit settings.
+QUESTION_TEXT    : Verify the auditing configuration for the Domain object.
+
+Open "Active Directory Users and Computers".  (Available from various menus or run "dsa.msc".)
+Ensure Advanced Features is selected in the View menu.
+Select the domain being reviewed in the left pane.
+Right click the domain name and select Properties.
+Select the Security tab.
+Select the Advanced button and then the Auditing tab.
+
+If the audit settings on the Domain object are not at least as inclusive as those below, this is a finding.
+
+Type - Fail
+Principal - Everyone
+Access - Full Control
+Inherited from - None
+Applies to - This object only
+
+The success types listed below are defaults.  Where Special is listed in the summary screens for Access, detailed Permissions are provided for reference, various Properties selections may also exist by default.
+
+Two instances with the following summary information will be listed.
+Type - Success
+Principal - Everyone
+Access - (blank)
+Inherited from - None
+Applies to - Special
+
+Type - Success
+Principal - Domain Users
+Access - All extended rights
+Inherited from - None
+Applies to - This object only
+
+Type - Success
+Principal - Administrators
+Access - All extended rights
+Inherited from - None
+Applies to - This object only
+
+Type - Success
+Principal - Everyone
+Access - Special
+Inherited from - None
+Applies to - This object only
+(Access - Special = Permissions: Write all properties, Modify permissions, Modify owner)
+
+References:
+SV-51170
+V-39326
+CCI-000172
+CCI-002234
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 50 *******************************
+
+QUESTION         : 51 of 106
+TITLE            : CAT II, V-226130, SV-226130r852087, SRG-OS-000470-GPOS-00214
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:19901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:19901
+RULE             : The Active Directory Infrastructure object must be configured with proper audit settings.
+QUESTION_TEXT    : Verify the auditing configuration for Infrastructure object.
+
+Open "Active Directory Users and Computers".  (Available from various menus or run "dsa.msc".)
+Ensure Advanced Features is selected in the View menu.
+Select the domain being reviewed in the left pane.
+Right click the Infrastructure object in the right pane and select Properties.
+Select the Security tab.
+Select the Advanced button and then the Auditing tab.
+
+If the audit settings on the Infrastructure object are not at least as inclusive as those below, this is a finding.
+
+Type - Fail
+Principal - Everyone
+Access - Full Control
+Inherited from - None
+
+The success types listed below are defaults.  Where Special is listed in the summary screens for Access, detailed Permissions are provided for reference, various Properties selections may also exist by default.
+
+Type - Success
+Principal - Everyone
+Access - Special
+Inherited from - None
+(Access - Special = Permissions: Write all properties, All extended rights, Change infrastructure master)
+
+Two instances with the following summary information will be listed.
+Type - Success
+Principal - Everyone
+Access - (blank)
+Inherited from - (CN of domain)
+
+References:
+SV-51171
+V-39327
+CCI-000172
+CCI-002234
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 51 *******************************
+
+QUESTION         : 52 of 106
+TITLE            : CAT II, V-226131, SV-226131r852088, SRG-OS-000470-GPOS-00214
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:20101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:20101
+RULE             : The Active Directory Domain Controllers Organizational Unit (OU) object must be configured with proper audit settings.
+QUESTION_TEXT    : Verify the auditing configuration for the Domain Controller OU object.
+
+Open "Active Directory Users and Computers".  (Available from various menus or run "dsa.msc".)
+Ensure Advanced Features is selected in the View menu.
+Select the Domain Controllers OU under the domain being reviewed in the left pane.
+Right click the Domain Controllers OU object and select Properties.
+Select the Security tab.
+Select the Advanced button and then the Auditing tab.
+
+If the audit settings on the Domain Controllers OU object are not at least as inclusive as those below, this is a finding.
+
+Type - Fail
+Principal - Everyone
+Access - Full Control
+Inherited from - None
+Applies to - This object and all descendant objects
+
+The success types listed below are defaults.  Where Special is listed in the summary screens for Access, detailed Permissions are provided for reference, various Properties selections may also exist by default.
+
+Type - Success
+Principal - Everyone
+Access - Special
+Inherited from - None
+Applies to - This object only
+(Access - Special = Permissions: all create, delete and modify permissions)
+
+Type - Success
+Principal - Everyone
+Access - Write all properties
+Inherited from - None
+Applies to - This object and all descendant objects
+
+Two instances with the following summary information will be listed.
+Type - Success
+Principal - Everyone
+Access - (blank)
+Inherited from - (CN of domain)
+Applies to - Descendant Organizational Unit objects
+
+References:
+SV-51172
+V-39328
+CCI-000172
+CCI-002234
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 52 *******************************
+
+QUESTION         : 53 of 106
+TITLE            : CAT II, V-226132, SV-226132r852089, SRG-OS-000470-GPOS-00214
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:20301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:20301
+RULE             : The Active Directory AdminSDHolder object must be configured with proper audit settings.
+QUESTION_TEXT    : Verify the auditing configuration for the AdminSDHolder object.
+
+Open "Active Directory Users and Computers".  (Available from various menus or run "dsa.msc".)
+Ensure Advanced Features is selected in the View menu.
+Select System under the domain being reviewed in the left pane.
+Right click the AdminSDHolder object in the right pane and select Properties.
+Select the Security tab.
+Select the Advanced button and then the Auditing tab.
+
+If the audit settings on the AdminSDHolder object are not at least as inclusive as those below, this is a finding.
+
+Type - Fail
+Principal - Everyone
+Access - Full Control
+Inherited from - None
+Applies to - This object only
+
+The success types listed below are defaults.  Where Special is listed in the summary screens for Access, detailed Permissions are provided for reference, various Properties selections may also exist by default.
+
+Type - Success
+Principal - Everyone
+Access - Special
+Inherited from - None
+Applies to - This object only
+(Access - Special = Write all properties, Modify permissions, Modify owner)
+
+Two instances with the following summary information will be listed.
+Type - Success
+Principal - Everyone
+Access - (blank)
+Inherited from - (CN of domain)
+Applies to - Descendant Organizational Unit objects
+
+References:
+SV-51173
+V-39329
+CCI-000172
+CCI-002234
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 53 *******************************
+
+QUESTION         : 54 of 106
+TITLE            : CAT II, V-226133, SV-226133r852090, SRG-OS-000470-GPOS-00214
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:20501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:20501
+RULE             : The Active Directory RID Manager$ object must be configured with proper audit settings.
+QUESTION_TEXT    : Verify the auditing configuration for the RID Manager$ object.
+
+Open "Active Directory Users and Computers".  (Available from various menus or run "dsa.msc".)
+Ensure Advanced Features is selected in the View menu.
+Select System under the domain being reviewed in the left pane.
+Right-click the RID Manager$ object in the right pane and select Properties.
+Select the Security tab.
+Select the Advanced button and then the Auditing tab.
+
+If the audit settings on the RID Manager$ object are not at least as inclusive as those below, this is a finding.
+
+Type - Fail
+Principal - Everyone
+Access - Full Control
+Inherited from - None
+
+The success types listed below are defaults.  Where Special is listed in the summary screens for Access, detailed Permissions are provided for reference, various Properties selections may also exist by default.
+
+Type - Success
+Principal - Everyone
+Access - Special
+Inherited from - None
+ (Access - Special = Write all properties, All extended rights, Change RID master)
+
+Two instances with the following summary information will be listed.
+Type - Success
+Principal - Everyone
+Access - (blank)
+Inherited from - (CN of domain)
+
+References:
+SV-51174
+V-39330
+CCI-000172
+CCI-002234
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 54 *******************************
+
+QUESTION         : 55 of 106
+TITLE            : CAT II, V-226208, SV-226208r794444, SRG-OS-000095-GPOS-00049
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:34701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:34701
+RULE             : The Windows Store application must be turned off.
+QUESTION_TEXT    : The Windows Store is not installed by default. If the \Windows\WinStore directory does not exist, this is NA.
+If the following registry value does not exist or is not configured as specified, this is a finding:
+
+Registry Hive:  HKEY_LOCAL_MACHINE
+Registry Path:  \SOFTWARE\Policies\Microsoft\WindowsStore\
+
+Value Name:  RemoveWindowsStore
+
+Type:  REG_DWORD
+Value:  1
+
+References:
+SV-51751
+V-36711
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 55 *******************************
+
+QUESTION         : 56 of 106
+TITLE            : CAT II, V-226228, SV-226228r794448, SRG-OS-000114-GPOS-00059
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:38501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:38501
+RULE             : Only the default client printer must be redirected to the Remote Desktop Session Host.  (Remote Desktop Services Role).
+QUESTION_TEXT    : If the following registry value does not exist or is not configured as specified, this is a finding: 
+
+Registry Hive: HKEY_LOCAL_MACHINE
+Registry Path: \Software\Policies\Microsoft\Windows NT\Terminal Services\
+
+Value Name: RedirectOnlyDefaultClientPrinter
+
+Type: REG_DWORD
+Value: 1
+
+References:
+V-40204
+SV-52163
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 56 *******************************
+
+QUESTION         : 57 of 106
+TITLE            : CAT II, V-226229, SV-226229r794446, SRG-OS-000095-GPOS-00049
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:38701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:38701
+RULE             : The display of slide shows on the lock screen must be disabled (Windows 2012 R2).
+QUESTION_TEXT    : This requirement is NA for the initial release of Windows 2012.  It is applicable to Windows 2012 R2.
+
+Verify the registry value below.  If it does not exist or is not configured as specified, this is a finding.
+
+Registry Hive: HKEY_LOCAL_MACHINE 
+Registry Path: \SOFTWARE\Policies\Microsoft\Windows\Personalization\
+
+Value Name: NoLockScreenSlideshow
+
+Value Type: REG_DWORD
+Value: 1
+
+References:
+V-43238
+SV-56343
+CCI-000381
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 57 *******************************
+
+QUESTION         : 58 of 106
+TITLE            : CAT II, V-226231, SV-226231r794532, SRG-OS-000095-GPOS-00049
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:39101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:39101
+RULE             : The network selection user interface (UI) must not be displayed on the logon screen (Windows 2012 R2).
+QUESTION_TEXT    : This requirement is NA for the initial release of Windows 2012.  It is applicable to Windows 2012 R2.
+
+Verify the registry value below.  If it does not exist or is not configured as specified, this is a finding.
+
+Registry Hive: HKEY_LOCAL_MACHINE 
+Registry Path: \SOFTWARE\Policies\Microsoft\Windows\System\
+
+Value Name: DontDisplayNetworkSelectionUI
+
+Value Type: REG_DWORD
+Value: 1
+
+References:
+V-43240
+SV-56346
+CCI-000381
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 58 *******************************
+
+QUESTION         : 59 of 106
+TITLE            : CAT II, V-226233, SV-226233r794560, SRG-OS-000420-GPOS-00186
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:39501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:39501
+RULE             : The Windows Explorer Preview pane must be disabled for Windows 2012.
+QUESTION_TEXT    : If the following registry values do not exist or are not configured as specified, this is a finding:
+
+Registry Hive: HKEY_CURRENT_USER
+Registry Path: \SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer
+
+Value Name: NoPreviewPane
+
+Value Type: REG_DWORD
+
+Value: 1
+
+Registry Hive: HKEY_CURRENT_USER
+Registry Path: \SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\Explorer
+
+Value Name: NoReadingPane
+
+Value Type: REG_DWORD
+
+Value: 1
+
+References:
+SV-111569
+V-102619
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 59 *******************************
+
+QUESTION         : 60 of 106
+TITLE            : CAT II, V-226234, SV-226234r794575, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:39701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:39701
+RULE             : Automatically signing in the last interactive user after a system-initiated restart must be disabled (Windows 2012 R2).
+QUESTION_TEXT    : This requirement is NA for the initial release of Windows 2012.  It is applicable to Windows 2012 R2.
+
+Verify the registry value below.  If it does not exist or is not configured as specified, this is a finding.
+
+Registry Hive: HKEY_LOCAL_MACHINE 
+Registry Path: \SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\
+
+Value Name: DisableAutomaticRestartSignOn
+
+Value Type: REG_DWORD
+Value: 1
+
+References:
+SV-56355
+V-43245
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 60 *******************************
+
+QUESTION         : 61 of 106
+TITLE            : CAT II, V-226235, SV-226235r794533, SRG-OS-000095-GPOS-00049
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:39901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:39901
+RULE             : WDigest Authentication must be disabled.
+QUESTION_TEXT    : If the following registry value does not exist or is not configured as specified, this is a finding.
+
+Registry Hive: HKEY_LOCAL_MACHINE
+Registry Path: \SYSTEM\CurrentControlSet\Control\SecurityProviders\Wdigest\
+
+Value Name: UseLogonCredential
+
+Type: REG_DWORD
+Value: 0x00000000 (0)
+
+Note: Microsoft Security Advisory update 2871997 is required for this setting to be effective on Windows 2012.  It is not required for Windows 2012 R2.
+
+References:
+SV-87391
+V-72753
+CCI-000381
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 61 *******************************
+
+QUESTION         : 62 of 106
+TITLE            : CAT II, V-226236, SV-226236r794607, SRG-OS-000480-GPOS-00232
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:40101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:40101
+RULE             : A host-based firewall must be installed and enabled on the system.
+QUESTION_TEXT    : Determine if a host-based firewall is installed and enabled on the system.  If a host-based firewall is not installed and enabled on the system, this is a finding.
+
+The configuration requirements will be determined by the applicable firewall STIG.
+
+References:
+SV-55085
+V-42420
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 62 *******************************
+
+QUESTION         : 63 of 106
+TITLE            : CAT II, V-226240, SV-226240r852124, SRG-OS-000312-GPOS-00124
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:40901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:40901
+RULE             : Permissions for system drive root directory (usually C:\) must conform to minimum requirements.
+QUESTION_TEXT    : The default permissions are adequate when the Security Option "Network access: Let everyone permissions apply to anonymous users" is set to "Disabled" (V-3377).  If the default ACLs are maintained and the referenced option is set to "Disabled", this is not a finding.
+
+Verify the default permissions for the system drive's root directory (usually C:\).  Nonprivileged groups such as Users or Authenticated Users must not have greater than Read & execute permissions except where noted as defaults.  (Individual accounts must not be used to assign permissions.)
+
+Viewing in File Explorer:
+View the Properties of system drive root directory.
+Select the "Security" tab, and the "Advanced" button.
+
+C:\
+Type - "Allow" for all
+Inherited from - "None" for all
+
+Principal - Access - Applies to
+
+SYSTEM - Full control - This folder, subfolders and files
+Administrators - Full control - This folder, subfolders and files
+Users - Read & execute - This folder, subfolders and files
+Users - Create folders / append data - This folder and subfolders
+Users - Create files / write data - Subfolders only
+CREATOR OWNER - Full Control - Subfolders and files only
+
+Alternately, use Icacls:
+
+Open a Command prompt (admin).
+Enter icacls followed by the directory:
+
+icacls c:\
+
+The following results should be displayed:
+
+c:\
+NT AUTHORITY\SYSTEM:(OI)(CI)(F)
+BUILTIN\Administrators:(OI)(CI)(F)
+BUILTIN\Users:(OI)(CI)(RX)
+BUILTIN\Users:(CI)(AD)
+BUILTIN\Users:(CI)(IO)(WD)
+CREATOR OWNER:(OI)(CI)(IO)(F)
+Successfully processed 1 files; Failed processing 0 files
+
+References:
+SV-52136
+V-40178
+CCI-002165
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 63 *******************************
+
+QUESTION         : 64 of 106
+TITLE            : CAT II, V-226241, SV-226241r852125, SRG-OS-000312-GPOS-00124
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:41101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:41101
+RULE             : Permissions for program file directories must conform to minimum requirements.
+QUESTION_TEXT    : The default permissions are adequate when the Security Option "Network access: Let everyone permissions apply to anonymous users" is set to "Disabled" (V-3377).  If the default ACLs are maintained and the referenced option is set to "Disabled", this is not a finding.
+
+Verify the default permissions for the program file directories (Program Files and Program Files (x86)).  Nonprivileged groups such as Users or Authenticated Users must not have greater than Read & execute permissions except where noted as defaults.  (Individual accounts must not be used to assign permissions.)
+
+Viewing in File Explorer:
+For each folder, view the Properties.
+Select the "Security" tab, and the "Advanced" button.
+
+Default Permissions:
+\Program Files and \Program Files (x86)
+Type - "Allow" for all
+Inherited from - "None" for all
+
+Principal - Access - Applies to
+
+TrustedInstaller - Full control - This folder and subfolders
+SYSTEM - Modify - This folder only
+SYSTEM - Full control - Subfolders and files only
+Administrators - Modify - This folder only
+Administrators - Full control - Subfolders and files only
+Users - Read & execute - This folder, subfolders and files
+CREATOR OWNER - Full control - Subfolders and files only
+ALL APPLICATION PACKAGES - Read & execute - This folder, subfolders and files
+
+Alternately, use Icacls:
+
+Open a Command prompt (admin).
+Enter icacls followed by the directory:
+
+icacls "c:\program files"
+icacls "c:\program files (x86)"
+
+The following results should be displayed as each is entered:
+
+c:\program files 
+NT SERVICE\TrustedInstaller:(F)
+NT SERVICE\TrustedInstaller:(CI)(IO)(F)
+NT AUTHORITY\SYSTEM:(M)
+NT AUTHORITY\SYSTEM:(OI)(CI)(IO)(F)
+BUILTIN\Administrators:(M)
+BUILTIN\Administrators:(OI)(CI)(IO)(F)
+BUILTIN\Users:(RX)
+BUILTIN\Users:(OI)(CI)(IO)(GR,GE)
+CREATOR OWNER:(OI)(CI)(IO)(F)
+APPLICATION PACKAGE AUTHORITY\ALL APPLICATION PACKAGES:(RX)
+APPLICATION PACKAGE AUTHORITY\ALL APPLICATION PACKAGES:(OI)(CI)(IO)(GR,GE)
+Successfully processed 1 files; Failed processing 0 files
+
+References:
+SV-52135
+V-40177
+CCI-002165
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 64 *******************************
+
+QUESTION         : 65 of 106
+TITLE            : CAT II, V-226242, SV-226242r852126, SRG-OS-000259-GPOS-00100
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:41301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:41301
+RULE             : Permissions for Windows installation directory must conform to minimum requirements.
+QUESTION_TEXT    : The default permissions are adequate when the Security Option "Network access: Let everyone permissions apply to anonymous users" is set to "Disabled" (V-3377).  If the default ACLs are maintained and the referenced option is set to "Disabled", this is not a finding.
+
+Verify the default permissions for the Windows installation directory (usually C:\Windows).  Nonprivileged groups such as Users or Authenticated Users must not have greater than Read & execute permissions except where noted as defaults.  (Individual accounts must not be used to assign permissions.)
+
+Viewing in File Explorer:
+View the Properties of the folder.
+Select the "Security" tab, and the "Advanced" button.
+
+Default Permissions:
+\Windows
+Type - "Allow" for all
+Inherited from - "None" for all
+
+Principal - Access - Applies to
+
+TrustedInstaller - Full control - This folder and subfolders
+SYSTEM - Modify - This folder only
+SYSTEM - Full control - Subfolders and files only
+Administrators - Modify - This folder only
+Administrators - Full control - Subfolders and files only
+Users - Read & execute - This folder, subfolders and files
+CREATOR OWNER - Full control - Subfolders and files only
+ALL APPLICATION PACKAGES - Read & execute - This folder, subfolders and files
+
+Alternately, use Icacls:
+
+Open a Command prompt (admin).
+Enter icacls followed by the directory:
+
+icacls c:\windows
+
+The following results should be displayed:
+
+c:\windows
+NT SERVICE\TrustedInstaller:(F)
+NT SERVICE\TrustedInstaller:(CI)(IO)(F)
+NT AUTHORITY\SYSTEM:(M)
+NT AUTHORITY\SYSTEM:(OI)(CI)(IO)(F)
+BUILTIN\Administrators:(M)
+BUILTIN\Administrators:(OI)(CI)(IO)(F)
+BUILTIN\Users:(RX)
+BUILTIN\Users:(OI)(CI)(IO)(GR,GE)
+CREATOR OWNER:(OI)(CI)(IO)(F)
+APPLICATION PACKAGE AUTHORITY\ALL APPLICATION PACKAGES:(RX)
+APPLICATION PACKAGE AUTHORITY\ALL APPLICATION PACKAGES:(OI)(CI)(IO)(GR,GE)
+Successfully processed 1 files; Failed processing 0 files
+
+References:
+SV-52137
+V-40179
+CCI-001499
+CCI-002165
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 65 *******************************
+
+QUESTION         : 66 of 106
+TITLE            : CAT II, V-226243, SV-226243r794576, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:41501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:41501
+RULE             : The system must not boot into multiple operating systems (dual-boot).
+QUESTION_TEXT    : Verify the local system boots directly into Windows.  
+
+Open Control Panel.
+Select "System".
+Select the "Advanced System Settings" link.
+Select the "Advanced" tab.
+Click the "Startup and Recovery" Settings button.  
+
+If the drop-down list box "Default operating system:" shows any operating system other than Windows Server 2012, this is a finding.
+
+References:
+SV-52858
+V-1119
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 66 *******************************
+
+QUESTION         : 67 of 106
+TITLE            : CAT II, V-226247, SV-226247r857210, SRG-OS-000076-GPOS-00044
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:42301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:42301
+RULE             : Windows 2012/2012 R2 passwords must be configured to expire.
+QUESTION_TEXT    : Review the password never expires status for enabled user accounts.
+
+Open "Windows PowerShell" with elevated privileges (run as administrator).
+
+Domain Controllers:
+
+Enter "Search-ADAccount -PasswordNeverExpires -UsersOnly | Where PasswordNeverExpires -eq True | FT Name, PasswordNeverExpires, Enabled".
+
+Exclude application accounts and disabled accounts (e.g., Guest).
+
+If any enabled user accounts are returned with a "PasswordNeverExpires" status of "True", this is a finding.
+
+Member servers and standalone systems:
+
+Enter 'Get-CimInstance -Class Win32_Useraccount -Filter "PasswordExpires=False and LocalAccount=True" | FT Name, PasswordExpires, Disabled, LocalAccount'.
+
+Exclude application accounts and disabled accounts (e.g., Guest).
+
+If any enabled user accounts are returned with a "PasswordExpires" status of "False", this is a finding.
+
+References:
+SV-52939
+V-6840
+CCI-000199
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 67 *******************************
+
+QUESTION         : 68 of 106
+TITLE            : CAT II, V-226248, SV-226248r894352, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:42501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:42501
+RULE             : System files must be monitored for unauthorized changes.
+QUESTION_TEXT    : Determine whether the site monitors system files (e.g., *.exe, *.bat, *.com, *.cmd, and *.dll) on servers for unauthorized changes against a baseline on a weekly basis.
+
+An approved and properly configured solution will contain both a list of baselines that includes all system file locations and a file comparison task that is scheduled to run at least weekly. 
+
+If system files are not being monitored for unauthorized changes, this is a finding.
+
+References:
+SV-52215
+V-2907
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 68 *******************************
+
+QUESTION         : 69 of 106
+TITLE            : CAT II, V-226249, SV-226249r794543, SRG-OS-000138-GPOS-00069
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:42701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:42701
+RULE             : Non system-created file shares on a system must limit access to groups that require it.
+QUESTION_TEXT    : If only system-created shares such as "ADMIN$", "C$", and "IPC$" exist on the system, this is NA.
+(System-created shares will display a message that it has been shared for administrative purposes when "Properties" is selected.)
+
+Run "Computer Management".
+Navigate to System Tools >> Shared Folders >> Shares.
+
+Right click any non-system-created shares.
+Select "Properties".
+Select the "Share Permissions" tab.
+
+If the file shares have not been reconfigured to restrict permissions to the specific groups or accounts that require access, this is a finding.
+
+Select the "Security" tab.
+
+If the NTFS permissions have not been reconfigured to restrict permissions to the specific groups or accounts that require access, this is a finding.
+
+References:
+SV-52881
+V-3245
+CCI-001090
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 69 *******************************
+
+QUESTION         : 70 of 106
+TITLE            : CAT II, V-226251, SV-226251r794577, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:42901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:42901
+RULE             : Software certificate installation files must be removed from Windows 2012/2012 R2.
+QUESTION_TEXT    : Search all drives for *.p12 and *.pfx files.
+
+If any files with these extensions exist, this is a finding.
+
+This does not apply to server-based applications that have a requirement for certificate files or Adobe PreFlight certificate files. Some applications create files with extensions of .p12 that are not certificate installation files. Removal of non-certificate installation files from systems is not required. These must be documented with the ISSO.
+
+References:
+SV-53141
+V-15823
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 70 *******************************
+
+QUESTION         : 71 of 106
+TITLE            : CAT II, V-226252, SV-226252r794534, SRG-OS-000095-GPOS-00049
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:43101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:43101
+RULE             : Necessary services must be documented to maintain a baseline to determine if additional, unnecessary services have been added to a system.
+QUESTION_TEXT    : Required services will vary between organizations, and on the role of the individual system.  Organizations will develop their own list of services which will be documented and justified with the ISSO.  The site's list will be provided for any security review.  Services common to multiple systems can be addressed in one document.  Exceptions for individual systems should be identified separately by system.
+
+Individual services specifically required to be disabled per the STIG are identified in separate requirements.
+
+If the site has not documented the services required for their system(s), this is a finding.
+
+The following can be used to view the services on a system:
+Run "Services.msc".
+
+Services for Windows Server 2012 roles are managed automatically, adding those necessary for a particular role.  The following lists the default services for a baseline installation as a reference. This can be used as a basis for documenting the services necessary.
+
+Default Installation
+Name - Startup Type
+Application Experience - Manual (Trigger Start)
+Application Identity - Manual (Trigger Start)
+Application Information - Manual
+Application Layer Gateway Service - Manual
+Application Management - Manual
+Background Intelligent Transfer Service - Automatic (Delayed Start)
+Background Tasks Infrastructure Service - Automatic
+Base Filtering Engine - Automatic
+Certificate Propagation - Manual
+CNG Key Isolation - Manual (Trigger Start)
+COM+ Event System - Automatic
+COM+ System Application - Manual
+Computer Browser - Disabled
+Credential Manager - Manual
+Cryptographic Services - Automatic
+DCOM Server Process Launcher - Automatic
+Device Association Service - Manual (Trigger Start)
+Device Install Service - Manual (Trigger Start)
+Device Setup Manager - Manual (Trigger Start)
+DHCP Client - Automatic
+Diagnostic Policy Service - Automatic (Delayed Start)
+Diagnostic Service Host - Manual
+Diagnostic System Host - Manual
+Distributed Link Tracking Client - Automatic
+Distributed Transaction Coordinator - Automatic (Delayed Start)
+DNS Client - Automatic (Trigger Start)
+Encrypting File System (EFS) - Manual (Trigger Start)
+Extensible Authentication Protocol - Manual
+Function Discovery Provider Host - Manual
+Function Discovery Resource Publication - Manual
+Group Policy Client - Automatic (Trigger Start)
+Health Key and Certificate Management - Manual
+Human Interface Device Access - Manual (Trigger Start)
+Hyper-V Data Exchange Service - Manual (Trigger Start)
+Hyper-V Guest Shutdown Service - Manual (Trigger Start)
+Hyper-V Heartbeat Service - Manual (Trigger Start)
+Hyper-V Remote Desktop Virtualization Service - Manual (Trigger Start)
+Hyper-V Time Synchronization Service - Manual (Trigger Start)
+Hyper-V Volume Shadow Copy Requestor - Manual (Trigger Start)
+IKE and AuthIP IPsec Keying Modules - Manual (Trigger Start)
+Interactive Services Detection - Manual
+Internet Connection Sharing (ICS) - Disabled
+IP Helper - Automatic
+IPsec Policy Agent - Manual (Trigger Start)
+KDC Proxy Server service (KPS) - Manual
+KtmRm for Distributed Transaction Coordinator - Manual (Trigger Start)
+Link-Layer Topology Discovery Mapper - Manual
+Local Session Manager - Automatic
+Microsoft iSCSI Initiator Service - Manual
+Microsoft Software Shadow Copy Provider - Manual
+Multimedia Class Scheduler - Manual
+Net.Tcp Port Sharing Service - Disabled
+Netlogon - Manual
+Network Access Protection Agent - Manual
+Network Connections - Manual
+Network Connectivity Assistant - Manual (Trigger Start)
+Network List Service - Manual
+Network Location Awareness - Automatic
+Network Store Interface Service - Automatic
+Optimize drives - Manual
+Performance Counter DLL Host - Manual
+Performance Logs & Alerts - Manual
+Plug and Play - Manual
+Portable Device Enumerator Service - Manual (Trigger Start)
+Power - Automatic
+Print Spooler - Automatic
+Printer Extensions and Notifications - Manual
+Problem Reports and Solutions Control Panel Support - Manual
+Remote Access Auto Connection Manager - Manual
+Remote Access Connection Manager - Manual
+Remote Desktop Configuration - Manual
+Remote Desktop Services - Manual
+Remote Desktop Services UserMode Port Redirector - Manual
+Remote Procedure Call (RPC) - Automatic
+Remote Procedure Call (RPC) Locator - Manual
+Remote Registry - Automatic (Trigger Start)
+Resultant Set of Policy Provider - Manual
+Routing and Remote Access - Disabled
+RPC Endpoint Mapper - Automatic
+Secondary Logon - Manual
+Secure Socket Tunneling Protocol Service - Manual
+Security Accounts Manager - Automatic
+Server - Automatic
+Shell Hardware Detection - Automatic
+Smart Card - Disabled
+Smart Card Removal Policy - Manual
+SNMP Trap - Manual
+Software Protection - Automatic (Delayed Start, Trigger Start)
+Special Administration Console Helper - Manual
+Spot Verifier - Manual (Trigger Start)
+SSDP Discovery - Disabled
+Superfetch - Manual
+System Event Notification Service - Automatic
+Task Scheduler - Automatic
+TCP/IP NetBIOS Helper - Automatic (Trigger Start)
+Telephony - Manual
+Themes - Automatic
+Thread Ordering Server - Manual
+UPnP Device Host - Disabled
+User Access Logging Service - Automatic (Delayed Start)
+User Profile Service - Automatic
+Virtual Disk - Manual
+Volume Shadow Copy - Manual
+Windows All-User Install Agent - Manual (Trigger Start)
+Windows Audio - Manual
+Windows Audio Endpoint Builder - Manual
+Windows Color System - Manual
+Windows Driver Foundation - User-mode Driver Framework - Manual (Trigger Start)
+Windows Error Reporting Service - Manual (Trigger Start)
+Windows Event Collector - Manual
+Windows Event Log - Automatic
+Windows Firewall - Automatic
+Windows Font Cache Service - Automatic
+Windows Installer - Manual
+Windows Licensing Monitoring Service - Automatic
+Windows Management Instrumentation - Automatic
+Windows Modules Installer - Manual
+Windows Remote Management (WS-Management) - Automatic
+Windows Store Service (WSService) - Manual (Trigger Start)
+Windows Time - Manual (Trigger Start)
+Windows Update - Manual
+WinHTTP Web Proxy Auto-Discovery Service - Manual
+Wired AutoConfig - Manual
+WMI Performance Adapter - Manual
+Workstation - Automatic
+
+References:
+SV-52218
+V-3487
+CCI-000381
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 71 *******************************
+
+QUESTION         : 72 of 106
+TITLE            : CAT II, V-226253, SV-226253r794618, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:43301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:43301
+RULE             : Servers must have a host-based Intrusion Detection System.
+QUESTION_TEXT    : Determine whether there is a host-based Intrusion Detection System on each server. 
+
+If the HIPS component of ESS is installed and active on the host and the Alerts of blocked activity are being logged and monitored, this will meet the requirement of this finding. 
+
+A HID device is not required on a system that has the role as the Network Intrusion Device (NID). However, this exception needs to be documented with the site ISSO.
+
+If a host-based Intrusion Detection System is not installed on the system, this is a finding.
+
+References:
+SV-52105
+V-3289
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 72 *******************************
+
+QUESTION         : 73 of 106
+TITLE            : CAT II, V-226254, SV-226254r794616, SRG-OS-000191-GPOS-00080
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:43501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:43501
+RULE             : Windows Server 2012 / 2012 R2 must employ automated mechanisms to determine the state of system components with regard to flaw remediation using the following frequency: continuously, where ESS is used; 30 days, for any additional internal network scans n
+QUESTION_TEXT    : Verify DoD-approved ESS software is installed and properly operating. Ask the site ISSM for documentation of the ESS software installation and configuration.
+
+If the ISSM is not able to provide a documented configuration for an installed ESS or if the ESS software is not properly maintained or used, this is a finding.
+
+Note: Example of documentation can be a copy of the site's CCB approved Software Baseline with version of software noted or a memo from the ISSM stating current ESS software and version.
+
+References:
+SV-51582
+V-36734
+CCI-001233
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 73 *******************************
+
+QUESTION         : 74 of 106
+TITLE            : CAT II, V-226255, SV-226255r794612, SRG-OS-000191-GPOS-00080
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:43701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:43701
+RULE             : The system must support automated patch management tools to facilitate flaw remediation.
+QUESTION_TEXT    : Verify the organization has an automated process to install security-related software updates.  If it does not, this is a finding.
+
+References:
+V-36735
+SV-51583
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 74 *******************************
+
+QUESTION         : 75 of 106
+TITLE            : CAT II, V-226256, SV-226256r877395, SRG-OS-000125-GPOS-00065
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:43901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:43901
+RULE             : The system must query the certification authority to determine whether a public key certificate has been revoked before accepting the certificate for authentication purposes.
+QUESTION_TEXT    : Verify the system has software installed and running that provides certificate validation and revocation checking.  If it does not, this is a finding.
+
+References:
+SV-51584
+V-36736
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 75 *******************************
+
+QUESTION         : 76 of 106
+TITLE            : CAT II, V-226257, SV-226257r794578, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:44101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:44101
+RULE             : File Transfer Protocol (FTP) servers must be configured to prevent anonymous logons.
+QUESTION_TEXT    : If FTP is not installed on the system, this is NA.
+
+Determine the IP address and port number assigned to FTP sites from documentation or configuration.
+
+If Microsoft FTP is used, open "Internet Information Services (IIS) Manager".
+
+Select "Sites" under the server name.
+
+For any sites that reference FTP, view the Binding information for IP address and port.  The standard port for FTP is 21, however this may be changed.
+
+Open a "Command Prompt".
+
+Attempt to log on as the user "anonymous" with the following commands:
+
+Note: Returned results may vary depending on the FTP server software.
+
+C:\> "ftp"
+ftp> "Open IP Address Port"
+(Substituting [IP Address] and [Port] with the information previously identified.  If no IP Address was listed in the Binding, attempt using "localhost".)
+(Connected to IP Address
+220 Microsoft FTP Service)
+
+User (IP Address): "anonymous"
+(331 Anonymous access allowed, send identity (e-mail name) as password.)
+
+Password: "password"
+(230 User logged in.)
+ftp>
+
+If the response indicates that an anonymous FTP login was permitted, this is a finding.
+
+If accounts with administrator privileges are used to access FTP, this is a CAT I finding.
+
+References:
+SV-52106
+V-1120
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 76 *******************************
+
+QUESTION         : 77 of 106
+TITLE            : CAT II, V-226259, SV-226259r794508, SRG-OS-000002-GPOS-00002
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:44501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:44501
+RULE             : Windows 2012 / 2012 R2 must automatically remove or disable temporary user accounts after 72 hours.
+QUESTION_TEXT    : Determine if temporary user accounts are used and identify any that exist. If none exist, this is NA.
+
+Review temporary user accounts for expiration dates.
+
+Open "PowerShell".
+
+Domain Controllers:
+
+Enter "Search-ADAccount -AccountExpiring -TimeSpan 3:00:00:00 | FT Name, AccountExpirationDate"
+This will return any accounts configured to expire within the next 3 days.  (The "TimeSpan" value to can be changed to find accounts configured to expire at various times such as 30 for the next month.)
+
+If any accounts identified as temporary are not listed, this is a finding.
+
+For any temporary accounts returned by the previous query:
+Enter "Get-ADUser -Identity [Name] -Property WhenCreated" to determine when the account was created.
+
+If the "WhenCreated" date and "AccountExpirationDate" from the previous query are greater than 3 days apart, this is a finding.
+
+Member servers and standalone systems:
+
+Enter "Net User [username]", where [username] is the name of the temporary user account.
+
+If "Account expires" has not been defined within 72 hours for any temporary user account, this is a finding.
+
+If the "Password last set" date and "Account expires" date are greater than 72 hours apart, this is a finding. (Net User does not provide an account creation date.)
+
+References:
+SV-72063
+V-57653
+CCI-000016
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 77 *******************************
+
+QUESTION         : 78 of 106
+TITLE            : CAT II, V-226260, SV-226260r794541, SRG-OS-000123-GPOS-00064
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:44701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:44701
+RULE             : Windows 2012 / 2012 R2 must automatically remove or disable emergency accounts after the crisis is resolved or within 72 hours.
+QUESTION_TEXT    : Determine if emergency administrator accounts are used and identify any that exist. If none exist, this is NA.
+
+If emergency administrator accounts cannot be configured with an expiration date due to an ongoing crisis, the accounts must be disabled or removed when the crisis is resolved.
+
+If emergency administrator accounts have not been configured with an expiration date or have not been disabled or removed following the resolution of a crisis, this is a finding.
+
+Domain Controllers:
+
+Enter "Search-ADAccount -AccountExpiring -TimeSpan 3:00:00:00 | FT Name, AccountExpirationDate"
+This will return any accounts configured to expire within the next 3 days.  (The "TimeSpan" value to can be changed to find accounts configured to expire at various times such as 30 for the next month.)
+
+If any accounts identified as emergency administrator accounts are not listed, this is a finding.
+
+For any emergency administrator accounts returned by the previous query:
+Enter "Get-ADUser -Identity [Name] -Property WhenCreated" to determine when the account was created.
+
+If the "WhenCreated" date and "AccountExpirationDate" from the previous query are greater than 3 days apart, this is a finding.
+
+Member servers and standalone systems:
+
+Enter "Net User [username]", where [username] is the name of the emergency administrator accounts.
+
+If "Account expires" has not been defined within 72 hours for any emergency administrator accounts, this is a finding.
+
+If the "Password last set" date and "Account expires" date are greater than 72 hours apart, this is a finding. (Net User does not provide an account creation date.)
+
+References:
+V-57655
+SV-72065
+CCI-001682
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 78 *******************************
+
+QUESTION         : 79 of 106
+TITLE            : CAT II, V-226264, SV-226264r794523, SRG-OS-000066-GPOS-00034
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:45501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:45501
+RULE             : Domain controllers must have a PKI server certificate.
+QUESTION_TEXT    : Verify the domain controller has a PKI server certificate.
+
+Run "mmc".
+Select "Add/Remove Snap-in" from the File menu.
+Select "Certificates" in the left pane and click the "Add >" button.
+Select "Computer Account", click "Next".
+Select the appropriate option for "Select the computer you want this snap-in to manage.", click "Finish".
+Click "OK".
+Select and expand the Certificates (Local Computer) entry in the left pane.
+Select and expand the Personal entry in the left pane.
+Select the Certificates entry in the left pane.
+
+If no certificate for the domain controller exists in the right pane, this is a finding.
+
+References:
+V-39334
+SV-51189
+CCI-000185
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 79 *******************************
+
+QUESTION         : 80 of 106
+TITLE            : CAT II, V-226267, SV-226267r852130, SRG-OS-000105-GPOS-00052
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:46101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:46101
+RULE             : Active directory user accounts, including administrators, must be configured to require the use of a Common Access Card (CAC), PIV-compliant hardware token, or Alternate Logon Token (ALT) for user authentication.
+QUESTION_TEXT    : Verify active directory user accounts, including administrators, have "Smart card is required for interactive logon" selected.
+
+Run "PowerShell".
+Enter the following:
+"Get-ADUser -Filter {(Enabled -eq $True) -and (SmartcardLogonRequired -eq $False)} | FT Name"
+("DistinguishedName" may be substituted for "Name" for more detailed output.)
+If any user accounts are listed, this is a finding.
+
+Alternately:
+To view sample accounts in "Active Directory Users and Computers" (Available from various menus or run "dsa.msc"):
+Select the Organizational Unit (OU) where the User accounts are located.  (By default this is the Users node; however, accounts may be under other organization-defined OUs.)
+Right click the sample User account and select "Properties".
+Select the "Account" tab.
+If any User accounts do not have "Smart card is required for interactive logon" checked in the "Account Options" area, this is a finding.
+
+References:
+V-15488
+SV-51192
+CCI-000765
+CCI-000766
+CCI-000767
+CCI-000768
+CCI-001948
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 80 *******************************
+
+QUESTION         : 81 of 106
+TITLE            : CAT II, V-226288, SV-226288r794509, SRG-OS-000023-GPOS-00006
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:50301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:50301
+RULE             : The required legal notice must be configured to display before console logon.
+QUESTION_TEXT    : If the following registry value does not exist or is not configured as specified, this is a finding:
+
+Registry Hive: HKEY_LOCAL_MACHINE 
+Registry Path: \SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\
+
+Value Name: LegalNoticeText
+
+Value Type: REG_SZ
+Value: See message text below
+
+You are accessing a U.S. Government (USG) Information System (IS) that is provided for USG-authorized use only.
+
+By using this IS (which includes any device attached to this IS), you consent to the following conditions:
+
+-The USG routinely intercepts and monitors communications on this IS for purposes including, but not limited to, penetration testing, COMSEC monitoring, network operations and defense, personnel misconduct (PM), law enforcement (LE), and counterintelligence (CI) investigations.
+
+-At any time, the USG may inspect and seize data stored on this IS.
+
+-Communications using, or data stored on, this IS are not private, are subject to routine monitoring, interception, and search, and may be disclosed or used for any USG-authorized purpose.
+
+-This IS includes security measures (e.g., authentication and access controls) to protect USG interests--not for your personal benefit or privacy.
+
+-Notwithstanding the above, using this IS does not constitute consent to PM, LE or CI investigative searching or monitoring of the content of privileged communications, or work product, related to personal representation or services by attorneys, psychotherapists, or clergy, and their assistants.  Such communications and work product are private and confidential.  See User Agreement for details.
+
+References:
+V-1089
+SV-52845
+CCI-000048
+CCI-000050
+CCI-001384
+CCI-001385
+CCI-001386
+CCI-001387
+CCI-001388
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 81 *******************************
+
+QUESTION         : 82 of 106
+TITLE            : CAT II, V-226359, SV-226359r794620, SRG-OS-000031-GPOS-00012
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:64501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:64501
+RULE             : A screen saver must be enabled on the system.
+QUESTION_TEXT    : If the following registry value does not exist or is not configured as specified, this is a finding:
+
+Registry Hive: HKEY_CURRENT_USER
+Registry Path: \Software\Policies\Microsoft\Windows\Control Panel\Desktop\
+
+Value Name: ScreenSaveActive
+
+Type: REG_SZ
+Value: 1
+
+Applications requiring continuous, real-time screen display (e.g., network management products) require the following and must be documented with the ISSO:
+ 
+-The logon session does not have administrator rights. 
+-The display station (e.g., keyboard, monitor, etc.) is located in a controlled access area.
+
+References:
+V-36656
+SV-51758
+CCI-000060
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 82 *******************************
+
+QUESTION         : 83 of 106
+TITLE            : CAT II, V-226360, SV-226360r794619, SRG-OS-000028-GPOS-00009
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:64701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:64701
+RULE             : The screen saver must be password protected.
+QUESTION_TEXT    : If the following registry value does not exist or is not configured as specified, this is a finding:
+
+Registry Hive: HKEY_CURRENT_USER
+Registry Path: \Software\Policies\Microsoft\Windows\Control Panel\Desktop\
+
+Value Name: ScreenSaverIsSecure
+
+Type: REG_SZ
+Value: 1
+
+References:
+SV-51760
+V-36657
+CCI-000056
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 83 *******************************
+
+QUESTION         : 84 of 106
+TITLE            : CAT II, V-226363, SV-226363r794638, SRG-OS-000095-GPOS-00049
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:65301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:65301
+RULE             : The Windows Help Experience Improvement Program must be disabled.
+QUESTION_TEXT    : If the following registry value does not exist or is not configured as specified, this is a finding:
+
+Registry Hive: HKEY_CURRENT_USER
+Registry Path: \Software\Policies\Microsoft\Assistance\Client\1.0\
+
+Value Name: NoImplicitFeedback
+
+Type: REG_DWORD
+Value: 1
+
+References:
+SV-53144
+V-16021
+CCI-000381
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 84 *******************************
+
+QUESTION         : 85 of 106
+TITLE            : CAT II, V-226364, SV-226364r794639, SRG-OS-000095-GPOS-00049
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:65501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:65501
+RULE             : Windows Help Ratings feedback must be turned off.
+QUESTION_TEXT    : If the following registry value does not exist or is not configured as specified, this is a finding:
+
+Registry Hive: HKEY_CURRENT_USER
+Registry Path: \Software\Policies\Microsoft\Assistance\Client\1.0\
+
+Value Name: NoExplicitFeedback
+
+Type: REG_DWORD
+Value: 1
+
+References:
+SV-53145
+V-16048
+CCI-000381
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 85 *******************************
+
+QUESTION         : 86 of 106
+TITLE            : CAT II, V-226365, SV-226365r794685, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:65701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:65701
+RULE             : Zone information must be preserved when saving attachments.
+QUESTION_TEXT    : If the following registry value does not exist or is not configured as specified, this is a finding:
+
+Registry Hive: HKEY_CURRENT_USER
+Registry Path: \Software\Microsoft\Windows\CurrentVersion\Policies\Attachments\
+
+Value Name: SaveZoneInformation
+
+Type: REG_DWORD
+Value: 2
+
+References:
+SV-53002
+V-14268
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 86 *******************************
+
+QUESTION         : 87 of 106
+TITLE            : CAT II, V-226366, SV-226366r794686, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:65901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:65901
+RULE             : Mechanisms for removing zone information from file attachments must be hidden.
+QUESTION_TEXT    : If the following registry value does not exist or is not configured as specified, this is a finding:
+
+Registry Hive: HKEY_CURRENT_USER
+Registry Path: \Software\Microsoft\Windows\CurrentVersion\Policies\Attachments\
+
+Value Name: HideZoneInfoOnProperties
+
+Type: REG_DWORD
+Value: 1
+
+References:
+SV-53004
+V-14269
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 87 *******************************
+
+QUESTION         : 88 of 106
+TITLE            : CAT II, V-226367, SV-226367r794687, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:66101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:66101
+RULE             : The system must notify antivirus when file attachments are opened.
+QUESTION_TEXT    : If the following registry value does not exist or is not configured as specified, this is a finding:
+
+Registry Hive: HKEY_CURRENT_USER
+Registry Path: \Software\Microsoft\Windows\CurrentVersion\Policies\Attachments\
+
+Value Name: ScanWithAntiVirus
+
+Type: REG_DWORD
+Value: 3
+
+References:
+SV-53006
+V-14270
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 88 *******************************
+
+QUESTION         : 89 of 106
+TITLE            : CAT II, V-226368, SV-226368r794688, SRG-OS-000480-GPOS-00228
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:66301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:66301
+RULE             : Users must be prevented from sharing files in their profiles.
+QUESTION_TEXT    : If the following registry value does not exist or is not configured as specified, this is a finding:
+
+Registry Hive: HKEY_CURRENT_USER
+Registry Path: \Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\
+
+Value Name: NoInPlaceSharing
+
+Type: REG_DWORD
+Value: 1
+
+References:
+SV-53140
+V-15727
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 89 *******************************
+
+QUESTION         : 90 of 106
+TITLE            : CAT II, V-226369, SV-226369r852155, SRG-OS-000362-GPOS-00149
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:66501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:66501
+RULE             : Media Player must be configured to prevent automatic Codec downloads.
+QUESTION_TEXT    : If the following registry value does not exist or is not configured as specified, this is a finding: 
+
+Registry Hive: HKEY_CURRENT_USER
+Registry Path: \Software\Policies\Microsoft\WindowsMediaPlayer\
+
+Value Name: PreventCodecDownload
+
+Type: REG_DWORD
+Value: 1
+
+References:
+SV-52921
+V-3481
+CCI-001812
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 90 *******************************
+
+QUESTION         : 91 of 106
+TITLE            : CAT III, V-226040, SV-226040r794377, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:2301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:2301
+RULE             : Security configuration tools or equivalent processes must be used to configure and maintain platforms for security compliance.
+QUESTION_TEXT    : Verify security configuration tools or equivalent processes are being used to configure Windows systems to meet security requirements.  If security configuration tools or equivalent processes are not used, this is a finding.
+
+Security configuration tools that are integrated into Windows, such as Group Policies and Security Templates, may be used to configure platforms for security compliance.
+
+If an alternate method is used to configure a system (e.g., manually using the DISA Windows Security STIGs, etc.) and the same configured result is achieved, this is acceptable.
+
+References:
+SV-52859
+V-1128
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 91 *******************************
+
+QUESTION         : 92 of 106
+TITLE            : CAT III, V-226041, SV-226041r794378, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:2501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:2501
+RULE             : System-level information must be backed up in accordance with local recovery time and recovery point objectives.
+QUESTION_TEXT    : Determine whether system-level information is backed up in accordance with local recovery time and recovery point objectives.  If system-level information is not backed up in accordance with local recovery time and recovery point objectives, this is a finding.
+
+References:
+SV-52841
+V-1076
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 92 *******************************
+
+QUESTION         : 93 of 106
+TITLE            : CAT III, V-226042, SV-226042r794312, SRG-OS-000185-GPOS-00079
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:2701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:2701
+RULE             : User-level information must be backed up in accordance with local recovery time and recovery point objectives.
+QUESTION_TEXT    : Determine whether user-level information is backed up in accordance with local recovery time and recovery point objectives.  If user-level information is not backed up in accordance with local recovery time and recovery point objectives, this is a finding.
+
+References:
+SV-51581
+V-36733
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 93 *******************************
+
+QUESTION         : 94 of 106
+TITLE            : CAT III, V-226043, SV-226043r794313, SRG-OS-000185-GPOS-00079
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:2901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:2901
+RULE             : Backups of system-level information must be protected.
+QUESTION_TEXT    : Determine if system-level information backups are protected from destruction and stored in a physically secure location.  If they are not, this is a finding.
+
+References:
+SV-52130
+V-40172
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 94 *******************************
+
+QUESTION         : 95 of 106
+TITLE            : CAT III, V-226044, SV-226044r794314, SRG-OS-000185-GPOS-00079
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:3101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:3101
+RULE             : System-related documentation must be backed up in accordance with local recovery time and recovery point objectives.
+QUESTION_TEXT    : Determine whether system-related documentation is backed up in accordance with local recovery time and recovery point objectives.  If system-related documentation is not backed up in accordance with local recovery time and recovery point objectives, this is a finding.
+
+References:
+V-40173
+SV-52131
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 95 *******************************
+
+QUESTION         : 96 of 106
+TITLE            : CAT III, V-226077, SV-226077r794796, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:9701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:9701
+RULE             : The time synchronization tool must be configured to enable logging of time source switching.
+QUESTION_TEXT    : Verify logging is configured to capture time source switches.
+
+If the Windows Time Service is used, verify the following registry value.  If it is not configured as specified, this is a finding.
+
+Registry Hive: HKEY_LOCAL_MACHINE
+Registry Path: \System\CurrentControlSet\Services\W32Time\Config\
+
+Value Name: EventLogFlags
+
+Type: REG_DWORD
+Value: 2 or 3
+
+If another time synchronization tool is used, review the available configuration options and logs.  If the tool has time source logging capability and it is not enabled, this is a finding.
+
+References:
+SV-51182
+V-8324
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 96 *******************************
+
+QUESTION         : 97 of 106
+TITLE            : CAT III, V-226081, SV-226081r794800, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:10501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:10501
+RULE             : Anonymous access to the root DSE of a non-public directory must be disabled.
+QUESTION_TEXT    : At this time, this is a finding for all Windows domain controllers for sensitive or classified levels as Windows Active Directory Domain Services (AD DS) does not provide a method to restrict anonymous access to the root DSE on domain controllers.
+
+The following can be used to verify anonymous access is allowed.
+
+Open a command prompt (not elevated).
+Run "ldp.exe".
+From the Connection menu, select Bind.
+Clear the User, Password, and Domain fields.
+Select Simple bind for the Bind type, Click OK.
+
+RootDSE attributes should display, such as various namingContexts.
+
+Confirmation of anonymous access will be displayed at the end:
+res = ldap_simple_bind_s
+Authenticated as: 'NT AUTHORITY\ANONYMOUS LOGON'
+
+References:
+SV-51186
+V-14797
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 97 *******************************
+
+QUESTION         : 98 of 106
+TITLE            : CAT III, V-226083, SV-226083r794805, SRG-OS-000163-GPOS-00072
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:10901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:10901
+RULE             : The directory service must be configured to terminate LDAP-based network connections to the directory server after five (5) minutes of inactivity.
+QUESTION_TEXT    : Verify the value for MaxConnIdleTime.
+
+Open an elevated command prompt.
+Enter "ntdsutil".
+At the "ntdsutil:" prompt, enter "LDAP policies".
+At the "ldap policy:" prompt, enter "connections".
+At the "server connections:" prompt, enter "connect to server [host-name]".
+(Where [host-name] is the computer name of the domain controller.)
+At the "server connections:" prompt, enter "q".
+At the "ldap policy:" prompt, enter "show values". 
+
+If the value for MaxConnIdleTime is greater than 300 (the value for five minutes) or it is not specified, this is a finding.
+
+Enter "q" at the "ldap policy:" and "ntdsutil:" prompts to exit.
+
+Alternately, Dsquery can be used to display MaxConnIdleTime:
+
+Open an elevated command prompt.
+Enter the following command (on a single line).
+dsquery * "cn=Default Query Policy,cn=Query-Policies,cn=Directory Service, cn=Windows NT,cn=Services,cn=Configuration,dc=[forest-name]" -attr LDAPAdminLimits 
+The quotes are required and dc=[forest-name] is the fully qualified LDAP name of the domain being reviewed (e.g., dc=disaost,dc=mil).
+
+References:
+V-14831
+SV-51188
+CCI-001133
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 98 *******************************
+
+QUESTION         : 99 of 106
+TITLE            : CAT III, V-226181, SV-226181r877038, SRG-OS-000355-GPOS-00143
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:29301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:29301
+RULE             : The time service must synchronize with an appropriate DoD time source.
+QUESTION_TEXT    : Open "Windows PowerShell" or an elevated "Command Prompt" (run as administrator).
+
+Enter "W32tm /query /configuration".
+
+Domain-joined systems are automatically configured with a "Type" of "NT5DS" to synchronize with domain controllers and would not be a finding.
+
+If systems are configured with a "Type" of "NTP", including standalone systems and the forest root domain controller with the PDC Emulator role, and do not have a DoD time server defined for "NTPServer", this is a finding. (See V-8557 in the Active Directory Forest STIG for the time source requirement of the forest root domain PDC emulator.)
+
+If an alternate time synchronization tool is used and is not enabled or not configured to synchronize with a DoD time source, this is a finding.
+
+The US Naval Observatory operates stratum 1 time servers, which are identified at:
+https://www.cnmoc.usff.navy.mil/Organization/United-States-Naval-Observatory/Precise-Time-Department/Network-Time-Protocol-NTP/
+
+Time synchronization will occur through a hierarchy of time servers down to the local level. Clients and lower-level servers will synchronize with an authorized time server in the hierarchy.
+
+References:
+SV-52919
+V-3472
+CCI-001891
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 99 *******************************
+
+QUESTION         : 100 of 106
+TITLE            : CAT III, V-226207, SV-226207r794443, SRG-OS-000095-GPOS-00049
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:34501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:34501
+RULE             : Automatic download of updates from the Windows Store must be turned off.
+QUESTION_TEXT    : The Windows Store is not installed by default.  If the \Windows\WinStore directory does not exist, this is NA.
+If the following registry value does not exist or is not configured as specified, this is a finding:
+
+Windows 2012 R2:
+Registry Hive:  HKEY_LOCAL_MACHINE
+Registry Path:  \SOFTWARE\Policies\Microsoft\WindowsStore\
+
+Value Name:  AutoDownload
+
+Type:  REG_DWORD
+Value:  0x00000002 (2)
+
+Windows 2012:
+Registry Hive:  HKEY_LOCAL_MACHINE
+Registry Path:  \SOFTWARE\Policies\Microsoft\WindowsStore\WindowsUpdate\
+
+Value Name:  AutoDownload
+
+Type:  REG_DWORD
+Value:  0x00000002 (2)
+
+References:
+V-36710
+SV-51750
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 100 *******************************
+
+QUESTION         : 101 of 106
+TITLE            : CAT III, V-226232, SV-226232r794574, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:39301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:39301
+RULE             : The setting to allow Microsoft accounts to be optional for modern style apps must be enabled (Windows 2012 R2).
+QUESTION_TEXT    : This requirement is NA for the initial release of Windows 2012.  It is applicable to Windows 2012 R2.
+
+Verify the registry value below.  If it does not exist or is not configured as specified, this is a finding.
+
+Registry Hive: HKEY_LOCAL_MACHINE 
+Registry Path: \SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System
+
+Value Name: MSAOptional
+
+Value Type: REG_DWORD
+Value: 1
+
+References:
+SV-56353
+V-43241
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 101 *******************************
+
+QUESTION         : 102 of 106
+TITLE            : CAT III, V-226244, SV-226244r794531, SRG-OS-000080-GPOS-00048
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:41701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:41701
+RULE             : Nonadministrative user accounts or groups must only have print permissions on printer shares.
+QUESTION_TEXT    : Open "Devices and Printers" in Control Panel or through Search.
+If there are no printers configured, this is NA.(Exclude Microsoft Print to PDF and Microsoft XPS Document Writer, which do not support sharing.)
+
+For each configured printer:
+Right click on the printer. 
+Select "Printer Properties". 
+Select the "Sharing" tab. 
+View whether "Share this printer" is checked. 
+
+For any printers with "Share this printer" selected: 
+Select the Security tab. 
+
+If any standard user accounts or groups have permissions other than "Print", this is a finding.
+Standard users will typically be given "Print" permission through the Everyone group.
+"All APPLICATION PACKAGES" and "CREATOR OWNER" are not considered standard user accounts for this requirement.
+
+References:
+SV-52213
+V-1135
+CCI-000213
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 102 *******************************
+
+QUESTION         : 103 of 106
+TITLE            : CAT III, V-226245, SV-226245r794538, SRG-OS-000118-GPOS-00060
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:41901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:41901
+RULE             : Outdated or unused accounts must be removed from the system or disabled.
+QUESTION_TEXT    : Run "PowerShell".
+
+Member servers and standalone systems:
+Copy or enter the lines below to the PowerShell window and enter. (Entering twice may be required. Do not include the quotes at the beginning and end of the query.)
+
+"([ADSI]('WinNT://{0}' -f $env:COMPUTERNAME)).Children | Where { $_.SchemaClassName -eq 'user' } | ForEach {
+ $user = ([ADSI]$_.Path)
+ $lastLogin = $user.Properties.LastLogin.Value
+ $enabled = ($user.Properties.UserFlags.Value -band 0x2) -ne 0x2
+ if ($lastLogin -eq $null) {
+ $lastLogin = 'Never'
+ }
+ Write-Host $user.Name $lastLogin $enabled 
+}"
+
+This will return a list of local accounts with the account name, last logon, and if the account is enabled (True/False).
+For example: User1 10/31/2015 5:49:56 AM True
+
+Domain Controllers:
+Enter the following command in PowerShell.
+"Search-ADAccount -AccountInactive -UsersOnly -TimeSpan 35.00:00:00"
+
+This will return accounts that have not been logged on to for 35 days, along with various attributes such as the Enabled status and LastLogonDate.
+
+Review the list of accounts returned by the above queries to determine the finding validity for each account reported.
+
+Exclude the following accounts:
+Built-in administrator account (Renamed, SID ending in 500)
+Built-in guest account (Renamed, Disabled, SID ending in 501)
+Application accounts
+
+If any enabled accounts have not been logged on to within the past 35 days, this is a finding.
+
+Inactive accounts that have been reviewed and deemed to be required must be documented with the ISSO.
+
+References:
+V-1112
+SV-52854
+CCI-000795
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 103 *******************************
+
+QUESTION         : 104 of 106
+TITLE            : CAT III, V-226289, SV-226289r794510, SRG-OS-000023-GPOS-00006
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:50501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:50501
+RULE             : The Windows dialog box title for the legal banner must be configured.
+QUESTION_TEXT    : If the following registry value does not exist or is not configured as specified, this is a finding:
+
+Registry Hive: HKEY_LOCAL_MACHINE 
+Registry Path: \Software\Microsoft\Windows\CurrentVersion\Policies\System\
+
+Value Name: LegalNoticeCaption
+
+Value Type: REG_SZ
+Value: See message title options below
+
+"DoD Notice and Consent Banner", "US Department of Defense Warning Statement", or a site-defined equivalent. 
+
+If a site-defined title is used, it can in no case contravene or modify the language of the banner text required in V-1089.
+
+Automated tools may only search for the titles defined above. If a site-defined title is used, a manual review will be required.
+
+References:
+V-26359
+SV-53121
+CCI-000048
+CCI-001384
+CCI-001385
+CCI-001386
+CCI-001387
+CCI-001388
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 104 *******************************
+
+QUESTION         : 105 of 106
+TITLE            : CAT III, V-226361, SV-226361r794636, SRG-OS-000095-GPOS-00049
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:64901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:64901
+RULE             : Notifications from Windows Push Network Service must be turned off.
+QUESTION_TEXT    : If the following registry value does not exist or is not configured as specified, this is a finding:
+
+Registry Hive: HKEY_CURRENT_USER
+Registry Path: \SOFTWARE\Policies\Microsoft\Windows\CurrentVersion\PushNotifications\
+
+Value Name: NoCloudApplicationNotification
+
+Type: REG_DWORD
+Value: 1
+
+References:
+SV-51762
+V-36776
+CCI-000381
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 105 *******************************
+
+QUESTION         : 106 of 106
+TITLE            : CAT III, V-226362, SV-226362r794637, SRG-OS-000095-GPOS-00049
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows:testaction:65101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows:question:65101
+RULE             : Toast notifications to the lock screen must be turned off.
+QUESTION_TEXT    : If the following registry value does not exist or is not configured as specified, this is a finding:
+
+Registry Hive: HKEY_CURRENT_USER
+Registry Path: \SOFTWARE\Policies\Microsoft\Windows\CurrentVersion\PushNotifications\
+
+Value Name: NoToastApplicationNotificationOnLockScreen
+
+Type: REG_DWORD
+Value: 1
+
+References:
+SV-51763
+V-36777
+CCI-000381
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 106 *******************************
+

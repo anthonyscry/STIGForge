@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using STIGForge.App.Helpers;
 using STIGForge.Core.Abstractions;
 
 namespace STIGForge.App;
@@ -31,10 +32,9 @@ public partial class MainViewModel
       };
 
       var entries = await _audit.QueryAsync(query, CancellationToken.None);
-      System.Windows.Application.Current.Dispatcher.Invoke(() =>
+      await System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
       {
-        AuditEntries.Clear();
-        foreach (var entry in entries) AuditEntries.Add(entry);
+        AuditEntries.ReplaceAll(entries);
       });
 
       StatusText = $"Loaded {entries.Count} audit entries.";

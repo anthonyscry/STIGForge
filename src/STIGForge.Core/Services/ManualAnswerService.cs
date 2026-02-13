@@ -1,6 +1,8 @@
 using System.Text;
 using System.Text.Json;
 using STIGForge.Core.Abstractions;
+using BundlePaths = STIGForge.Core.Constants.BundlePaths;
+using ControlStatusStrings = STIGForge.Core.Constants.ControlStatus;
 using STIGForge.Core.Models;
 
 namespace STIGForge.Core.Services;
@@ -32,28 +34,28 @@ public sealed class ManualAnswerService
   {
     var token = NormalizeToken(status);
     if (token.Length == 0)
-      return "Open";
+      return ControlStatusStrings.Open;
 
     if (token == "pass" || token == "notafinding" || token == "compliant" || token == "closed")
-      return "Pass";
+      return ControlStatusStrings.Pass;
 
     if (token == "fail" || token == "noncompliant")
-      return "Fail";
+      return ControlStatusStrings.Fail;
 
     if (token == "notapplicable" || token == "na")
-      return "NotApplicable";
+      return ControlStatusStrings.NotApplicable;
 
     if (token == "open" || token == "notreviewed" || token == "notchecked" || token == "unknown" || token == "informational" || token == "error")
-      return "Open";
+      return ControlStatusStrings.Open;
 
-    return "Open";
+    return ControlStatusStrings.Open;
   }
 
   public bool RequiresReason(string? status)
   {
     var normalized = NormalizeStatus(status);
-    return string.Equals(normalized, "Fail", StringComparison.Ordinal)
-      || string.Equals(normalized, "NotApplicable", StringComparison.Ordinal);
+    return string.Equals(normalized, ControlStatusStrings.Fail, StringComparison.Ordinal)
+      || string.Equals(normalized, ControlStatusStrings.NotApplicable, StringComparison.Ordinal);
   }
 
   public void ValidateReasonRequirement(string? status, string? reason)
@@ -168,6 +170,10 @@ public sealed class ManualAnswerService
       // Update existing
       existing.RuleId = ruleId ?? existing.RuleId;
       existing.VulnId = vulnId ?? existing.VulnId;
+      if (!string.Equals(existing.Status, normalizedStatus, StringComparison.Ordinal))
+      {
+        existing.PreviousStatus = existing.Status;
+      }
       existing.Status = normalizedStatus;
       existing.Reason = reason;
       existing.Comment = comment;
@@ -234,7 +240,7 @@ public sealed class ManualAnswerService
     foreach (var answer in file.Answers)
     {
       var status = NormalizeStatus(answer.Status);
-      if (string.Equals(status, "Open", StringComparison.Ordinal))
+      if (string.Equals(status, ControlStatusStrings.Open, StringComparison.Ordinal))
         continue;
 
       if (!string.IsNullOrWhiteSpace(answer.RuleId))
@@ -274,15 +280,15 @@ public sealed class ManualAnswerService
       }
 
       var status = NormalizeStatus(answer.Status);
-      if (string.Equals(status, "Pass", StringComparison.Ordinal))
+      if (string.Equals(status, ControlStatusStrings.Pass, StringComparison.Ordinal))
       {
         pass++;
       }
-      else if (string.Equals(status, "Fail", StringComparison.Ordinal))
+      else if (string.Equals(status, ControlStatusStrings.Fail, StringComparison.Ordinal))
       {
         fail++;
       }
-      else if (string.Equals(status, "NotApplicable", StringComparison.Ordinal))
+      else if (string.Equals(status, ControlStatusStrings.NotApplicable, StringComparison.Ordinal))
       {
         na++;
       }
@@ -304,6 +310,83 @@ public sealed class ManualAnswerService
       NotApplicableCount = na,
       PercentComplete = total > 0 ? (answered * 100.0 / total) : 0.0
     };
+  }
+
+  public void ExportAnswerFile(string bundleRoot, string exportPath)
+  {
+    var file = LoadAnswerFile(bundleRoot);
+    var json = JsonSerializer.Serialize(file, new JsonSerializerOptions
+    {
+      WriteIndented = true,
+      PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    });
+
+    var dir = Path.GetDirectoryName(exportPath);
+    if (!string.IsNullOrEmpty(dir))
+      Directory.CreateDirectory(dir);
+
+    File.WriteAllText(exportPath, json, Encoding.UTF8);
+  }
+
+  public int ImportAnswerFile(string bundleRoot, string importPath, bool overwriteExisting = false)
+  {
+    if (!File.Exists(importPath))
+      throw new FileNotFoundException("Answer file not found.", importPath);
+
+    var json = File.ReadAllText(importPath);
+    var imported = JsonSerializer.Deserialize<AnswerFile>(json, new JsonSerializerOptions
+    {
+      PropertyNameCaseInsensitive = true
+    });
+
+    if (imported?.Answers == null || imported.Answers.Count == 0)
+      return 0;
+
+    var current = LoadAnswerFile(bundleRoot);
+    var count = 0;
+
+    foreach (var answer in imported.Answers)
+    {
+      var normalized = NormalizeStatus(answer.Status);
+      if (string.Equals(normalized, ControlStatusStrings.Open, StringComparison.Ordinal))
+        continue;
+
+      var existing = current.Answers.FirstOrDefault(a =>
+        (!string.IsNullOrWhiteSpace(a.RuleId) && !string.IsNullOrWhiteSpace(answer.RuleId) &&
+         string.Equals(a.RuleId, answer.RuleId, StringComparison.OrdinalIgnoreCase)) ||
+        (!string.IsNullOrWhiteSpace(a.VulnId) && !string.IsNullOrWhiteSpace(answer.VulnId) &&
+         string.Equals(a.VulnId, answer.VulnId, StringComparison.OrdinalIgnoreCase)));
+
+      if (existing != null && !overwriteExisting)
+        continue;
+
+      if (existing != null)
+      {
+        existing.Status = normalized;
+        existing.Reason = answer.Reason;
+        existing.Comment = answer.Comment;
+        existing.UpdatedAt = DateTimeOffset.Now;
+      }
+      else
+      {
+        current.Answers.Add(new ManualAnswer
+        {
+          RuleId = answer.RuleId,
+          VulnId = answer.VulnId,
+          Status = normalized,
+          Reason = answer.Reason,
+          Comment = answer.Comment,
+          UpdatedAt = DateTimeOffset.Now
+        });
+      }
+
+      count++;
+    }
+
+    if (count > 0)
+      SaveAnswerFile(bundleRoot, current);
+
+    return count;
   }
 
   private static ManualAnswer? FindAnswer(AnswerFile file, ControlRecord control)
@@ -349,7 +432,7 @@ public sealed class ManualAnswerService
 
   private static AnswerFile CreateEmptyAnswerFile(string bundleRoot)
   {
-    var manifestPath = Path.Combine(bundleRoot, "Manifest", "manifest.json");
+    var manifestPath = Path.Combine(bundleRoot, BundlePaths.ManifestDirectory, "manifest.json");
     string? profileId = null;
     string? packId = null;
 
@@ -379,7 +462,7 @@ public sealed class ManualAnswerService
 
   private static string GetAnswerFilePath(string bundleRoot)
   {
-    return Path.Combine(bundleRoot, "Manual", "answers.json");
+    return Path.Combine(bundleRoot, BundlePaths.ManualDirectory, BundlePaths.AnswersFileName);
   }
 }
 

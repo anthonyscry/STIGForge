@@ -1,4 +1,5 @@
 using System.Text.Json;
+using BundlePaths = STIGForge.Core.Constants.BundlePaths;
 
 namespace STIGForge.Apply;
 
@@ -13,7 +14,7 @@ public sealed class IdempotencyTracker
 
     public IdempotencyTracker(string bundleRoot)
     {
-        var applyRoot = Path.Combine(bundleRoot, "Apply");
+        var applyRoot = Path.Combine(bundleRoot, BundlePaths.ApplyDirectory);
         Directory.CreateDirectory(applyRoot);
         _trackerPath = Path.Combine(applyRoot, "idempotency_tracker.json");
         _state = Load();

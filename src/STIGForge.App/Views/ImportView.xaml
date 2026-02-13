@@ -39,8 +39,21 @@
         <TextBlock Text="{Binding ImportHint}" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,2"/>
         <Expander Header="Machine Scan Results" IsExpanded="{Binding IsScanExpanded}" Margin="0,0,0,2"
                   ToolTipService.ToolTip="Click to expand or collapse the machine scan output. Shows what OS, roles, and features were detected.">
-          <TextBlock Text="{Binding MachineApplicabilityStatus}" Foreground="{DynamicResource TextMutedBrush}" FontSize="11"
-                     TextWrapping="Wrap" Margin="4,4,0,0"/>
+          <Grid Margin="4,4,0,0">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="Auto" MinWidth="340"/>
+              <ColumnDefinition Width="16"/>
+              <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0">
+              <TextBlock Text="{Binding MachineApplicabilityStatus}" Foreground="{DynamicResource TextMutedBrush}" FontSize="11"
+                         TextWrapping="Wrap" Margin="0,0,0,6"/>
+              <TextBlock Text="{Binding MachineApplicablePacks}" Foreground="{DynamicResource TextMutedBrush}" FontSize="11"
+                         TextWrapping="Wrap"/>
+            </StackPanel>
+            <TextBlock Grid.Column="2" Text="{Binding MachineRecommendations}" Foreground="{DynamicResource TextMutedBrush}" FontSize="11"
+                       TextWrapping="Wrap"/>
+          </Grid>
         </Expander>
         <TextBlock Text="{Binding SelectedContentSummary}" Foreground="{DynamicResource TextMutedBrush}" FontSize="11" Margin="0,2,0,0"/>
       </StackPanel>
@@ -72,22 +85,42 @@
             </StackPanel>
           </DockPanel>
 
-          <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Margin="0,0,0,8">
-            <ListView x:Name="ContentLibraryList" ItemsSource="{Binding FilteredContentLibrary}" SelectedItem="{Binding SelectedLibraryItem}"
-                      SelectionMode="Extended" MaxHeight="320" MinHeight="80"
-                      SelectionChanged="ContentLibraryList_SelectionChanged"
-                      GridViewColumnHeader.Click="ColumnHeader_Click">
-              <ListView.View>
-                <GridView>
-                  <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}" Width="200"/>
-                  <GridViewColumn Header="Format" DisplayMemberBinding="{Binding Format}" Width="80"/>
-                  <GridViewColumn Header="PackId" DisplayMemberBinding="{Binding PackId}" Width="150"/>
-                  <GridViewColumn Header="Imported" DisplayMemberBinding="{Binding ImportedAtLabel}" Width="140"/>
-                  <GridViewColumn Header="Source" DisplayMemberBinding="{Binding SourceLabel}" Width="120"/>
-                </GridView>
-              </ListView.View>
-            </ListView>
-          </Border>
+           <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Margin="0,0,0,8">
+             <Grid>
+               <ListView x:Name="ContentLibraryList" ItemsSource="{Binding FilteredContentLibrary}" SelectedItem="{Binding SelectedLibraryItem}"
+                         SelectionMode="Extended" MaxHeight="320" MinHeight="80"
+                         VirtualizingPanel.IsVirtualizing="True"
+                         VirtualizingPanel.VirtualizationMode="Recycling"
+                         ScrollViewer.CanContentScroll="True"
+                         SelectionChanged="ContentLibraryList_SelectionChanged"
+                         GridViewColumnHeader.Click="ColumnHeader_Click">
+                 <ListView.View>
+                   <GridView>
+                     <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}" Width="200"/>
+                     <GridViewColumn Header="Format" DisplayMemberBinding="{Binding Format}" Width="80"/>
+                     <GridViewColumn Header="PackId" DisplayMemberBinding="{Binding PackId}" Width="150"/>
+                     <GridViewColumn Header="Imported" DisplayMemberBinding="{Binding ImportedAtLabel}" Width="140"/>
+                     <GridViewColumn Header="Source" DisplayMemberBinding="{Binding SourceLabel}" Width="120"/>
+                   </GridView>
+                 </ListView.View>
+               </ListView>
+
+               <TextBlock Text="No content packs imported. Click 'Import STIG...', 'Import SCAP...', or 'Import GPO / LGPO...' to add content."
+                          VerticalAlignment="Center" HorizontalAlignment="Center" TextAlignment="Center"
+                          Foreground="{DynamicResource TextMutedBrush}" FontSize="14" TextWrapping="Wrap" MaxWidth="500">
+                 <TextBlock.Style>
+                   <Style TargetType="TextBlock">
+                     <Setter Property="Visibility" Value="Collapsed"/>
+                     <Style.Triggers>
+                       <DataTrigger Binding="{Binding AllLibraryItems.Count}" Value="0">
+                         <Setter Property="Visibility" Value="Visible"/>
+                       </DataTrigger>
+                     </Style.Triggers>
+                   </Style>
+                 </TextBlock.Style>
+               </TextBlock>
+             </Grid>
+           </Border>
 
           <WrapPanel>
             <Button Content="Select All" MinWidth="100" Height="30" Padding="14,0" Margin="0,0,10,4"

@@ -4,6 +4,8 @@ using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using STIGForge.Core.Abstractions;
+using BundlePaths = STIGForge.Core.Constants.BundlePaths;
+using ControlStatusStrings = STIGForge.Core.Constants.ControlStatus;
 using STIGForge.Core.Models;
 using STIGForge.Core.Services;
 using STIGForge.Evidence;
@@ -37,10 +39,10 @@ internal static class BundleCommands
       var searchFilter = ctx.ParseResult.GetValueForOption(searchOpt) ?? string.Empty;
 
       if (!Directory.Exists(bundle)) { Console.Error.WriteLine("Bundle not found: " + bundle); Environment.ExitCode = 2; return; }
-      var controlsPath = Path.Combine(bundle, "Manifest", "pack_controls.json");
-      if (!File.Exists(controlsPath)) { Console.Error.WriteLine("No pack_controls.json found."); Environment.ExitCode = 2; return; }
+      var controlsPath = Path.Combine(bundle, BundlePaths.ManifestDirectory, BundlePaths.PackControlsFileName);
+      if (!File.Exists(controlsPath)) { Console.Error.WriteLine("No " + BundlePaths.PackControlsFileName + " found."); Environment.ExitCode = 2; return; }
 
-      var allControls = JsonSerializer.Deserialize<List<ControlRecord>>(File.ReadAllText(controlsPath), new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<ControlRecord>();
+      var allControls = PackControlsReader.LoadFromPath(controlsPath);
       var manualControls = allControls.Where(c => c.IsManual).ToList();
       var svc = new ManualAnswerService();
       var answerFile = svc.LoadAnswerFile(bundle);
@@ -52,7 +54,7 @@ internal static class BundleCommands
         var answer = answerFile.Answers.FirstOrDefault(a =>
           (!string.IsNullOrWhiteSpace(a.RuleId) && string.Equals(a.RuleId, c.ExternalIds.RuleId, StringComparison.OrdinalIgnoreCase)) ||
           (!string.IsNullOrWhiteSpace(a.VulnId) && string.Equals(a.VulnId, c.ExternalIds.VulnId, StringComparison.OrdinalIgnoreCase)));
-        rows.Add((key, c.Title, answer?.Status ?? "Open"));
+        rows.Add((key, c.Title, answer?.Status ?? ControlStatusStrings.Open));
       }
 
       if (!string.IsNullOrWhiteSpace(statusFilter)) rows = rows.Where(r => r.Status.IndexOf(statusFilter, StringComparison.OrdinalIgnoreCase) >= 0).ToList();
@@ -238,7 +240,7 @@ internal static class BundleCommands
     var overlayOpt = new Option<string>("--overlay", "Overlay ID") { IsRequired = true };
     var addOpt = new Option<string>("--add-rule", () => string.Empty, "Add override for rule ID");
     var removeOpt = new Option<string>("--remove-rule", () => string.Empty, "Remove override for rule ID");
-    var statusOpt = new Option<string>("--status", () => "NotApplicable", "Override status");
+    var statusOpt = new Option<string>("--status", () => ControlStatusStrings.NotApplicable, "Override status");
     var reasonOpt = new Option<string>("--reason", () => string.Empty, "NA reason or notes");
     cmd.AddOption(overlayOpt); cmd.AddOption(addOpt); cmd.AddOption(removeOpt); cmd.AddOption(statusOpt); cmd.AddOption(reasonOpt);
 
@@ -247,7 +249,7 @@ internal static class BundleCommands
       var overlayId = ctx.ParseResult.GetValueForOption(overlayOpt) ?? string.Empty;
       var addRule = ctx.ParseResult.GetValueForOption(addOpt) ?? string.Empty;
       var removeRule = ctx.ParseResult.GetValueForOption(removeOpt) ?? string.Empty;
-      var statusStr = ctx.ParseResult.GetValueForOption(statusOpt) ?? "NotApplicable";
+      var statusStr = ctx.ParseResult.GetValueForOption(statusOpt) ?? ControlStatusStrings.NotApplicable;
       var reason = ctx.ParseResult.GetValueForOption(reasonOpt) ?? string.Empty;
 
       using var host = buildHost();

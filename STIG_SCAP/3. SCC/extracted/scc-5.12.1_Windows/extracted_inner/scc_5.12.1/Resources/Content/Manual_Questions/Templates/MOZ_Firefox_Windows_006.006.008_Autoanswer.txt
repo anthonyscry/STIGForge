@@ -1,0 +1,41 @@
+################################################################################
+DOCUMENT         : MOZ_Firefox_Windows
+VERSION          : 006.006.008
+CHECKSUM         : 297befed17fa7f194a92d64840a0172accc2612b8d0a0eeda934456a04a7e94d
+MANUAL QUESTIONS : 1
+
+IMPORTANT: Make sure to save the completed version of this file to: 
+<SCC Install>/Resources/Content/Manual_Questions/Completed_Files
+
+This file contains all of the non-automated STIG requirements found in the STIG.
+Results from this file will be combined with automated checks in SCC to provide
+complete STIG compliance results.
+
+This file will be programmaticaly imported, so do not modify anything in this file
+except for placing an '[X]' to select a Single answer, and entering text comments.
+
+The list of questions is printed in order of severity, listing CAT I (High), then CAT II, etc..
+
+################################################################################
+
+QUESTION         : 1 of 1
+TITLE            : CAT I, V-251545, SV-251545r961683, SRG-APP-000456
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.firefox.windows:testaction:101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.firefox.windows:question:101
+RULE             : The installed version of Firefox must be supported.
+QUESTION_TEXT    : Run Firefox. Click the ellipsis button >> Help >> About Firefox, and view the version number.
+
+If the Firefox version is not a supported version, this is a finding.
+
+References:
+CCI-002605
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 1 *******************************
+

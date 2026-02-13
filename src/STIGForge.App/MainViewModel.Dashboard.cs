@@ -1,9 +1,14 @@
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
+using Microsoft.Extensions.Logging;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.IO.Compression;
 using System.Text.Json;
+using STIGForge.App.Helpers;
 using STIGForge.Core.Abstractions;
+using STIGForge.Core.Constants;
+using STIGForge.Core.Models;
 
 namespace STIGForge.App;
 
@@ -127,6 +132,7 @@ public partial class MainViewModel
       DashRecoveryGuidance = string.Empty;
       DashLastVerify = "";
       DashLastExport = "";
+      TrendSnapshots = new ObservableCollection<TrendSnapshot>();
       return;
     }
 
@@ -158,6 +164,19 @@ public partial class MainViewModel
         : "—";
       DashMissionSeverity = BuildMissionSeverityLine(summary);
       DashRecoveryGuidance = BuildMissionRecoveryGuidance(summary, bundlePath);
+
+      var snapshot = new TrendSnapshot
+      {
+        Timestamp = DateTimeOffset.Now,
+        PassCount = DashManualPass,
+        FailCount = DashManualFail,
+        OpenCount = DashManualOpen,
+        NotApplicableCount = DashManualNa,
+        TotalControls = DashTotalControls
+      };
+      _trendService.RecordSnapshot(bundlePath, snapshot);
+      var trendFile = _trendService.LoadTrend(bundlePath);
+      TrendSnapshots = new ObservableCollection<TrendSnapshot>(trendFile.Snapshots);
     }
     catch (Exception ex)
     {
@@ -178,16 +197,17 @@ public partial class MainViewModel
       DashManualPercent = "—";
       DashMissionSeverity = "Mission severity unavailable";
       DashRecoveryGuidance = "Load verify artifacts to compute mission recovery guidance.";
+      TrendSnapshots = new ObservableCollection<TrendSnapshot>();
     }
 
     DashLastVerify = "";
-    var verifyDir = Path.Combine(bundlePath, "Verify");
+    var verifyDir = Path.Combine(bundlePath, BundlePaths.VerifyDirectory);
     if (Directory.Exists(verifyDir))
     {
       try
       {
         var lastVerify = DateTimeOffset.MinValue;
-        foreach (var reportFile in Directory.GetFiles(verifyDir, "consolidated-results.json", SearchOption.AllDirectories))
+        foreach (var reportFile in Directory.GetFiles(verifyDir, BundlePaths.ConsolidatedResultsFileName, SearchOption.AllDirectories))
         {
           var report = STIGForge.Verify.VerifyReportReader.LoadFromJson(reportFile);
           if (report.FinishedAt > lastVerify)
@@ -204,7 +224,7 @@ public partial class MainViewModel
     }
 
     // Check for eMASS export
-    var emassDir = Path.Combine(bundlePath, "Export");
+    var emassDir = Path.Combine(bundlePath, BundlePaths.ExportDirectory);
     if (Directory.Exists(emassDir))
     {
       try
@@ -229,7 +249,7 @@ public partial class MainViewModel
   {
     if (summary.Verify.BlockingFailureCount > 0)
     {
-      var verifyRoot = Path.Combine(bundleRoot, "Verify");
+      var verifyRoot = Path.Combine(bundleRoot, BundlePaths.VerifyDirectory);
       var rollbackHint = GetRollbackGuidance(bundleRoot);
       return "Blocking findings detected. Required artifacts: consolidated verify reports and coverage overlap artifacts. "
         + "Next action: resolve failing/open controls, rerun Verify, and regenerate mission summary. "
@@ -247,7 +267,7 @@ public partial class MainViewModel
 
   private static string GetRollbackGuidance(string bundleRoot)
   {
-    var snapshotsDir = Path.Combine(bundleRoot, "Apply", "Snapshots");
+      var snapshotsDir = Path.Combine(bundleRoot, BundlePaths.ApplyDirectory, "Snapshots");
     if (!Directory.Exists(snapshotsDir))
       return "Rollback guidance: use the latest rollback script from Apply/Snapshots if rollback is required.";
 
@@ -490,9 +510,85 @@ public partial class MainViewModel
   [RelayCommand]
   private void UseRecentBundle()
   {
-    if (string.IsNullOrWhiteSpace(SelectedRecentBundle)) return;
-    BundleRoot = SelectedRecentBundle;
-    LoadCoverageOverlap();
+    var candidate = ResolveSelectedRecentBundle();
+    if (string.IsNullOrWhiteSpace(candidate))
+    {
+      StatusText = "Select a recent bundle first.";
+      return;
+    }
+
+    if (!Directory.Exists(candidate))
+    {
+      StatusText = "Recent bundle path does not exist: " + candidate;
+      var stale = RecentBundles.FirstOrDefault(b => string.Equals(b, candidate, StringComparison.OrdinalIgnoreCase));
+      if (!string.IsNullOrWhiteSpace(stale))
+        RecentBundles.Remove(stale);
+      SaveUiState();
+      return;
+    }
+
+      var manifestPath = Path.Combine(candidate, BundlePaths.ManifestDirectory, "manifest.json");
+    if (!File.Exists(manifestPath))
+    {
+      StatusText = "Selected folder is not a valid bundle (missing Manifest/manifest.json).";
+      return;
+    }
+
+    BundleRoot = candidate;
+    AddRecentBundle(candidate);
+    StatusText = "Active bundle set: " + Path.GetFileName(candidate);
+  }
+
+  [RelayCommand]
+  private void DeleteSelectedRecentBundle()
+  {
+    var candidate = ResolveSelectedRecentBundle();
+    if (string.IsNullOrWhiteSpace(candidate))
+    {
+      StatusText = "Select a recent bundle first.";
+      return;
+    }
+
+    if (!Directory.Exists(candidate))
+    {
+      var stale = RecentBundles.FirstOrDefault(b => string.Equals(b, candidate, StringComparison.OrdinalIgnoreCase));
+      if (!string.IsNullOrWhiteSpace(stale))
+        RecentBundles.Remove(stale);
+
+      SelectedRecentBundle = string.Empty;
+      SaveUiState();
+      StatusText = "Removed missing recent bundle entry.";
+      return;
+    }
+
+    var result = System.Windows.MessageBox.Show(
+      $"Delete bundle at:\n{candidate}\n\nThis permanently removes the bundle folder and all its contents.",
+      "Confirm Delete Recent Bundle",
+      System.Windows.MessageBoxButton.YesNo,
+      System.Windows.MessageBoxImage.Warning);
+
+    if (result != System.Windows.MessageBoxResult.Yes)
+      return;
+
+    try
+    {
+      Directory.Delete(candidate, recursive: true);
+
+      var existing = RecentBundles.FirstOrDefault(b => string.Equals(b, candidate, StringComparison.OrdinalIgnoreCase));
+      if (!string.IsNullOrWhiteSpace(existing))
+        RecentBundles.Remove(existing);
+
+      if (string.Equals(BundleRoot, candidate, StringComparison.OrdinalIgnoreCase))
+        BundleRoot = string.Empty;
+
+      SelectedRecentBundle = string.Empty;
+      SaveUiState();
+      StatusText = "Bundle deleted: " + Path.GetFileName(candidate);
+    }
+    catch (Exception ex)
+    {
+      StatusText = "Delete recent bundle failed: " + ex.Message;
+    }
   }
 
   [RelayCommand]
@@ -540,6 +636,9 @@ public partial class MainViewModel
 
   partial void OnBundleRootChanged(string value)
   {
+    if (!string.IsNullOrWhiteSpace(value) && Directory.Exists(value))
+      AddRecentBundle(value);
+
     SaveUiState();
     LoadCoverageOverlap();
     LoadManualControls();
@@ -654,26 +753,44 @@ public partial class MainViewModel
     SaveUiState();
   }
 
-  private void LoadUiState()
+  private async Task LoadUiStateAsync()
   {
     LocalToolkitRoot = ResolveDefaultToolkitRoot();
     var path = GetUiStatePath();
-    if (!File.Exists(path)) return;
+    if (!File.Exists(path))
+    {
+      PopulateRecentBundles(null);
+      return;
+    }
 
     try
     {
-      var json = File.ReadAllText(path);
+      var json = await File.ReadAllTextAsync(path);
       var state = JsonSerializer.Deserialize<UiState>(json, new JsonSerializerOptions
       {
         PropertyNameCaseInsensitive = true
       });
 
       if (state == null) return;
+
+      var app = System.Windows.Application.Current;
+      if (app?.Dispatcher != null)
+      {
+        _ = app.Dispatcher.InvokeAsync(() =>
+        {
+          ApplyTheme(state.IsDarkTheme);
+          PopulateRecentBundles(state.RecentBundles);
+        });
+      }
+      else
+      {
+        PopulateRecentBundles(state.RecentBundles);
+      }
+
       SelectedMissionPreset = state.SelectedMissionPreset ?? SelectedMissionPreset;
       LocalToolkitRoot = string.IsNullOrWhiteSpace(state.LocalToolkitRoot)
         ? LocalToolkitRoot
         : state.LocalToolkitRoot;
-      BundleRoot = state.BundleRoot ?? BundleRoot;
       EvaluateStigRoot = state.EvaluateStigRoot ?? EvaluateStigRoot;
       EvaluateStigArgs = state.EvaluateStigArgs ?? EvaluateStigArgs;
       ScapCommandPath = state.ScapCommandPath ?? ScapCommandPath;
@@ -689,77 +806,182 @@ public partial class MainViewModel
       SimpleBuildBeforeRun = state.SimpleBuildBeforeRun;
       SelectedEvalStigPreset = state.EvaluateStigPreset ?? SelectedEvalStigPreset;
       IsDarkTheme = state.IsDarkTheme;
+      ManualReviewColumnWidths = state.ManualReviewColumnWidths;
+      FullReviewColumnWidths = state.FullReviewColumnWidths;
 
-      System.Windows.Application.Current.Dispatcher.Invoke(() =>
-      {
-        ApplyTheme(IsDarkTheme);
-        RecentBundles.Clear();
-        if (state.RecentBundles != null)
-        {
-          foreach (var b in state.RecentBundles)
-            RecentBundles.Add(b);
-        }
-      });
+      // Set BundleRoot LAST — OnBundleRootChanged triggers AddRecentBundle,
+      // LoadManualControls, RefreshDashboard which all need other state loaded first
+      BundleRoot = state.BundleRoot ?? BundleRoot;
     }
     catch
     {
+      PopulateRecentBundles(null);
     }
+  }
+
+  private void PopulateRecentBundles(List<string>? bundles)
+  {
+    var recentBundleItems = new List<string>();
+    var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+    void AddCandidate(string? candidate)
+    {
+      var path = (candidate ?? string.Empty).Trim();
+      if (string.IsNullOrWhiteSpace(path))
+        return;
+      if (!Directory.Exists(path))
+        return;
+      var manifestPath = Path.Combine(path, BundlePaths.ManifestDirectory, "manifest.json");
+      if (!File.Exists(manifestPath))
+        return;
+      if (!seen.Add(path))
+        return;
+      recentBundleItems.Add(path);
+    }
+
+    if (bundles != null)
+    {
+      foreach (var b in bundles)
+        AddCandidate(b);
+    }
+
+    var bundlesRoot = Path.Combine(_paths.GetAppDataRoot(), "bundles");
+    if (Directory.Exists(bundlesRoot))
+    {
+      string[] dirs;
+      try
+      {
+        dirs = Directory.GetDirectories(bundlesRoot);
+      }
+      catch
+      {
+        dirs = Array.Empty<string>();
+      }
+
+      foreach (var dir in dirs.OrderByDescending(GetDirectoryLastWriteUtcSafe))
+        AddCandidate(dir);
+    }
+
+    while (recentBundleItems.Count > 20)
+      recentBundleItems.RemoveAt(recentBundleItems.Count - 1);
+
+    if (string.IsNullOrWhiteSpace(SelectedRecentBundle) && recentBundleItems.Count > 0)
+      SelectedRecentBundle = recentBundleItems[0];
+
+    if (!string.IsNullOrWhiteSpace(BundleRoot)
+        && Directory.Exists(BundleRoot)
+        && File.Exists(Path.Combine(BundleRoot, BundlePaths.ManifestDirectory, "manifest.json"))
+        && !recentBundleItems.Any(b => string.Equals(b, BundleRoot, StringComparison.OrdinalIgnoreCase)))
+    {
+      recentBundleItems.Insert(0, BundleRoot);
+    }
+
+    RecentBundles.ReplaceAll(recentBundleItems);
+    OnPropertyChanged(nameof(RecentBundles));
   }
 
   private void AddRecentBundle(string bundlePath)
   {
     if (string.IsNullOrWhiteSpace(bundlePath)) return;
 
-    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+    void UpdateCollection()
     {
       var existing = RecentBundles.FirstOrDefault(b =>
         string.Equals(b, bundlePath, StringComparison.OrdinalIgnoreCase));
       if (existing != null) RecentBundles.Remove(existing);
 
       RecentBundles.Insert(0, bundlePath);
-      while (RecentBundles.Count > 5) RecentBundles.RemoveAt(RecentBundles.Count - 1);
-    });
+      while (RecentBundles.Count > 20) RecentBundles.RemoveAt(RecentBundles.Count - 1);
+    }
+
+    var app = System.Windows.Application.Current;
+    if (app?.Dispatcher != null && !app.Dispatcher.CheckAccess())
+      _ = app.Dispatcher.InvokeAsync(UpdateCollection);
+    else
+      UpdateCollection();
 
     SaveUiState();
   }
 
-  private void SaveUiState()
+  private string ResolveSelectedRecentBundle()
+  {
+    var selected = (SelectedRecentBundle ?? string.Empty).Trim();
+    if (!string.IsNullOrWhiteSpace(selected))
+      return selected;
+
+    var view = System.Windows.Data.CollectionViewSource.GetDefaultView(RecentBundles);
+    var current = (view?.CurrentItem as string ?? string.Empty).Trim();
+    if (!string.IsNullOrWhiteSpace(current))
+    {
+      SelectedRecentBundle = current;
+      return current;
+    }
+
+    return string.Empty;
+  }
+
+  private static DateTime GetDirectoryLastWriteUtcSafe(string path)
   {
     try
     {
-      var path = GetUiStatePath();
-      Directory.CreateDirectory(Path.GetDirectoryName(path)!);
-
-      var state = new UiState
-      {
-        LocalToolkitRoot = LocalToolkitRoot,
-        BundleRoot = BundleRoot,
-        EvaluateStigRoot = EvaluateStigRoot,
-        EvaluateStigArgs = EvaluateStigArgs,
-        ScapCommandPath = ScapCommandPath,
-        ScapArgs = ScapArgs,
-        ScapLabel = ScapLabel,
-        PowerStigModulePath = PowerStigModulePath,
-        PowerStigDataFile = PowerStigDataFile,
-        PowerStigOutputPath = PowerStigOutputPath,
-        PowerStigVerbose = PowerStigVerbose,
-        ApplySkipSnapshot = ApplySkipSnapshot,
-        BreakGlassAcknowledged = BreakGlassAcknowledged,
-        BreakGlassReason = BreakGlassReason,
-        SelectedMissionPreset = SelectedMissionPreset,
-        SimpleBuildBeforeRun = SimpleBuildBeforeRun,
-        EvaluateStigPreset = SelectedEvalStigPreset,
-        RecentBundles = RecentBundles.ToList(),
-        IsDarkTheme = IsDarkTheme
-      };
-
-      var json = JsonSerializer.Serialize(state, new JsonSerializerOptions { WriteIndented = true });
-      File.WriteAllText(path, json);
+      return Directory.GetLastWriteTimeUtc(path);
     }
     catch
     {
+      return DateTime.MinValue;
     }
   }
+
+   private void SaveUiState()
+   {
+     _saveDebounceTimer?.Dispose();
+     _saveDebounceTimer = new System.Threading.Timer(
+       _ => FlushUiState(),
+       null,
+       dueTime: 500,
+       period: Timeout.Infinite);
+   }
+
+   private void FlushUiState()
+   {
+     try
+     {
+       var path = GetUiStatePath();
+       Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+
+        var state = new UiState
+        {
+          LocalToolkitRoot = LocalToolkitRoot,
+          BundleRoot = BundleRoot,
+          EvaluateStigRoot = EvaluateStigRoot,
+          EvaluateStigArgs = EvaluateStigArgs,
+          ScapCommandPath = ScapCommandPath,
+          ScapArgs = ScapArgs,
+          ScapLabel = ScapLabel,
+          PowerStigModulePath = PowerStigModulePath,
+          PowerStigDataFile = PowerStigDataFile,
+          PowerStigOutputPath = PowerStigOutputPath,
+          PowerStigVerbose = PowerStigVerbose,
+          ApplySkipSnapshot = ApplySkipSnapshot,
+          BreakGlassAcknowledged = BreakGlassAcknowledged,
+          BreakGlassReason = BreakGlassReason,
+          SelectedMissionPreset = SelectedMissionPreset,
+          SimpleBuildBeforeRun = SimpleBuildBeforeRun,
+          EvaluateStigPreset = SelectedEvalStigPreset,
+          RecentBundles = RecentBundles.ToList(),
+          IsDarkTheme = IsDarkTheme,
+          ManualReviewColumnWidths = ManualReviewColumnWidths,
+          FullReviewColumnWidths = FullReviewColumnWidths
+        };
+
+       var json = JsonSerializer.Serialize(state, new JsonSerializerOptions { WriteIndented = true });
+       File.WriteAllText(path, json);
+     }
+      catch (Exception ex)
+      {
+        _logger?.LogWarning(ex, "Failed to save UI state");
+      }
+    }
 
   private async Task<bool> TryActivateToolkitAsync(bool userInitiated, CancellationToken ct)
   {
@@ -801,7 +1023,7 @@ public partial class MainViewModel
       PowerStigModulePath = result.PowerStigModulePath;
 
     if (string.IsNullOrWhiteSpace(ScapArgs))
-      ScapArgs = "-u -s -r -f";
+      ScapArgs = string.Empty;
 
     if (string.IsNullOrWhiteSpace(ScapLabel))
       ScapLabel = "DISA SCAP";
@@ -907,7 +1129,8 @@ public partial class MainViewModel
 
   private static string? ResolveScapCommandPath(string sourceRoot, string installRoot, List<string> notes)
   {
-    var commandPath = FindFirstFileByName(sourceRoot, "scc.exe");
+    var commandPath = FindFirstFileByName(sourceRoot, "cscc.exe")
+      ?? FindFirstFileByName(sourceRoot, "scc.exe");
     if (!string.IsNullOrWhiteSpace(commandPath))
     {
       notes.Add("SCC executable located in source root.");
@@ -915,7 +1138,8 @@ public partial class MainViewModel
     }
 
     var cachedRoot = Path.Combine(installRoot, "SCC");
-    commandPath = FindFirstFileByName(cachedRoot, "scc.exe");
+    commandPath = FindFirstFileByName(cachedRoot, "cscc.exe")
+      ?? FindFirstFileByName(cachedRoot, "scc.exe");
     if (!string.IsNullOrWhiteSpace(commandPath))
     {
       notes.Add("SCC resolved from managed tools cache.");
@@ -940,14 +1164,15 @@ public partial class MainViewModel
       return null;
     }
 
-    commandPath = FindFirstFileByName(extractRoot, "scc.exe");
+    commandPath = FindFirstFileByName(extractRoot, "cscc.exe")
+      ?? FindFirstFileByName(extractRoot, "scc.exe");
     if (!string.IsNullOrWhiteSpace(commandPath))
     {
       notes.Add("SCC extracted from " + Path.GetFileName(archive) + ".");
       return commandPath;
     }
 
-    notes.Add("scc.exe not found after extraction.");
+    notes.Add("cscc.exe/scc.exe not found after extraction.");
     return null;
   }
 
@@ -1145,75 +1370,39 @@ public partial class MainViewModel
   private void LoadCoverageOverlap()
   {
     var overlapItems = new List<OverlapItem>();
-    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+    if (!string.IsNullOrWhiteSpace(BundleRoot))
     {
-      OverlapItems.Clear();
-    });
-    if (string.IsNullOrWhiteSpace(BundleRoot)) return;
-    var path = Path.Combine(BundleRoot, "Reports", "coverage_overlap.csv");
-    if (!File.Exists(path)) return;
-
-    var lines = File.ReadAllLines(path).Skip(1);
-    foreach (var line in lines)
-    {
-      if (string.IsNullOrWhiteSpace(line)) continue;
-      var parts = ParseCsvLine(line);
-      if (parts.Length < 5) continue;
-
-      overlapItems.Add(new OverlapItem
+      var path = Path.Combine(BundleRoot, BundlePaths.ReportsDirectory, "coverage_overlap.csv");
+      if (File.Exists(path))
       {
-        SourcesKey = parts[0],
-        SourceCount = SafeInt(parts[1]),
-        ControlsCount = SafeInt(parts[2]),
-        ClosedCount = SafeInt(parts[3]),
-        OpenCount = SafeInt(parts[4])
-      });
+        var lines = File.ReadAllLines(path).Skip(1);
+        foreach (var line in lines)
+        {
+          if (string.IsNullOrWhiteSpace(line)) continue;
+          var parts = ParseCsvLine(line);
+          if (parts.Count < 5) continue;
+
+          overlapItems.Add(new OverlapItem
+          {
+            SourcesKey = parts[0],
+            SourceCount = SafeInt(parts[1]),
+            ControlsCount = SafeInt(parts[2]),
+            ClosedCount = SafeInt(parts[3]),
+            OpenCount = SafeInt(parts[4])
+          });
+        }
+      }
     }
 
-    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+    _ = System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
     {
-      foreach (var item in overlapItems)
-        OverlapItems.Add(item);
+      OverlapItems.ReplaceAll(overlapItems);
     });
   }
 
   private static int SafeInt(string value)
   {
     return int.TryParse(value, out var i) ? i : 0;
-  }
-
-  private static string[] ParseCsvLine(string line)
-  {
-    var list = new List<string>();
-    var sb = new System.Text.StringBuilder();
-    bool inQuotes = false;
-    for (int i = 0; i < line.Length; i++)
-    {
-      var ch = line[i];
-      if (ch == '"')
-      {
-        if (inQuotes && i + 1 < line.Length && line[i + 1] == '"')
-        {
-          sb.Append('"');
-          i++;
-        }
-        else
-        {
-          inQuotes = !inQuotes;
-        }
-      }
-      else if (ch == ',' && !inQuotes)
-      {
-        list.Add(sb.ToString());
-        sb.Clear();
-      }
-      else
-      {
-        sb.Append(ch);
-      }
-    }
-    list.Add(sb.ToString());
-    return list.ToArray();
   }
 
   private static string Csv(string? value)

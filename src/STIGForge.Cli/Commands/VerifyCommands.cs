@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using STIGForge.Core.Abstractions;
+using PackTypes = STIGForge.Core.Constants.PackTypes;
 using STIGForge.Verify;
 
 namespace STIGForge.Cli.Commands;
@@ -71,7 +72,7 @@ internal static class VerifyCommands
     var argsOpt = new Option<string>("--args", () => string.Empty, "Arguments passed to SCAP tool");
     var workOpt = new Option<string>("--workdir", () => string.Empty, "Working directory");
     var outOpt = new Option<string>("--output-root", () => string.Empty, "Folder to scan for generated CKL files");
-    var toolOpt = new Option<string>("--tool", () => "SCAP", "Tool label used in reports");
+    var toolOpt = new Option<string>("--tool", () => PackTypes.Scap, "Tool label used in reports");
     var logOpt = new Option<string>("--log", () => string.Empty, "Optional log file path");
 
     cmd.AddOption(exeOpt); cmd.AddOption(argsOpt); cmd.AddOption(workOpt);
@@ -84,18 +85,18 @@ internal static class VerifyCommands
         outputRoot,
         request =>
         {
-          request.ConsolidatedToolLabel = string.IsNullOrWhiteSpace(toolName) ? "SCAP" : toolName;
+          request.ConsolidatedToolLabel = string.IsNullOrWhiteSpace(toolName) ? PackTypes.Scap : toolName;
           request.Scap = new ScapWorkflowOptions
           {
             Enabled = true,
             CommandPath = exe,
             Arguments = args ?? string.Empty,
             WorkingDirectory = string.IsNullOrWhiteSpace(workDir) ? null : workDir,
-            ToolLabel = string.IsNullOrWhiteSpace(toolName) ? "SCAP" : toolName
+            ToolLabel = string.IsNullOrWhiteSpace(toolName) ? PackTypes.Scap : toolName
           };
         });
 
-      var scapRun = workflowResult.ToolRuns.FirstOrDefault(r => r.Tool.IndexOf("SCAP", StringComparison.OrdinalIgnoreCase) >= 0 || string.Equals(r.Tool, toolName, StringComparison.OrdinalIgnoreCase));
+      var scapRun = workflowResult.ToolRuns.FirstOrDefault(r => r.Tool.IndexOf(PackTypes.Scap, StringComparison.OrdinalIgnoreCase) >= 0 || string.Equals(r.Tool, toolName, StringComparison.OrdinalIgnoreCase));
       if (scapRun != null)
       {
         if (!string.IsNullOrWhiteSpace(scapRun.Output)) Console.WriteLine(scapRun.Output);

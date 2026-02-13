@@ -1,0 +1,1456 @@
+################################################################################
+DOCUMENT         : MS_SQL_Server_2022_Instance_STIG
+VERSION          : 001.001.002
+CHECKSUM         : 1c3700ce254cc855f4890e74126fc42a2a95aac076303394abda9464de1c1f08
+MANUAL QUESTIONS : 43
+
+IMPORTANT: Make sure to save the completed version of this file to: 
+<SCC Install>/Resources/Content/Manual_Questions/Completed_Files
+
+This file contains all of the non-automated STIG requirements found in the STIG.
+Results from this file will be combined with automated checks in SCC to provide
+complete STIG compliance results.
+
+This file will be programmaticaly imported, so do not modify anything in this file
+except for placing an '[X]' to select a Single answer, and entering text comments.
+
+The list of questions is printed in order of severity, listing CAT I (High), then CAT II, etc..
+
+################################################################################
+
+QUESTION         : 1 of 43
+TITLE            : CAT I, V-271264, SV-271264r1111061, SRG-APP-000023-DB-000001
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.sql.server:testaction:301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.sql.server:question:301
+RULE             : SQL Server must be configured to use the most-secure authentication method available.
+QUESTION_TEXT    : If the SQL Server is not part of an Active Directory domain, this is Not Applicable. 
+
+Obtain the fully qualified domain name of the SQL Server instance: 
+
+1. Launch Windows Explorer. 
+2. Right-click "Computer" or "This PC" (Varies by OS level). 
+3. Click "Properties". Note the value shown for "Full computer name". 
+
+Note: For a cluster, this value must be obtained from the Failover Cluster Manager.
+
+Obtain the TCP port that is supporting the SQL Server instance:
+ 
+1. Click "Start".
+2. Type "SQL Server 2022 Configuration Manager".
+3. From the search results, click "SQL Server 2022 Configuration Manager". 
+4. From the tree on the left, expand "SQL Server Network Configuration". 
+5. Click "Protocols for <Instance Name>" where <Instance Name> is the name of the instance (MSSQLSERVER is the default name). 
+6. In the right pane, right-click "TCP/IP" and choose "Properties". 
+7. In the window that opens, click the "IP Addresses" tab. Note the TCP port configured for the instance. 
+
+Obtain the service account that is running the SQL Server service: 
+
+1. Click "Start". 
+2. Type "SQL Server 2022 Configuration Manager". 
+3. From the search results, click "SQL Server 2022 Configuration Manager". 
+4. From the tree on the left, select "SQL Server Services". Note the account listed in the "Log On As" column for the SQL Server instance being reviewed. 
+5. Launch a command-line or PowerShell window. 
+6. Enter the following command where <Service Account> is the identity of the service account:
+      setspn -L <Service Account> 
+      Example: setspn -L CONTOSO\sql2016svc 
+7. Review the Registered Service Principal Names returned. 
+
+If the listing does not contain the following supported service principal names (SPN) formats, this is a finding. 
+
+Named instance
+   MSSQLSvc/<FQDN>:[<port> | <instancename>], where:
+   MSSQLSvc is the service that is being registered.
+   <FQDN> is the fully qualified domain name of the server.
+   <port> is the TCP port number.
+   <instancename> is the name of the SQL Server instance.
+
+Default instance
+   MSSQLSvc/<FQDN>:<port> | MSSQLSvc/<FQDN>, where:
+   MSSQLSvc is the service that is being registered.
+   <FQDN> is the fully qualified domain name of the server.
+   <port> is the TCP port number.
+
+If the MSSQLSvc service is registered for any fully qualified domain names that do not match the current server, this may indicate the service account is shared across SQL Server instances. Review server documentation, if the sharing of service accounts across instances is not documented and authorized, this is a finding.
+
+References:
+CCI-000015
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 1 *******************************
+
+QUESTION         : 2 of 43
+TITLE            : CAT I, V-271265, SV-271265r1108933, SRG-APP-000023-DB-000001
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.inst.hybrid:testaction:27126501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.inst.hybrid:question:27126501
+VARIABLE_ID      : oval:navy.navwar.niwcatlantic.scc.ms.sql.server.inst:var:27126504
+RULE             : SQL Server must integrate with an organization-level authentication/access mechanism providing account management and automation for all users, groups, roles, and any other principals.
+QUESTION_TEXT    : Enter the list of database user names authorized and documented to manage SQL Server
+HYBRID QUESTION  :Enter Scope, Target, Authorization (SSP doc, ISSM etc...), and authorized value(s) in the XML below. Refer to SCC User Manual Section 6 for more information and detailed examples
+
+<hybrid_variables>
+	<hybrid_variable>
+		<scope>INSTANCE</scope>
+		<target>ALL</target>
+		<authorization></authorization>
+		<authorized_values>
+			<authorized_value></authorized_value>
+		</authorized_values>
+		<notes></notes>
+	</hybrid_variable>
+</hybrid_variables>
+******************************* end of question 2 *******************************
+
+QUESTION         : 3 of 43
+TITLE            : CAT I, V-271266, SV-271266r1108414, SRG-APP-000033-DB-000084
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.sql.server:testaction:701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.sql.server:question:701
+RULE             : SQL Server must enforce approved authorizations for logical access to information and system resources in accordance with applicable access control policies.
+QUESTION_TEXT    : Review the system documentation to determine the required levels of protection for DBMS server securables by type of login. 
+ 
+Review the permissions in place on the server. 
+ 
+If the permissions do not match the documented requirements, this is a finding. 
+ 
+Use the supplemental file "Instance permissions assignments to logins and roles.sql".
+
+References:
+CCI-000213
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 3 *******************************
+
+QUESTION         : 4 of 43
+TITLE            : CAT I, V-271286, SV-271286r1108474, SRG-APP-000133-DB-000198
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.inst.hybrid:testaction:27128601
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.inst.hybrid:question:27128601
+VARIABLE_ID      : oval:navy.navwar.niwcatlantic.scc.ms.sql.server.inst:var:27128602
+RULE             : SQL Server software installation account must be restricted to authorized users.
+QUESTION_TEXT    : From system documentation, enter the list of database user names authorized to install/update SQL Server
+HYBRID QUESTION  :Enter Scope, Target, Authorization (SSP doc, ISSM etc...), and authorized value(s) in the XML below. Refer to SCC User Manual Section 6 for more information and detailed examples
+
+<hybrid_variables>
+	<hybrid_variable>
+		<scope>INSTANCE</scope>
+		<target>ALL</target>
+		<authorization></authorization>
+		<authorized_values>
+			<authorized_value></authorized_value>
+		</authorized_values>
+		<notes></notes>
+	</hybrid_variable>
+</hybrid_variables>
+******************************* end of question 4 *******************************
+
+QUESTION         : 5 of 43
+TITLE            : CAT I, V-271322, SV-271322r1108582, SRG-APP-000231-DB-000154
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.sql.server:testaction:7901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.sql.server:question:7901
+RULE             : The Master Key must be backed up and stored in a secure location that is not on the SQL Server.
+QUESTION_TEXT    : If the application owner and authorizing official have determined that encryption of data at rest is not required, this is not a finding. 
+ 
+Review procedures for and evidence of backup of the Master Key in the System Security Plan. 
+ 
+If the procedures or evidence does not exist, this is a finding. 
+ 
+If the procedures do not indicate that a backup of the Master Key is stored in a secure location that is not on the SQL Server, this is a finding.
+
+If procedures do not indicate access restrictions to the Master Key backup, this is a finding.
+
+References:
+CCI-001199
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 5 *******************************
+
+QUESTION         : 6 of 43
+TITLE            : CAT I, V-271323, SV-271323r1108585, SRG-APP-000231-DB-000154
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.sql.server:testaction:8101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.sql.server:question:8101
+RULE             : The Service Master Key must be backed up and stored in a secure location that is not on the SQL Server.
+QUESTION_TEXT    : Review procedures for and evidence of backup of the Server Service Master Key in the System Security Plan. 
+ 
+If the procedures or evidence does not exist, this is a finding.
+ 
+If the procedures do not indicate that a backup of the Service Master Key is stored in a secure location that is not on the SQL Server, this is a finding. 
+
+If procedures do not indicate access restrictions to the Service Master Key backup, this is a finding.
+
+References:
+CCI-001199
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 6 *******************************
+
+QUESTION         : 7 of 43
+TITLE            : CAT I, V-271324, SV-271324r1109248, SRG-APP-000231-DB-000154
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.inst.hybrid:testaction:27132401
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.inst.hybrid:question:27132401
+VARIABLE_ID      : oval:navy.navwar.niwcatlantic.scc.ms.sql.server.inst:var:27132404
+RULE             : SQL Server must protect the confidentiality and integrity of all information at rest.
+QUESTION_TEXT    : Enter the required database tranparent data encryption (TDE) requirements in the format of: db_name:encryption_state  (no space between fields, just a colon)
+Valid 'encryption_state' options are:
+NoDatabaseEncryptionKey
+Unencrypted
+Encrypted
+
+NOTE:  This requirement returns results per database, which makes it abnormal compared to other Instance STIG requirements.  Note the format of the ENCRYPTION_STATE being 'database name':'encryption state option', no spaces, and the : between is required.
+
+Example (single database):
+SCOPE=INSTANCE
+TARGET=ALL
+ENCRYPTION_STATE=tempdb:NoDatabaseEncryptionKey
+
+Example (multiple databases):
+SCOPE=INSTANCE
+TARGET=ALL
+ENCRYPTION_STATE=testDB1:NoDatabaseEncryptionKey
+ENCRYPTION_STATE=testDB2:NoDatabaseEncryptionKey
+
+				
+HYBRID QUESTION  :Enter Scope, Target, Authorization (SSP doc, ISSM etc...), and authorized value(s) in the XML below. Refer to SCC User Manual Section 6 for more information and detailed examples
+
+<hybrid_variables>
+	<hybrid_variable>
+		<scope>INSTANCE</scope>
+		<target>ALL</target>
+		<authorization></authorization>
+		<authorized_values>
+			<authorized_value></authorized_value>
+		</authorized_values>
+		<notes></notes>
+	</hybrid_variable>
+</hybrid_variables>
+******************************* end of question 7 *******************************
+
+QUESTION         : 8 of 43
+TITLE            : CAT I, V-271365, SV-271365r1111148, SRG-APP-000456-DB-000400
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.sql.server:testaction:12301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.sql.server:question:12301
+RULE             : Microsoft SQL Server products must be a version supported by the vendor.
+QUESTION_TEXT    : Review the system documentation and interview the database administrator.
+
+Identify all database software components.
+
+Review the version and release information.
+
+Verify the SQL Server version via one of the following methods: 
+
+Connect to the server by using Object Explorer in SQL Server Management Studio. After Object Explorer is connected, it will show the version information in parentheses with the username used to connect to the specific instance of SQL Server.
+
+Or, from SQL Server Management Studio execute the following:
+SELECT @@VERSION;
+
+More information for finding the version is available at the following link: https://learn.microsoft.com/en-us/troubleshoot/sql/releases/find-my-sql-version.
+
+Access the vendor website or use other means to verify the version is still supported. Refer to https://learn.microsoft.com/en-us/lifecycle/products/sql-server-2016.
+
+If the installed version or any of the software components are not supported by the vendor, this is a finding.
+
+References:
+CCI-003376
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 8 *******************************
+
+QUESTION         : 9 of 43
+TITLE            : CAT II, V-271263, SV-271263r1108405, SRG-APP-000001-DB-000031
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.sql.server:testaction:101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.sql.server:question:101
+RULE             : SQL Server must limit the number of concurrent sessions to an organization-defined number per user for all accounts and/or account types.
+QUESTION_TEXT    : Review the system documentation to determine whether any concurrent session limits have been defined. If it does not, assume a limit of 10 for database administrators and two for all other users. 
+ 
+If a mechanism other than a logon trigger is used, verify its correct operation by the appropriate means. If it does not work correctly, this is a finding.
+
+Due to excessive CPU consumption when using a logon trigger, an alternative method of limiting concurrent sessions is setting the max connection limit within SQL Server to an appropriate value. This serves to block a distributed denial-of-service (DDOS) attack by limiting the attacker's connections while allowing a database administrator to still force a SQL connection.
+
+In SQL Server Management Studio's Object Explorer tree, right-click on the Server Name >> Properties >> Connections Tab.
+
+OR
+
+Run the query:
+EXEC sys.sp_configure N'user connections'
+
+If the max connection limit is set to 0 (unlimited) or does not match the documented value, this is a finding.
+ 
+Otherwise, determine if a logon trigger exists:  
+ 
+In SQL Server Management Studio's Object Explorer tree, expand [SQL Server Instance] >> Server Objects >> Triggers.
+ 
+OR 
+ 
+Run the query:  
+SELECT name FROM master.sys.server_triggers;  
+ 
+If no triggers are listed, this is a finding. 
+ 
+If triggers are listed, identify the trigger(s) limiting the number of concurrent sessions per user. If none are found, this is a finding. If they are present but disabled, this is a finding. 
+ 
+Examine the trigger source code for logical correctness and for compliance with the documented limit(s). If errors or variances exist, this is a finding.
+ 
+Verify that the system does execute the trigger(s) each time a user session is established. If it does not operate correctly for all types of user, this is a finding.
+
+References:
+CCI-000054
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 9 *******************************
+
+QUESTION         : 10 of 43
+TITLE            : CAT II, V-271270, SV-271270r1108426, SRG-APP-000089-DB-000064
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.inst.hybrid:testaction:27127001
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.inst.hybrid:question:27127001
+VARIABLE_ID      : oval:navy.navwar.niwcatlantic.scc.ms.sql.server.inst:var:27127004
+RULE             : SQL Server must be configured to generate audit records for DoD-defined auditable events within all DBMS/database components.
+QUESTION_TEXT    : Enter the list of audit events (action_name) required by documentation
+HYBRID QUESTION  :Enter Scope, Target, Authorization (SSP doc, ISSM etc...), and authorized value(s) in the XML below. Refer to SCC User Manual Section 6 for more information and detailed examples
+
+<hybrid_variables>
+	<hybrid_variable>
+		<scope>INSTANCE</scope>
+		<target>ALL</target>
+		<authorization></authorization>
+		<authorized_values>
+			<authorized_value></authorized_value>
+		</authorized_values>
+		<notes></notes>
+	</hybrid_variable>
+</hybrid_variables>
+******************************* end of question 10 *******************************
+
+QUESTION         : 11 of 43
+TITLE            : CAT II, V-271271, SV-271271r1108429, SRG-APP-000090-DB-000065
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.sql.server:testaction:1701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.sql.server:question:1701
+RULE             : SQL Server must allow only the information system security manager (ISSM) (or individuals or roles appointed by the ISSM) to select which auditable events are to be audited.
+QUESTION_TEXT    : Obtain the list of approved audit maintainers from the system documentation. 
+ 
+Review the server roles and individual logins that have the following role memberships, all of which enable the ability to create and maintain audit definitions. 
+ 
+sysadmin 
+dbcreator 
+ 
+Review the server roles and individual logins that have the following permissions, all of which enable the ability to create and maintain audit definitions. 
+ 
+ALTER ANY SERVER AUDIT  
+CONTROL SERVER  
+ALTER ANY DATABASE  
+CREATE ANY DATABASE 
+ 
+Use the following query to determine the roles and logins that have the listed permissions: 
+ 
+SELECT-- DISTINCT 
+    CASE 
+        WHEN SP.class_desc IS NOT NULL THEN  
+            CASE 
+                WHEN SP.class_desc = 'SERVER' AND S.is_linked = 0 THEN 'SERVER' 
+                WHEN SP.class_desc = 'SERVER' AND S.is_linked = 1 THEN 'SERVER (linked)' 
+                ELSE SP.class_desc 
+            END 
+        WHEN E.name IS NOT NULL THEN 'ENDPOINT' 
+        WHEN S.name IS NOT NULL AND S.is_linked = 0 THEN 'SERVER' 
+        WHEN S.name IS NOT NULL AND S.is_linked = 1 THEN 'SERVER (linked)' 
+        WHEN P.name IS NOT NULL THEN 'SERVER_PRINCIPAL' 
+        ELSE '???'  
+    END                    AS [Securable Class], 
+    CASE 
+        WHEN E.name IS NOT NULL THEN E.name 
+        WHEN S.name IS NOT NULL THEN S.name  
+        WHEN P.name IS NOT NULL THEN P.name 
+        ELSE '???'  
+    END                    AS [Securable], 
+    P1.name                AS [Grantee], 
+    P1.type_desc           AS [Grantee Type], 
+    sp.permission_name     AS [Permission], 
+    sp.state_desc          AS [State], 
+    P2.name                AS [Grantor], 
+    P2.type_desc           AS [Grantor Type], 
+R.name    AS [Role Name] 
+FROM 
+    sys.server_permissions SP 
+    INNER JOIN sys.server_principals P1 
+        ON P1.principal_id = SP.grantee_principal_id 
+    INNER JOIN sys.server_principals P2 
+        ON P2.principal_id = SP.grantor_principal_id 
+ 
+    FULL OUTER JOIN sys.servers S 
+        ON  SP.class_desc = 'SERVER' 
+        AND S.server_id = SP.major_id 
+ 
+    FULL OUTER JOIN sys.endpoints E 
+        ON  SP.class_desc = 'ENDPOINT' 
+        AND E.endpoint_id = SP.major_id 
+ 
+    FULL OUTER JOIN sys.server_principals P 
+        ON  SP.class_desc = 'SERVER_PRINCIPAL'         
+        AND P.principal_id = SP.major_id 
+ 
+FULL OUTER JOIN sys.server_role_members SRM 
+ON P.principal_id = SRM.member_principal_id 
+ 
+LEFT OUTER JOIN sys.server_principals R 
+ON SRM.role_principal_id = R.principal_id 
+WHERE sp.permission_name IN ('ALTER ANY SERVER AUDIT','CONTROL SERVER','ALTER ANY DATABASE','CREATE ANY DATABASE') 
+OR R.name IN ('sysadmin','dbcreator') 
+ 
+If any of the logins, roles, or role memberships returned have permissions that are not documented, or the documented audit maintainers do not have permissions, this is a finding.
+
+References:
+CCI-000171
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 11 *******************************
+
+QUESTION         : 12 of 43
+TITLE            : CAT II, V-271280, SV-271280r1108456, SRG-APP-000101-DB-000044
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.sql.server:testaction:2301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.sql.server:question:2301
+RULE             : SQL Server must include additional, more detailed, organization-defined information in the audit records for audit events identified by type, location, or subject.
+QUESTION_TEXT    : If a SQL Server Audit is not in use for audit purposes, this is a finding unless a third-party product is being used that can perform detailed auditing for SQL Server. 
+ 
+Review system documentation to determine whether SQL Server is required to audit any events, and any fields, in addition to those in the standard audit. 
+ 
+If there are none specified, this is not a finding. 
+ 
+If SQL Server Audit is in use, compare the audit specification(s) with the documented requirements. 
+ 
+If any such requirement is not satisfied by the audit specification(s) (or by supplemental, locally deployed mechanisms), this is a finding.
+
+References:
+CCI-000135
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 12 *******************************
+
+QUESTION         : 13 of 43
+TITLE            : CAT II, V-271282, SV-271282r1109273, SRG-APP-000118-DB-000059
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.sql.server:testaction:2501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.sql.server:question:2501
+RULE             : The audit information produced by SQL Server must be protected from unauthorized access, modification, and deletion.
+QUESTION_TEXT    : If the database is set up to write audit logs using APPLICATION or SECURITY event logs rather than writing to a file, this is Not Applicable.
+
+Obtain the SQL Server Audit file location(s) by running the following SQL script:  
+
+SELECT log_file_path AS "Audit Path"  
+FROM sys.server_file_audits  
+
+For each audit, the path column will give the location of the file. 
+
+Verify that all audit files have the correct permissions by doing the following for each audit file: Navigate to audit folder location(s) using a command prompt or Windows Explorer. 
+
+Right-click the file/folder and click "Properties". On the "Security" tab, verify the following permissions are applied:  
+
+Administrator (read)  
+Users (none)  
+Audit Administrator (Full Control)  
+Auditors group (Read)  
+SQL Server Service SID OR Service Account (Full Control)  
+SQL Server SQL Agent Service SID OR Service Account, if SQL Server Agent is in use. (Read, Execute, Write) 
+
+If any less restrictive permissions are present (and not specifically justified and approved), this is a finding.
+
+References:
+CCI-000162
+CCI-000163
+CCI-000164
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 13 *******************************
+
+QUESTION         : 14 of 43
+TITLE            : CAT II, V-271283, SV-271283r1108465, SRG-APP-000121-DB-000202
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.inst.hybrid:testaction:27128301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.inst.hybrid:question:27128301
+VARIABLE_ID      : oval:navy.navwar.niwcatlantic.scc.ms.sql.server.inst:var:27128304
+RULE             : SQL Server must protect its audit configuration from authorized and unauthorized access and modification.
+QUESTION_TEXT    : Enter the list of database user names who are approved in documentation to access SQL Server Audits
+HYBRID QUESTION  :Enter Scope, Target, Authorization (SSP doc, ISSM etc...), and authorized value(s) in the XML below. Refer to SCC User Manual Section 6 for more information and detailed examples
+
+<hybrid_variables>
+	<hybrid_variable>
+		<scope>INSTANCE</scope>
+		<target>ALL</target>
+		<authorization></authorization>
+		<authorized_values>
+			<authorized_value></authorized_value>
+		</authorized_values>
+		<notes></notes>
+	</hybrid_variable>
+</hybrid_variables>
+******************************* end of question 14 *******************************
+
+QUESTION         : 15 of 43
+TITLE            : CAT II, V-271284, SV-271284r1109111, SRG-APP-000133-DB-000179
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.sql.server:testaction:2901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.sql.server:question:2901
+RULE             : SQL Server must limit privileges to change software modules, to include stored procedures, functions and triggers, and links to software external to SQL Server.
+QUESTION_TEXT    : Review server documentation to determine the process by which shared software libraries are monitored for change. Ensure the process alerts for changes in a file's ownership, modification dates, and hash value at a minimum.
+
+If alerts do not at least hash their value, this is a finding.
+
+To determine the location for these instance-specific binaries:
+
+1. Launch SQL Server Management Studio (SSMS).
+2. Connect to the instance to be reviewed.
+3. Right-click server name in Object Explorer.
+4. Click "Facets".
+5. Select the "Server" facet.
+6. Record the value for the "RootDirectory" facet property.
+
+Tip: Use the Get-FileHash cmdlet shipped with PowerShell 5.0 to get the SHA-2 hash of one or more files.
+
+References:
+CCI-001499
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 15 *******************************
+
+QUESTION         : 16 of 43
+TITLE            : CAT II, V-271285, SV-271285r1109236, SRG-APP-000133-DB-000179
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.sql.server:testaction:3101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.sql.server:question:3101
+RULE             : SQL Server must limit privileges to change software modules and links to software external to SQL Server.
+QUESTION_TEXT    : Review Server documentation to determine the authorized owner and users or groups with modify rights for this SQL instance's binary files. Additionally check the owner and users or groups with modify rights for shared software library paths on disk. 
+ 
+If any unauthorized users are granted modify rights or the owner is incorrect, this is a finding. 
+
+To determine the location for these instance-specific binaries:
+
+1. Launch SQL Server Management Studio (SSMS). 
+2. Connect to the instance to be reviewed. 
+3. Right-click server name in "Object Explorer".
+4. Click "Facets".
+5. Select the "Server" facet. 
+6. Record the value for the "RootDirectory" facet property. 
+7. Navigate to the folder above and review the "Binn" subdirectory.
+
+TIP: Use the Get-FileHash cmdlet shipped with PowerShell 5.0 to get the SHA-2 hash of one or more files.
+
+References:
+CCI-001499
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 16 *******************************
+
+QUESTION         : 17 of 43
+TITLE            : CAT II, V-271287, SV-271287r1108843, SRG-APP-000133-DB-000199
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.sql.server:testaction:3501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.sql.server:question:3501
+RULE             : Database software, including DBMS configuration files, must be stored in dedicated directories, separate from the host OS and other applications.
+QUESTION_TEXT    : Determine the directory in which SQL Server has been installed:
+
+Using SQL Server Management Studio's Object Explorer, right-click [SQL Server Instance], select "Facets", then record the value of RootDirectory.
+
+Determine the Operating System directory:
+1. Click "Start".
+2. Type "Run".
+3. Press "Enter".
+4. Type "%windir%".
+5. Click "Ok".
+6. Record the value in the address bar.
+
+Verify the SQL Server RootDirectory is not in the Operating System directory.
+
+Compare the SQL RootDirectory and the Operating System directory. If the SQL RootDirectory is in the same directory as the Operating System, this is a finding.
+
+Verify the SQL Server RootDirectory is not in another application's directory.
+
+Navigate to the SQL RootDirectory using Windows Explorer.
+
+Examine each directory for evidence another application is stored in it.
+
+If evidence exists the SQL RootDirectory is in another application's directory, this is a finding.
+
+If the SQL RootDirectory is not in the Operating System directory or another application's directory, this is not a finding.
+
+Examples:
+1. The Operating System directory is "C:\Windows". The SQL RootDirectory is "D:\Program Files\MSSQLSERVER\MSSQL". The MSSQLSERVER directory is not living in the Operating System directory or the directory of another application. This is not a finding.
+
+2. The Operating System directory is "C:\Windows". The SQL RootDirectory is "C:\Windows\MSSQLSERVER\MSSQL". This is a finding.
+
+3. The Operating System directory is "C:\Windows". The SQL RootDirectory is "D:\Program Files\Microsoft Office\MSSQLSERVER\MSSQL". The MSSQLSERVER directory is in the Microsoft Office directory, which indicates Microsoft Office is installed here. This is a finding.
+
+References:
+CCI-001499
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 17 *******************************
+
+QUESTION         : 18 of 43
+TITLE            : CAT II, V-271291, SV-271291r1108899, SRG-APP-000141-DB-000091
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.inst.hybrid:testaction:27129101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.inst.hybrid:question:27129101
+VARIABLE_ID      : oval:navy.navwar.niwcatlantic.scc.ms.sql.server.inst:var:27129102
+RULE             : Unused database components that are integrated in SQL Server and cannot be uninstalled must be disabled.
+QUESTION_TEXT    : From system documentation, enter the list of required database components
+Examples:Database Engine Services, SQL Server Replication, Full-Text and Semantic Extractions for Search, Analysis Services
+
+
+HYBRID QUESTION  :Enter Scope, Target, Authorization (SSP doc, ISSM etc...), and authorized value(s) in the XML below. Refer to SCC User Manual Section 6 for more information and detailed examples
+
+<hybrid_variables>
+	<hybrid_variable>
+		<scope>INSTANCE</scope>
+		<target>ALL</target>
+		<authorization></authorization>
+		<authorized_values>
+			<authorized_value></authorized_value>
+		</authorized_values>
+		<notes></notes>
+	</hybrid_variable>
+</hybrid_variables>
+******************************* end of question 18 *******************************
+
+QUESTION         : 19 of 43
+TITLE            : CAT II, V-271299, SV-271299r1108513, SRG-APP-000141-DB-000093
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.inst.hybrid:testaction:27129901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.inst.hybrid:question:27129901
+VARIABLE_ID      : oval:navy.navwar.niwcatlantic.scc.ms.sql.server.inst:var:27129904
+RULE             : Access to linked servers must be disabled or restricted, unless specifically required and approved.
+QUESTION_TEXT    : From system documentation, enter a list of authorized linked servers in the format of remote ServerName\InstanceName
+HYBRID QUESTION  :Enter Scope, Target, Authorization (SSP doc, ISSM etc...), and authorized value(s) in the XML below. Refer to SCC User Manual Section 6 for more information and detailed examples
+
+<hybrid_variables>
+	<hybrid_variable>
+		<scope>INSTANCE</scope>
+		<target>ALL</target>
+		<authorization></authorization>
+		<authorized_values>
+			<authorized_value></authorized_value>
+		</authorized_values>
+		<notes></notes>
+	</hybrid_variable>
+</hybrid_variables>
+******************************* end of question 19 *******************************
+
+QUESTION         : 20 of 43
+TITLE            : CAT II, V-271303, SV-271303r1109116, SRG-APP-000142-DB-000094
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.sql.server:testaction:6101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.sql.server:question:6101
+RULE             : SQL Server must be configured to prohibit or restrict the use of organization-defined ports, as defined in the Ports, Protocols, and Services Management (PPSM) Category Assurance List (CAL) and vulnerability assessments.
+QUESTION_TEXT    : Review SQL Server Configuration for the ports used by SQL Server. 
+ 
+To determine whether SQL Server is configured to use a fixed port or dynamic ports, in the right-side pane, double-click on the TCP/IP entry to open the Properties dialog. (The default fixed port is 1433.) 
+
+Alternatively, run the following SQL query to determine the port used by SQL Server:
+
+SELECT ISNULL(CONVERT(VARCHAR(25),local_tcp_port),'Dynamic Ports are Enabled')
+FROM   sys.dm_exec_connections
+WHERE  session_id = @@SPID
+ 
+If any ports in use are in conflict with PPSM guidance and not explained and approved in the system documentation, this is a finding.
+
+References:
+CCI-000382
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 20 *******************************
+
+QUESTION         : 21 of 43
+TITLE            : CAT II, V-271304, SV-271304r1109265, SRG-APP-000142-DB-000094
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.sql.server:testaction:6301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.sql.server:question:6301
+RULE             : SQL Server must be configured to prohibit or restrict the use of organization-defined protocols as defined in the Ports, Protocols, and Services Management (PPSM) Category Assurance List (CAL) and vulnerability assessments.
+QUESTION_TEXT    : To determine the protocol(s) enabled for SQL Server, open SQL Server Configuration Manager. In the left pane, expand SQL Server Network Configuration. Click on the entry for the SQL Server instance under review: "Protocols for". The right-side pane displays the protocols enabled for the instance. 
+
+Alternatively, run the following SQL Script and review the registry_key for enabled protocols.
+
+SELECT 
+*
+FROM sys.dm_server_registry
+WHERE registry_key like 'HKLM\Software\Microsoft\Microsoft SQL Server\%\MSSQLServer\SuperSocketNetLib\%'
+   AND value_name = 'enabled'
+   AND value_data = 1
+ 
+If any listed protocols are enabled but not documented and authorized, this is a finding.
+
+References:
+CCI-000382
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 21 *******************************
+
+QUESTION         : 22 of 43
+TITLE            : CAT II, V-271305, SV-271305r1109239, SRG-APP-000148-DB-000103
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.inst.hybrid:testaction:27126901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.inst.hybrid:question:27126901
+VARIABLE_ID      : oval:navy.navwar.niwcatlantic.scc.ms.sql.server.inst:var:27126904
+RULE             : SQL Server must protect against a user falsely repudiating by ensuring all accounts are individual, unique, and not shared.
+QUESTION_TEXT    : Note:  This check covers tow duplicate requirements in the SQL Instance STIG:  
+Rule ID: SV-271269
+Rule ID: SV-271305
+					   
+Enter database user names documented and verified to be individual, unique, and not shared
+HYBRID QUESTION  :Enter Scope, Target, Authorization (SSP doc, ISSM etc...), and authorized value(s) in the XML below. Refer to SCC User Manual Section 6 for more information and detailed examples
+
+<hybrid_variables>
+	<hybrid_variable>
+		<scope>INSTANCE</scope>
+		<target>ALL</target>
+		<authorization></authorization>
+		<authorized_values>
+			<authorized_value></authorized_value>
+		</authorized_values>
+		<notes></notes>
+	</hybrid_variable>
+</hybrid_variables>
+******************************* end of question 22 *******************************
+
+QUESTION         : 23 of 43
+TITLE            : CAT II, V-271327, SV-271327r1109250, SRG-APP-000243-DB-000373
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.sql.server:testaction:8501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.sql.server:question:8501
+RULE             : SQL Server must prevent unauthorized and unintended information transfer via Instant File Initialization (IFI).
+QUESTION_TEXT    : Review system configuration to determine whether IFI support has been enabled (IFI is enabled by default).
+
+Run the following query in SSMS:
+
+SELECT
+	servicename
+	,instant_file_initialization_enabled
+FROM sys.dm_server_services 
+
+If the column instant_file_initialization_enabled returns a value of "Y", then IFI is enabled.
+
+Alternatively, navigate to Start >> Control Panel >> System and Security >> Administrative Tools >> Local Security Policy >> Local Policies >> User Rights Assignment >> Perform volume maintenance tasks.
+
+The default SQL service account for a default instance is NT SERVICE\MSSQLSERVER or for a named instance is NT SERVICE\MSSQL$InstanceName.
+
+If the SQL service account or SQL service SID has been granted "Perform volume maintenance tasks" Local Rights Assignment, this means that IFI is enabled.
+
+Review the system documentation to determine if IFI is required.
+
+If IFI is enabled but not documented as required, this is a finding.
+
+If IFI is not enabled, this is not a finding.
+
+References:
+CCI-001090
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 23 *******************************
+
+QUESTION         : 24 of 43
+TITLE            : CAT II, V-271329, SV-271329r1108603, SRG-APP-000243-DB-000374
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.sql.server:testaction:8901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.sql.server:question:8901
+RULE             : Access to database files must be limited to relevant processes and to authorized, administrative users.
+QUESTION_TEXT    : Review the permissions granted to users by the operating system/file system on the database files, database log files, and database backup files. 
+
+To obtain the location of SQL Server data, transaction log, and backup files, open and execute the supplemental file "Get SQL Data and Backup Directories.sql".
+
+For each of the directories returned by the above script, verify whether the correct permissions have been applied.
+
+1. Launch Windows Explorer.
+2. Navigate to the folder.
+3. Right-click the folder and click "Properties".
+4. Navigate to the "Security" tab.
+5. Review the listing of principals and permissions.
+
+Account Type Directory Type Permission
+-----------------------------------------------------------------------------------------------
+Database Administrators      ALL                   Full Control
+SQL Server Service SID       Data; Log; Backup;    Full Control
+SQL Server Agent Service SID Backup                Full Control
+SYSTEM                       ALL                   Full Control
+CREATOR OWNER                ALL                   Full Control
+
+For information on how to determine a "Service SID", refer to https://aka.ms/sql-service-sids.
+
+Additional permission requirements, including full directory permissions and operating system rights for SQL Server, are documented at https://aka.ms/sqlservicepermissions.
+
+If any additional permissions are granted but not documented as authorized, this is a finding.
+
+References:
+CCI-001090
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 24 *******************************
+
+QUESTION         : 25 of 43
+TITLE            : CAT II, V-271331, SV-271331r1108609, SRG-APP-000251-DB-000391
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.sql.server:testaction:9101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.sql.server:question:9101
+RULE             : SQL Server and associated applications must reserve the use of dynamic code execution for situations that require it.
+QUESTION_TEXT    : Review DBMS source code (stored procedures, functions, triggers) and application source code, to identify cases of dynamic code execution.
+
+If dynamic code execution is employed in circumstances where the objective could practically be satisfied by static execution with strongly typed parameters, this is a finding.
+
+References:
+CCI-001310
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 25 *******************************
+
+QUESTION         : 26 of 43
+TITLE            : CAT II, V-271332, SV-271332r1108612, SRG-APP-000251-DB-000392
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.sql.server:testaction:9301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.sql.server:question:9301
+RULE             : SQL Server and associated applications, when making use of dynamic code execution, must scan input data for invalid values that may indicate a code injection attack.
+QUESTION_TEXT    : Review DBMS source code (stored procedures, functions, triggers) and application source code to identify cases of dynamic code execution.
+
+If dynamic code execution is employed without protective measures against code injection, this is a finding.
+
+References:
+CCI-001310
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 26 *******************************
+
+QUESTION         : 27 of 43
+TITLE            : CAT II, V-271334, SV-271334r1109125, SRG-APP-000267-DB-000163
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.sql.server:testaction:9501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.sql.server:question:9501
+RULE             : SQL Server must reveal detailed error messages only to documented and approved individuals or roles.
+QUESTION_TEXT    : Error messages within applications, custom database code (stored procedures, triggers) must be enforced by guidelines and code review practices.  
+
+SQL Server generates certain system events and user-defined events to the SQL Server error log. The SQL Server error log can be viewed using SQL Server Management Studio GUI. All users granted the security admin or sysadmin level of permission are able to view the logs. Review the users returned in the following script: 
+
+USE master 
+GO
+SELECT Name 
+FROM syslogins 
+WHERE (sysadmin = 1 or securityadmin = 1) 
+and hasaccess = 1; 
+
+If any nonauthorized users have access to the SQL Server Error Log located at Program Files\Microsoft SQL Server\MSSQL.n\MSSQL\LOG, this is a finding. 
+
+In addition, the SQL Server Error Log is also located at Program Files\Microsoft SQL Server\MSSQL.n\MSSQL\LOG\. Review the permissions on this folder to ensure that only authorized users are listed.  
+
+If any nonauthorized users have access to the SQL Server Error Log in SQL Server Management Studio or if documentation does not exist stating that full error messages must be returned, this is a finding.
+
+Otherwise, verify if trace flag 3625 is enabled to mask certain system-level error information returned to nonadministrative users. 
+ 
+Launch SQL Server Configuration Manager >> select SQL Server Services >> select the SQL Server >> right-click and select Properties >> select Startup Parameters tab >> verify -T3625 exists in the dialogue window.
+
+OR
+
+Run the query:
+DBCC TRACESTATUS;
+
+If TraceFlag 3625 does not return with Status = 1, and if documentation does not exist stating that full error messages must be returned, this is a finding.
+
+References:
+CCI-001314
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 27 *******************************
+
+QUESTION         : 28 of 43
+TITLE            : CAT II, V-271341, SV-271341r1111081, SRG-APP-000340-DB-000304
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.sql.server:testaction:9701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.sql.server:question:9701
+RULE             : SQL Server must prevent nonprivileged users from executing privileged functions, to include disabling, circumventing, or altering implemented security safeguards/countermeasures.
+QUESTION_TEXT    : Review server-level securables and built-in role membership to ensure only authorized users have privileged access and the ability to create server-level objects and grant permissions to themselves or others. 
+ 
+Review the system documentation to determine the required levels of protection for DBMS server securables by type of login. 
+ 
+Review the permissions in place on the server. If the actual permissions do not match the documented requirements, this is a finding. 
+ 
+Get all permission assignments to logins and roles: 
+ 
+SELECT DISTINCT 
+    CASE 
+        WHEN SP.class_desc IS NOT NULL THEN 
+            CASE 
+                WHEN SP.class_desc = 'SERVER' AND S.is_linked = 0 THEN 'SERVER' 
+                WHEN SP.class_desc = 'SERVER' AND S.is_linked = 1 THEN 'SERVER (linked)' 
+                ELSE SP.class_desc 
+            END 
+        WHEN E.name IS NOT NULL THEN 'ENDPOINT' 
+        WHEN S.name IS NOT NULL AND S.is_linked = 0 THEN 'SERVER' 
+        WHEN S.name IS NOT NULL AND S.is_linked = 1 THEN 'SERVER (linked)' 
+        WHEN P.name IS NOT NULL THEN 'SERVER_PRINCIPAL' 
+        ELSE '???' 
+    END                    AS [Securable Class], 
+    CASE 
+        WHEN E.name IS NOT NULL THEN E.name 
+        WHEN S.name IS NOT NULL THEN S.name 
+        WHEN P.name IS NOT NULL THEN P.name 
+        ELSE '???' 
+    END                    AS [Securable], 
+    P1.name                AS [Grantee], 
+    P1.type_desc           AS [Grantee Type], 
+    sp.permission_name     AS [Permission], 
+    sp.state_desc          AS [State], 
+    P2.name                AS [Grantor], 
+    P2.type_desc           AS [Grantor Type] 
+FROM 
+    sys.server_permissions SP 
+    INNER JOIN sys.server_principals P1 
+        ON P1.principal_id = SP.grantee_principal_id 
+    INNER JOIN sys.server_principals P2 
+        ON P2.principal_id = SP.grantor_principal_id 
+ 
+    FULL OUTER JOIN sys.servers S 
+        ON  SP.class_desc = 'SERVER' 
+        AND S.server_id = SP.major_id 
+ 
+    FULL OUTER JOIN sys.endpoints E 
+        ON  SP.class_desc = 'ENDPOINT' 
+        AND E.endpoint_id = SP.major_id 
+ 
+    FULL OUTER JOIN sys.server_principals P 
+        ON  SP.class_desc = 'SERVER_PRINCIPAL'        
+        AND P.principal_id = SP.major_id 
+ 
+Get all server role memberships: 
+ 
+SELECT 
+    R.name    AS [Role], 
+    M.name    AS [Member] 
+FROM 
+    sys.server_role_members X 
+    INNER JOIN sys.server_principals R ON R.principal_id = X.role_principal_id 
+    INNER JOIN sys.server_principals M ON M.principal_id = X.member_principal_id 
+ 
+The CONTROL SERVER permission is similar but not identical to the sysadmin fixed server role. Permissions do not imply role memberships, and role memberships do not grant permissions (e.g., CONTROL SERVER does not imply membership in the sysadmin fixed server role). 
+ 
+Ensure only the documented and approved logins have privileged functions in SQL Server. 
+ 
+If the current configuration does not match the documented baseline, this is a finding.
+
+References:
+CCI-002235
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 28 *******************************
+
+QUESTION         : 29 of 43
+TITLE            : CAT II, V-271342, SV-271342r1108642, SRG-APP-000342-DB-000302
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.inst.hybrid:testaction:27134201
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.inst.hybrid:question:27134201
+VARIABLE_ID      : oval:navy.navwar.niwcatlantic.scc.ms.sql.server.inst:var:27134204
+RULE             : Use of credentials and proxies must be restricted to necessary cases only.
+QUESTION_TEXT    : Enter the list of database accounts (credential_identity) who are approved in documentation for executing external processes
+HYBRID QUESTION  :Enter Scope, Target, Authorization (SSP doc, ISSM etc...), and authorized value(s) in the XML below. Refer to SCC User Manual Section 6 for more information and detailed examples
+
+<hybrid_variables>
+	<hybrid_variable>
+		<scope>INSTANCE</scope>
+		<target>ALL</target>
+		<authorization></authorization>
+		<authorized_values>
+			<authorized_value></authorized_value>
+		</authorized_values>
+		<notes></notes>
+	</hybrid_variable>
+</hybrid_variables>
+******************************* end of question 29 *******************************
+
+QUESTION         : 30 of 43
+TITLE            : CAT II, V-271343, SV-271343r1108645, SRG-APP-000357-DB-000316
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.sql.server:testaction:10101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.sql.server:question:10101
+RULE             : SQL Server must allocate audit record storage capacity in accordance with organization-defined audit record storage requirements.
+QUESTION_TEXT    : If the database is setup to write audit logs using APPLICATION or SECURITY event logs rather than writing to a file, this is Not Applicable.
+
+Check the server documentation for the SQL Audit file size configurations. Locate the Audit file path and drive. 
+ 
+SELECT max_file_size, max_rollover_files, log_file_path AS "Audit Path"  
+FROM sys.server_file_audits 
+ 
+Calculate the space needed as the maximum file size and number of files from the SQL Audit File properties. 
+ 
+If the calculated product of the "max_file_size" times the "max_rollover_files" exceeds the size of the storage location, this is a finding; 
+
+OR if "max_file_size" is set to "0" (Unlimited), this is a finding;
+
+OR if "max_rollover_files" are set to "0" (None) or "2147483647" (Unlimited), this is a finding.
+
+References:
+CCI-001849
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 30 *******************************
+
+QUESTION         : 31 of 43
+TITLE            : CAT II, V-271344, SV-271344r1111082, SRG-APP-000359-DB-000319
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.sql.server:testaction:10301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.sql.server:question:10301
+RULE             : SQL Server must provide a warning to appropriate support staff when allocated audit record storage volume reaches 75 percent of maximum audit record storage capacity.
+QUESTION_TEXT    : The operating system and SQL Server offer a number of methods for checking the drive or volume free space. Locate the destination drive where SQL Audits are stored and review system configuration. 
+ 
+If no alert exists to notify support staff in the event the SQL Audit drive reaches 75 percent, this is a finding.
+
+References:
+CCI-001855
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 31 *******************************
+
+QUESTION         : 32 of 43
+TITLE            : CAT II, V-271345, SV-271345r1109254, SRG-APP-000360-DB-000320
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.sql.server:testaction:10501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.sql.server:question:10501
+RULE             : SQL Server must provide an immediate real-time alert to appropriate support staff of all audit log failures.
+QUESTION_TEXT    : Review SQL Server settings, OS, or third-party logging software settings to determine whether a real-time alert will be sent to the appropriate personnel when auditing fails for any reason.
+
+If real-time alerts are not sent upon auditing failure, this is a finding.
+
+References:
+CCI-001858
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 32 *******************************
+
+QUESTION         : 33 of 43
+TITLE            : CAT II, V-271346, SV-271346r1109256, SRG-APP-000374-DB-000322
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.sql.server:testaction:10701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.sql.server:question:10701
+RULE             : SQL Server must record time stamps in audit records and application data that can be mapped to Coordinated Universal Time (UTC), formerly Greenwich Mean Time (GMT).
+QUESTION_TEXT    : SQL Server Audits store the timestamp in UTC time. 
+ 
+Determine if the computer is joined to a domain. 
+ 
+SELECT DEFAULT_DOMAIN()[DomainName]  
+ 
+If this is not NULL, this is not a finding. 
+ 
+If the computer is not joined to a domain, determine what the time source is. (Run the following command in an elevated PowerShell session.) 
+ 
+     w32tm /query /source 
+ 
+If the results of the command return "Local CMOS Clock" and this is not documented with justification and authorizing official (AO) authorization, this is a finding. 
+ 
+If the OS does not synchronize with a time server, review the procedure for maintaining accurate time on the system. 
+ 
+If such a procedure does not exist, this is a finding. 
+ 
+If the procedure exists, review evidence that the correct time is actually maintained. 
+ 
+If the evidence indicates otherwise, this is a finding.
+
+References:
+CCI-001890
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 33 *******************************
+
+QUESTION         : 34 of 43
+TITLE            : CAT II, V-271349, SV-271349r1108938, SRG-APP-000380-DB-000360
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.inst.hybrid:testaction:27134901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.inst.hybrid:question:27134901
+VARIABLE_ID      : oval:navy.navwar.niwcatlantic.scc.ms.sql.server.inst:var:27134902
+RULE             : Windows must enforce access restrictions associated with changes to the configuration of the SQL Server instance.
+QUESTION_TEXT    : Enter approved and documented list of datbase user names who have privileged access to the server via the local Administrators group.
+HYBRID QUESTION  :Enter Scope, Target, Authorization (SSP doc, ISSM etc...), and authorized value(s) in the XML below. Refer to SCC User Manual Section 6 for more information and detailed examples
+
+<hybrid_variables>
+	<hybrid_variable>
+		<scope>INSTANCE</scope>
+		<target>ALL</target>
+		<authorization></authorization>
+		<authorized_values>
+			<authorized_value></authorized_value>
+		</authorized_values>
+		<notes></notes>
+	</hybrid_variable>
+</hybrid_variables>
+******************************* end of question 34 *******************************
+
+QUESTION         : 35 of 43
+TITLE            : CAT II, V-271350, SV-271350r1111084, SRG-APP-000380-DB-000360
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.inst.hybrid:testaction:27135001
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.inst.hybrid:question:27135001
+VARIABLE_ID      : oval:navy.navwar.niwcatlantic.scc.ms.sql.server.inst:var:27135004
+RULE             : SQL Server must enforce access restrictions associated with changes to the configuration of the instance.
+QUESTION_TEXT    : Enter the list of database user names who are approved in documentation to have the permission of 'CONTROL SERVER' or be a member of 'sysadmin,'securityadmin','serveradmin' groups
+HYBRID QUESTION  :Enter Scope, Target, Authorization (SSP doc, ISSM etc...), and authorized value(s) in the XML below. Refer to SCC User Manual Section 6 for more information and detailed examples
+
+<hybrid_variables>
+	<hybrid_variable>
+		<scope>INSTANCE</scope>
+		<target>ALL</target>
+		<authorization></authorization>
+		<authorized_values>
+			<authorized_value></authorized_value>
+		</authorized_values>
+		<notes></notes>
+	</hybrid_variable>
+</hybrid_variables>
+******************************* end of question 35 *******************************
+
+QUESTION         : 36 of 43
+TITLE            : CAT II, V-271358, SV-271358r1109129, SRG-APP-000431-DB-000388
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.sql.server:testaction:11501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.sql.server:question:11501
+RULE             : SQL Server services must be configured to run under unique dedicated user accounts.
+QUESTION_TEXT    : Review the server documentation to obtain a listing of required service accounts. Review the accounts configured for all SQL Server services installed on the server. 
+ 
+Run the following query in SSMS:
+
+SELECT servicename,service_account FROM sys.dm_server_services
+ 
+Review the returned results. If any services are configured with the same service account or with an account that is not documented and authorized, this is a finding.
+
+References:
+CCI-002530
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 36 *******************************
+
+QUESTION         : 37 of 43
+TITLE            : CAT II, V-271362, SV-271362r1108702, SRG-APP-000447-DB-000393
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.sql.server:testaction:11901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.sql.server:question:11901
+RULE             : When invalid inputs are received, the SQL Server must behave in a predictable and documented manner that reflects organizational and system objectives.
+QUESTION_TEXT    : Review DBMS code (stored procedures, functions, triggers), application code, settings, column and field definitions, and constraints to determine whether the database is protected against invalid input. 
+
+If code exists that allows invalid data to be acted upon or input into the database, this is a finding. 
+
+If column/field definitions are not reflective of the data, this is a finding. 
+
+If columns/fields do not contain constraints and validity checking where required, this is a finding. 
+
+Where a column/field is noted in the system documentation as necessarily free form, even though its name and context suggest that it should be strongly typed and constrained, the absence of these protections is not a finding. 
+
+Where a column/field is clearly identified by name, caption or context as Notes, Comments, Description, Text, etc., the absence of these protections is not a finding.
+
+References:
+CCI-002754
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 37 *******************************
+
+QUESTION         : 38 of 43
+TITLE            : CAT II, V-271364, SV-271364r1108902, SRG-APP-000456-DB-000390
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.sql.server:testaction:12101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.sql.server:question:12101
+RULE             : Security-relevant software updates to SQL Server must be installed within the time period directed by an authoritative source (e.g., IAVM, CTOs, DTMs, and STIGs).
+QUESTION_TEXT    : Obtain evidence that software patches are consistently applied to SQL Server within the time frame defined for each patch. To be considered supported, Microsoft must report that the version is supported by security patches to known vulnerability. Review the Support dates at https://learn.microsoft.com/en-us/troubleshoot/sql/releases/download-and-install-latest-updates.
+ 
+Check the SQL Server version by running the following script: 
+
+Print @@version 
+ 
+If the SQL Server version is not shown as supported, this is a finding. 
+ 
+If such evidence cannot be obtained, or the evidence that is obtained indicates a pattern of noncompliance, this is a finding.
+
+References:
+CCI-002605
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 38 *******************************
+
+QUESTION         : 39 of 43
+TITLE            : CAT II, V-271381, SV-271381r1111095, SRG-APP-000508-DB-000358
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.sql.server:testaction:12901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.sql.server:question:12901
+RULE             : SQL Server must generate audit records for all direct access to the database(s).
+QUESTION_TEXT    : Determine whether any Server Audits are configured to filter records. From SQL Server Management Studio, execute the following query:
+SELECT name AS AuditName, predicate AS AuditFilter
+FROM sys.server_audits
+WHERE predicate IS NOT NULL
+
+If any audits are returned, review the associated filters. If any direct access to the database(s) is being excluded, this is a finding.
+
+References:
+CCI-000172
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 39 *******************************
+
+QUESTION         : 40 of 43
+TITLE            : CAT II, V-271385, SV-271385r1108771, SRG-APP-000515-DB-000318
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.sql.server:testaction:13101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.sql.server:question:13101
+RULE             : The system SQL Server must off-load audit data to a separate log management facility; this must be continuous and in near real time for systems with a network connection to the storage facility and weekly or more often for stand-alone systems.
+QUESTION_TEXT    : Review the system documentation for a description of how audit records are off-loaded. 
+ 
+If the system has a continuous network connection to the centralized log management system, but the DBMS audit records are not written directly to the centralized log management system or transferred in near-real-time, this is a finding. 
+ 
+If the system does not have a continuous network connection to the centralized log management system, and the DBMS audit records are not transferred to the centralized log management system weekly or more often, this is a finding.
+
+References:
+CCI-001851
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 40 *******************************
+
+QUESTION         : 41 of 43
+TITLE            : CAT II, V-271388, SV-271388r1111098, SRG-APP-000516-DB-000363
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.sql.server:testaction:13501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.sql.server:question:13501
+RULE             : SQL Server must configure SQL Server Usage and Error Reporting Auditing.
+QUESTION_TEXT    : Review the server documentation to determine if auditing of the telemetry data is required. If auditing of telemetry data is not required, this is not a finding. 
+ 
+If auditing of telemetry data is required, determine the telemetry service username by executing the following query: 
+SELECT name 
+FROM sys.server_principals 
+WHERE name LIKE '%SQLTELEMETRY%' 
+ 
+Review the values of the following registry key: 
+Note: InstanceId refers to the type and instance of the feature (e.g., MSSQL16.SqlInstance, MSAS16.SSASInstance, MSRS16.SSRSInstance). 
+ 
+HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Microsoft SQL Server\[InstanceId]\CPE\UserRequestedLocalAuditDirectory 
+ 
+If the registry key does not exist or the value is blank, this is a finding. 
+ 
+Navigate the path defined in the "UserRequestedLocalAuditDirectory" registry key in file explorer. 
+ 
+Right-click on the folder and choose "Properties". Open the "Security" tab.
+ 
+Verify the SQLTELEMETRY account has the following permissions: 
+- List folder contents 
+- Read 
+- Write 
+ 
+If the permissions are not set properly on the folder, this is a finding. 
+ 
+Open services.msc and find the telemetry service. 
+- For Database Engine, use SQL Server CEIP service (<INSTANCENAME>). 
+- For Analysis Services, use SQL Server Analysis Services CEIP (<INSTANCENAME>). 
+ 
+Right-click on the service and choose "Properties". Verify the "Startup type" is "Automatic."  
+ 
+If the service is not configured to automatically start, this is a finding. 
+ 
+Review the processes and procedures for reviewing the telemetry data. If there is evidence that the telemetry data is periodically reviewed in accordance with the processes and procedures, this is not a finding. 
+ 
+If no processes and procedures exist for reviewing telemetry data, this is a finding.
+
+References:
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 41 *******************************
+
+QUESTION         : 42 of 43
+TITLE            : CAT II, V-271400, SV-271400r1111151, SRG-APP-000855-DB-000240
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.sql.server:testaction:13901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.sql.server:question:13901
+RULE             : SQL Server must, for password-based authentication, require immediate selection of a new password upon account recovery.
+QUESTION_TEXT    : Check for use of SQL Server Authentication:
+SELECT CASE SERVERPROPERTY('IsIntegratedSecurityOnly') WHEN 1 THEN 'Windows Authentication' WHEN 0 THEN 'SQL Server Authentication' END as [Authentication Mode]
+
+If the returned value in the "Authentication Mode" column is "Windows Authentication", this is not a finding.
+
+If the returned value is not "Windows Authentication", verify SQL Server is configured to require immediate selection of a new password upon account recovery.
+
+All scripts, functions, triggers, and stored procedures that are used to create a user or reset a user's password should include a line similar to the following password_option:
+MUST_CHANGE
+
+Example:
+CREATE LOGIN STIG_test WITH PASSWORD ='Password' MUST_CHANGE, 
+     CHECK_EXPIRATION = ON,
+     CHECK_POLICY = ON;
+
+If they do not, this is a finding.
+
+If SQL Server is not configured to require immediate selection of a new password upon account recovery, this is a finding.
+
+References:
+CCI-004063
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 42 *******************************
+
+QUESTION         : 43 of 43
+TITLE            : CAT II, V-274446, SV-274446r1111106, SRG-APP-000342-DB-000302
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.inst.hybrid:testaction:27444601
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.inst.hybrid:question:27444601
+VARIABLE_ID      : oval:navy.navwar.niwcatlantic.scc.ms.sql.server.inst:var:27444604
+RULE             : Execution of startup stored procedures must be restricted to necessary cases only.
+QUESTION_TEXT    : Enter approved and documented list of stored procedures
+HYBRID QUESTION  :Enter Scope, Target, Authorization (SSP doc, ISSM etc...), and authorized value(s) in the XML below. Refer to SCC User Manual Section 6 for more information and detailed examples
+
+<hybrid_variables>
+	<hybrid_variable>
+		<scope>INSTANCE</scope>
+		<target>ALL</target>
+		<authorization></authorization>
+		<authorized_values>
+			<authorized_value></authorized_value>
+		</authorized_values>
+		<notes></notes>
+	</hybrid_variable>
+</hybrid_variables>
+******************************* end of question 43 *******************************
+

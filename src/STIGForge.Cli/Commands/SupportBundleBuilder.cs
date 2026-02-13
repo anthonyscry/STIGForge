@@ -2,6 +2,7 @@ using System.IO.Compression;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text.Json;
+using BundlePaths = STIGForge.Core.Constants.BundlePaths;
 
 namespace STIGForge.Cli.Commands;
 
@@ -129,11 +130,11 @@ public sealed class SupportBundleBuilder
       return;
     }
 
-    CopyMatchingFiles(request, Path.Combine(bundleRoot, "Manifest"), Path.Combine(stagingRoot, "bundle", "Manifest"), files, warnings);
-    CopyMatchingFiles(request, Path.Combine(bundleRoot, "Reports"), Path.Combine(stagingRoot, "bundle", "Reports"), files, warnings);
-    CopyMatchingFiles(request, Path.Combine(bundleRoot, "Apply"), Path.Combine(stagingRoot, "bundle", "Apply"), files, warnings);
-    CopyMatchingFiles(request, Path.Combine(bundleRoot, "Verify"), Path.Combine(stagingRoot, "bundle", "Verify"), files, warnings);
-    CopyMatchingFiles(request, Path.Combine(bundleRoot, "Manual"), Path.Combine(stagingRoot, "bundle", "Manual"), files, warnings);
+    CopyMatchingFiles(request, Path.Combine(bundleRoot, BundlePaths.ManifestDirectory), Path.Combine(stagingRoot, "bundle", BundlePaths.ManifestDirectory), files, warnings);
+    CopyMatchingFiles(request, Path.Combine(bundleRoot, BundlePaths.ReportsDirectory), Path.Combine(stagingRoot, "bundle", BundlePaths.ReportsDirectory), files, warnings);
+    CopyMatchingFiles(request, Path.Combine(bundleRoot, BundlePaths.ApplyDirectory), Path.Combine(stagingRoot, "bundle", BundlePaths.ApplyDirectory), files, warnings);
+    CopyMatchingFiles(request, Path.Combine(bundleRoot, BundlePaths.VerifyDirectory), Path.Combine(stagingRoot, "bundle", BundlePaths.VerifyDirectory), files, warnings);
+    CopyMatchingFiles(request, Path.Combine(bundleRoot, BundlePaths.ManualDirectory), Path.Combine(stagingRoot, "bundle", BundlePaths.ManualDirectory), files, warnings);
   }
 
   private static void CollectDatabase(SupportBundleRequest request, string stagingRoot, List<BundleFile> files, List<string> warnings)

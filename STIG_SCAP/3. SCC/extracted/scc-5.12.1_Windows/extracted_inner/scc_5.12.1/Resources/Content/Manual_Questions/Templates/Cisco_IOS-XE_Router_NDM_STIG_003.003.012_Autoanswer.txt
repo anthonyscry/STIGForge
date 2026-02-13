@@ -1,0 +1,728 @@
+################################################################################
+DOCUMENT         : Cisco_IOS-XE_Router_NDM_STIG
+VERSION          : 003.003.012
+CHECKSUM         : 5a2eb9195f84bebcf07121607eeaeff60be3b60b92ee138df03c1c42adeff069
+MANUAL QUESTIONS : 22
+
+IMPORTANT: Make sure to save the completed version of this file to: 
+<SCC Install>/Resources/Content/Manual_Questions/Completed_Files
+
+This file contains all of the non-automated STIG requirements found in the STIG.
+Results from this file will be combined with automated checks in SCC to provide
+complete STIG compliance results.
+
+This file will be programmaticaly imported, so do not modify anything in this file
+except for placing an '[X]' to select a Single answer, and entering text comments.
+
+The list of questions is printed in order of severity, listing CAT I (High), then CAT II, etc..
+
+################################################################################
+
+QUESTION         : 1 of 22
+TITLE            : CAT I, V-215833, SV-215833r961068, SRG-APP-000190-NDM-000267
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.iosxe:testaction:4901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.iosxe:question:4901
+RULE             : The Cisco router must be configured to terminate all network connections associated with device management after five minutes of inactivity.
+QUESTION_TEXT    : Review the Cisco router configuration to verify that all network connections associated with a device management have an idle timeout value set to five minutes or less as shown in the following example:
+
+ip http secure-server
+ip http timeout-policy idle 300 life nnnn requests nn
+…
+…
+…
+line con 0
+ exec-timeout 5 0
+line vty 0 1
+ exec-timeout 5 0
+
+If the Cisco router is not configured to terminate all network connections associated with a device management after five minutes of inactivity, this is a finding.
+
+References:
+SV-105409
+V-96271
+CCI-001133
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 1 *******************************
+
+QUESTION         : 2 of 22
+TITLE            : CAT I, V-215854, SV-215854r961863, SRG-APP-000516-NDM-000336
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.iosxe:testaction:7501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.iosxe:question:7501
+RULE             : The Cisco router must be configured to use at least two  authentication servers for the purpose of authenticating users prior to granting administrative access.
+QUESTION_TEXT    : Review the Cisco router configuration to verify that the device is configured to use at least two authentication servers as primary source for authentication as shown in the following example:
+
+aaa new-model
+!
+aaa authentication CONSOLE local
+aaa authentication login LOGIN_AUTHENTICATION group radius local
+…
+…
+…
+ip http authentication aaa login-authentication LOGIN_AUTHENTICATION
+ip http secure-server
+…
+…
+…
+radius-server host x.x.x.x auth-port 1812 acct-port 1813 key xxxxxxx
+radius-server host x.x.x.x auth-port 1812 acct-port 1813 key xxxxxxx
+…
+…
+…
+line con 0
+ exec-timeout 5 0
+ login authentication CONSOLE
+line vty 0 1
+ exec-timeout 5 0
+ login authentication LOGIN_AUTHENTICATION
+
+If the Cisco router is not configured to use at least two authentication servers for the purpose of authenticating users prior to granting administrative access, this is a finding.
+
+References:
+SV-105489
+V-96351
+CCI-000370
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 2 *******************************
+
+QUESTION         : 3 of 22
+TITLE            : CAT I, V-220139, SV-220139r961863, SRG-APP-000516-NDM-000350
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.iosxe:testaction:8101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.iosxe:question:8101
+RULE             : The Cisco router must be configured to send log data to at least two syslog servers for the purpose of forwarding alerts to the administrators and the information system security officer (ISSO).
+QUESTION_TEXT    : Verify that the router is configured to send logs to at least two syslog servers. The configuration should look similar to the example below:
+
+logging x.x.x.x
+logging x.x.x.x
+
+If the router is not configured to send log data to the syslog servers, this is a finding.
+
+References:
+SV-105503
+V-96365
+CCI-001851
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 3 *******************************
+
+QUESTION         : 4 of 22
+TITLE            : CAT I, V-220140, SV-220140r961863, SRG-APP-000516-NDM-000351
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.iosxe:testaction:8301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.iosxe:question:8301
+RULE             : The Cisco router must be running an IOS release that is currently supported by Cisco Systems.
+QUESTION_TEXT    : Verify that the router is in compliance with this requirement by having the router administrator enter the following command: 
+
+show version
+
+Verify that the release is still supported by Cisco. All releases supported by Cisco can be found on the following URL:
+
+www.cisco.com/c/en/us/support/ios-nx-os-software
+
+If the router is not running a supported release, this is a finding.
+
+References:
+SV-105507
+V-96369
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 4 *******************************
+
+QUESTION         : 5 of 22
+TITLE            : CAT II, V-215807, SV-215807r960735, SRG-APP-000001-NDM-000200
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.iosxe:testaction:101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.iosxe:question:101
+RULE             : The Cisco router must be configured to limit the number of concurrent management sessions to an organization-defined number.
+QUESTION_TEXT    : Note: This requirement is not applicable to file transfer actions such as FTP, SCP, and SFTP.
+
+Review the router configuration to determine if concurrent management sessions are limited as shown in the example below:
+
+ip http secure-server 
+ip http max-connections 2 
+… 
+… 
+… 
+line vty 0 1 
+transport input ssh 
+line vty 2 4 
+transport input none 
+
+If the router is not configured to limit the number of concurrent management sessions, this is a finding.
+
+References:
+SV-105327
+V-96189
+CCI-000054
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 5 *******************************
+
+QUESTION         : 6 of 22
+TITLE            : CAT II, V-215812, SV-215812r991874, SRG-APP-000038-NDM-000213
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.iosxe:testaction:1101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.iosxe:question:1101
+RULE             : The Cisco router must be configured to enforce approved authorizations for controlling the flow of management information within the device based on control policies.
+QUESTION_TEXT    : Review the Cisco router configuration to verify that it is compliant with this requirement. 
+
+Step 1: Verify that the line vty has an ACL inbound applied as shown in the example below.
+
+line vty 0 1
+ access-class MANAGEMENT_NET in
+ transport input ssh
+
+Step 2: Verify that the ACL permits only hosts from the management network to access the router.
+
+ip access-list extended MANAGEMENT_NET 
+permit ip x.x.x.0 0.0.0.255 any
+deny   ip any any log-input
+
+If the Cisco router is not configured to enforce approved authorizations for controlling the flow of management information within the device based on control policies, this is a finding.
+
+References:
+SV-105343
+V-96205
+CCI-001368
+CCI-004192
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 6 *******************************
+
+QUESTION         : 7 of 22
+TITLE            : CAT II, V-215814, SV-215814r960843, SRG-APP-000068-NDM-000215
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.iosxe:testaction:1501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.iosxe:question:1501
+RULE             : The Cisco router must be configured to display the Standard Mandatory DoD Notice and Consent Banner before granting access to the device.
+QUESTION_TEXT    : Review the Cisco router configuration to verify that it is compliant with this requirement as shown in the example below.
+
+banner login ^C
+You are accessing a U.S. Government (USG) Information System (IS) that is provided for USG-authorized use only.
+
+By using this IS (which includes any device attached to this IS), you consent to the following conditions:
+
+-The USG routinely intercepts and monitors communications on this IS for purposes including, but not limited to, penetration testing, COMSEC monitoring, network operations and defense, personnel misconduct (PM), law enforcement (LE), and counterintelligence (CI) investigations.
+
+-At any time, the USG may inspect and seize data stored on this IS.
+
+-Communications using, or data stored on, this IS are not private, are subject to routine monitoring, interception, and search, and may be disclosed or used for any USG-authorized purpose.
+
+-This IS includes security measures (e.g., authentication and access controls) to protect USG interests--not for your personal benefit or privacy.
+
+-Notwithstanding the above, using this IS does not constitute consent to PM, LE or CI investigative searching or monitoring of the content of privileged communications, or work product, related to personal representation or services by attorneys, psychotherapists, or clergy, and their assistants. Such communications and work product are private and confidential. See User Agreement for details.
+^C
+
+If the Cisco router is not configured to display the Standard Mandatory DoD Notice and Consent Banner before granting access to the device, this is a finding.
+
+References:
+SV-105347
+V-96209
+CCI-000048
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 7 *******************************
+
+QUESTION         : 8 of 22
+TITLE            : CAT II, V-215818, SV-215818r960897, SRG-APP-000097-NDM-000227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.iosxe:testaction:2101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.iosxe:question:2101
+RULE             : The Cisco router must produce audit records containing information to establish where the events occurred.
+QUESTION_TEXT    : Review the deny statements in all interface ACLs to determine if the log-input parameter has been configured as shown in the example below.
+Note: log-input can only apply to interface bound ACLs.
+
+ip access-list extended BLOCK_INBOUND
+ deny  icmp any any log-input
+
+If the router is not configured with the log-input parameter after any deny statements to note where packets have been dropped via an ACL, this is a finding.
+
+References:
+SV-105363
+V-96225
+CCI-000132
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 8 *******************************
+
+QUESTION         : 9 of 22
+TITLE            : CAT II, V-215824, SV-215824r1051115, SRG-APP-000148-NDM-000346
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.iosxe:testaction:3301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.iosxe:question:3301
+RULE             : The Cisco router must be configured with only one local account to be used as the account of last resort in the event the authentication server is unavailable.
+QUESTION_TEXT    : Step 1: Review the Cisco router configuration to verify that a local account for last resort has been configured.
+
+username xxxxxxxxxxx privilege nn common-criteria-policy PASSWORD_POLICY password xxxxxxxxxx
+
+Note: The configured Common Criteria policy must be used when creating or changing the local account password as shown in the example above.
+
+Step 2: Verify that local is defined after radius or tacas+ in the authentication order as shown in the example below.
+
+aaa authentication login default group tacacs+ local
+
+If the Cisco router is not configured with only one local account to be used as the account of last resort in the event the authentication server is unavailable, this is a finding.
+
+References:
+SV-105381
+V-96243
+CCI-001358
+CCI-002111
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 9 *******************************
+
+QUESTION         : 10 of 22
+TITLE            : CAT II, V-215826, SV-215826r1015288, SRG-APP-000164-NDM-000252
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.iosxe:testaction:3501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.iosxe:question:3501
+RULE             : The Cisco router must be configured to enforce a minimum 15-character password length.
+QUESTION_TEXT    : Review the Cisco router configuration to verify that it is compliant with this requirement as shown in the example below.
+
+aaa new-model
+!
+!
+aaa common-criteria policy PASSWORD_POLICY
+ min-length 15
+
+If the Cisco router is not configured to enforce a minimum 15-character password length, this is a finding.
+
+References:
+SV-105391
+V-96253
+CCI-004066
+CCI-000205
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 10 *******************************
+
+QUESTION         : 11 of 22
+TITLE            : CAT II, V-215827, SV-215827r1015289, SRG-APP-000166-NDM-000254
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.iosxe:testaction:3701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.iosxe:question:3701
+RULE             : The Cisco router must be configured to enforce password complexity by requiring that at least one uppercase character be used.
+QUESTION_TEXT    : Review the Cisco router configuration to verify that it is compliant with this requirement as shown in the example below.
+
+aaa new-model
+!
+!
+aaa common-criteria policy PASSWORD_POLICY
+upper-case 1
+
+If the Cisco router is not configured to enforce password complexity by requiring that at least one uppercase character be used, this is a finding.
+
+References:
+SV-105393
+V-96255
+CCI-004066
+CCI-000192
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 11 *******************************
+
+QUESTION         : 12 of 22
+TITLE            : CAT II, V-215828, SV-215828r1015290, SRG-APP-000167-NDM-000255
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.iosxe:testaction:3901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.iosxe:question:3901
+RULE             : The Cisco router must be configured to enforce password complexity by requiring that at least one lowercase character be used.
+QUESTION_TEXT    : Review the Cisco router configuration to verify that it is compliant with this requirement as shown in the example below.
+
+aaa new-model
+!
+!
+aaa common-criteria policy PASSWORD_POLICY
+lower-case 1
+
+If the Cisco router is not configured to enforce password complexity by requiring that at least one lowercase character be used, this is a finding.
+
+References:
+SV-105395
+V-96257
+CCI-004066
+CCI-000193
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 12 *******************************
+
+QUESTION         : 13 of 22
+TITLE            : CAT II, V-215829, SV-215829r1015291, SRG-APP-000168-NDM-000256
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.iosxe:testaction:4101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.iosxe:question:4101
+RULE             : The Cisco router must be configured to enforce password complexity by requiring that at least one numeric character be used.
+QUESTION_TEXT    : Review the Cisco router configuration to verify that it is compliant with this requirement as shown in the example below.
+
+aaa new-model
+!
+!
+aaa common-criteria policy PASSWORD_POLICY
+ numeric-count 1
+
+If the Cisco router is not configured to enforce password complexity by requiring that at least one numeric character be used, this is a finding.
+
+References:
+SV-105397
+V-96259
+CCI-004066
+CCI-000194
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 13 *******************************
+
+QUESTION         : 14 of 22
+TITLE            : CAT II, V-215830, SV-215830r1015292, SRG-APP-000169-NDM-000257
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.iosxe:testaction:4301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.iosxe:question:4301
+RULE             : The Cisco router must be configured to enforce password complexity by requiring that at least one special character be used.
+QUESTION_TEXT    : Review the Cisco router configuration to verify that it is compliant with this requirement as shown in the example below.
+
+aaa new-model
+!
+!
+aaa common-criteria policy PASSWORD_POLICY
+ special-case 1
+
+If the Cisco router is not configured to enforce password complexity by requiring that at least one special character be used, this is a finding.
+
+References:
+SV-105399
+V-96261
+CCI-004066
+CCI-001619
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 14 *******************************
+
+QUESTION         : 15 of 22
+TITLE            : CAT II, V-215831, SV-215831r1043189, SRG-APP-000170-NDM-000329
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.iosxe:testaction:4501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.iosxe:question:4501
+RULE             : The Cisco router must be configured to require that when a password is changed, the characters are changed in at least eight of the positions within the password.
+QUESTION_TEXT    : Review the Cisco router configuration to verify that it is compliant with this requirement as shown in the example below.
+
+aaa new-model
+!
+!
+aaa common-criteria policy PASSWORD_POLICY
+ char-changes 8
+
+If the Cisco router is not configured to require that when a password is changed, the characters are changed in at least eight of the positions within the password, this is a finding.
+
+References:
+SV-105401
+V-96263
+CCI-004066
+CCI-000195
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 15 *******************************
+
+QUESTION         : 16 of 22
+TITLE            : CAT II, V-215836, SV-215836r961392, SRG-APP-000357-NDM-000293
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.iosxe:testaction:5301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.iosxe:question:5301
+RULE             : The Cisco router must be configured to allocate audit record storage capacity in accordance with organization-defined audit record storage requirements.
+QUESTION_TEXT    : Verify that the Cisco router is configured with a logging buffer size. The configuration should look like the example below:
+
+logging buffered xxxxxxxx informational
+
+If a logging buffer size is not configured, this is a finding.
+
+If the Cisco router is not configured to allocate audit record storage capacity in accordance with organization-defined audit record storage requirements, this is a finding.
+
+References:
+SV-105435
+V-96297
+CCI-001849
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 16 *******************************
+
+QUESTION         : 17 of 22
+TITLE            : CAT II, V-215837, SV-215837r991886, SRG-APP-000360-NDM-000295
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.iosxe:testaction:5501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.iosxe:question:5501
+RULE             : The Cisco router must be configured to generate an alert for all audit failure events.
+QUESTION_TEXT    : Review the Cisco router configuration to verify that it is compliant with this requirement as shown in the example below.
+
+logging trap critical
+
+Note: The parameter "critical" can replaced with a lesser severity level (i.e. error, warning, notice, informational). Informational is the default severity level; hence, if the severity level is configured to informational, the logging trap command will not be shown in the configuration.
+
+If the Cisco router is not configured to generate an alert for all audit failure events, this is a finding.
+
+References:
+V-96301
+SV-105439
+CCI-001858
+CCI-003831
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 17 *******************************
+
+QUESTION         : 18 of 22
+TITLE            : CAT II, V-215841, SV-215841r1107207, SRG-APP-000395-NDM-000310
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.iosxe:testaction:5901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.iosxe:question:5901
+RULE             : The Cisco router must be configured to authenticate SNMP messages using a FIPS-validated Keyed-Hash Message Authentication Code (HMAC).
+QUESTION_TEXT    : Review the Cisco router configuration to verify that it is compliant with this requirement as shown in the example below.
+
+snmp-server group V3GROUP v3 auth read V3READ write V3WRITE 
+snmp-server host x.x.x.x version 3 auth V3USER
+
+Authentication used by the SNMP users can be viewed via the show snmp user command as shown in the example below:
+
+R4#show snmp user
+
+User name: V3USER
+Engine ID: 800000090300C2042B540000
+storage-type: nonvolatile active
+Authentication Protocol: SHA
+Privacy Protocol: None
+Group-name: V3GROUP
+
+If the Cisco router is not configured to authenticate SNMP messages using a FIPS-validated HMAC, this is a finding.
+
+References:
+SV-105455
+V-96317
+CCI-001967
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 18 *******************************
+
+QUESTION         : 19 of 22
+TITLE            : CAT II, V-215842, SV-215842r961506, SRG-APP-000395-NDM-000310
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.iosxe:testaction:6101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.iosxe:question:6101
+RULE             : The Cisco router must be configured to encrypt SNMP messages using a FIPS 140-2 approved algorithm.
+QUESTION_TEXT    : Review the Cisco router configuration to verify that it is compliant with this requirement as shown in the example below.
+
+snmp-server group V3GROUP v3 priv read V3READ write V3WRITE
+snmp-server view V3READ iso included
+snmp-server view V3WRITE iso included
+snmp-server host x.x.x.x version 3 auth V3USER
+
+Encryption used by the SNMP users can be viewed via the show snmp user command as shown in the example below.
+
+R4#show snmp user
+
+User name: V3USER
+Engine ID: 800000090300C2042B540000
+storage-type: nonvolatile active
+Authentication Protocol: SHA
+Privacy Protocol: AES256
+Group-name: V3GROUP
+
+If the Cisco router is not configured to encrypt SNMP messages using a FIPS 140-2 approved algorithm, this is a finding.
+
+References:
+SV-105457
+V-96319
+CCI-000068
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 19 *******************************
+
+QUESTION         : 20 of 22
+TITLE            : CAT II, V-215843, SV-215843r1050862, SRG-APP-000395-NDM-000347
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.iosxe:testaction:6301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.iosxe:question:6301
+RULE             : The Cisco router must be configured to authenticate Network Time Protocol (NTP) sources using authentication that is cryptographically based.
+QUESTION_TEXT    : Review the Cisco router configuration to verify that it is compliant with this requirement as shown in the configuration example below.
+
+ntp authentication-key 1 hmac-sha2-256 xxxxxx
+ntp authenticate
+ntp trusted-key 1
+ntp server x.x.x.x key 1
+ntp server y.y.y.y key 1
+
+If the Cisco router is not configured to authenticate NTP sources using authentication that is cryptographically based, this is a finding.
+
+References:
+SV-105459
+V-96321
+CCI-001967
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 20 *******************************
+
+QUESTION         : 21 of 22
+TITLE            : CAT II, V-215855, SV-215855r1069501, SRG-APP-000516-NDM-000340
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.iosxe:testaction:7701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.iosxe:question:7701
+RULE             : The Cisco router must be configured to back up the configuration when changes occur.
+QUESTION_TEXT    : Review the Cisco router configuration to verify that it is compliant with this requirement. The example configuration below will send the configuration to a SCP server when a configuration change occurs.
+
+event manager applet BACKUP_CONFIG
+ event syslog pattern "%SYS-5-CONFIG_I"
+ action 1 info type routername
+ action 2 cli command "enable"
+ action 3 cli command "copy run scp" pattern "remote host"
+ action 4 cli command "x.x.x.x" pattern "filename"
+ action 5 cli command "$_info_routername-config"
+ action 6 syslog priority informational msg "Configuration backup was executed"
+
+If the Cisco router is not configured to conduct backups of the configuration when changes occur, this is a finding.
+
+References:
+SV-105497
+V-96359
+CCI-000366
+CCI-000537
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 21 *******************************
+
+QUESTION         : 22 of 22
+TITLE            : CAT II, V-215856, SV-215856r991889, SRG-APP-000516-NDM-000344
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.iosxe:testaction:7901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.iosxe:question:7901
+RULE             : The Cisco router must be configured to obtain its public key certificates from an appropriate certificate policy through an approved service provider.
+QUESTION_TEXT    : Review the router configuration to determine if a CA trust point has been configured. The CA trust point will contain the URL of the CA in which the router has enrolled with. Verify this is a DOD or DOD-approved CA. This will ensure the router has enrolled and received a certificate from a trusted CA. The CA trust point configuration would look similar to the example below.
+
+crypto pki trustpoint CA_X
+ enrollment url http://trustpoint1.example.com
+
+Note: A remote end-point's certificate will always be validated by the router by verifying the signature of the CA on the certificate using the CA's public key, which is contained in the router's certificate it received at enrollment.
+
+Note: This requirement is not applicable if the router does not have any public key certificates.
+
+If the Cisco router is not configured to obtain its public key certificates from an appropriate certificate policy through an approved service provider, this is a finding.
+
+References:
+SV-105501
+V-96363
+CCI-001159
+CCI-004909
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 22 *******************************
+

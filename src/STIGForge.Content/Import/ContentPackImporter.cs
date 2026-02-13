@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using System.Text.Json;
 using STIGForge.Core.Abstractions;
+using STIGForge.Core.Constants;
 using STIGForge.Core.Models;
 using STIGForge.Content.Models;
 
@@ -99,6 +100,10 @@ public sealed class ContentPackImporter
         {
             ExtractZipSafely(consolidatedZipPath, extractionRoot, ct);
 
+            var gpoSubPacks = await TrySplitGpoBundleAsync(extractionRoot, sourceLabel, ct).ConfigureAwait(false);
+            if (gpoSubPacks != null)
+                return gpoSubPacks;
+
             var nestedZipPaths = Directory
                 .GetFiles(extractionRoot, "*.zip", SearchOption.AllDirectories)
                 .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
@@ -106,8 +111,6 @@ public sealed class ContentPackImporter
 
             if (nestedZipPaths.Count == 0)
             {
-                // NIWC-style bundles: no nested ZIPs, but multiple benchmark folders with XCCDF files.
-                // Split by parent directory of each XCCDF so each benchmark becomes its own pack.
                 var xccdfFiles = Directory
                     .GetFiles(extractionRoot, "*.xml", SearchOption.AllDirectories)
                     .Where(p => Path.GetFileName(p).IndexOf("xccdf", StringComparison.OrdinalIgnoreCase) >= 0)
@@ -134,7 +137,54 @@ public sealed class ContentPackImporter
                     return splitPacks;
                 }
 
+                // SCAP datastream bundles: flat ZIP with multiple *Benchmark*.xml files
+                // (DISA consolidated bundles use data-stream-collection format, not plain XCCDF)
+                if (xccdfFiles.Count == 0)
+                {
+                    var datastreamXmls = Directory
+                        .GetFiles(extractionRoot, "*.xml", SearchOption.AllDirectories)
+                        .Where(p =>
+                        {
+                            var fn = Path.GetFileName(p);
+                            return fn.IndexOf("Benchmark", StringComparison.OrdinalIgnoreCase) >= 0
+                                || fn.IndexOf(PackTypes.Scap, StringComparison.OrdinalIgnoreCase) >= 0;
+                        })
+                        .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
+                        .ToList();
+
+                    if (datastreamXmls.Count > 1)
+                    {
+                        var dsImported = new List<ContentPack>(datastreamXmls.Count);
+                        foreach (var dsXml in datastreamXmls)
+                        {
+                            ct.ThrowIfCancellationRequested();
+                            var dsDir = Path.Combine(extractionRoot, Path.GetFileNameWithoutExtension(dsXml));
+                            Directory.CreateDirectory(dsDir);
+                            File.Copy(dsXml, Path.Combine(dsDir, Path.GetFileName(dsXml)), true);
+                            var packName = CleanDisaPackName(Path.GetFileNameWithoutExtension(dsXml));
+                            if (string.IsNullOrWhiteSpace(packName))
+                                packName = Path.GetFileNameWithoutExtension(dsXml);
+                            dsImported.Add(await ImportDirectoryAsPackAsync(dsDir, packName, sourceLabel, ct).ConfigureAwait(false));
+                        }
+                        return dsImported;
+                    }
+                }
+
                 var singlePackName = BuildImportedPackName(consolidatedZipPath, "Imported");
+
+                var sourceStats = CountSourceArtifacts(extractionRoot);
+                var formatResult = DetectPackFormatWithConfidence(extractionRoot, sourceStats);
+                if (formatResult.Format == PackFormat.Scap)
+                {
+                    var parsingErrors = new List<ParsingError>();
+                    var allControls = ImportScapZip(extractionRoot, singlePackName, parsingErrors);
+                    var benchmarkGroups = GroupByBenchmark(allControls);
+                    if (benchmarkGroups.Count > 1)
+                    {
+                        return await PersistBenchmarkSubPacksAsync(benchmarkGroups, extractionRoot, sourceLabel, singlePackName, ct).ConfigureAwait(false);
+                    }
+                }
+
                 var importedSingle = await ImportZipAsync(consolidatedZipPath, singlePackName, sourceLabel, ct).ConfigureAwait(false);
                 return new[] { importedSingle };
             }
@@ -608,23 +658,32 @@ public sealed class ContentPackImporter
             return result;
         }
 
-        // GPO packages: ADMX files
-        if (hasAdmx)
-        {
-            result.Format = PackFormat.Gpo;
-            result.Confidence = hasXccdf || hasOval ? DetectionConfidence.Medium : DetectionConfidence.High;
-            result.Reasons.Add($"Found {stats.AdmxCount} ADMX files - GPO policy format.");
-            if (hasXccdf || hasOval)
-                result.Reasons.Add("Warning: XCCDF/OVAL files also present - possible mixed-format bundle.");
-            return result;
-        }
-
-        // STIG packages: XCCDF only (no OVAL, no ADMX)
+        // STIG packages: XCCDF present (takes priority over ADMX — many STIGs bundle ADMX alongside XCCDF)
         if (hasXccdf)
         {
             result.Format = PackFormat.Stig;
-            result.Confidence = DetectionConfidence.High;
-            result.Reasons.Add($"Found {stats.XccdfXmlCount} XCCDF files with no OVAL - standalone STIG benchmark.");
+            result.Confidence = hasAdmx ? DetectionConfidence.Medium : DetectionConfidence.High;
+            result.Reasons.Add($"Found {stats.XccdfXmlCount} XCCDF files - STIG benchmark.");
+            if (hasAdmx)
+                result.Reasons.Add($"Note: {stats.AdmxCount} ADMX files also present but XCCDF takes priority.");
+            return result;
+        }
+
+        // GPO packages: ADMX files only (no XCCDF)
+        if (hasAdmx)
+        {
+            result.Format = PackFormat.Gpo;
+            if (hasOval)
+            {
+                result.Confidence = DetectionConfidence.Medium;
+                result.Reasons.Add(
+                    $"Found {stats.AdmxCount} ADMX files and {stats.OvalXmlCount} OVAL files but no XCCDF; ADMX dominates while mixed format lowers confidence.");
+            }
+            else
+            {
+                result.Confidence = DetectionConfidence.High;
+                result.Reasons.Add($"Found {stats.AdmxCount} ADMX files with no XCCDF - GPO policy format.");
+            }
             return result;
         }
 
@@ -676,10 +735,6 @@ public sealed class ContentPackImporter
 
     private List<ControlRecord> ImportScapZip(string rawRoot, string packName, List<ParsingError> errors)
     {
-        // For SCAP bundles, we need to find the bundle ZIP or use the extracted directory
-        // ScapBundleParser expects a ZIP path, so we need to handle this differently
-        
-        // Find all XCCDF files and parse them
         var xccdfFiles = Directory.GetFiles(rawRoot, "*.xml", SearchOption.AllDirectories)
             .Where(p => Path.GetFileName(p).IndexOf("xccdf", StringComparison.OrdinalIgnoreCase) >= 0)
             .ToList();
@@ -713,7 +768,6 @@ public sealed class ContentPackImporter
             }
         }
 
-        // Parse OVAL files for metadata (reference-only)
         var ovalFiles = Directory.GetFiles(rawRoot, "*.xml", SearchOption.AllDirectories)
             .Where(p => Path.GetFileName(p).IndexOf("oval", StringComparison.OrdinalIgnoreCase) >= 0)
             .ToList();
@@ -724,7 +778,6 @@ public sealed class ContentPackImporter
             {
                 var ovalDefs = OvalParser.Parse(f);
                 Console.WriteLine($"Parsed OVAL: {f} ({ovalDefs.Count} definitions)");
-                // OVAL definitions stored as metadata - not converted to ControlRecords
             }
             catch (ParsingException ex)
             {
@@ -749,6 +802,184 @@ public sealed class ContentPackImporter
         }
 
         return parsed;
+    }
+
+    private async Task<IReadOnlyList<ContentPack>?> TrySplitGpoBundleAsync(string extractionRoot, string sourceLabel, CancellationToken ct)
+    {
+        var localPolicyDirs = Directory.GetDirectories(extractionRoot, "Local Policies", SearchOption.AllDirectories);
+        var admxTemplateDirs = Directory.GetDirectories(extractionRoot, "ADMX Templates", SearchOption.AllDirectories);
+        var hasAdmx = Directory.GetFiles(extractionRoot, "*.admx", SearchOption.AllDirectories).Length > 0;
+
+        if (localPolicyDirs.Length == 0 && admxTemplateDirs.Length == 0)
+            return null;
+
+        if (!hasAdmx && localPolicyDirs.Length == 0)
+            return null;
+
+        var packs = new List<ContentPack>();
+        var importedDirs = new List<string>();
+
+        foreach (var lpDir in localPolicyDirs)
+        {
+            ct.ThrowIfCancellationRequested();
+            var osSubDirs = Directory.GetDirectories(lpDir);
+            if (osSubDirs.Length > 0)
+            {
+                foreach (var osDir in osSubDirs.OrderBy(d => d, StringComparer.OrdinalIgnoreCase))
+                {
+                    ct.ThrowIfCancellationRequested();
+                    var osName = new DirectoryInfo(osDir).Name;
+                    var packName = "Local Policy – " + osName;
+                    packs.Add(await ImportDirectoryAsPackAsync(osDir, packName, sourceLabel + "/LocalPolicy", ct).ConfigureAwait(false));
+                    importedDirs.Add(Path.GetFullPath(osDir));
+                }
+            }
+            else
+            {
+                var dirName = new DirectoryInfo(lpDir).Name;
+                var packName = "Local Policy – " + dirName;
+                packs.Add(await ImportDirectoryAsPackAsync(lpDir, packName, sourceLabel + "/LocalPolicy", ct).ConfigureAwait(false));
+            }
+            importedDirs.Add(Path.GetFullPath(lpDir));
+        }
+
+        foreach (var admxDir in admxTemplateDirs)
+        {
+            ct.ThrowIfCancellationRequested();
+            var categorySubDirs = Directory.GetDirectories(admxDir);
+            if (categorySubDirs.Length > 0)
+            {
+                foreach (var catDir in categorySubDirs.OrderBy(d => d, StringComparer.OrdinalIgnoreCase))
+                {
+                    ct.ThrowIfCancellationRequested();
+                    var catName = new DirectoryInfo(catDir).Name;
+                    var packName = "ADMX Templates – " + catName;
+                    packs.Add(await ImportDirectoryAsPackAsync(catDir, packName, sourceLabel + "/ADMX", ct).ConfigureAwait(false));
+                    importedDirs.Add(Path.GetFullPath(catDir));
+                }
+            }
+            else
+            {
+                var dirName = new DirectoryInfo(admxDir).Name;
+                var packName = "ADMX Templates – " + dirName;
+                packs.Add(await ImportDirectoryAsPackAsync(admxDir, packName, sourceLabel + "/ADMX", ct).ConfigureAwait(false));
+            }
+            importedDirs.Add(Path.GetFullPath(admxDir));
+        }
+
+        var remainingAdmx = Directory.GetFiles(extractionRoot, "*.admx", SearchOption.AllDirectories)
+            .Where(f =>
+            {
+                var fullPath = Path.GetFullPath(f);
+                return !importedDirs.Any(d => fullPath.StartsWith(d, StringComparison.OrdinalIgnoreCase));
+            })
+            .ToList();
+
+        if (remainingAdmx.Count > 0)
+        {
+            var parentPackName = BuildImportedPackName(extractionRoot, PackTypes.Gpo);
+            packs.Add(await ImportDirectoryAsPackAsync(extractionRoot, parentPackName, sourceLabel, ct).ConfigureAwait(false));
+        }
+
+        return packs.Count > 0 ? packs : null;
+    }
+
+    private static Dictionary<string, List<ControlRecord>> GroupByBenchmark(List<ControlRecord> controls)
+    {
+        var groups = new Dictionary<string, List<ControlRecord>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var c in controls)
+        {
+            var benchmarkId = c.ExternalIds?.BenchmarkId ?? "(unknown)";
+            if (!groups.TryGetValue(benchmarkId, out var list))
+            {
+                list = new List<ControlRecord>();
+                groups[benchmarkId] = list;
+            }
+            list.Add(c);
+        }
+        return groups;
+    }
+
+    private async Task<IReadOnlyList<ContentPack>> PersistBenchmarkSubPacksAsync(
+        Dictionary<string, List<ControlRecord>> benchmarkGroups,
+        string rawRoot, string sourceLabel, string parentPackName, CancellationToken ct)
+    {
+        var packs = new List<ContentPack>(benchmarkGroups.Count);
+        foreach (var kv in benchmarkGroups.OrderBy(k => k.Key, StringComparer.OrdinalIgnoreCase))
+        {
+            var benchmarkId = kv.Key;
+            var controls = kv.Value;
+            ct.ThrowIfCancellationRequested();
+
+            var subPackId = Guid.NewGuid().ToString("n");
+            var subPackRoot = _paths.GetPackRoot(subPackId);
+            var subRawRoot = Path.Combine(subPackRoot, "raw");
+            Directory.CreateDirectory(subRawRoot);
+
+            var subPackName = benchmarkId == "(unknown)" ? parentPackName : CleanDisaPackName(benchmarkId);
+            if (string.IsNullOrWhiteSpace(subPackName))
+                subPackName = benchmarkId;
+
+            var pack = new ContentPack
+            {
+                PackId = subPackId,
+                Name = subPackName,
+                ImportedAt = DateTimeOffset.Now,
+                ReleaseDate = GuessReleaseDate(rawRoot, subPackName),
+                SourceLabel = sourceLabel,
+                HashAlgorithm = "sha256",
+                ManifestSha256 = subPackId,
+                SchemaVersion = CanonicalContract.Version
+            };
+
+            var validationErrors = ControlRecordContractValidator.Validate(controls);
+            if (validationErrors.Count > 0)
+                throw new ParsingException(
+                    $"[IMPORT-CONTRACT-001] Benchmark '{benchmarkId}' failed validation ({validationErrors.Count} errors): " +
+                    string.Join(" | ", validationErrors.Take(10)));
+
+            await _packs.SaveAsync(pack, ct).ConfigureAwait(false);
+            if (controls.Count > 0)
+                await _controls.SaveControlsAsync(pack.PackId, controls, ct).ConfigureAwait(false);
+
+            var note = new
+            {
+                importedFrom = rawRoot,
+                benchmarkId = benchmarkId,
+                schemaVersion = CanonicalContract.Version,
+                detectedFormat = "Scap",
+                parsedControls = controls.Count,
+                splitFromConsolidated = true,
+                timestamp = DateTimeOffset.Now
+            };
+            File.WriteAllText(
+                Path.Combine(subPackRoot, "import_note.json"),
+                JsonSerializer.Serialize(note, new JsonSerializerOptions { WriteIndented = true }));
+
+            if (_audit != null)
+            {
+                try
+                {
+                    await _audit.RecordAsync(new AuditEntry
+                    {
+                        Action = "import-pack",
+                        Target = subPackName,
+                        Result = "success",
+                        Detail = $"PackId={subPackId}, Format=Scap, BenchmarkId={benchmarkId}, Controls={controls.Count}, SplitFromConsolidated=true",
+                        User = Environment.UserName,
+                        Machine = Environment.MachineName,
+                        Timestamp = DateTimeOffset.Now
+                    }, ct).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    System.Diagnostics.Trace.TraceWarning("Audit write failed during sub-pack import: " + ex.Message);
+                }
+            }
+
+            packs.Add(pack);
+        }
+        return packs;
     }
 
     private List<ControlRecord> ImportGpoZip(string rawRoot, string packName, List<ParsingError> errors)
@@ -875,12 +1106,18 @@ public sealed class ContentPackImporter
             if (idx > 0) { suffixFound = s.Trim(); name = name.Substring(0, idx); break; }
         }
 
+        // Preserve V#R# version tag — extract it before cleanup, re-append after
+        var versionMatch = System.Text.RegularExpressions.Regex.Match(name, @"V(\d+)R(\d+)");
+        var versionTag = versionMatch.Success ? versionMatch.Value : null;
         name = System.Text.RegularExpressions.Regex.Replace(name, @"\s*V\d+R\d+\s*", " ").Trim();
         name = System.Text.RegularExpressions.Regex.Replace(name, @"\s*\d{8} \d{6}\s*$", "").Trim();
         name = System.Text.RegularExpressions.Regex.Replace(name, @"\s+", " ");
 
         if (!string.IsNullOrWhiteSpace(suffixFound))
             name = name + " " + suffixFound;
+
+        if (versionTag != null)
+            name = name + " " + versionTag;
 
         return name.Trim();
     }

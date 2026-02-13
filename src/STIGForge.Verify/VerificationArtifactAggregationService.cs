@@ -1,3 +1,5 @@
+using BundlePaths = STIGForge.Core.Constants.BundlePaths;
+
 namespace STIGForge.Verify;
 
 public sealed class VerificationCoverageInput
@@ -93,7 +95,7 @@ public sealed class VerificationArtifactAggregationService
 
     if (Directory.Exists(path))
     {
-      var candidate = Path.Combine(path, "consolidated-results.json");
+      var candidate = Path.Combine(path, BundlePaths.ConsolidatedResultsFileName);
       if (File.Exists(candidate))
         return candidate;
     }

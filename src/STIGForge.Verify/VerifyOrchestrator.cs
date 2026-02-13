@@ -17,7 +17,8 @@ public sealed class VerifyOrchestrator
     {
       new ScapResultAdapter(),
       new EvaluateStigAdapter(),
-      new CklAdapter()
+      new CklAdapter(),
+      new DscResultAdapter()
     };
   }
 

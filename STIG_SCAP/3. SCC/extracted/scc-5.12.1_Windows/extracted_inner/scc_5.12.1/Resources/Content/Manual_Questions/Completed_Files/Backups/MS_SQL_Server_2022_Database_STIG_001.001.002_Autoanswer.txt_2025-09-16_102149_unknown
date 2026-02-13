@@ -1,0 +1,539 @@
+################################################################################
+DOCUMENT         : MS_SQL_Server_2022_Database_STIG
+VERSION          : 001.001.002
+CHECKSUM         : 165cb6f24d3c1c3a290decbe5c9a17670ff179a51a6d68efe4c9621ac5bd9b58
+MANUAL QUESTIONS : 21
+
+IMPORTANT: Make sure to save the completed version of this file to: 
+<SCC Install>/Resources/Content/Manual_Questions/Completed_Files
+
+This file contains all of the non-automated STIG requirements found in the STIG.
+Results from this file will be combined with automated checks in SCC to provide
+complete STIG compliance results.
+
+This file will be programmaticaly imported, so do not modify anything in this file
+except for placing an '[X]' to select a Single answer, and entering text comments.
+
+The list of questions is printed in order of severity, listing CAT I (High), then CAT II, etc..
+
+################################################################################
+
+QUESTION         : 1 of 21
+TITLE            : CAT I, V-271118, SV-271118r1107970, SRG-APP-000023-DB-000001
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.db.hybrid:testaction:27111801
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.db.hybrid:question:27111801
+VARIABLE_ID      : oval:navy.navwar.niwcatlantic.scc.ms.sql.server.db:var:27111804
+RULE             : If contained databases are enabled, and if mixed mode authentication is enabled, SQL Logins must be documented and authorized
+QUESTION_TEXT    : If contained databases are enabled, and if mixed mode authentication is in use:  
+From the documentation, obtain the list of accounts authorized to be managed by SQL Server.
+Determine the accounts (SQL Logins) actually managed by SQL Server.
+				
+HYBRID QUESTION  :Enter Scope, Target, Authorization (SSP doc, ISSM etc...), and authorized value(s) in the XML below. Refer to SCC User Manual Section 6 for more information and detailed examples
+
+<hybrid_variables>
+	<hybrid_variable>
+		<scope>DATABASE</scope>
+		<target>ALL</target>
+		<authorization></authorization>
+		<authorized_values>
+			<authorized_value></authorized_value>
+		</authorized_values>
+		<notes></notes>
+	</hybrid_variable>
+</hybrid_variables>
+******************************* end of question 1 *******************************
+
+QUESTION         : 2 of 21
+TITLE            : CAT I, V-271119, SV-271119r1107973, SRG-APP-000033-DB-000084
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.sql.server:testaction:301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.sql.server:question:301
+RULE             : SQL Server must enforce approved authorizations for logical access to information and system resources in accordance with applicable access control policies.
+QUESTION_TEXT    : If the database is tempdb, this is Not Applicable.
+
+Check SQL Server settings to determine whether users are restricted from accessing objects and data they are not authorized to access.
+
+Review the system documentation to determine the required levels of protection for securables in the database by type of user. 
+
+Review the permissions in place in the database. 
+
+If the permissions do not match the documented requirements, this is a finding.
+
+Use the supplemental file "Database permission assignments to users and roles.sql".
+
+References:
+CCI-000213
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 2 *******************************
+
+QUESTION         : 3 of 21
+TITLE            : CAT I, V-271199, SV-271199r1108919, SRG-APP-000416-DB-000380
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.db.hybrid:testaction:27119901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.db.hybrid:question:27119901
+VARIABLE_ID      : oval:navy.navwar.niwcatlantic.scc.ms.sql.server.db:var:27119902
+RULE             : SQL Server must use NSA-approved cryptography to protect classified information in accordance with the data owners requirements.
+QUESTION_TEXT    : Review system documentation to determine whether cryptography for classified or sensitive information is required by the information owner.
+Valid 'cryptography_required' options are:
+YES
+NO
+				
+HYBRID QUESTION  :Enter Scope, Target, Authorization (SSP doc, ISSM etc...), and single authorized value in the XML below. Refer to SCC User Manual Section 6 for more information and detailed examples
+
+<hybrid_variables>
+	<hybrid_variable>
+		<scope>DATABASE</scope>
+		<target>ALL</target>
+		<authorization></authorization>
+		<authorized_values>
+			<authorized_value></authorized_value>
+		</authorized_values>
+		<notes></notes>
+	</hybrid_variable>
+</hybrid_variables>
+******************************* end of question 3 *******************************
+
+QUESTION         : 4 of 21
+TITLE            : CAT I, V-271201, SV-271201r1109210, SRG-APP-000428-DB-000386
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.db.hybrid:testaction:27120101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.db.hybrid:question:27120101
+VARIABLE_ID      : oval:navy.navwar.niwcatlantic.scc.ms.sql.server.db:var:27120104
+RULE             : SQL Server must implement cryptographic mechanisms to prevent unauthorized modification of organization-defined information at rest (to include, at a minimum, PII and classified information) on organization-defined information system components.
+QUESTION_TEXT    : Note:  This check covers two duplicate requirements in the SQL Database STIG:
+Vul ID: V-213926	   	Rule ID: SV-213926r1018576_rule	   	STIG ID: SQL6-D0-003300
+Vul ID: V-213927	   	Rule ID: SV-213927r1018577_rule	   	STIG ID: SQL6-D0-003400	
+
+Enter the required database tranparent data encryption (TDE) requirements.  Valid 'encryption_state' options are:
+NoDatabaseEncryptionKey
+Unencrypted
+Encrypted
+
+Example:
+DATABASE:ALL=NoDatabaseEncryptionKey
+HYBRID QUESTION  :Enter Scope, Target, Authorization (SSP doc, ISSM etc...), and authorized value(s) in the XML below. Refer to SCC User Manual Section 6 for more information and detailed examples
+
+<hybrid_variables>
+	<hybrid_variable>
+		<scope>DATABASE</scope>
+		<target>ALL</target>
+		<authorization></authorization>
+		<authorized_values>
+			<authorized_value></authorized_value>
+		</authorized_values>
+		<notes></notes>
+	</hybrid_variable>
+</hybrid_variables>
+******************************* end of question 4 *******************************
+
+QUESTION         : 5 of 21
+TITLE            : CAT II, V-271121, SV-271121r1109177, SRG-APP-000080-DB-000063
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.db.hybrid:testaction:27112101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.db.hybrid:question:27112101
+VARIABLE_ID      : oval:navy.navwar.niwcatlantic.scc.ms.sql.server.db:var:27112103
+RULE             : SQL Server must protect against a user falsely repudiating by use of system-versioned tables (Temporal Tables).
+QUESTION_TEXT    : Enter the list of database tables that are required to be temporal. If no database tables are required to be temporal, enter "NONE_REQUIRED" without quotes.
+				
+HYBRID QUESTION  :Enter Scope, Target, Authorization (SSP doc, ISSM etc...), and authorized value(s) in the XML below. Refer to SCC User Manual Section 6 for more information and detailed examples
+
+<hybrid_variables>
+	<hybrid_variable>
+		<scope>DATABASE</scope>
+		<target>ALL</target>
+		<authorization></authorization>
+		<authorized_values>
+			<authorized_value></authorized_value>
+		</authorized_values>
+		<notes></notes>
+	</hybrid_variable>
+</hybrid_variables>
+******************************* end of question 5 *******************************
+
+QUESTION         : 6 of 21
+TITLE            : CAT II, V-271122, SV-271122r1109180, SRG-APP-000080-DB-000063
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.db.hybrid:testaction:27112201
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.db.hybrid:question:27112201
+VARIABLE_ID      : oval:navy.navwar.niwcatlantic.scc.ms.sql.server.db:var:27112204
+RULE             : SQL Server must protect against a user falsely repudiating by ensuring databases are not in a trust relationship.
+QUESTION_TEXT    : Enter the list of database owners authorized to be trustworthy and privileged
+				
+HYBRID QUESTION  :Enter Scope, Target, Authorization (SSP doc, ISSM etc...), and authorized value(s) in the XML below. Refer to SCC User Manual Section 6 for more information and detailed examples
+
+<hybrid_variables>
+	<hybrid_variable>
+		<scope>DATABASE</scope>
+		<target>ALL</target>
+		<authorization></authorization>
+		<authorized_values>
+			<authorized_value></authorized_value>
+		</authorized_values>
+		<notes></notes>
+	</hybrid_variable>
+</hybrid_variables>
+******************************* end of question 6 *******************************
+
+QUESTION         : 7 of 21
+TITLE            : CAT II, V-271124, SV-271124r1109215, SRG-APP-000090-DB-000065
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.db.hybrid:testaction:27112401
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.db.hybrid:question:27112401
+VARIABLE_ID      : oval:navy.navwar.niwcatlantic.scc.ms.sql.server.db:var:27112404
+RULE             : SQL Server must allow only the ISSM (or individuals or roles appointed by the ISSM) to select which auditable events are to be audited.
+QUESTION_TEXT    : Enter the list of approved audit maintainers from the system documentation. 
+				
+HYBRID QUESTION  :Enter Scope, Target, Authorization (SSP doc, ISSM etc...), and authorized value(s) in the XML below. Refer to SCC User Manual Section 6 for more information and detailed examples
+
+<hybrid_variables>
+	<hybrid_variable>
+		<scope>DATABASE</scope>
+		<target>ALL</target>
+		<authorization></authorization>
+		<authorized_values>
+			<authorized_value></authorized_value>
+		</authorized_values>
+		<notes></notes>
+	</hybrid_variable>
+</hybrid_variables>
+******************************* end of question 7 *******************************
+
+QUESTION         : 8 of 21
+TITLE            : CAT II, V-271143, SV-271143r1108045, SRG-APP-000133-DB-000179
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.db.hybrid:testaction:27114301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.db.hybrid:question:27114301
+VARIABLE_ID      : oval:navy.navwar.niwcatlantic.scc.ms.sql.server.db:var:27114304
+RULE             : SQL Server must limit privileges to change software modules, to include stored procedures, functions, and triggers, and links to software external to SQL Server.
+QUESTION_TEXT    : Enter the list of schema to owner in the format of: schema_name:owning_principal  (no space between fields, just a colon)
+Example:
+DATABASE:ALL=db_accessadmin:db_accessadmin, db_backupoperator:db_backupoperator, db_datareader:db_datareader, db_datawriter:db_datawriter, db_ddladmin:db_ddladmin, db_denydatareader:db_denydatareader, db_denydatawriter:db_denydatawriter, db_owner:db_owner, db_securityadmin:db_securityadmin, dbo:dbo, guest:guest, INFORMATION_SCHEMA:INFORMATION_SCHEMA, sys:sys
+				
+HYBRID QUESTION  :Enter Scope, Target, Authorization (SSP doc, ISSM etc...), and authorized value(s) in the XML below. Refer to SCC User Manual Section 6 for more information and detailed examples
+
+<hybrid_variables>
+	<hybrid_variable>
+		<scope>DATABASE</scope>
+		<target>ALL</target>
+		<authorization></authorization>
+		<authorized_values>
+			<authorized_value></authorized_value>
+		</authorized_values>
+		<notes></notes>
+	</hybrid_variable>
+</hybrid_variables>
+******************************* end of question 8 *******************************
+
+QUESTION         : 9 of 21
+TITLE            : CAT II, V-271146, SV-271146r1109183, SRG-APP-000133-DB-000200
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.db.hybrid:testaction:27114601
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.db.hybrid:question:27114601
+VARIABLE_ID      : oval:navy.navwar.niwcatlantic.scc.ms.sql.server.db:var:27114604
+RULE             : Database objects (including but not limited to tables, indexes, storage, stored procedures, functions, triggers, links to software external to SQL Server, etc.) must be owned by database/DBMS principals authorized for ownership.
+QUESTION_TEXT    : Enter the list of authorized database object owners (user names)
+				
+HYBRID QUESTION  :Enter Scope, Target, Authorization (SSP doc, ISSM etc...), and authorized value(s) in the XML below. Refer to SCC User Manual Section 6 for more information and detailed examples
+
+<hybrid_variables>
+	<hybrid_variable>
+		<scope>DATABASE</scope>
+		<target>ALL</target>
+		<authorization></authorization>
+		<authorized_values>
+			<authorized_value></authorized_value>
+		</authorized_values>
+		<notes></notes>
+	</hybrid_variable>
+</hybrid_variables>
+******************************* end of question 9 *******************************
+
+QUESTION         : 10 of 21
+TITLE            : CAT II, V-271147, SV-271147r1111078, SRG-APP-000133-DB-000362
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.db.hybrid:testaction:27114701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.db.hybrid:question:27114701
+VARIABLE_ID      : oval:navy.navwar.niwcatlantic.scc.ms.sql.server.db:var:27114704
+RULE             : The role(s)/group(s) used to modify database structure (including but not necessarily limited to tables, indexes, storage, etc.) and logic modules (stored procedures, functions, triggers, links to software external to SQL Server, etc.) must be restricted to authorized users.
+QUESTION_TEXT    : Enter the list of users and roles who are authorized to modify database structure and logic modules from the server documentation (role = 'db_ddladmin' or 'db_owner)
+				
+HYBRID QUESTION  :Enter Scope, Target, Authorization (SSP doc, ISSM etc...), and authorized value(s) in the XML below. Refer to SCC User Manual Section 6 for more information and detailed examples
+
+<hybrid_variables>
+	<hybrid_variable>
+		<scope>DATABASE</scope>
+		<target>ALL</target>
+		<authorization></authorization>
+		<authorized_values>
+			<authorized_value></authorized_value>
+		</authorized_values>
+		<notes></notes>
+	</hybrid_variable>
+</hybrid_variables>
+******************************* end of question 10 *******************************
+
+QUESTION         : 11 of 21
+TITLE            : CAT II, V-271168, SV-271168r1109218, SRG-APP-000226-DB-000147
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.16.db.hybrid:testaction:27116801
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.16.db.hybrid:question:27116801
+VARIABLE_ID      : oval:navy.navwar.niwcatlantic.scc.ms.sql.server.db:var:27116804
+RULE             : In the event of a system failure, hardware loss or disk failure, SQL Server must be able to restore necessary databases with least disruption to mission processes
+QUESTION_TEXT    : Enter the authorized/documented database recovery model
+Valid 'recovery_model_desc' options are:
+Simple
+Full
+Bulk-logged
+				
+HYBRID QUESTION  :Enter Scope, Target, Authorization (SSP doc, ISSM etc...), and single authorized value in the XML below. Refer to SCC User Manual Section 6 for more information and detailed examples
+
+<hybrid_variables>
+	<hybrid_variable>
+		<scope>DATABASE</scope>
+		<target>ALL</target>
+		<authorization></authorization>
+		<authorized_values>
+			<authorized_value></authorized_value>
+		</authorized_values>
+		<notes></notes>
+	</hybrid_variable>
+</hybrid_variables>
+******************************* end of question 11 *******************************
+
+QUESTION         : 12 of 21
+TITLE            : CAT II, V-271170, SV-271170r1109190, SRG-APP-000231-DB-000154
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.db.hybrid:testaction:27117001
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.db.hybrid:question:27117001
+VARIABLE_ID      : oval:navy.navwar.niwcatlantic.scc.ms.sql.server.db:var:27117004
+RULE             : The Database Master Key must be encrypted by the Service Master Key, where a Database Master Key is required and another encryption method has not been specified.
+QUESTION_TEXT    : Enter the list of database names that have been documented to have the correct encryption type.
+				
+HYBRID QUESTION  :Enter Scope, Target, Authorization (SSP doc, ISSM etc...), and authorized value(s) in the XML below. Refer to SCC User Manual Section 6 for more information and detailed examples
+
+<hybrid_variables>
+	<hybrid_variable>
+		<scope>DATABASE</scope>
+		<target>ALL</target>
+		<authorization></authorization>
+		<authorized_values>
+			<authorized_value></authorized_value>
+		</authorized_values>
+		<notes></notes>
+	</hybrid_variable>
+</hybrid_variables>
+******************************* end of question 12 *******************************
+
+QUESTION         : 13 of 21
+TITLE            : CAT II, V-271171, SV-271171r1109192, SRG-APP-000231-DB-000154
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.sql.server:testaction:2301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.sql.server:question:2301
+RULE             : The certificate used for encryption must be backed up and stored in a secure location that is not on the SQL Server.
+QUESTION_TEXT    : If the application owner and authorizing official have determined that encryption of data at rest is not required, this is not a finding.
+
+Review procedures for and evidence of backup of the certificate used for encryption in the System Security Plan. 
+
+If the procedures or evidence does not exist, this is a finding. 
+
+If the procedures do not indicate that a backup of the certificate used for encryption is stored in a secure location that is not on the SQL Server, this is a finding. 
+
+If procedures do not indicate access restrictions to the certificate backup, this is a finding.
+
+References:
+CCI-001199
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 13 *******************************
+
+QUESTION         : 14 of 21
+TITLE            : CAT II, V-271172, SV-271172r1109195, SRG-APP-000233-DB-000124
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.sql.server:testaction:2501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.sql.server:question:2501
+RULE             : SQL Server must isolate security functions from nonsecurity functions.
+QUESTION_TEXT    : Determine elements of security functionality (lists of permissions, additional authentication information, stored procedures, application specific auditing, etc.) being housed inside SQL Server.
+
+For any elements found, check SQL Server to determine if these objects or code implementing security functionality are located in a separate security domain, such as a separate database, schema, or table created specifically for security functionality.
+
+Review the system documentation to determine if the necessary database changes cannot be made and that the blockers are also documented. If the necessary changes are documented as not possible, this is not a finding.
+
+Review the database structure to determine where security-related functionality is stored. If security-related database objects or code is not kept separate, this is a finding.
+
+References:
+CCI-001084
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 14 *******************************
+
+QUESTION         : 15 of 21
+TITLE            : CAT II, V-271173, SV-271173r1109197, SRG-APP-000243-DB-000128
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.sql.server:testaction:2701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.sql.server:question:2701
+RULE             : Database contents must be protected from unauthorized and unintended information transfer by enforcement of a data transfer policy.
+QUESTION_TEXT    : Review the procedures for the refreshing of development/test data from production. 
+
+Review any scripts or code that exists for the movement of production data to development/test systems, or to any other location or for any other purpose. 
+
+Verify that copies of production data are not left in unprotected locations. 
+
+If the code that exists for data movement does not comply with the organization-defined data transfer policy and/or fails to remove any copies of production data from unprotected locations, this is a finding.
+
+References:
+CCI-001090
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 15 *******************************
+
+QUESTION         : 16 of 21
+TITLE            : CAT II, V-271176, SV-271176r1109200, SRG-APP-000251-DB-000160
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.sql.server:testaction:2901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.sql.server:question:2901
+RULE             : SQL Server must check the validity of all data inputs except those specifically identified by the organization.
+QUESTION_TEXT    : Review SQL Server code (stored procedures, functions, triggers), application code, settings, column and field definitions, and constraints to determine whether the database is protected against invalid input. If code exists that allows invalid data to be acted upon or input into the database, this is a finding. 
+
+If column/field definitions do not reflect the data, this is a finding. 
+
+If columns/fields do not contain constraints and validity checking where required, this is a finding. 
+
+Where a column/field is noted in the system documentation as necessarily free-form, even though its name and context suggest that it should be strongly typed and constrained, the absence of these protections is not a finding. 
+
+Where a column/field is clearly identified by name, caption, or context as Notes, Comments, Description, Text, etc., the absence of these protections is not a finding.
+
+References:
+CCI-001310
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 16 *******************************
+
+QUESTION         : 17 of 21
+TITLE            : CAT II, V-271179, SV-271179r1108921, SRG-APP-000266-DB-000162
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.sql.server:testaction:3101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.sql.server:question:3101
+RULE             : SQL Server must provide nonprivileged users with error messages that provide information necessary for corrective actions without revealing information that could be exploited by adversaries.
+QUESTION_TEXT    : Review application behavior and custom database code (stored procedures, triggers), to determine whether error messages contain information beyond what is needed for explaining the issue to general users.
+
+If database error messages contain PII data, sensitive business data, or information useful for identifying the host system or database structure, this is a finding.
+
+References:
+CCI-001312
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 17 *******************************
+
+QUESTION         : 18 of 21
+TITLE            : CAT II, V-271184, SV-271184r1109203, SRG-APP-000313-DB-000309
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.sql.server:testaction:3301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.sql.server:question:3301
+RULE             : SQL Server must associate organization-defined types of security labels having organization-defined security label values with information in process, transit, or storage.
+QUESTION_TEXT    : If security labeling is not required, this is not a finding.
+
+If security labeling requirements have been specified, but neither a third-party solution nor a SQL Server Row-Level security solution is implemented that reliably maintains labels on information, this is a finding.
+
+References:
+CCI-002262
+CCI-002263
+CCI-002264
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 18 *******************************
+
+QUESTION         : 19 of 21
+TITLE            : CAT II, V-271186, SV-271186r1109206, SRG-APP-000328-DB-000301
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.db.hybrid:testaction:27118601
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.db.hybrid:question:27118601
+VARIABLE_ID      : oval:navy.navwar.niwcatlantic.scc.ms.sql.server.db:var:27118604
+RULE             : SQL Server must enforce discretionary access control policies, as defined by the data owner, over defined subjects and objects.
+QUESTION_TEXT    : Enter the list of database user names that are authorized to own schema, own objects and assign additional permissions.
+				
+HYBRID QUESTION  :Enter Scope, Target, Authorization (SSP doc, ISSM etc...), and authorized value(s) in the XML below. Refer to SCC User Manual Section 6 for more information and detailed examples
+
+<hybrid_variables>
+	<hybrid_variable>
+		<scope>DATABASE</scope>
+		<target>ALL</target>
+		<authorization></authorization>
+		<authorized_values>
+			<authorized_value></authorized_value>
+		</authorized_values>
+		<notes></notes>
+	</hybrid_variable>
+</hybrid_variables>
+******************************* end of question 19 *******************************
+
+QUESTION         : 20 of 21
+TITLE            : CAT II, V-271188, SV-271188r1108912, SRG-APP-000342-DB-000302
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.db.hybrid:testaction:27118801
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.db.hybrid:question:27118801
+VARIABLE_ID      : oval:navy.navwar.niwcatlantic.scc.ms.sql.server.db:var:27118804
+RULE             : Execution of stored procedures and functions that utilize execute as must be restricted to necessary cases only.
+QUESTION_TEXT    : Enter the list of stored procedures that are authorized to utilize impersonation.
+				
+HYBRID QUESTION  :Enter Scope, Target, Authorization (SSP doc, ISSM etc...), and authorized value(s) in the XML below. Refer to SCC User Manual Section 6 for more information and detailed examples
+
+<hybrid_variables>
+	<hybrid_variable>
+		<scope>DATABASE</scope>
+		<target>ALL</target>
+		<authorization></authorization>
+		<authorized_values>
+			<authorized_value></authorized_value>
+		</authorized_values>
+		<notes></notes>
+	</hybrid_variable>
+</hybrid_variables>
+******************************* end of question 20 *******************************
+
+QUESTION         : 21 of 21
+TITLE            : CAT II, V-271195, SV-271195r1109208, SRG-APP-000380-DB-000360
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.db.hybrid:testaction:27119501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.ms.sql.server.db.hybrid:question:27119501
+VARIABLE_ID      : oval:navy.navwar.niwcatlantic.scc.ms.sql.server.db:var:27119504
+RULE             : SQL Server must enforce access restrictions associated with changes to the configuration of the database(s).
+QUESTION_TEXT    : Enter the documented and authorized list databases whose owner is a member of a fixed server role.
+				
+HYBRID QUESTION  :Enter Scope, Target, Authorization (SSP doc, ISSM etc...), and authorized value(s) in the XML below. Refer to SCC User Manual Section 6 for more information and detailed examples
+
+<hybrid_variables>
+	<hybrid_variable>
+		<scope>DATABASE</scope>
+		<target>ALL</target>
+		<authorization></authorization>
+		<authorized_values>
+			<authorized_value></authorized_value>
+		</authorized_values>
+		<notes></notes>
+	</hybrid_variable>
+</hybrid_variables>
+******************************* end of question 21 *******************************
+

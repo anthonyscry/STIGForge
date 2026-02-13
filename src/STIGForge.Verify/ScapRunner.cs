@@ -2,7 +2,12 @@ using System.Diagnostics;
 
 namespace STIGForge.Verify;
 
-public sealed class ScapRunner
+public interface IScapRunner
+{
+  VerifyRunResult Run(string commandPath, string arguments, string? workingDirectory);
+}
+
+public sealed class ScapRunner : IScapRunner
 {
   public VerifyRunResult Run(string commandPath, string arguments, string? workingDirectory)
   {
@@ -30,10 +35,10 @@ public sealed class ScapRunner
 
     var output = process.StandardOutput.ReadToEnd();
     var error = process.StandardError.ReadToEnd();
-    if (!process.WaitForExit(30000))
+    if (!process.WaitForExit(600000))
     {
       process.Kill();
-      throw new TimeoutException("Process did not exit within 30 seconds.");
+      throw new TimeoutException("SCAP process did not exit within 10 minutes.");
     }
 
     return new VerifyRunResult

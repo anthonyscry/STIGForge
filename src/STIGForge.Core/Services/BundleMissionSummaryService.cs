@@ -1,6 +1,8 @@
 using System.Text;
 using System.Text.Json;
 using STIGForge.Core.Abstractions;
+using BundlePaths = STIGForge.Core.Constants.BundlePaths;
+using ControlStatusStrings = STIGForge.Core.Constants.ControlStatus;
 using STIGForge.Core.Models;
 
 namespace STIGForge.Core.Services;
@@ -33,11 +35,12 @@ public sealed class BundleMissionSummaryService : IBundleMissionSummaryService
 
     var controls = LoadControls(bundleRoot, diagnostics);
     summary.TotalControls = controls.Count;
-    summary.ManualControls = controls.Count(c => c.IsManual);
+
+    var manualScope = BuildManualScopeControls(bundleRoot, controls, diagnostics);
+    summary.ManualControls = manualScope.Count;
     summary.AutoControls = summary.TotalControls - summary.ManualControls;
 
-    var manualControls = controls.Where(c => c.IsManual).ToList();
-    var manualStats = _manualAnswers.GetProgressStats(bundleRoot, manualControls);
+    var manualStats = _manualAnswers.GetProgressStats(bundleRoot, manualScope);
     summary.Manual = new BundleManualSummary
     {
       PassCount = manualStats.PassCount,
@@ -49,7 +52,7 @@ public sealed class BundleMissionSummaryService : IBundleMissionSummaryService
       PercentComplete = manualStats.PercentComplete
     };
 
-    var verify = LoadVerifySummary(bundleRoot, diagnostics);
+    var verify = LoadVerifySummary(bundleRoot, controls, diagnostics);
     summary.Verify = verify;
 
     summary.Diagnostics = diagnostics;
@@ -60,37 +63,38 @@ public sealed class BundleMissionSummaryService : IBundleMissionSummaryService
   {
     var normalized = NormalizeToken(status);
     if (normalized.Length == 0)
-      return "Open";
+      return ControlStatusStrings.Open;
 
     if (normalized == "pass" || normalized == "notafinding" || normalized == "compliant" || normalized == "closed")
-      return "Pass";
+      return ControlStatusStrings.Pass;
 
     if (normalized == "notapplicable" || normalized == "na")
-      return "NotApplicable";
+      return ControlStatusStrings.NotApplicable;
 
     if (normalized == "fail" || normalized == "noncompliant")
-      return "Fail";
+      return ControlStatusStrings.Fail;
 
     if (normalized == "open" || normalized == "notreviewed" || normalized == "notchecked" || normalized == "unknown" || normalized == "error" || normalized == "informational")
-      return "Open";
+      return ControlStatusStrings.Open;
 
-    return "Open";
+    return ControlStatusStrings.Open;
   }
 
-  private BundleVerifySummary LoadVerifySummary(string bundleRoot, List<string> diagnostics)
+  private BundleVerifySummary LoadVerifySummary(string bundleRoot, IReadOnlyList<ControlRecord> controls, List<string> diagnostics)
   {
-    var verifyRoot = Path.Combine(bundleRoot, "Verify");
+    var verifyRoot = Path.Combine(bundleRoot, BundlePaths.VerifyDirectory);
     if (!Directory.Exists(verifyRoot))
       return new BundleVerifySummary();
 
-    var reportPaths = Directory.GetFiles(verifyRoot, "consolidated-results.json", SearchOption.AllDirectories)
+    var reportPaths = Directory.GetFiles(verifyRoot, BundlePaths.ConsolidatedResultsFileName, SearchOption.AllDirectories)
       .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
       .ToList();
 
-    int closed = 0;
-    int total = 0;
+    var controlIndex = BuildControlIndex(controls);
+    var states = new Dictionary<string, (bool anyClosed, bool anyOpen, bool anyWarning)>(StringComparer.OrdinalIgnoreCase);
+
     int blockingFailures = 0;
-    int warnings = 0;
+    int parseWarnings = 0;
     int optionalSkips = 0;
 
     foreach (var reportPath in reportPaths)
@@ -110,34 +114,43 @@ public sealed class BundleMissionSummaryService : IBundleMissionSummaryService
           if (item.ValueKind != JsonValueKind.Object)
             continue;
 
-          total++;
-
           var status = ReadStringProperty(item, "status");
-          var normalized = NormalizeStatus(status);
-          if (string.Equals(normalized, "Pass", StringComparison.Ordinal))
-          {
-            closed++;
-          }
-          else if (string.Equals(normalized, "NotApplicable", StringComparison.Ordinal))
-          {
-            closed++;
-            optionalSkips++;
-          }
-          else
-          {
-            blockingFailures++;
-          }
+          var key = ResolveControlKey(item, status, diagnostics);
+          if (string.IsNullOrWhiteSpace(key))
+            continue;
 
-          if (IsWarningStatus(status))
-            warnings++;
+          if (controlIndex.Count > 0 && !controlIndex.Contains(key))
+            continue;
+
+          var normalized = NormalizeStatus(status);
+          var isClosed = string.Equals(normalized, ControlStatusStrings.Pass, StringComparison.Ordinal)
+            || string.Equals(normalized, ControlStatusStrings.NotApplicable, StringComparison.Ordinal);
+          var isOpen = !isClosed;
+          var isWarning = IsWarningStatus(status);
+
+          if (!states.TryGetValue(key, out var state))
+            state = (false, false, false);
+
+          state.anyClosed = state.anyClosed || isClosed;
+          state.anyOpen = state.anyOpen || isOpen;
+          state.anyWarning = state.anyWarning || isWarning;
+          states[key] = state;
+
+          if (string.Equals(normalized, ControlStatusStrings.NotApplicable, StringComparison.Ordinal))
+            optionalSkips++;
         }
       }
       catch (Exception ex)
       {
         diagnostics.Add("Failed to parse verify report " + reportPath + ": " + ex.Message);
-        warnings++;
+        parseWarnings++;
       }
     }
+
+    var total = states.Count;
+    var closed = states.Count(kvp => kvp.Value.anyClosed && !kvp.Value.anyOpen);
+    blockingFailures = total - closed;
+    var statusWarnings = states.Count(kvp => kvp.Value.anyWarning);
 
     return new BundleVerifySummary
     {
@@ -146,36 +159,97 @@ public sealed class BundleMissionSummaryService : IBundleMissionSummaryService
       TotalCount = total,
       ReportCount = reportPaths.Count,
       BlockingFailureCount = blockingFailures,
-      RecoverableWarningCount = warnings,
+      RecoverableWarningCount = statusWarnings + parseWarnings,
       OptionalSkipCount = optionalSkips
     };
   }
 
+  private static IReadOnlyList<ControlRecord> BuildManualScopeControls(string bundleRoot, IReadOnlyList<ControlRecord> controls, List<string> diagnostics)
+  {
+    return controls.ToList();
+  }
+
+  private static HashSet<string> BuildControlIndex(IReadOnlyList<ControlRecord> controls)
+  {
+    var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    foreach (var control in controls)
+    {
+      var key = BuildControlKey(control.ExternalIds.RuleId, control.ExternalIds.VulnId, control.ControlId);
+      if (!string.IsNullOrWhiteSpace(key))
+        set.Add(key);
+    }
+    return set;
+  }
+
+  private static string ResolveControlKey(JsonElement item, string? status, List<string> diagnostics)
+  {
+    var ruleId = ReadStringProperty(item, "ruleId");
+    var vulnId = ReadStringProperty(item, "vulnId");
+    var title = ReadStringProperty(item, "title");
+
+    var key = BuildControlKey(ruleId, vulnId, title);
+    if (string.IsNullOrWhiteSpace(key))
+      diagnostics.Add("Verify result skipped due to missing RuleId/VulnId/Title. Status=" + (status ?? "(null)"));
+
+    return key;
+  }
+
+  private static string BuildControlKey(string? ruleId, string? vulnId, string? fallback)
+  {
+    if (!string.IsNullOrWhiteSpace(ruleId))
+      return "RULE:" + (ruleId ?? string.Empty).Trim();
+    if (!string.IsNullOrWhiteSpace(vulnId))
+      return "VULN:" + (vulnId ?? string.Empty).Trim();
+    if (!string.IsNullOrWhiteSpace(fallback))
+      return "TITLE:" + (fallback ?? string.Empty).Trim();
+    return string.Empty;
+  }
+
+  private static string[] ParseCsvLine(string line)
+  {
+    var list = new List<string>();
+    var sb = new StringBuilder();
+    var inQuotes = false;
+
+    for (var i = 0; i < line.Length; i++)
+    {
+      var ch = line[i];
+      if (ch == '"')
+      {
+        if (inQuotes && i + 1 < line.Length && line[i + 1] == '"')
+        {
+          sb.Append('"');
+          i++;
+        }
+        else
+        {
+          inQuotes = !inQuotes;
+        }
+      }
+      else if (ch == ',' && !inQuotes)
+      {
+        list.Add(sb.ToString());
+        sb.Clear();
+      }
+      else
+      {
+        sb.Append(ch);
+      }
+    }
+
+    list.Add(sb.ToString());
+    return list.ToArray();
+  }
+
   private static IReadOnlyList<ControlRecord> LoadControls(string bundleRoot, List<string> diagnostics)
   {
-    var controlsPath = Path.Combine(bundleRoot, "Manifest", "pack_controls.json");
-    if (!File.Exists(controlsPath))
-      return Array.Empty<ControlRecord>();
-
-    try
-    {
-      var controls = JsonSerializer.Deserialize<List<ControlRecord>>(File.ReadAllText(controlsPath), new JsonSerializerOptions
-      {
-        PropertyNameCaseInsensitive = true
-      });
-
-      return controls ?? new List<ControlRecord>();
-    }
-    catch (Exception ex)
-    {
-      diagnostics.Add("Failed to parse pack_controls.json: " + ex.Message);
-      return Array.Empty<ControlRecord>();
-    }
+    _ = diagnostics;
+    return PackControlsReader.Load(bundleRoot);
   }
 
   private static void LoadManifestMetadata(string bundleRoot, BundleMissionSummary summary, List<string> diagnostics)
   {
-    var manifestPath = Path.Combine(bundleRoot, "Manifest", "manifest.json");
+    var manifestPath = Path.Combine(bundleRoot, BundlePaths.ManifestDirectory, "manifest.json");
     if (!File.Exists(manifestPath))
       return;
 
@@ -202,8 +276,8 @@ public sealed class BundleMissionSummaryService : IBundleMissionSummaryService
   private bool IsClosedStatus(string? status)
   {
     var normalized = NormalizeStatus(status);
-    return string.Equals(normalized, "Pass", StringComparison.Ordinal)
-      || string.Equals(normalized, "NotApplicable", StringComparison.Ordinal);
+    return string.Equals(normalized, ControlStatusStrings.Pass, StringComparison.Ordinal)
+      || string.Equals(normalized, ControlStatusStrings.NotApplicable, StringComparison.Ordinal);
   }
 
   private static bool IsWarningStatus(string? status)

@@ -1,0 +1,1737 @@
+################################################################################
+DOCUMENT         : MS_Windows_Server_2022_STIG
+VERSION          : 002.005.013
+CHECKSUM         : 5f44a3e7233c73ae1077f45b7648dfc6439a592712aae223004224a305b372f3
+MANUAL QUESTIONS : 43
+
+IMPORTANT: Make sure to save the completed version of this file to: 
+<SCC Install>/Resources/Content/Manual_Questions/Completed_Files
+
+This file contains all of the non-automated STIG requirements found in the STIG.
+Results from this file will be combined with automated checks in SCC to provide
+complete STIG compliance results.
+
+This file will be programmaticaly imported, so do not modify anything in this file
+except for placing an '[X]' to select a Single answer, and entering text comments.
+
+The list of questions is printed in order of severity, listing CAT I (High), then CAT II, etc..
+
+################################################################################
+
+QUESTION         : 1 of 43
+TITLE            : CAT I, V-254240, SV-254240r991589, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:501
+RULE             : Windows Server 2022 administrative accounts must not be used with applications that access the internet, such as web browsers, or with potential internet sources, such as email.
+QUESTION_TEXT    : Determine whether organization policy, at a minimum, prohibits administrative accounts from using applications that access the internet, such as web browsers, or with potential internet sources, such as email, except as necessary for local service administration.
+
+If it does not, this is a finding.
+
+The organization may use technical means such as whitelisting to prevent the use of browsers and mail applications to enforce this requirement.
+
+References:
+CCI-000366
+CCI-001312
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 1 *******************************
+
+QUESTION         : 2 of 43
+TITLE            : CAT I, V-254262, SV-254262r958552, SRG-OS-000185-GPOS-00079
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:4901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:4901
+RULE             : Windows Server 2022 systems requiring data at rest protections must employ cryptographic mechanisms to prevent unauthorized disclosure and modification of the information at rest.
+QUESTION_TEXT    : Verify systems that require additional protections due to factors such as inadequate physical protection or sensitivity of the data employ encryption to protect the confidentiality and integrity of all information at rest.
+
+If they do not, this is a finding.
+
+References:
+CCI-001199
+CCI-002475
+CCI-002476
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 2 *******************************
+
+QUESTION         : 3 of 43
+APPLICABILITY    : Windows_DomainController
+TITLE            : CAT I, V-254385, SV-254385r958726, SRG-OS-000324-GPOS-00125
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:29301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:29301
+RULE             : Windows Server 2022 must only allow administrators responsible for the domain controller to have Administrator rights on the system.
+QUESTION_TEXT    : This applies to domain controllers. A separate version applies to other systems.
+
+Review the Administrators group. Only the appropriate administrator groups or accounts responsible for administration of the system may be members of the group.
+
+Standard user accounts must not be members of the local administrator group.
+
+If prohibited accounts are members of the local administrators group, this is a finding.
+
+If the built-in Administrator account or other required administrative accounts are found on the system, this is not a finding.
+
+References:
+CCI-002235
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 3 *******************************
+
+QUESTION         : 4 of 43
+APPLICABILITY    : Windows_DomainController
+TITLE            : CAT I, V-254392, SV-254392r958726, SRG-OS-000324-GPOS-00125
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:30701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:30701
+RULE             : Windows Server 2022 Active Directory SYSVOL directory must have the proper access control permissions.
+QUESTION_TEXT    : This applies to domain controllers. It is NA for other systems.
+
+Open a command prompt.
+
+Run "net share".
+
+Make note of the directory location of the SYSVOL share.
+
+By default, this will be \Windows\SYSVOL\sysvol. For this requirement, permissions will be verified at the first SYSVOL directory level.
+
+If any standard user accounts or groups have greater than "Read & execute" permissions, this is a finding. 
+
+The default permissions noted below meet this requirement:
+
+Open "Command Prompt".
+
+Run "icacls c:\Windows\SYSVOL".
+
+The following results must be displayed:
+
+NT AUTHORITY\Authenticated Users:(RX)
+NT AUTHORITY\Authenticated Users:(OI)(CI)(IO)(GR,GE)
+BUILTIN\Server Operators:(RX)
+BUILTIN\Server Operators:(OI)(CI)(IO)(GR,GE)
+BUILTIN\Administrators:(M,WDAC,WO)
+BUILTIN\Administrators:(OI)(CI)(IO)(F)
+NT AUTHORITY\SYSTEM:(F)
+NT AUTHORITY\SYSTEM:(OI)(CI)(IO)(F)
+CREATOR OWNER:(OI)(CI)(IO)(F)
+
+(RX) - Read & execute 
+
+Run "icacls /help" to view definitions of other permission codes.
+
+References:
+CCI-002235
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 4 *******************************
+
+QUESTION         : 5 of 43
+APPLICABILITY    : Windows_DomainController
+TITLE            : CAT I, V-254393, SV-254393r1081073, SRG-OS-000324-GPOS-00125
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:30901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:30901
+RULE             : Windows Server 2022 Active Directory Group Policy objects must have proper access control permissions.
+QUESTION_TEXT    : This applies to domain controllers. It is NA for other systems.
+
+Review the permissions on Group Policy objects.
+
+Open "Group Policy Management" (available from various menus or run "gpmc.msc").
+
+Navigate to "Group Policy Objects" in the domain being reviewed (Forest >> Domains >> Domain).
+
+For each Group Policy object:
+
+Select the Group Policy object item in the left pane.
+
+Select the "Delegation" tab in the right pane.
+
+Select "Advanced".
+
+Select each Group or user name.
+
+View the permissions.
+
+If any standard user accounts or groups have "Allow" permissions greater than "Read" and "Apply group policy", this is a finding.
+
+Other access permissions that allow the objects to be updated are considered findings unless specifically documented by the Information System Security Officer (ISSO).
+
+The default permissions noted below satisfy this requirement. 
+
+The permissions shown are at the summary level. More detailed permissions can be viewed by selecting the next "Advanced" button, the desired Permission entry, and the "Edit" button.
+
+Authenticated Users - Read, Apply group policy, Special permissions
+
+The special permissions for Authenticated Users are for Read-type Properties. If detailed permissions include any Create, Delete, Modify, or Write Permissions or Properties, this is a finding.
+
+The special permissions for the following default groups are not the focus of this requirement and may include a wide range of permissions and properties:
+
+CREATOR OWNER - Special permissions
+SYSTEM - Read, Write, Create all child objects, Delete all child objects, Special permissions
+Domain Admins - Read, Write, Create all child objects, Delete all child objects, Special permissions
+Enterprise Admins - Read, Write, Create all child objects, Delete all child objects, Special permissions
+ENTERPRISE DOMAIN CONTROLLERS - Read, Special permissions
+
+
+
+References:
+CCI-002235
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 5 *******************************
+
+QUESTION         : 6 of 43
+APPLICABILITY    : Windows_DomainController
+TITLE            : CAT I, V-254394, SV-254394r958726, SRG-OS-000324-GPOS-00125
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:31101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:31101
+RULE             : Windows Server 2022 Active Directory Domain Controllers Organizational Unit (OU) object must have the proper access control permissions.
+QUESTION_TEXT    : This applies to domain controllers. It is NA for other systems.
+
+Review the permissions on the Domain Controllers OU.
+
+Open "Active Directory Users and Computers" (available from various menus or run "dsa.msc").
+
+Select "Advanced Features" in the "View" menu if not previously selected.
+
+Select the "Domain Controllers" OU (folder in folder icon).
+
+Right-click and select "Properties".
+
+Select the "Security" tab.
+
+If the permissions on the Domain Controllers OU do not restrict changes to System, Domain Admins, Enterprise Admins and Administrators, this is a finding.
+
+The default permissions listed below satisfy this requirement.
+
+Domains supporting Microsoft Exchange will have additional Exchange related permissions on the Domain Controllers OU. These may include some change related permissions and are not a finding.
+
+The permissions shown are at the summary level. More detailed permissions can be viewed by selecting the "Advanced" button, the desired Permission entry, and the "View" or "Edit" button.
+
+Except where noted otherwise, the special permissions may include a wide range of permissions and properties and are acceptable for this requirement.
+
+CREATOR OWNER - Special permissions
+
+SELF - Special permissions
+
+Authenticated Users - Read, Special permissions
+
+The special permissions for Authenticated Users are Read types.
+
+If detailed permissions include any Create, Delete, Modify, or Write Permissions or Properties, this is a finding.
+
+SYSTEM - Full Control
+
+Domain Admins - Read, Write, Create all child objects, Generate resultant set of policy (logging), Generate resultant set of policy (planning), Special permissions
+
+Enterprise Admins - Full Control
+
+Key Admins - Special permissions
+
+Enterprise Key Admins - Special permissions
+
+Administrators - Read, Write, Create all child objects, Generate resultant set of policy (logging), Generate resultant set of policy (planning), Special permissions
+
+Pre-Windows 2000 Compatible Access - Special permissions
+
+The Special permissions for Pre-Windows 2000 Compatible Access are Read types.
+
+If detailed permissions include any Create, Delete, Modify, or Write Permissions or Properties, this is a finding.
+
+ENTERPRISE DOMAIN CONTROLLERS - Read, Special permissions
+
+References:
+CCI-002235
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 6 *******************************
+
+QUESTION         : 7 of 43
+APPLICABILITY    : Windows_DomainController
+TITLE            : CAT I, V-254395, SV-254395r958726, SRG-OS-000324-GPOS-00125
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:31301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:31301
+RULE             : Windows Server 2022 organization created Active Directory Organizational Unit (OU) objects must have proper access control permissions.
+QUESTION_TEXT    : This applies to domain controllers. It is NA for other systems.
+
+Review the permissions on domain-defined OUs.
+
+Open "Active Directory Users and Computers" (available from various menus or run "dsa.msc").
+
+Ensure "Advanced Features" is selected in the "View" menu.
+
+For each OU that is defined (folder in folder icon) excluding the Domain Controllers OU:
+
+Right-click the OU and select "Properties".
+
+Select the "Security" tab.
+
+If the Allow type permissions on the OU are not at least as restrictive as those below, this is a finding.
+
+The permissions shown are at the summary level. More detailed permissions can be viewed by selecting the "Advanced" button, the desired Permission entry, and the "Edit" or "View" button.
+
+Except where noted otherwise, the special permissions may include a wide range of permissions and properties and are acceptable for this requirement.
+
+CREATOR OWNER - Special permissions
+
+Self - Special permissions
+
+Authenticated Users - Read, Special permissions
+
+The Special permissions for Authenticated Users are Read type. If detailed permissions include any Create, Delete, Modify, or Write Permissions or Properties, this is a finding.
+
+SYSTEM - Full Control
+
+Domain Admins - Full Control
+
+Enterprise Admins - Full Control
+
+Key Admins - Special permissions
+
+Enterprise Key Admins - Special permissions
+
+Administrators - Read, Write, Create all child objects, Generate resultant set of policy (logging), Generate resultant set of policy (planning), Special permissions
+
+Pre-Windows 2000 Compatible Access - Special permissions
+
+The Special permissions for Pre-Windows 2000 Compatible Access are for Read types. If detailed permissions include any Create, Delete, Modify, or Write Permissions or Properties, this is a finding.
+
+ENTERPRISE DOMAIN CONTROLLERS - Read, Special permissions
+
+If an Information System Security Officer (ISSO)-approved distributed administration model (help desk or other user support staff) is implemented, permissions above Read may be allowed for groups documented by the ISSO.
+
+If any OU with improper permissions includes identification or authentication data (e.g., accounts, passwords, or password hash data) used by systems to determine access control, the severity is CAT I (e.g., OUs that include user accounts, including service/application accounts).
+
+If an OU with improper permissions does not include identification and authentication data used by systems to determine access control, the severity is CAT II (e.g., Workstation, Printer OUs).
+
+References:
+CCI-002235
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 7 *******************************
+
+QUESTION         : 8 of 43
+APPLICABILITY    : Windows_DomainController
+TITLE            : CAT I, V-254399, SV-254399r991589, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:32101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:32101
+RULE             : Windows Server 2022 directory data (outside the root DSE) of a nonpublic directory must be configured to prevent anonymous access.
+QUESTION_TEXT    : This applies to domain controllers. It is NA for other systems.
+
+Open "Command Prompt" (not elevated).
+
+Run "ldp.exe".
+
+From the "Connection menu", select "Bind".
+
+Clear the User, Password, and Domain fields.
+
+Select "Simple bind" for the Bind type and click "OK".
+
+Confirmation of anonymous access will be displayed at the end:
+
+res = ldap_simple_bind_s
+Authenticated as: 'NT AUTHORITY\ANONYMOUS LOGON'
+
+From the "Browse" menu, select "Search".
+
+In the Search dialog, enter the DN of the domain naming context (generally something like "dc=disaost,dc=mil") in the Base DN field.
+
+Clear the Attributes field and select "Run".
+
+Error messages must display related to Bind and user not authenticated.
+
+If attribute data is displayed, anonymous access is enabled to the domain naming context and this is a finding.
+
+The following network controls allow the finding severity to be downgraded to a CAT II since these measures lower the risk associated with anonymous access.
+
+Network hardware ports at the site are subject to 802.1x authentication or MAC address restrictions. 
+
+Premise firewall or host restrictions prevent access to ports 389, 636, 3268, and 3269 from client hosts not explicitly identified by domain (.mil) or IP address.
+
+References:
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 8 *******************************
+
+QUESTION         : 9 of 43
+APPLICABILITY    : Windows_DomainController
+TITLE            : CAT I, V-254413, SV-254413r958448, SRG-OS-000066-GPOS-00034
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:34701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:34701
+RULE             : Windows Server 2022 domain Controller PKI certificates must be issued by the DoD PKI or an approved External Certificate Authority (ECA).
+QUESTION_TEXT    : This applies to domain controllers. It is NA for other systems.
+
+Run "MMC".
+
+Select "Add/Remove Snap-in" from the "File" menu.
+
+Select "Certificates" in the left pane and click "Add >".
+
+Select "Computer Account" and click "Next".
+
+Select the appropriate option for "Select the computer you want this snap-in to manage" and click "Finish".
+
+Click "OK".
+
+Select and expand the Certificates (Local Computer) entry in the left pane.
+
+Select and expand the Personal entry in the left pane.
+
+Select the Certificates entry in the left pane.
+
+In the right pane, examine the "Issued By" field for the certificate to determine the issuing CA.
+
+If the "Issued By" field of the PKI certificate being used by the domain controller does not indicate the issuing CA is part of the DoD PKI or an approved ECA, this is a finding.
+
+If the certificates in use are issued by a CA authorized by the Component's CIO, this is a CAT II finding.
+
+There are multiple sources from which lists of valid DoD CAs and approved ECAs can be obtained: 
+
+The Global Directory Service (GDS) website provides an online source. The address for this site is https://crl.gds.disa.mil.
+
+DoD Public Key Enablement (PKE) Engineering Support maintains the InstallRoot utility to manage DoD supported root certificates on Windows computers, which includes a list of authorized CAs. The utility package can be downloaded from the PKI and PKE Tools page on Cyber Exchange:
+
+https://https://cyber.mil/pki-pke/
+
+References:
+CCI-000185
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 9 *******************************
+
+QUESTION         : 10 of 43
+APPLICABILITY    : Windows_DomainController
+TITLE            : CAT I, V-254414, SV-254414r958448, SRG-OS-000066-GPOS-00034
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:34901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:34901
+RULE             : Windows Server 2022 PKI certificates associated with user accounts must be issued by a DoD PKI or an approved External Certificate Authority (ECA).
+QUESTION_TEXT    : This applies to domain controllers. It is NA for other systems.
+
+Review user account mappings to PKI certificates.
+
+Open "Windows PowerShell".
+
+Enter "Get-ADUser -Filter * | FT Name, UserPrincipalName, Enabled".
+
+Exclude disabled accounts (e.g., DefaultAccount, Guest) and the krbtgt account.
+
+If the User Principal Name (UPN) is not in the format of an individual's identifier for the certificate type and for the appropriate domain suffix, this is a finding.
+
+For standard NIPRNet certificates, the individual's identifier is in the format of an Electronic Data Interchange - Personnel Identifier (EDI-PI).
+
+Alt Tokens and other certificates may use a different UPN format than the EDI-PI which vary by organization. Verified these with the organization.
+
+NIPRNet Example:
+
+Name - User Principal Name
+User1 - 1234567890@mil
+
+See PKE documentation for other network domain suffixes.
+
+If the mappings are to certificates issued by a CA authorized by the Component's CIO, this is a CAT II finding.
+
+References:
+CCI-000185
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 10 *******************************
+
+QUESTION         : 11 of 43
+APPLICABILITY    : StandaloneServer_or_MemberServer
+TITLE            : CAT I, V-254428, SV-254428r958726, SRG-OS-000324-GPOS-00125
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:37701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:37701
+RULE             : Windows Server 2022 must only allow administrators responsible for the member server or standalone or nondomain-joined system to have Administrator rights on the system.
+QUESTION_TEXT    : This applies to member servers and standalone or nondomain-joined systems. A separate version applies to domain controllers.
+
+Open "Computer Management".
+
+Navigate to "Groups" under "Local Users and Groups".
+
+Review the local "Administrators" group.
+
+Only administrator groups or accounts responsible for administration of the system may be members of the group.
+
+For domain-joined member servers, the Domain Admins group must be replaced by a domain member server administrator group.
+
+Standard user accounts must not be members of the local Administrator group.
+
+If accounts that do not have responsibility for administration of the system are members of the local Administrators group, this is a finding.
+
+If the built-in Administrator account or other required administrative accounts are found on the system, this is not a finding.
+
+References:
+CCI-002235
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 11 *******************************
+
+QUESTION         : 12 of 43
+TITLE            : CAT II, V-254238, SV-254238r991589, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:101
+RULE             : Windows Server 2022 users with Administrative privileges must have separate accounts for administrative duties and normal operational tasks.
+QUESTION_TEXT    : Verify each user with administrative privileges has been assigned a unique administrative account separate from their standard user account. 
+
+If users with administrative privileges do not have separate accounts for administrative functions and standard user functions, this is a finding.
+
+References:
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 12 *******************************
+
+QUESTION         : 13 of 43
+TITLE            : CAT II, V-254239, SV-254239r1081067, SRG-OS-000076-GPOS-00044
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:301
+RULE             : Windows Server 2022 passwords for the built-in Administrator account must be changed at least every 60 days.
+QUESTION_TEXT    : If there are no enabled local Administrator accounts, this is not applicable.
+
+Review the password last set date for the enabled local Administrator account.
+
+On the stand alone or domain-joined workstation:
+
+Open "PowerShell".
+
+Enter "Get-LocalUser -Name * | Select-Object *".
+
+If the "PasswordLastSet" date is greater than "60" days old for the local Administrator account for administering the computer/domain, this is a finding.
+
+Verify LAPS is configured and operational. 
+
+Navigate to Local Computer Policy >> Computer Configuration >> Administrative Templates >> System >> LAPS >> Password Settings >> Set to enabled. Password Complexity, large letters + small letters + numbers + special, Password Length 14, Password Age 60. If not configured as shown, this is a finding. 
+
+Verify LAPS Operational logs >> Event Viewer >> Applications and Services Logs >> Microsoft >> Windows >> LAPS >> Operational. Verify LAPS policy process is completing. If it is not, this is a finding.
+
+If the server is not a member of a domain this not applicable.
+
+References:
+CCI-004066
+CCI-000199
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 13 *******************************
+
+QUESTION         : 14 of 43
+TITLE            : CAT II, V-254241, SV-254241r991589, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:701
+RULE             : Windows Server 2022 members of the Backup Operators group must have separate accounts for backup duties and normal operational tasks.
+QUESTION_TEXT    : If no accounts are members of the Backup Operators group, this is NA.
+
+Verify users with accounts in the Backup Operators group have a separate user account for backup functions and for performing normal user tasks.
+
+If users with accounts in the Backup Operators group do not have separate accounts for backup functions and standard user functions, this is a finding.
+
+References:
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 14 *******************************
+
+QUESTION         : 15 of 43
+TITLE            : CAT II, V-254242, SV-254242r1051087, SRG-OS-000078-GPOS-00046
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:901
+RULE             : Windows Server 2022 manually managed application account passwords must be at least 14 characters in length.
+QUESTION_TEXT    : Determine if manually managed application/service accounts exist. If none exist, this is NA.
+
+Verify the organization has a policy to ensure passwords for manually managed application/service accounts are at least 14 characters in length.
+
+If such a policy does not exist or has not been implemented, this is a finding.
+
+References:
+CCI-004066
+CCI-000205
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 15 *******************************
+
+QUESTION         : 16 of 43
+TITLE            : CAT II, V-254243, SV-254243r991589, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:1101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:1101
+RULE             : Windows Server 2022 manually managed application account passwords must be changed at least annually or when a system administrator with knowledge of the password leaves the organization.
+QUESTION_TEXT    : Determine if manually managed application/service accounts exist. If none exist, this is NA.
+
+If passwords for manually managed application/service accounts are not changed at least annually or when an administrator with knowledge of the password leaves the organization, this is a finding.
+
+Identify manually managed application/service accounts.
+
+To determine the date a password was last changed:
+
+Domain controllers:
+
+Open "PowerShell".
+
+Enter "Get-AdUser -Identity [application account name] -Properties PasswordLastSet | FT Name, PasswordLastSet", where [application account name] is the name of the manually managed application/service account.
+
+If the "PasswordLastSet" date is more than one year old, this is a finding.
+
+Member servers and standalone or nondomain-joined systems:
+
+Open "Command Prompt".
+
+Enter 'Net User [application account name] | Find /i "Password Last Set"', where [application account name] is the name of the manually managed application/service account.
+
+If the "Password Last Set" date is more than one year old, this is a finding.
+
+References:
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 16 *******************************
+
+QUESTION         : 17 of 43
+TITLE            : CAT II, V-254244, SV-254244r958482, SRG-OS-000104-GPOS-00051
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:1301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:1301
+RULE             : Windows Server 2022 shared user accounts must not be permitted.
+QUESTION_TEXT    : Determine whether any shared accounts exist. If no shared accounts exist, this is NA.
+
+Shared accounts, such as required by an application, may be approved by the organization. This must be documented with the Information System Security Officer (ISSO). Documentation must include the reason for the account, who has access to the account, and how the risk of using the shared account is mitigated to include monitoring account activity.
+
+If unapproved shared accounts exist, this is a finding.
+
+References:
+CCI-000764
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 17 *******************************
+
+QUESTION         : 18 of 43
+TITLE            : CAT II, V-254245, SV-254245r958808, SRG-OS-000370-GPOS-00155
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:1501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:1501
+RULE             : Windows Server 2022 must employ a deny-all, permit-by-exception policy to allow the execution of authorized software programs.
+QUESTION_TEXT    : Verify the operating system employs a deny-all, permit-by-exception policy to allow the execution of authorized software programs.
+
+If an application allowlisting program is not in use on the system, this is a finding.
+
+Configuration of allowlisting applications will vary by the program.
+
+AppLocker is an allowlisting application built in to Windows Server. A deny-by-default implementation is initiated by enabling any AppLocker rules within a category, only allowing what is specified by defined rules.
+
+If AppLocker is used, perform the following to view the configuration of AppLocker:
+
+Open "PowerShell".
+
+If the AppLocker PowerShell module has not been imported previously, execute the following first:
+
+Import-Module AppLocker
+
+Execute the following command, substituting [c:\temp\file.xml] with a location and file name appropriate for the system:
+
+Get-AppLockerPolicy -Effective -XML > c:\temp\file.xml
+
+This will produce an xml file with the effective settings that can be viewed in a browser or opened in a program such as Excel for review.
+
+Implementation guidance for AppLocker is available at the following link:
+
+https://docs.microsoft.com/en-us/windows/security/threat-protection/windows-defender-application-control/applocker/applocker-policies-deployment-guide
+
+References:
+CCI-001774
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 18 *******************************
+
+QUESTION         : 19 of 43
+TITLE            : CAT II, V-254248, SV-254248r991589, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:2101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:2101
+RULE             : Windows Server 2022 must use an antivirus program.
+QUESTION_TEXT    : Verify an antivirus solution is installed on the system. The antivirus solution may be bundled with an approved host-based security solution.
+
+If there is no antivirus solution installed on the system, this is a finding.
+
+Verify if Microsoft Defender antivirus is in use or enabled:
+
+Open "PowerShell".
+
+Enter "get-service | where {$_.DisplayName -Like "*Defender*"} | Select Status,DisplayName"
+
+Verify if third-party antivirus is in use or enabled:
+
+Open "PowerShell".
+
+Enter "get-service | where {$_.DisplayName -Like "*mcafee*"} | Select Status,DisplayName
+
+Enter "get-service | where {$_.DisplayName -Like "*symantec*"} | Select Status,DisplayName
+
+References:
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 19 *******************************
+
+QUESTION         : 20 of 43
+TITLE            : CAT II, V-254249, SV-254249r991589, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:2301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:2301
+RULE             : Windows Server 2022 must have a host-based intrusion detection or prevention system.
+QUESTION_TEXT    : Determine whether there is a HIDS or HIPS on each server. 
+
+If the HIPS component of ESS is installed and active on the host and the alerts of blocked activity are being logged and monitored, this meets the requirement. 
+
+A HIDS device is not required on a system that has the role as the Network Intrusion Device (NID). However, this exception needs to be documented with the Information System Security Officer (ISSO).
+
+If a HIDS is not installed on the system, this is a finding.
+
+References:
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 20 *******************************
+
+QUESTION         : 21 of 43
+TITLE            : CAT II, V-254256, SV-254256r1051088, SRG-OS-000118-GPOS-00060
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:3701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:3701
+RULE             : Windows Server 2022 outdated or unused accounts must be removed or disabled.
+QUESTION_TEXT    : Open "Windows PowerShell".
+
+Domain Controllers:
+
+Enter "Search-ADAccount -AccountInactive -UsersOnly -TimeSpan 35.00:00:00"
+
+This will return accounts that have not been logged on to for 35 days, along with various attributes such as the Enabled status and LastLogonDate.
+
+Member servers and standalone or nondomain-joined systems:
+
+Copy or enter the lines below to the PowerShell window and enter. (Entering twice may be required. Do not include the quotes at the beginning and end of the query.)
+
+"([ADSI]('WinNT://{0}' -f $env:COMPUTERNAME)).Children | Where { $_.SchemaClassName -eq 'user' } | ForEach {
+ $user = ([ADSI]$_.Path)
+ $lastLogin = $user.Properties.LastLogin.Value
+ $enabled = ($user.Properties.UserFlags.Value -band 0x2) -ne 0x2
+ if ($lastLogin -eq $null) {
+ $lastLogin = 'Never'
+ }
+ Write-Host $user.Name $lastLogin $enabled 
+}"
+
+This will return a list of local accounts with the account name, last logon, and if the account is enabled (True/False).
+For example: User1 10/31/2015 5:49:56 AM True
+
+Review the list of accounts returned by the above queries to determine the finding validity for each account reported.
+
+Exclude the following accounts:
+
+- Built-in administrator account (Renamed, SID ending in 500)
+- Built-in guest account (Renamed, Disabled, SID ending in 501)
+- Application accounts
+
+If any enabled accounts have not been logged on to within the past 35 days, this is a finding.
+
+Inactive accounts that have been reviewed and deemed to be required must be documented with the Information System Security Officer (ISSO).
+
+References:
+CCI-003627
+CCI-000795
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 21 *******************************
+
+QUESTION         : 22 of 43
+TITLE            : CAT II, V-254259, SV-254259r958794, SRG-OS-000363-GPOS-00150
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:4301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:4301
+RULE             : Windows Server 2022 system files must be monitored for unauthorized changes.
+QUESTION_TEXT    : Determine whether the system is monitored for unauthorized changes to system files (e.g., *.exe, *.bat, *.com, *.cmd, and *.dll) against a baseline on a weekly basis.
+
+If system files are not monitored for unauthorized changes, this is a finding.
+
+An approved and properly configured solution will contain both a list of baselines that includes all system file locations and a file comparison task that is scheduled to run at least weekly.
+
+References:
+CCI-001744
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 22 *******************************
+
+QUESTION         : 23 of 43
+TITLE            : CAT II, V-254260, SV-254260r958524, SRG-OS-000138-GPOS-00069
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:4501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:4501
+RULE             : Windows Server 2022 nonsystem-created file shares must limit access to groups that require it.
+QUESTION_TEXT    : If only system-created shares such as "ADMIN$", "C$", and "IPC$" exist on the system, this is NA. (System-created shares will display a message that it has been shared for administrative purposes when "Properties" is selected.)
+
+Run "Computer Management".
+
+Navigate to System Tools >> Shared Folders >> Shares.
+
+Right-click any nonsystem-created shares.
+
+Select "Properties".
+
+Select the "Share Permissions" tab.
+
+If the file shares have not been configured to restrict permissions to the specific groups or accounts that require access, this is a finding.
+
+Select the "Security" tab.
+
+If the permissions have not been configured to restrict permissions to the specific groups or accounts that require access, this is a finding.
+
+References:
+CCI-001090
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 23 *******************************
+
+QUESTION         : 24 of 43
+TITLE            : CAT II, V-254263, SV-254263r958912, SRG-OS-000425-GPOS-00189
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:5101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:5101
+RULE             : Windows Server 2022 must implement protection methods such as TLS, encrypted VPNs, or IPsec if the data owner has a strict requirement for ensuring data integrity and confidentiality is maintained at every step of the data transfer and handling process.
+QUESTION_TEXT    : If the data owner has a strict requirement for ensuring data integrity and confidentiality is maintained at every step of the data transfer and handling process, verify protection methods such as TLS, encrypted VPNs, or IPsec have been implemented.
+
+If protection methods have not been implemented, this is a finding.
+
+References:
+CCI-002420
+CCI-002422
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 24 *******************************
+
+QUESTION         : 25 of 43
+TITLE            : CAT II, V-254264, SV-254264r958478, SRG-OS-000095-GPOS-00049
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:5301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:5301
+RULE             : Windows Server 2022 must have the roles and features required by the system documented.
+QUESTION_TEXT    : Required roles and features will vary based on the function of the individual system.
+
+Roles and features specifically required to be disabled per the STIG are identified in separate requirements.
+
+If the organization has not documented the roles and features required for the system(s), this is a finding.
+
+The PowerShell command "Get-WindowsFeature" will list all roles and features with an "Install State".
+
+References:
+CCI-000381
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 25 *******************************
+
+QUESTION         : 26 of 43
+TITLE            : CAT II, V-254265, SV-254265r991589, SRG-OS-000480-GPOS-00227
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:5501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:5501
+RULE             : Windows Server 2022 must have a host-based firewall installed and enabled.
+QUESTION_TEXT    : Determine if a host-based firewall is installed and enabled on the system.
+
+If a host-based firewall is not installed and enabled on the system, this is a finding.
+
+The configuration requirements will be determined by the applicable firewall STIG.
+
+References:
+CCI-000366
+CCI-002080
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 26 *******************************
+
+QUESTION         : 27 of 43
+TITLE            : CAT II, V-254266, SV-254266r1000154, SRG-OS-000191-GPOS-00080
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:5701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:5701
+RULE             : Windows Server 2022 must employ automated mechanisms to determine the state of system components with regard to flaw remediation using the following frequency: continuously, where Endpoint Security Solution (ESS) is used; 30 days, for any additional internal network scans not covered by ESS; and annually, for external scans by Computer Network Defense Service Provider (CNDSP).
+QUESTION_TEXT    : Verify DOD-approved ESS software is installed and properly operating. Ask the site information system security manager (ISSM) for documentation of the ESS software installation and configuration.
+
+If the ISSM is not able to provide a documented configuration for an installed ESS or if the ESS software is not properly maintained or used, this is a finding.
+
+Note: Example of documentation can be a copy of the site's configuration control board (CCB)-approved software baseline with version of software noted or a memo from the ISSM stating current ESS software and version.
+
+References:
+CCI-000366
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 27 *******************************
+
+QUESTION         : 28 of 43
+TITLE            : CAT II, V-254267, SV-254267r958364, SRG-OS-000002-GPOS-00002
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:5901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:5901
+RULE             : Windows Server 2022 must automatically remove or disable temporary user accounts after 72 hours.
+QUESTION_TEXT    : Review temporary user accounts for expiration dates.
+
+Determine if temporary user accounts are used and identify any that exist. If none exist, this is NA.
+
+Domain Controllers:
+
+Open "PowerShell".
+
+Enter "Search-ADAccount -AccountExpiring | FT Name, AccountExpirationDate".
+
+If "AccountExpirationDate" has not been defined within 72 hours for any temporary user account, this is a finding.
+
+Member servers and standalone or nondomain-joined systems:
+
+Open "Command Prompt".
+
+Run "Net user [username]", where [username] is the name of the temporary user account.
+
+If "Account expires" has not been defined within 72 hours for any temporary user account, this is a finding.
+
+References:
+CCI-000016
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 28 *******************************
+
+QUESTION         : 29 of 43
+TITLE            : CAT II, V-254268, SV-254268r958508, SRG-OS-000123-GPOS-00064
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:6101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:6101
+RULE             : Windows Server 2022 must automatically remove or disable emergency accounts after the crisis is resolved or within 72 hours.
+QUESTION_TEXT    : Determine if emergency administrator accounts are used and identify any that exist. If none exist, this is NA.
+
+If emergency administrator accounts cannot be configured with an expiration date due to an ongoing crisis, the accounts must be disabled or removed when the crisis is resolved.
+
+If emergency administrator accounts have not been configured with an expiration date or have not been disabled or removed following the resolution of a crisis, this is a finding.
+
+Domain Controllers:
+
+Open "PowerShell".
+
+Enter "Search-ADAccount -AccountExpiring | FT Name, AccountExpirationDate".
+
+If "AccountExpirationDate" has been defined and is not within 72 hours for an emergency administrator account, this is a finding.
+
+Member servers and standalone or nondomain-joined systems:
+
+Open "Command Prompt".
+
+Run "Net user [username]", where [username] is the name of the emergency account.
+
+If "Account expires" has been defined and is not within 72 hours for an emergency administrator account, this is a finding.
+
+References:
+CCI-001682
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 29 *******************************
+
+QUESTION         : 30 of 43
+TITLE            : CAT II, V-254294, SV-254294r958754, SRG-OS-000342-GPOS-00133
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:11301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:11301
+RULE             : Windows Server 2022 audit records must be backed up to a different system or media than the system being audited.
+QUESTION_TEXT    : Determine if a process to back up log data to a different system or media than the system being audited has been implemented.
+
+If it has not, this is a finding.
+
+References:
+CCI-001851
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 30 *******************************
+
+QUESTION         : 31 of 43
+TITLE            : CAT II, V-254295, SV-254295r959008, SRG-OS-000479-GPOS-00224
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:11501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:11501
+RULE             : Windows Server 2022 must, at a minimum, offload audit records of interconnected systems in real time and offload standalone or nondomain-joined systems weekly.
+QUESTION_TEXT    : Verify the audit records, at a minimum, are offloaded for interconnected systems in real time and offloaded for standalone or nondomain-joined systems weekly. 
+
+If they are not, this is a finding.
+
+References:
+CCI-001851
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 31 *******************************
+
+QUESTION         : 32 of 43
+APPLICABILITY    : Windows_DomainController
+TITLE            : CAT II, V-254396, SV-254396r958524, SRG-OS-000138-GPOS-00069
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:31501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:31501
+RULE             : Windows Server 2022 data files owned by users must be on a different logical partition from the directory server data files.
+QUESTION_TEXT    : This applies to domain controllers. It is NA for other systems.
+
+Run "Regedit".
+
+Navigate to "HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\NTDS\Parameters".
+
+Note the directory locations in the values for "DSA Database file".
+
+Open "Command Prompt".
+
+Enter "net share".
+
+Note the logical drive(s) or file system partition for any organization-created data shares.
+
+Ignore system shares (e.g., NETLOGON, SYSVOL, and administrative shares ending in $). User shares that are hidden (ending with $) must not be ignored.
+
+If user shares are located on the same logical partition as the directory server data files, this is a finding.
+
+References:
+CCI-001090
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 32 *******************************
+
+QUESTION         : 33 of 43
+APPLICABILITY    : Windows_DomainController
+TITLE            : CAT II, V-254397, SV-254397r958478, SRG-OS-000095-GPOS-00049
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:31701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:31701
+RULE             : Windows Server 2022 domain controllers must run on a machine dedicated to that function.
+QUESTION_TEXT    : This applies to domain controllers, it is NA for other systems.
+
+Review the installed roles the domain controller is supporting.
+
+Start "Server Manager".
+
+Select "AD DS" in the left pane and the server name under "Servers" to the right.
+
+Select "Add (or Remove) Roles and Features" from "Tasks" in the "Roles and Features" section. (Cancel before any changes are made.)
+
+Determine if any additional server roles are installed. A basic domain controller setup will include the following:
+
+- Active Directory Domain Services
+- DNS Server
+- File and Storage Services
+
+If any roles not requiring installation on a domain controller are installed, this is a finding. 
+
+A Domain Name System (DNS) server integrated with the directory server (e.g., AD-integrated DNS) is an acceptable application. However, the DNS server must comply with the DNS STIG security requirements.
+
+Run "Programs and Features".
+
+Review installed applications.
+
+If any applications are installed that are not required for the domain controller, this is a finding.
+
+References:
+CCI-000381
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 33 *******************************
+
+QUESTION         : 34 of 43
+APPLICABILITY    : Windows_DomainController
+TITLE            : CAT II, V-254398, SV-254398r987791, SRG-OS-000396-GPOS-00176
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:31901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:31901
+RULE             : Windows Server 2022 must use separate, NSA-approved (Type 1) cryptography to protect the directory data in transit for directory service implementations at a classified confidentiality level when replication data traverses a network cleared to a lower level than the data.
+QUESTION_TEXT    : This applies to domain controllers. It is NA for other systems.
+
+Review the organization network diagram(s) or documentation to determine the level of classification for the network(s) over which replication data is transmitted.
+
+Determine the classification level of the Windows domain controller.
+
+If the classification level of the Windows domain controller is higher than the level of the networks, review the organization network diagram(s) and directory implementation documentation to determine if NSA-approved encryption is used to protect the replication network traffic.
+
+If the classification level of the Windows domain controller is higher than the level of the network traversed and NSA-approved encryption is not used, this is a finding.
+
+References:
+CCI-002450
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 34 *******************************
+
+QUESTION         : 35 of 43
+APPLICABILITY    : Windows_DomainController
+TITLE            : CAT II, V-254401, SV-254401r958732, SRG-OS-000327-GPOS-00127
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:32501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:32501
+RULE             : Windows Server 2022 Active Directory Group Policy objects must be configured with proper audit settings.
+QUESTION_TEXT    : This applies to domain controllers. It is NA for other systems.
+
+Review the auditing configuration for all Group Policy objects.
+
+Open "Group Policy Management" (available from various menus or run "gpmc.msc").
+
+Navigate to "Group Policy Objects" in the domain being reviewed (Forest >> Domains >> Domain).
+
+For each Group Policy object:
+
+Select the Group Policy object item in the left pane.
+
+Select the "Delegation" tab in the right pane.
+
+Select "Advanced".
+
+Select "Advanced" again and then the "Auditing" tab.
+
+If the audit settings for any Group Policy object are not at least as inclusive as those below, this is a finding:
+
+Type - Fail
+Principal - Everyone
+Access - Full Control
+Applies to - This object and all descendant objects or Descendant groupPolicyContainer objects
+
+The three Success types listed below are defaults inherited from the Parent Object. Where Special is listed in the summary screens for Access, detailed Permissions are provided for reference.
+
+Type - Success
+Principal - Everyone
+Access - Special (Permissions: Write all properties, Modify permissions; Properties: all "Write" type selected)
+Inherited from - Parent Object
+Applies to - Descendant groupPolicyContainer objects
+
+Two instances with the following summary information will be listed:
+
+Type - Success
+Principal - Everyone
+Access - blank (Permissions: none selected; Properties: one instance - Write gPLink, one instance - Write gPOptions)
+Inherited from - Parent Object
+Applies to - Descendant Organization Unit Objects
+
+References:
+CCI-000172
+CCI-002234
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 35 *******************************
+
+QUESTION         : 36 of 43
+APPLICABILITY    : Windows_DomainController
+TITLE            : CAT II, V-254402, SV-254402r958732, SRG-OS-000327-GPOS-00127
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:32701
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:32701
+RULE             : Windows Server 2022 Active Directory Domain object must be configured with proper audit settings.
+QUESTION_TEXT    : This applies to domain controllers. It is NA for other systems.
+
+Review the auditing configuration for the Domain object.
+
+Open "Active Directory Users and Computers" (available from various menus or run "dsa.msc").
+
+Ensure "Advanced Features" is selected in the "View" menu.
+
+Select the domain being reviewed in the left pane.
+
+Right-click the domain name and select "Properties".
+
+Select the "Security" tab.
+
+Select "Advanced" and then the "Auditing" tab.
+
+If the audit settings on the Domain object are not at least as inclusive as those below, this is a finding:
+
+Type - Fail
+Principal - Everyone
+Access - Full Control
+Inherited from - None
+Applies to - This object only
+
+The success types listed below are defaults. Where Special is listed in the summary screens for Access, detailed Permissions are provided for reference. Various Properties selections may also exist by default.
+
+Two instances with the following summary information will be listed:
+
+Type - Success
+Principal - Everyone
+Access - (blank)
+Inherited from - None
+Applies to - Special
+
+Type - Success
+Principal - Domain Users
+Access - All extended rights
+Inherited from - None
+Applies to - This object only
+
+Type - Success
+Principal - Administrators
+Access - All extended rights
+Inherited from - None
+Applies to - This object only
+
+Type - Success
+Principal - Everyone
+Access - Special
+Inherited from - None
+Applies to - This object only
+(Access - Special = Permissions: Write all properties, Modify permissions, Modify owner)
+
+References:
+CCI-000172
+CCI-002234
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 36 *******************************
+
+QUESTION         : 37 of 43
+APPLICABILITY    : Windows_DomainController
+TITLE            : CAT II, V-254403, SV-254403r958732, SRG-OS-000327-GPOS-00127
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:32901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:32901
+RULE             : Windows Server 2022 Active Directory Infrastructure object must be configured with proper audit settings.
+QUESTION_TEXT    : This applies to domain controllers. It is NA for other systems.
+
+Review the auditing configuration for Infrastructure object.
+
+Open "Active Directory Users and Computers" (available from various menus or run "dsa.msc").
+
+Ensure "Advanced Features" is selected in the "View" menu.
+
+Select the domain being reviewed in the left pane.
+
+Right-click the "Infrastructure" object in the right pane and select "Properties".
+
+Select the "Security" tab.
+
+Select "Advanced" and then the "Auditing" tab.
+
+If the audit settings on the Infrastructure object are not at least as inclusive as those below, this is a finding:
+
+Type - Fail
+Principal - Everyone
+Access - Full Control
+Inherited from - None
+
+The success types listed below are defaults. Where Special is listed in the summary screens for Access, detailed Permissions are provided for reference. Various Properties selections may also exist by default.
+
+Type - Success
+Principal - Everyone
+Access - Special
+Inherited from - None
+(Access - Special = Permissions: Write all properties, All extended rights, Change infrastructure master)
+
+Two instances with the following summary information will be listed:
+
+Type - Success
+Principal - Everyone
+Access - (blank)
+Inherited from - (CN of domain)
+
+References:
+CCI-000172
+CCI-002234
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 37 *******************************
+
+QUESTION         : 38 of 43
+APPLICABILITY    : Windows_DomainController
+TITLE            : CAT II, V-254404, SV-254404r958732, SRG-OS-000327-GPOS-00127
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:33101
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:33101
+RULE             : Windows Server 2022 Active Directory Domain Controllers Organizational Unit (OU) object must be configured with proper audit settings.
+QUESTION_TEXT    : This applies to domain controllers. It is NA for other systems.
+
+Review the auditing configuration for the Domain Controller OU object.
+
+Open "Active Directory Users and Computers" (available from various menus or run "dsa.msc").
+
+Ensure "Advanced Features" is selected in the "View" menu.
+
+Select the "Domain Controllers OU" under the domain being reviewed in the left pane.
+
+Right-click the "Domain Controllers OU" object and select "Properties".
+
+Select the "Security" tab.
+
+Select "Advanced" and then the "Auditing" tab.
+
+If the audit settings on the Domain Controllers OU object are not at least as inclusive as those below, this is a finding:
+
+Type - Fail
+Principal - Everyone
+Access - Full Control
+Inherited from - None
+Applies to - This object and all descendant objects
+
+The success types listed below are defaults. Where Special is listed in the summary screens for Access, detailed Permissions are provided for reference. Various Properties selections may also exist by default.
+
+Type - Success
+Principal - Everyone
+Access - Special
+Inherited from - None
+Applies to - This object only
+(Access - Special = Permissions: all create, delete and modify permissions)
+
+Type - Success
+Principal - Everyone
+Access - Write all properties
+Inherited from - None
+Applies to - This object and all descendant objects
+
+Two instances with the following summary information will be listed:
+
+Type - Success
+Principal - Everyone
+Access - (blank)
+Inherited from - (CN of domain)
+Applies to - Descendant Organizational Unit objects
+
+References:
+CCI-000172
+CCI-002234
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 38 *******************************
+
+QUESTION         : 39 of 43
+APPLICABILITY    : Windows_DomainController
+TITLE            : CAT II, V-254405, SV-254405r958732, SRG-OS-000327-GPOS-00127
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:33301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:33301
+RULE             : Windows Server 2022 Active Directory AdminSDHolder object must be configured with proper audit settings.
+QUESTION_TEXT    : This applies to domain controllers. It is NA for other systems.
+
+Review the auditing configuration for the "AdminSDHolder" object.
+
+Open "Active Directory Users and Computers" (available from various menus or run "dsa.msc").
+
+Ensure "Advanced Features" is selected in the "View" menu.
+
+Select "System" under the domain being reviewed in the left pane.
+
+Right-click the "AdminSDHolder" object in the right pane and select "Properties".
+
+Select the "Security" tab.
+
+Select "Advanced" and then the "Auditing" tab.
+
+If the audit settings on the "AdminSDHolder" object are not at least as inclusive as those below, this is a finding:
+
+Type - Fail
+Principal - Everyone
+Access - Full Control
+Inherited from - None
+Applies to - This object only
+
+The success types listed below are defaults. Where Special is listed in the summary screens for Access, detailed Permissions are provided for reference. Various Properties selections may also exist by default.
+
+Type - Success
+Principal - Everyone
+Access - Special
+Inherited from - None
+Applies to - This object only
+(Access - Special = Write all properties, Modify permissions, Modify owner)
+
+Two instances with the following summary information will be listed:
+
+Type - Success
+Principal - Everyone
+Access - (blank)
+Inherited from - (CN of domain)
+Applies to - Descendant Organizational Unit objects
+
+References:
+CCI-000172
+CCI-002234
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 39 *******************************
+
+QUESTION         : 40 of 43
+APPLICABILITY    : Windows_DomainController
+TITLE            : CAT II, V-254406, SV-254406r958732, SRG-OS-000327-GPOS-00127
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:33501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:33501
+RULE             : Windows Server 2022 Active Directory RID Manager$ object must be configured with proper audit settings.
+QUESTION_TEXT    : This applies to domain controllers. It is NA for other systems.
+
+Review the auditing configuration for the "RID Manager$" object.
+
+Open "Active Directory Users and Computers" (available from various menus or run "dsa.msc").
+
+Ensure "Advanced Features" is selected in the "View" menu.
+
+Select "System" under the domain being reviewed in the left pane.
+
+Right-click the "RID Manager$" object in the right pane and select "Properties".
+
+Select the "Security" tab.
+
+Select "Advanced" and then the "Auditing" tab.
+
+If the audit settings on the "RID Manager$" object are not at least as inclusive as those below, this is a finding:
+
+Type - Fail
+Principal - Everyone
+Access - Full Control
+Inherited from - None
+
+The success types listed below are defaults. Where Special is listed in the summary screens for Access, detailed Permissions are provided for reference. Various Properties selections may also exist by default.
+
+Type - Success
+Principal - Everyone
+Access - Special
+Inherited from - None
+ (Access - Special = Write all properties, All extended rights, Change RID master)
+
+Two instances with the following summary information will be listed:
+
+Type - Success
+Principal - Everyone
+Access - (blank)
+Inherited from - (CN of domain)
+
+References:
+CCI-000172
+CCI-002234
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 40 *******************************
+
+QUESTION         : 41 of 43
+APPLICABILITY    : Windows_DomainController
+TITLE            : CAT II, V-254412, SV-254412r958448, SRG-OS-000066-GPOS-00034
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:34501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:34501
+RULE             : Windows Server 2022 domain controllers must have a PKI server certificate.
+QUESTION_TEXT    : This applies to domain controllers. It is NA for other systems.
+
+Run "MMC".
+
+Select "Add/Remove Snap-in" from the "File" menu.
+
+Select "Certificates" in the left pane and click "Add >".
+
+Select "Computer Account" and click "Next".
+
+Select the appropriate option for "Select the computer you want this snap-in to manage" and click "Finish".
+
+Click "OK".
+
+Select and expand the Certificates (Local Computer) entry in the left pane.
+
+Select and expand the Personal entry in the left pane.
+
+Select the Certificates entry in the left pane.
+
+If no certificate for the domain controller exists in the right pane, this is a finding.
+
+References:
+CCI-000185
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 41 *******************************
+
+QUESTION         : 42 of 43
+TITLE            : CAT III, V-254255, SV-254255r958472, SRG-OS-000080-GPOS-00048
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:3501
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:3501
+RULE             : Windows Server 2022 nonadministrative accounts or groups must only have print permissions on printer shares.
+QUESTION_TEXT    : Open "Printers & scanners" in "Settings".
+
+If there are no printers configured, this is NA. (Exclude Microsoft Print to PDF and Microsoft XPS Document Writer, which do not support sharing.)
+
+For each printer:
+
+Select the printer and "Manage". 
+
+Select "Printer Properties". 
+
+Select the "Sharing" tab. 
+
+If "Share this printer" is checked, select the "Security" tab.
+
+If any standard user accounts or groups have permissions other than "Print", this is a finding.
+
+The default is for the "Everyone" group to be given "Print" permission.
+
+"All APPLICATION PACKAGES" and "CREATOR OWNER" are not standard user accounts.
+
+References:
+CCI-000213
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 42 *******************************
+
+QUESTION         : 43 of 43
+APPLICABILITY    : Windows_DomainController
+TITLE            : CAT III, V-254400, SV-254400r970703, SRG-OS-000163-GPOS-00072
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.windows2022:testaction:32301
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.windows2022:question:32301
+RULE             : Windows Server 2022 directory service must be configured to terminate LDAP-based network connections to the directory server after five minutes of inactivity.
+QUESTION_TEXT    : This applies to domain controllers. It is NA for other systems.
+
+Open an elevated "Command Prompt" (run as administrator).
+
+Enter "ntdsutil".
+
+At the "ntdsutil:" prompt, enter "LDAP policies".
+
+At the "ldap policy:" prompt, enter "connections".
+
+At the "server connections:" prompt, enter "connect to server [host-name]"
+(where [host-name] is the computer name of the domain controller).
+
+At the "server connections:" prompt, enter "q".
+
+At the "ldap policy:" prompt, enter "show values". 
+
+If the value for MaxConnIdleTime is greater than "300" (5 minutes) or is not specified, this is a finding.
+
+Enter "q" at the "ldap policy:" and "ntdsutil:" prompts to exit.
+
+Alternately, Dsquery can be used to display MaxConnIdleTime:
+
+Open "Command Prompt (Admin)".
+Enter the following command (on a single line).
+
+dsquery * "cn=Default Query Policy,cn=Query-Policies,cn=Directory Service, cn=Windows NT,cn=Services,cn=Configuration,dc=[forest-name]" -attr LDAPAdminLimits 
+
+The quotes are required and dc=[forest-name] is the fully qualified LDAP name of the domain being reviewed (e.g., dc=disaost,dc=mil).
+
+If the results do not specify a "MaxConnIdleTime" or it has a value greater than "300" (5 minutes), this is a finding.
+
+References:
+CCI-001133
+CCI-002361
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 43 *******************************
+

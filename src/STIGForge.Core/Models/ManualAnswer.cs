@@ -1,10 +1,13 @@
+using ControlStatusStrings = STIGForge.Core.Constants.ControlStatus;
+
 namespace STIGForge.Core.Models;
 
 public sealed class ManualAnswer
 {
   public string? RuleId { get; set; }
   public string? VulnId { get; set; }
-  public string Status { get; set; } = "Open";
+  public string Status { get; set; } = ControlStatusStrings.Open;
+  public string? PreviousStatus { get; set; }
   public string? Reason { get; set; }
   public string? Comment { get; set; }
   public DateTimeOffset UpdatedAt { get; set; }

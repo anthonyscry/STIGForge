@@ -1,0 +1,49 @@
+################################################################################
+DOCUMENT         : Adobe_Acrobat_Reader_DC_Continuous_Track_STIG
+VERSION          : 002.004.007
+CHECKSUM         : eac843b9a3a40532e6a5a86f9b7fb446c083166ad7be4a05849d786722d1edac
+MANUAL QUESTIONS : 1
+
+IMPORTANT: Make sure to save the completed version of this file to: 
+<SCC Install>/Resources/Content/Manual_Questions/Completed_Files
+
+This file contains all of the non-automated STIG requirements found in the STIG.
+Results from this file will be combined with automated checks in SCC to provide
+complete STIG compliance results.
+
+This file will be programmaticaly imported, so do not modify anything in this file
+except for placing an '[X]' to select a Single answer, and entering text comments.
+
+The list of questions is printed in order of severity, listing CAT I (High), then CAT II, etc..
+
+################################################################################
+
+QUESTION         : 1 of 1
+TITLE            : CAT I, V-213192, SV-213192r400525, SRG-APP-000456
+TEST_ACTION_ID   : ocil:navy.navwar.niwcatlantic.scc.adobe.reader:testaction:4901
+QUESTION_ID      : ocil:navy.navwar.niwcatlantic.scc.adobe.reader:question:4901
+RULE             : Adobe Reader DC must have the latest Security-related Software Updates installed.
+QUESTION_TEXT    : Determine the method for doing this (e.g., connection to a WSUS server, local procedure, auto update, etc.).
+
+Open Adobe Acrobat Reader DC.
+
+Navigate to and click on Help >> About Adobe Acrobat Reader DC.
+
+Verify that the latest security-related software updates by Adobe are being applied.
+
+If the latest security-related software updates by Adobe are not being applied, this is a finding.
+
+References:
+SV-80167
+V-65677
+CCI-002605
+     ===========================================================================
+     Select One of the following by entering an X in the brackets
+     [ ] Finding
+     [ ] Not a Finding
+     [ ] Not Applicable
+     [X] Not Reviewed
+     Enter any comments : 
+
+******************************* end of question 1 *******************************
+

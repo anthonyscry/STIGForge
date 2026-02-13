@@ -39,16 +39,8 @@
           <!-- Remote Settings -->
           <Separator Margin="0,4,0,8"/>
           <TextBlock Text="Remote Compliance Settings" FontWeight="SemiBold" Margin="0,0,0,6"/>
-          <WrapPanel Margin="0,0,0,6">
-            <TextBlock Text="Profile:" Width="80" VerticalAlignment="Center"/>
-            <ComboBox Width="280" ItemsSource="{Binding Profiles}" SelectedItem="{Binding SelectedProfile}" DisplayMemberPath="Name"
-                      AutomationProperties.Name="Fleet profile"
-                      ToolTipService.ToolTip="Hardening profile to use on remote machines. Same profiles you set up on the Profile tab."/>
-            <TextBlock Text="Pack:" Width="60" Margin="12,0,0,0" VerticalAlignment="Center"/>
-            <ComboBox Width="280" ItemsSource="{Binding ContentPacks}" SelectedItem="{Binding SelectedPack}" DisplayMemberPath="Name"
-                      AutomationProperties.Name="Fleet content pack"
-                      ToolTipService.ToolTip="Content pack (security rules) to use on remote machines. Same packs you imported on the Import tab."/>
-          </WrapPanel>
+          <TextBlock Text="Fleet uses the selected bundle below (not individual pack selection). Build the bundle first, then target hosts with that bundle."
+                     Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,6" TextWrapping="Wrap"/>
           <WrapPanel Margin="0,0,0,6">
             <TextBlock Text="Bundle:" Width="80" VerticalAlignment="Center"/>
             <TextBox Width="520" Text="{Binding BundleRoot}" AutomationProperties.Name="Fleet bundle root"
@@ -85,16 +77,19 @@
           <TextBlock Text="Fleet Inventory" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,4"/>
           <TextBlock Text="Saved targets persist across sessions. Use comma-separated hostnames above or manage the inventory below."
                      Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,8" TextWrapping="Wrap"/>
-          <ListView ItemsSource="{Binding FleetInventoryItems}" SelectedItem="{Binding SelectedFleetInventoryItem}" MaxHeight="200" MinHeight="80">
-            <ListView.View>
-              <GridView>
-                <GridViewColumn Header="Hostname" DisplayMemberBinding="{Binding HostName}" Width="200"/>
-                <GridViewColumn Header="IP" DisplayMemberBinding="{Binding IpAddress}" Width="140"/>
-                <GridViewColumn Header="WinRM" DisplayMemberBinding="{Binding WinRmStatus}" Width="80"/>
-                <GridViewColumn Header="Last Check" DisplayMemberBinding="{Binding LastCheckLabel}" Width="120"/>
-              </GridView>
-            </ListView.View>
-          </ListView>
+           <ListView ItemsSource="{Binding FleetInventoryItems}" SelectedItem="{Binding SelectedFleetInventoryItem}" MaxHeight="200" MinHeight="80"
+                     VirtualizingPanel.IsVirtualizing="True"
+                     VirtualizingPanel.VirtualizationMode="Recycling"
+                     ScrollViewer.CanContentScroll="True">
+             <ListView.View>
+               <GridView>
+                 <GridViewColumn Header="Hostname" DisplayMemberBinding="{Binding HostName}" Width="200"/>
+                 <GridViewColumn Header="IP" DisplayMemberBinding="{Binding IpAddress}" Width="140"/>
+                 <GridViewColumn Header="WinRM" DisplayMemberBinding="{Binding WinRmStatus}" Width="80"/>
+                 <GridViewColumn Header="Last Check" DisplayMemberBinding="{Binding LastCheckLabel}" Width="120"/>
+               </GridView>
+             </ListView.View>
+           </ListView>
           <WrapPanel Margin="0,8,0,0">
             <Button Content="Add Host" MinWidth="100" Height="30" Padding="14,0" Margin="0,0,10,4"
                     Command="{Binding AddFleetHostCommand}"

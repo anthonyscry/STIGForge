@@ -1,0 +1,32 @@
+ Distribution A: Approved for Public Release (16 Feb 2021) NIWCLANT SPR# 2021-52
+
+ SCAP Compliance Checker Release Notes                   Sep 16, 2025   10:12:42
+ Naval Information Warfare Center (NIWC) Atlantic
+ https://www.niwcatlantic.navy.mil/scap/
+
+
+ SCAP Compliance Checker 5.12.1 Features Added
+ ===============================================================================
+ Type     IssueID  Summary
+ -------------------------------------------------------------------------------
+ Feature  32966    Update NIWC Enhanced SCAP content for Ubuntu 18.04 to
+                   include additional automation rules
+
+ Feature  32955    Add NIWC Enhanced version of DISA SCAP benchmark for Ubuntu
+                   24      
+
+
+
+ SCAP Compliance Checker 5.12.1 Defects Resolved
+ ===============================================================================
+ Type     IssueID  Summary
+ -------------------------------------------------------------------------------
+ Defect   32970    HTML Report Lists all Not Applicable Manual Checks as
+                   Automated
+
+ Defect   32956    Update Windows 10 and 11 NIWC Enhanced content to fix false
+                   positives for new AV check and domain/GPO checks
+
+ Defect   32954    Fix rule applicability issue when ignoring CPE
+                   applicability, due to change in SCC 5.12
+

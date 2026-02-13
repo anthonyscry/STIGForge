@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
+using BundlePaths = STIGForge.Core.Constants.BundlePaths;
 
 namespace STIGForge.Apply.Reboot;
 
@@ -298,7 +299,7 @@ public sealed class RebootCoordinator
 
     private static string GetMarkerPath(string bundleRoot)
     {
-        return Path.Combine(bundleRoot, "Apply", ".resume_marker.json");
+    return Path.Combine(bundleRoot, BundlePaths.ApplyDirectory, ".resume_marker.json");
     }
 
     private bool ScheduleSystemReboot(int delaySeconds)

@@ -77,7 +77,9 @@ static IHost BuildHost()
       services.AddSingleton<STIGForge.Apply.Reboot.RebootCoordinator>();
       services.AddSingleton<STIGForge.Apply.ApplyRunner>();
       services.AddSingleton<EvaluateStigRunner>();
-      services.AddSingleton<ScapRunner>();
+        services.AddSingleton<IScapRunner, ScapRunner>();
+        services.AddSingleton<ScapRunner>();
+      services.AddSingleton<DscScanRunner>();
       services.AddSingleton<IVerificationWorkflowService, VerificationWorkflowService>();
       services.AddSingleton<VerificationArtifactAggregationService>();
       services.AddSingleton<BaselineDiffService>();

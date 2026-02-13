@@ -1,7 +1,9 @@
 using CommunityToolkit.Mvvm.Input;
 using System.IO;
 using System.Text;
+using System.Text.Json;
 using STIGForge.Core.Abstractions;
+using STIGForge.Core.Constants;
 using STIGForge.Verify;
 
 namespace STIGForge.App;
@@ -21,7 +23,7 @@ public partial class MainViewModel
         return;
       }
 
-      var script = Path.Combine(BundleRoot, "Apply", "RunApply.ps1");
+      var script = Path.Combine(BundleRoot, BundlePaths.ApplyDirectory, "RunApply.ps1");
       if (!File.Exists(script))
       {
         ApplyStatus = "RunApply.ps1 not found in bundle.";
@@ -41,7 +43,11 @@ public partial class MainViewModel
         PowerStigModulePath = string.IsNullOrWhiteSpace(PowerStigModulePath) ? null : PowerStigModulePath.Trim(),
         PowerStigDataFile = string.IsNullOrWhiteSpace(PowerStigDataFile) ? null : PowerStigDataFile.Trim(),
         PowerStigOutputPath = string.IsNullOrWhiteSpace(PowerStigOutputPath) ? null : PowerStigOutputPath.Trim(),
-        PowerStigVerbose = PowerStigVerbose
+        PowerStigVerbose = PowerStigVerbose,
+        AdmxSourcePath = string.IsNullOrWhiteSpace(AdmxSourcePath) ? null : AdmxSourcePath.Trim(),
+        LgpoExePath = string.IsNullOrWhiteSpace(LgpoExePath) ? null : LgpoExePath.Trim(),
+        LgpoGpoBackupPath = string.IsNullOrWhiteSpace(LgpoGpoBackupPath) ? null : LgpoGpoBackupPath.Trim(),
+        LgpoVerbose = LgpoVerbose
       }, CancellationToken.None);
 
       ApplyStatus = "Apply complete: " + result.LogPath;
@@ -82,68 +88,145 @@ public partial class MainViewModel
       if (string.IsNullOrWhiteSpace(EvaluateStigRoot) && string.IsNullOrWhiteSpace(ScapCommandPath))
         await TryActivateToolkitAsync(userInitiated: false, _cts.Token);
 
-      if (string.IsNullOrWhiteSpace(EvaluateStigRoot) && string.IsNullOrWhiteSpace(ScapCommandPath))
+      var dscMofPath = ResolveDscMofPathForGui();
+      var hasDscMofs = !string.IsNullOrWhiteSpace(dscMofPath);
+
+      if (string.IsNullOrWhiteSpace(EvaluateStigRoot) && string.IsNullOrWhiteSpace(ScapCommandPath) && !hasDscMofs)
       {
-        VerifyStatus = "Provide Evaluate-STIG root or SCAP command path.";
+        VerifyStatus = "No verify tools available. Provide Evaluate-STIG root, SCAP command path, or compile PowerSTIG MOFs first.";
+        StatusText = VerifyStatus;
         return;
       }
 
-      var verifyRoot = Path.Combine(BundleRoot, "Verify");
+      var verifyRoot = Path.Combine(BundleRoot, BundlePaths.VerifyDirectory);
       Directory.CreateDirectory(verifyRoot);
       var coverageInputs = new List<VerificationCoverageInput>();
+      var aggregatedResults = 0;
+      var toolFailures = new List<string>();
+
+      var verifyTasks = new List<Task<VerificationToolExecutionOutcome>>();
 
       if (!string.IsNullOrWhiteSpace(EvaluateStigRoot))
       {
         var evalOutput = Path.Combine(verifyRoot, "Evaluate-STIG");
-        var evalWorkflow = await _verificationWorkflow.RunAsync(new VerificationWorkflowRequest
-        {
-          OutputRoot = evalOutput,
-          ConsolidatedToolLabel = "Evaluate-STIG",
-          EvaluateStig = new EvaluateStigWorkflowOptions
+        verifyTasks.Add(ExecuteVerificationToolAsync(
+          "Evaluate-STIG",
+          new VerificationWorkflowRequest
           {
-            Enabled = true,
-            ToolRoot = EvaluateStigRoot,
-            Arguments = EvaluateStigArgs ?? string.Empty,
-            WorkingDirectory = EvaluateStigRoot
-          }
-        }, CancellationToken.None);
-
-        coverageInputs.Add(new VerificationCoverageInput
-        {
-          ToolLabel = "Evaluate-STIG",
-          ReportPath = evalWorkflow.ConsolidatedJsonPath
-        });
+            OutputRoot = evalOutput,
+            ConsolidatedToolLabel = "Evaluate-STIG",
+            EvaluateStig = new EvaluateStigWorkflowOptions
+            {
+              Enabled = true,
+              ToolRoot = EvaluateStigRoot,
+              Arguments = EvaluateStigArgs ?? string.Empty
+            }
+          },
+          CancellationToken.None));
       }
 
       if (!string.IsNullOrWhiteSpace(ScapCommandPath))
       {
-        var scapOutput = Path.Combine(verifyRoot, "SCAP");
-        var toolName = string.IsNullOrWhiteSpace(ScapLabel) ? "SCAP" : ScapLabel;
-        var scapWorkflow = await _verificationWorkflow.RunAsync(new VerificationWorkflowRequest
+        var scapOutput = Path.Combine(verifyRoot, PackTypes.Scap);
+        var toolName = string.IsNullOrWhiteSpace(ScapLabel) ? PackTypes.Scap : ScapLabel;
+        verifyTasks.Add(ExecuteVerificationToolAsync(
+          toolName,
+          new VerificationWorkflowRequest
+          {
+            OutputRoot = scapOutput,
+            ConsolidatedToolLabel = toolName,
+            Scap = new ScapWorkflowOptions
+            {
+              Enabled = true,
+              CommandPath = ScapCommandPath,
+              Arguments = ScapArgs ?? string.Empty,
+              ToolLabel = toolName
+            }
+          },
+          CancellationToken.None));
+      }
+
+      if (verifyTasks.Count > 0)
+      {
+        VerifyStatus = verifyTasks.Count > 1
+          ? "Verify running: scanning with Evaluate-STIG and SCAP in parallel..."
+          : "Verify running: scanning configured verification tool...";
+        StatusText = VerifyStatus;
+
+        var verifyResults = await Task.WhenAll(verifyTasks);
+        foreach (var result in verifyResults)
         {
-          OutputRoot = scapOutput,
-          ConsolidatedToolLabel = toolName,
-          Scap = new ScapWorkflowOptions
+          if (result.Error != null)
+          {
+            var failure = result.ToolLabel + " failed: " + result.Error.Message;
+            toolFailures.Add(failure);
+            System.Diagnostics.Debug.WriteLine("[Verify-" + result.ToolLabel + "] " + failure);
+            continue;
+          }
+
+          var workflow = result.Workflow!;
+          foreach (var diag in workflow.Diagnostics)
+            System.Diagnostics.Debug.WriteLine("[Verify-" + result.ToolLabel + "] " + diag);
+
+          coverageInputs.Add(new VerificationCoverageInput
+          {
+            ToolLabel = result.ToolLabel,
+            ReportPath = workflow.ConsolidatedJsonPath
+          });
+
+          aggregatedResults += workflow.ConsolidatedResultCount;
+        }
+      }
+
+      if (hasDscMofs)
+      {
+        VerifyStatus = "Verify running: scanning compiled DSC MOFs...";
+        StatusText = VerifyStatus;
+        var dscOutput = Path.Combine(verifyRoot, "DSC-Scan");
+        var dscWorkflow = await _verificationWorkflow.RunAsync(new VerificationWorkflowRequest
+        {
+          OutputRoot = dscOutput,
+          ConsolidatedToolLabel = "PowerSTIG-DSC",
+          DscScan = new DscScanWorkflowOptions
           {
             Enabled = true,
-            CommandPath = ScapCommandPath,
-            Arguments = ScapArgs ?? string.Empty,
-            ToolLabel = toolName
+            MofPath = dscMofPath!,
+            Verbose = PowerStigVerbose,
+            ToolLabel = "PowerSTIG-DSC"
           }
         }, CancellationToken.None);
 
         coverageInputs.Add(new VerificationCoverageInput
         {
-          ToolLabel = toolName,
-          ReportPath = scapWorkflow.ConsolidatedJsonPath
+          ToolLabel = "PowerSTIG-DSC",
+          ReportPath = dscWorkflow.ConsolidatedJsonPath
         });
+
+        aggregatedResults += dscWorkflow.ConsolidatedResultCount;
       }
 
       if (coverageInputs.Count > 0)
-        _artifactAggregation.WriteCoverageArtifacts(Path.Combine(BundleRoot, "Reports"), coverageInputs);
+      {
+        VerifyStatus = "Verify running: aggregating coverage artifacts...";
+        StatusText = VerifyStatus;
+        _artifactAggregation.WriteCoverageArtifacts(Path.Combine(BundleRoot, BundlePaths.ReportsDirectory), coverageInputs);
+      }
 
-      VerifyStatus = "Verify complete.";
-      LastOutputPath = Path.Combine(BundleRoot, "Verify");
+      if (toolFailures.Count == 0)
+      {
+        VerifyStatus = $"Verify complete. Parsed {aggregatedResults} results.";
+      }
+      else if (aggregatedResults > 0)
+      {
+        VerifyStatus = $"Verify complete with warnings. Parsed {aggregatedResults} results. Failed: {string.Join("; ", toolFailures)}";
+      }
+      else
+      {
+        VerifyStatus = "Verify failed: " + string.Join("; ", toolFailures);
+      }
+
+      StatusText = VerifyStatus;
+      LastOutputPath = Path.Combine(BundleRoot, BundlePaths.VerifyDirectory);
       ReportSummary = BuildReportSummary(BundleRoot);
       VerifySummary = ReportSummary;
       LoadCoverageOverlap();
@@ -152,6 +235,7 @@ public partial class MainViewModel
     catch (Exception ex)
     {
       VerifyStatus = "Verify failed: " + ex.Message;
+      StatusText = VerifyStatus;
     }
     finally
     {
@@ -205,9 +289,10 @@ public partial class MainViewModel
     if (string.IsNullOrWhiteSpace(EvaluateStigRoot) && string.IsNullOrWhiteSpace(ScapCommandPath))
       await TryActivateToolkitAsync(userInitiated: false, _cts.Token);
 
-    if (string.IsNullOrWhiteSpace(EvaluateStigRoot) && string.IsNullOrWhiteSpace(ScapCommandPath))
+    var simpleDscMofs = ResolveDscMofPathForGui();
+    if (string.IsNullOrWhiteSpace(EvaluateStigRoot) && string.IsNullOrWhiteSpace(ScapCommandPath) && string.IsNullOrWhiteSpace(simpleDscMofs))
     {
-      StatusText = "Simple Mode: configure Evaluate-STIG root or SCAP command path.";
+      StatusText = "Simple Mode: no verify tools available. Configure Evaluate-STIG, SCAP, or compile PowerSTIG MOFs first.";
       GuidedNextAction = "Question 4: activate tools from STIG_SCAP or set scanner paths manually.";
       return;
     }
@@ -217,6 +302,44 @@ public partial class MainViewModel
     OrchRunExport = true;
     GuidedNextAction = "Running simple mission: apply, verify, and export.";
     await Orchestrate();
+  }
+
+  private async Task<VerificationToolExecutionOutcome> ExecuteVerificationToolAsync(string toolLabel, VerificationWorkflowRequest request, CancellationToken ct)
+  {
+    try
+    {
+      var workflow = await _verificationWorkflow.RunAsync(request, ct);
+      return VerificationToolExecutionOutcome.Success(toolLabel, workflow);
+    }
+    catch (Exception ex)
+    {
+      return VerificationToolExecutionOutcome.Failure(toolLabel, ex);
+    }
+  }
+
+  private sealed class VerificationToolExecutionOutcome
+  {
+    public string ToolLabel { get; private set; } = string.Empty;
+    public VerificationWorkflowResult? Workflow { get; private set; }
+    public Exception? Error { get; private set; }
+
+    public static VerificationToolExecutionOutcome Success(string toolLabel, VerificationWorkflowResult workflow)
+    {
+      return new VerificationToolExecutionOutcome
+      {
+        ToolLabel = toolLabel,
+        Workflow = workflow
+      };
+    }
+
+    public static VerificationToolExecutionOutcome Failure(string toolLabel, Exception error)
+    {
+      return new VerificationToolExecutionOutcome
+      {
+        ToolLabel = toolLabel,
+        Error = error
+      };
+    }
   }
 
   [RelayCommand]
@@ -251,6 +374,7 @@ public partial class MainViewModel
       }
 
       LastOutputPath = result.OutputRoot;
+      _notifications.Success("Export complete.");
       ReportSummary = BuildReportSummary(BundleRoot);
       LoadCoverageOverlap();
     }
@@ -281,6 +405,35 @@ public partial class MainViewModel
       OrchStatus = "Starting orchestration...";
       GuidedNextAction = "Orchestration in progress...";
       var log = new StringBuilder();
+      log.AppendLine("[" + DateTime.Now.ToString("HH:mm:ss") + "] Active bundle: " + BundleRoot);
+      log.AppendLine("[" + DateTime.Now.ToString("HH:mm:ss") + "] Verify uses the bundle's existing manifest/content. Rebuild bundle after changing selected packs.");
+      if (SelectedMissionPacks.Count > 1)
+      {
+        log.AppendLine("[" + DateTime.Now.ToString("HH:mm:ss") + "] NOTE: " + SelectedMissionPacks.Count + " packs are selected in Import, but orchestration runs only the active bundle path above.");
+      }
+      var manifestPath = Path.Combine(BundleRoot, BundlePaths.ManifestDirectory, "manifest.json");
+      if (File.Exists(manifestPath))
+      {
+        try
+        {
+          using var doc = JsonDocument.Parse(await File.ReadAllTextAsync(manifestPath));
+          var runPack = doc.RootElement.TryGetProperty("Run", out var runEl)
+            && runEl.TryGetProperty("PackName", out var runPackEl)
+            ? (runPackEl.GetString() ?? string.Empty).Trim()
+            : string.Empty;
+          var manifestPack = doc.RootElement.TryGetProperty("Pack", out var packEl)
+            && packEl.TryGetProperty("Name", out var nameEl)
+            ? (nameEl.GetString() ?? string.Empty).Trim()
+            : string.Empty;
+          var effectivePack = string.IsNullOrWhiteSpace(runPack) ? manifestPack : runPack;
+          if (!string.IsNullOrWhiteSpace(effectivePack))
+            log.AppendLine("[" + DateTime.Now.ToString("HH:mm:ss") + "] Bundle manifest pack: " + effectivePack);
+        }
+        catch
+        {
+        }
+      }
+      log.AppendLine();
 
       // Step 1: Apply
       var blockingFailures = new List<string>();
@@ -291,7 +444,7 @@ public partial class MainViewModel
         OrchStatus = "Running Apply...";
         OrchLog = log.ToString();
 
-        var script = Path.Combine(BundleRoot, "Apply", "RunApply.ps1");
+        var script = Path.Combine(BundleRoot, BundlePaths.ApplyDirectory, "RunApply.ps1");
         if (!File.Exists(script))
         {
           log.AppendLine("  SKIP: RunApply.ps1 not found in bundle.");
@@ -312,10 +465,15 @@ public partial class MainViewModel
               ScriptPath = script,
               ScriptArgs = "-BundleRoot \"" + BundleRoot + "\"",
               SkipSnapshot = ApplySkipSnapshot,
+              ModeOverride = ParseMode(ProfileMode),
               PowerStigModulePath = string.IsNullOrWhiteSpace(PowerStigModulePath) ? null : PowerStigModulePath.Trim(),
               PowerStigDataFile = string.IsNullOrWhiteSpace(PowerStigDataFile) ? null : PowerStigDataFile.Trim(),
               PowerStigOutputPath = string.IsNullOrWhiteSpace(PowerStigOutputPath) ? null : PowerStigOutputPath.Trim(),
-              PowerStigVerbose = PowerStigVerbose
+              PowerStigVerbose = PowerStigVerbose,
+              AdmxSourcePath = string.IsNullOrWhiteSpace(AdmxSourcePath) ? null : AdmxSourcePath.Trim(),
+              LgpoExePath = string.IsNullOrWhiteSpace(LgpoExePath) ? null : LgpoExePath.Trim(),
+              LgpoGpoBackupPath = string.IsNullOrWhiteSpace(LgpoGpoBackupPath) ? null : LgpoGpoBackupPath.Trim(),
+              LgpoVerbose = LgpoVerbose
             }, CancellationToken.None);
 
             log.AppendLine("  OK: Apply complete. Log: " + result.LogPath);
@@ -339,29 +497,25 @@ public partial class MainViewModel
 
       if (OrchRunVerify)
       {
-        if (blockingFailures.Count > 0)
-        {
-          log.AppendLine("[" + DateTime.Now.ToString("HH:mm:ss") + "] === VERIFY ===");
-          log.AppendLine("  SKIP: Verification skipped due to earlier blocking failures.");
-          OrchLog = log.ToString();
-        }
-        else
-        {
         log.AppendLine("[" + DateTime.Now.ToString("HH:mm:ss") + "] === VERIFY ===");
+        if (blockingFailures.Count > 0)
+          log.AppendLine("  WARN: Apply had failures, but proceeding with verification (scan-only is safe).");
         OrchStatus = "Running Verify...";
         OrchLog = log.ToString();
+        {
 
-        var verifyRoot = Path.Combine(BundleRoot, "Verify");
+        var verifyRoot = Path.Combine(BundleRoot, BundlePaths.VerifyDirectory);
         Directory.CreateDirectory(verifyRoot);
+
+        var orchVerifyTasks = new List<Task<VerificationToolExecutionOutcome>>();
 
         if (!string.IsNullOrWhiteSpace(EvaluateStigRoot))
         {
-          try
-          {
-            log.AppendLine("  Running Evaluate-STIG...");
-            OrchLog = log.ToString();
-            var evalOutput = Path.Combine(verifyRoot, "Evaluate-STIG");
-            var evalWorkflow = await _verificationWorkflow.RunAsync(new VerificationWorkflowRequest
+          log.AppendLine("  Queue: Evaluate-STIG");
+          var evalOutput = Path.Combine(verifyRoot, "Evaluate-STIG");
+          orchVerifyTasks.Add(ExecuteVerificationToolAsync(
+            "Evaluate-STIG",
+            new VerificationWorkflowRequest
             {
               OutputRoot = evalOutput,
               ConsolidatedToolLabel = "Evaluate-STIG",
@@ -369,32 +523,20 @@ public partial class MainViewModel
               {
                 Enabled = true,
                 ToolRoot = EvaluateStigRoot,
-                Arguments = EvaluateStigArgs ?? string.Empty,
-                WorkingDirectory = EvaluateStigRoot
+                Arguments = EvaluateStigArgs ?? string.Empty
               }
-            }, CancellationToken.None);
-            coverageInputs.Add(new VerificationCoverageInput
-            {
-              ToolLabel = "Evaluate-STIG",
-              ReportPath = evalWorkflow.ConsolidatedJsonPath
-            });
-            log.AppendLine("  OK: Evaluate-STIG complete. " + evalWorkflow.ConsolidatedResultCount + " results.");
-          }
-          catch (Exception ex)
-          {
-            log.AppendLine("  WARN: Evaluate-STIG failed: " + ex.Message);
-          }
+            },
+            CancellationToken.None));
         }
 
         if (!string.IsNullOrWhiteSpace(ScapCommandPath))
         {
-          try
-          {
-            log.AppendLine("  Running SCAP...");
-            OrchLog = log.ToString();
-            var scapOutput = Path.Combine(verifyRoot, "SCAP");
-            var toolName = string.IsNullOrWhiteSpace(ScapLabel) ? "SCAP" : ScapLabel;
-            var scapWorkflow = await _verificationWorkflow.RunAsync(new VerificationWorkflowRequest
+          var toolName = string.IsNullOrWhiteSpace(ScapLabel) ? PackTypes.Scap : ScapLabel;
+          log.AppendLine("  Queue: " + toolName);
+          var scapOutput = Path.Combine(verifyRoot, PackTypes.Scap);
+          orchVerifyTasks.Add(ExecuteVerificationToolAsync(
+            toolName,
+            new VerificationWorkflowRequest
             {
               OutputRoot = scapOutput,
               ConsolidatedToolLabel = toolName,
@@ -405,30 +547,91 @@ public partial class MainViewModel
                 Arguments = ScapArgs ?? string.Empty,
                 ToolLabel = toolName
               }
-            }, CancellationToken.None);
+            },
+            CancellationToken.None));
+        }
+
+        if (orchVerifyTasks.Count > 0)
+        {
+          log.AppendLine("  Running queued verification tools in parallel...");
+          OrchLog = log.ToString();
+
+          var orchResults = await Task.WhenAll(orchVerifyTasks);
+          foreach (var result in orchResults)
+          {
+            if (result.Error != null)
+            {
+              log.AppendLine("  WARN: " + result.ToolLabel + " failed: " + result.Error.Message);
+              continue;
+            }
+
+            var workflow = result.Workflow!;
             coverageInputs.Add(new VerificationCoverageInput
             {
-              ToolLabel = toolName,
-              ReportPath = scapWorkflow.ConsolidatedJsonPath
+              ToolLabel = result.ToolLabel,
+              ReportPath = workflow.ConsolidatedJsonPath
             });
-            log.AppendLine("  OK: SCAP complete. " + scapWorkflow.ConsolidatedResultCount + " results.");
-          }
-          catch (Exception ex)
-          {
-            log.AppendLine("  WARN: SCAP failed: " + ex.Message);
+            log.AppendLine("  OK: " + result.ToolLabel + " complete. " + workflow.ConsolidatedResultCount + " results.");
+
+            if (workflow.Diagnostics.Count > 0)
+            {
+              log.AppendLine("  Diagnostics:");
+              foreach (var diag in workflow.Diagnostics)
+                log.AppendLine("    " + diag);
+            }
           }
         }
 
-        if (string.IsNullOrWhiteSpace(EvaluateStigRoot) && string.IsNullOrWhiteSpace(ScapCommandPath))
+        var orchDscMofPath = ResolveDscMofPathForGui();
+        if (!string.IsNullOrWhiteSpace(orchDscMofPath))
         {
-          log.AppendLine("  SKIP: No verify tools configured.");
+          try
+          {
+            log.AppendLine("  Running DSC compliance scan...");
+            OrchLog = log.ToString();
+            var dscOutput = Path.Combine(verifyRoot, "DSC-Scan");
+            var dscWorkflow = await _verificationWorkflow.RunAsync(new VerificationWorkflowRequest
+            {
+              OutputRoot = dscOutput,
+              ConsolidatedToolLabel = "PowerSTIG-DSC",
+              DscScan = new DscScanWorkflowOptions
+              {
+                Enabled = true,
+                MofPath = orchDscMofPath!,
+                Verbose = PowerStigVerbose,
+                ToolLabel = "PowerSTIG-DSC"
+              }
+            }, CancellationToken.None);
+            coverageInputs.Add(new VerificationCoverageInput
+            {
+              ToolLabel = "PowerSTIG-DSC",
+              ReportPath = dscWorkflow.ConsolidatedJsonPath
+            });
+            log.AppendLine("  OK: DSC scan complete. " + dscWorkflow.ConsolidatedResultCount + " results.");
+            
+            if (dscWorkflow.Diagnostics.Count > 0)
+            {
+              log.AppendLine("  Diagnostics:");
+              foreach (var diag in dscWorkflow.Diagnostics)
+                log.AppendLine("    " + diag);
+            }
+          }
+          catch (Exception ex)
+          {
+            log.AppendLine("  WARN: DSC scan failed: " + ex.Message);
+          }
+        }
+
+        if (string.IsNullOrWhiteSpace(EvaluateStigRoot) && string.IsNullOrWhiteSpace(ScapCommandPath) && string.IsNullOrWhiteSpace(orchDscMofPath))
+        {
+          log.AppendLine("  SKIP: No verify tools configured and no DSC MOF files found.");
         }
 
         if (coverageInputs.Count > 0)
         {
           try
           {
-            var artifacts = _artifactAggregation.WriteCoverageArtifacts(Path.Combine(BundleRoot, "Reports"), coverageInputs);
+            var artifacts = _artifactAggregation.WriteCoverageArtifacts(Path.Combine(BundleRoot, BundlePaths.ReportsDirectory), coverageInputs);
             log.AppendLine("  OK: Coverage artifacts written: " + artifacts.CoverageOverlapCsvPath);
           }
           catch (Exception ex)
@@ -444,17 +647,12 @@ public partial class MainViewModel
       // Step 3: Export eMASS
       if (OrchRunExport)
       {
-        if (blockingFailures.Count > 0)
-        {
-          log.AppendLine("[" + DateTime.Now.ToString("HH:mm:ss") + "] === EXPORT eMASS ===");
-          log.AppendLine("  SKIP: eMASS export skipped due to earlier blocking failures.");
-          OrchLog = log.ToString();
-        }
-        else
-        {
         log.AppendLine("[" + DateTime.Now.ToString("HH:mm:ss") + "] === EXPORT eMASS ===");
+        if (blockingFailures.Count > 0)
+          log.AppendLine("  WARN: Apply had failures. Export will proceed but may contain incomplete data.");
         OrchStatus = "Exporting eMASS...";
         OrchLog = log.ToString();
+        {
 
         try
         {
@@ -563,10 +761,34 @@ public partial class MainViewModel
     }
   }
 
+  /// <summary>
+  /// Auto-detect compiled DSC MOF files for compliance scanning.
+  /// Checks PowerStigOutputPath, then default {BundleRoot}/Apply/Dsc.
+  /// Returns directory path if MOFs exist, null otherwise.
+  /// </summary>
+  private string? ResolveDscMofPathForGui()
+  {
+    if (!string.IsNullOrWhiteSpace(PowerStigOutputPath))
+    {
+      var trimmed = PowerStigOutputPath.Trim();
+      if (Directory.Exists(trimmed) && Directory.GetFiles(trimmed, "*.mof", SearchOption.AllDirectories).Length > 0)
+        return trimmed;
+    }
+
+    if (!string.IsNullOrWhiteSpace(BundleRoot))
+    {
+      var defaultDscDir = Path.Combine(BundleRoot, BundlePaths.ApplyDirectory, "Dsc");
+      if (Directory.Exists(defaultDscDir) && Directory.GetFiles(defaultDscDir, "*.mof", SearchOption.AllDirectories).Length > 0)
+        return defaultDscDir;
+    }
+
+    return null;
+  }
+
   private static string BuildApplyRecoveryGuidance(string bundleRoot)
   {
-    var applyLog = Path.Combine(bundleRoot, "Apply", "apply_run.json");
-    var snapshotsDir = Path.Combine(bundleRoot, "Apply", "Snapshots");
+    var applyLog = Path.Combine(bundleRoot, BundlePaths.ApplyDirectory, "apply_run.json");
+    var snapshotsDir = Path.Combine(bundleRoot, BundlePaths.ApplyDirectory, "Snapshots");
     var rollbackGuidance = GetRollbackGuidance(bundleRoot);
 
     return "Required artifacts: " + applyLog

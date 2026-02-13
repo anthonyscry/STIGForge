@@ -32,7 +32,10 @@
               <ColumnDefinition Width="*" />
             </Grid.ColumnDefinitions>
 
-            <ListView Grid.Column="0" ItemsSource="{Binding ContentPacks}" SelectedItem="{Binding SelectedPack}">
+            <ListView Grid.Column="0" ItemsSource="{Binding ContentPacks}" SelectedItem="{Binding SelectedPack}"
+                      VirtualizingPanel.IsVirtualizing="True"
+                      VirtualizingPanel.VirtualizationMode="Recycling"
+                      ScrollViewer.CanContentScroll="True">
               <ListView.View>
                 <GridView>
                   <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}"/>
@@ -95,7 +98,10 @@
 
               <TabControl Margin="0,8,0,0" Height="280">
                 <TabItem Header="STIG">
-                  <ListView ItemsSource="{Binding StigLibraryItems}" SelectedItem="{Binding SelectedStigLibraryItem}">
+                  <ListView ItemsSource="{Binding StigLibraryItems}" SelectedItem="{Binding SelectedStigLibraryItem}"
+                            VirtualizingPanel.IsVirtualizing="True"
+                            VirtualizingPanel.VirtualizationMode="Recycling"
+                            ScrollViewer.CanContentScroll="True">
                     <ListView.View>
                       <GridView>
                         <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}"/>
@@ -107,7 +113,10 @@
                 </TabItem>
 
                 <TabItem Header="SCAP">
-                  <ListView ItemsSource="{Binding ScapLibraryItems}" SelectedItem="{Binding SelectedScapLibraryItem}">
+                  <ListView ItemsSource="{Binding ScapLibraryItems}" SelectedItem="{Binding SelectedScapLibraryItem}"
+                            VirtualizingPanel.IsVirtualizing="True"
+                            VirtualizingPanel.VirtualizationMode="Recycling"
+                            ScrollViewer.CanContentScroll="True">
                     <ListView.View>
                       <GridView>
                         <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}"/>
@@ -119,7 +128,10 @@
                 </TabItem>
 
                 <TabItem Header="Other">
-                  <ListView ItemsSource="{Binding OtherLibraryItems}" SelectedItem="{Binding SelectedOtherLibraryItem}">
+                  <ListView ItemsSource="{Binding OtherLibraryItems}" SelectedItem="{Binding SelectedOtherLibraryItem}"
+                            VirtualizingPanel.IsVirtualizing="True"
+                            VirtualizingPanel.VirtualizationMode="Recycling"
+                            ScrollViewer.CanContentScroll="True">
                     <ListView.View>
                       <GridView>
                         <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}"/>
@@ -233,15 +245,25 @@
               <TextBlock Text="{Binding AutomationGatePath}" Foreground="{StaticResource TextMutedBrush}" Margin="6,0,0,0" />
             </WrapPanel>
 
-            <TextBlock Text="Recent Bundles" Margin="0,10,0,0" />
-            <WrapPanel>
-              <ComboBox Width="520" ItemsSource="{Binding RecentBundles}" SelectedItem="{Binding SelectedRecentBundle}"
-                        AutomationProperties.Name="Recent bundles"
-                        ToolTipService.ToolTip="Select a previously built bundle to reuse."/>
-              <Button Content="Use" Width="80" Margin="6,0,0,0" Command="{Binding UseRecentBundleCommand}"
-                      AutomationProperties.Name="Use selected bundle"
-                      ToolTipService.ToolTip="Set the selected recent bundle as the active bundle path."/>
-            </WrapPanel>
+            <TextBlock Text="Recent Bundles" Margin="0,10,0,4" />
+                   <ListBox ItemsSource="{Binding RecentBundles}" SelectedItem="{Binding SelectedRecentBundle}"
+                            MaxHeight="120" MinHeight="28"
+                            Background="{DynamicResource SurfaceBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                            VirtualizingPanel.IsVirtualizing="True"
+                            VirtualizingPanel.VirtualizationMode="Recycling"
+                            ScrollViewer.CanContentScroll="True"
+                            ToolTipService.ToolTip="Select a previously built bundle to reuse.">
+                     <ListBox.ItemTemplate>
+                       <DataTemplate>
+                         <TextBlock Text="{Binding}" TextTrimming="CharacterEllipsis"
+                                    ToolTipService.ToolTip="{Binding}"/>
+                       </DataTemplate>
+                     </ListBox.ItemTemplate>
+                   </ListBox>
+            <Button Content="Use Selected" Width="110" Margin="0,4,0,0" Command="{Binding UseRecentBundleCommand}"
+                    AutomationProperties.Name="Use selected bundle"
+                    ToolTipService.ToolTip="Set the selected recent bundle as the active bundle path."/>
           </StackPanel>
         </Grid>
       </TabItem>
@@ -250,64 +272,184 @@
         <Grid Margin="10">
           <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="180"/>
           </Grid.RowDefinitions>
 
-          <TextBlock Grid.Row="0" Text="One-Click Workflow: Apply -> Verify -> Export"
+          <TextBlock Grid.Row="0" Text="One-Click Workflow: Apply &#x2192; Verify &#x2192; Export"
                      FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8"/>
 
-          <!-- Configuration -->
-          <Border Grid.Row="1" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="12" Margin="0,0,0,8" Background="{StaticResource SurfaceMutedBrush}">
+          <!-- Sub-tabs for configuration sections -->
+          <TabControl Grid.Row="1" Margin="0,0,0,8">
+
+            <!-- Sub-tab 1: Bundle -->
+            <TabItem Header="Bundle" ToolTipService.ToolTip="Bundle path, build, and recent bundles.">
+              <Border Padding="12" Background="{DynamicResource SurfaceBrush}">
+                <StackPanel>
+                  <WrapPanel Margin="0,0,0,8">
+                    <TextBlock Text="Bundle Path:" Width="120" VerticalAlignment="Center"/>
+                    <TextBox Width="520" Text="{Binding BundleRoot}"/>
+                    <Button Content="Browse" Width="80" Margin="6,0,0,0" Command="{Binding BrowseBundleCommand}"/>
+                    <Button Content="Open" Width="80" Margin="6,0,0,0" Command="{Binding OpenBundleFolderCommand}"/>
+                  </WrapPanel>
+
+                  <WrapPanel Margin="0,0,0,8">
+                    <Button Content="Build Bundle" Width="140" Command="{Binding BuildBundleCommand}" IsEnabled="{Binding ActionsEnabled}"
+                            ToolTipService.ToolTip="Generate offline Apply/Verify/Manual/Evidence/Reports artifacts for this pack/profile pair."/>
+                  </WrapPanel>
+
+                  <TextBlock Text="{Binding BuildGateStatus}" Margin="0,0,0,8" Foreground="{StaticResource TextMutedBrush}"/>
+
+                  <TextBlock Text="Recent Bundles" Margin="0,0,0,4"/>
+                   <ListBox ItemsSource="{Binding RecentBundles}" SelectedItem="{Binding SelectedRecentBundle}"
+                            MaxHeight="120" MinHeight="28"
+                            Background="{DynamicResource SurfaceBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                            VirtualizingPanel.IsVirtualizing="True"
+                            VirtualizingPanel.VirtualizationMode="Recycling"
+                            ScrollViewer.CanContentScroll="True"
+                            ToolTipService.ToolTip="Select a previously built bundle to reuse.">
+                     <ListBox.ItemTemplate>
+                       <DataTemplate>
+                         <TextBlock Text="{Binding}" TextTrimming="CharacterEllipsis"
+                                    ToolTipService.ToolTip="{Binding}"/>
+                       </DataTemplate>
+                     </ListBox.ItemTemplate>
+                   </ListBox>
+                  <Button Content="Use Selected" Width="110" Margin="0,4,0,8" Command="{Binding UseRecentBundleCommand}"
+                          ToolTipService.ToolTip="Set the selected recent bundle as the active bundle path."/>
+
+                  <CheckBox Content="Build a new bundle before running" IsChecked="{Binding SimpleBuildBeforeRun}" Margin="0,0,0,0"
+                            ToolTipService.ToolTip="Automatically build a fresh bundle before orchestration starts."/>
+                </StackPanel>
+              </Border>
+            </TabItem>
+
+            <!-- Sub-tab 2: PowerSTIG -->
+            <TabItem Header="PowerSTIG" ToolTipService.ToolTip="PowerSTIG DSC module, data file, and output settings.">
+              <Border Padding="12" Background="{DynamicResource SurfaceBrush}">
+                <StackPanel>
+                  <WrapPanel Margin="0,0,0,8">
+                    <TextBlock Text="Module Path:" Width="120" VerticalAlignment="Center"/>
+                    <TextBox Width="520" Text="{Binding PowerStigModulePath}"
+                             ToolTipService.ToolTip="Path to the PowerSTIG module file."/>
+                    <Button Content="Browse" Width="80" Margin="6,0,0,0" Command="{Binding BrowsePowerStigModuleCommand}"
+                            ToolTipService.ToolTip="Open a file picker to find the PowerSTIG module file."/>
+                  </WrapPanel>
+
+                  <WrapPanel Margin="0,0,0,8">
+                    <TextBlock Text="Data File:" Width="120" VerticalAlignment="Center"/>
+                    <TextBox Width="520" Text="{Binding PowerStigDataFile}"
+                             ToolTipService.ToolTip="Optional data file for PowerSTIG. Leave blank to auto-generate."/>
+                    <Button Content="Browse" Width="80" Margin="6,0,0,0" Command="{Binding BrowsePowerStigDataCommand}"
+                            ToolTipService.ToolTip="Open a file picker to find a custom PowerSTIG data file."/>
+                  </WrapPanel>
+
+                  <WrapPanel Margin="0,0,0,8">
+                    <TextBlock Text="Output Path:" Width="120" VerticalAlignment="Center"/>
+                    <TextBox Width="520" Text="{Binding PowerStigOutputPath}"
+                             ToolTipService.ToolTip="Where PowerSTIG saves its output. Leave blank to use the default bundle location."/>
+                  </WrapPanel>
+
+                  <CheckBox Content="PowerSTIG Verbose" IsChecked="{Binding PowerStigVerbose}" Margin="0,0,0,0"
+                            ToolTipService.ToolTip="Enable verbose PowerSTIG compile output in apply logs."/>
+                </StackPanel>
+              </Border>
+            </TabItem>
+
+            <!-- Sub-tab 3: Toolkit & Scanners -->
+            <TabItem Header="Toolkit &amp; Scanners" ToolTipService.ToolTip="Evaluate-STIG, SCAP, ADMX, and LGPO settings.">
+              <Border Padding="12" Background="{DynamicResource SurfaceBrush}">
+                <StackPanel>
+                  <WrapPanel Margin="0,0,0,8">
+                    <TextBlock Text="Eval-STIG Root:" Width="120" VerticalAlignment="Center"/>
+                    <TextBox Width="520" Text="{Binding EvaluateStigRoot}"
+                             ToolTipService.ToolTip="Folder containing the Evaluate-STIG scanner script."/>
+                    <Button Content="Browse" Width="80" Margin="6,0,0,0" Command="{Binding BrowseEvaluateStigCommand}"/>
+                  </WrapPanel>
+
+                  <WrapPanel Margin="0,0,0,8">
+                    <TextBlock Text="Eval-STIG Args:" Width="120" VerticalAlignment="Center"/>
+                    <TextBox Width="520" Text="{Binding EvaluateStigArgs}"
+                             ToolTipService.ToolTip="Custom arguments for Evaluate-STIG."/>
+                  </WrapPanel>
+
+                  <WrapPanel Margin="0,0,0,8">
+                    <TextBlock Text="SCAP Cmd:" Width="120" VerticalAlignment="Center"/>
+                    <TextBox Width="520" Text="{Binding ScapCommandPath}"
+                             ToolTipService.ToolTip="Path to the SCC (SCAP Compliance Checker) scanner program."/>
+                    <Button Content="Browse" Width="80" Margin="6,0,0,0" Command="{Binding BrowseScapCommandCommand}"/>
+                  </WrapPanel>
+
+                  <WrapPanel Margin="0,0,0,8">
+                    <TextBlock Text="SCAP Args:" Width="120" VerticalAlignment="Center"/>
+                    <TextBox Width="520" Text="{Binding ScapArgs}"
+                             ToolTipService.ToolTip="Extra command-line options for the SCAP scanner."/>
+                  </WrapPanel>
+
+                  <WrapPanel Margin="0,0,0,8">
+                    <TextBlock Text="SCAP Label:" Width="120" VerticalAlignment="Center"/>
+                    <TextBox Width="200" Text="{Binding ScapLabel}"
+                             ToolTipService.ToolTip="Display label for the SCAP scanner tool."/>
+                  </WrapPanel>
+
+                  <Separator Margin="0,4,0,8"/>
+
+                  <WrapPanel Margin="0,0,0,8">
+                    <TextBlock Text="ADMX Source:" Width="120" VerticalAlignment="Center"/>
+                    <TextBox Width="520" Text="{Binding AdmxSourcePath}"
+                             ToolTipService.ToolTip="Path to the ADMX template source folder."/>
+                  </WrapPanel>
+
+                  <WrapPanel Margin="0,0,0,8">
+                    <TextBlock Text="LGPO Exe:" Width="120" VerticalAlignment="Center"/>
+                    <TextBox Width="520" Text="{Binding LgpoExePath}"
+                             ToolTipService.ToolTip="Path to the LGPO.exe utility."/>
+                  </WrapPanel>
+
+                  <WrapPanel Margin="0,0,0,8">
+                    <TextBlock Text="GPO Backup:" Width="120" VerticalAlignment="Center"/>
+                    <TextBox Width="520" Text="{Binding LgpoGpoBackupPath}"
+                             ToolTipService.ToolTip="Path to the GPO backup folder for LGPO import."/>
+                  </WrapPanel>
+
+                  <CheckBox Content="LGPO Verbose" IsChecked="{Binding LgpoVerbose}" Margin="0,0,0,0"
+                            ToolTipService.ToolTip="Enable verbose LGPO output in apply logs."/>
+                </StackPanel>
+              </Border>
+            </TabItem>
+
+          </TabControl>
+
+          <!-- Run section: checkboxes + button + status -->
+          <Border Grid.Row="2" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="12" Margin="0,0,0,8" Background="{StaticResource SurfaceMutedBrush}">
             <StackPanel>
-              <TextBlock Text="Configuration" FontWeight="SemiBold" Margin="0,0,0,8"/>
-
               <WrapPanel Margin="0,0,0,8">
-                <TextBlock Text="Bundle:" Width="120" VerticalAlignment="Center" />
-                <TextBox Width="520" Text="{Binding BundleRoot}" />
-                <Button Content="Browse" Width="80" Margin="6,0,0,0" Command="{Binding BrowseBundleCommand}" />
-              </WrapPanel>
-
-              <WrapPanel Margin="0,0,0,8">
-                <TextBlock Text="Eval-STIG Root:" Width="120" VerticalAlignment="Center" />
-                <TextBox Width="520" Text="{Binding EvaluateStigRoot}" />
-                <Button Content="Browse" Width="80" Margin="6,0,0,0" Command="{Binding BrowseEvaluateStigCommand}" />
-              </WrapPanel>
-
-              <WrapPanel Margin="0,0,0,8">
-                <TextBlock Text="SCAP Cmd:" Width="120" VerticalAlignment="Center" />
-                <TextBox Width="520" Text="{Binding ScapCommandPath}" />
-                <Button Content="Browse" Width="80" Margin="6,0,0,0" Command="{Binding BrowseScapCommandCommand}" />
-              </WrapPanel>
-
-              <WrapPanel>
                 <CheckBox Content="Run Apply" IsChecked="{Binding OrchRunApply}" Margin="0,0,16,0"/>
                 <CheckBox Content="Run Verify" IsChecked="{Binding OrchRunVerify}" Margin="0,0,16,0"/>
-                <CheckBox Content="Export eMASS" IsChecked="{Binding OrchRunExport}" />
+                <CheckBox Content="Export eMASS" IsChecked="{Binding OrchRunExport}"/>
+              </WrapPanel>
+
+              <WrapPanel Margin="0,0,0,0">
+                <Button Content="Run Orchestration" Width="160" Height="36" FontWeight="SemiBold"
+                        Command="{Binding OrchestrateCommand}" IsEnabled="{Binding ActionsEnabled}"/>
+                <TextBlock Text="{Binding OrchStatus}" Margin="12,8,0,0" Foreground="{StaticResource TextMutedBrush}"/>
               </WrapPanel>
             </StackPanel>
           </Border>
 
-          <!-- Run + Log -->
-          <Grid Grid.Row="2">
-            <Grid.RowDefinitions>
-              <RowDefinition Height="Auto"/>
-              <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
+          <!-- Status line -->
+          <TextBlock Grid.Row="3" Text="{Binding OrchStatus}" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,4"/>
 
-            <WrapPanel Grid.Row="0" Margin="0,0,0,8">
-              <Button Content="Run Orchestration" Width="160" Height="36" FontWeight="SemiBold"
-                      Command="{Binding OrchestrateCommand}" IsEnabled="{Binding ActionsEnabled}" />
-              <TextBlock Text="{Binding OrchStatus}" Margin="12,8,0,0" Foreground="{StaticResource TextMutedBrush}"/>
-            </WrapPanel>
-
-            <Border Grid.Row="1" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Background="{StaticResource SurfaceBrush}">
-              <ScrollViewer VerticalScrollBarVisibility="Auto">
-                <TextBlock Text="{Binding OrchLog}" FontFamily="Consolas" FontSize="11" Padding="8"
-                           TextWrapping="Wrap"/>
-              </ScrollViewer>
-            </Border>
-          </Grid>
+          <!-- Orchestration Log -->
+          <Border Grid.Row="4" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Background="{StaticResource SurfaceBrush}">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+              <TextBlock Text="{Binding OrchLog}" FontFamily="Consolas" FontSize="11" Padding="8"
+                         TextWrapping="Wrap"/>
+            </ScrollViewer>
+          </Border>
         </Grid>
       </TabItem>
 
@@ -377,7 +519,10 @@
             <Button Content="Refresh Overlap" Width="140" Margin="0,8,0,0" Command="{Binding RefreshOverlapCommand}"
                     AutomationProperties.Name="Refresh overlap analysis"
                     ToolTipService.ToolTip="Recalculate source overlap between verify results from different scanners."/>
-            <ListView ItemsSource="{Binding OverlapItems}" Height="160" Margin="0,6,0,0">
+            <ListView ItemsSource="{Binding OverlapItems}" Height="160" Margin="0,6,0,0"
+                      VirtualizingPanel.IsVirtualizing="True"
+                      VirtualizingPanel.VirtualizationMode="Recycling"
+                      ScrollViewer.CanContentScroll="True">
               <ListView.View>
                 <GridView>
                   <GridViewColumn Header="Sources" DisplayMemberBinding="{Binding SourcesKey}" Width="220" />
@@ -427,7 +572,10 @@
               <ColumnDefinition Width="3*" />
             </Grid.ColumnDefinitions>
 
-            <ListView Grid.Column="0" ItemsSource="{Binding ManualControlsView}" SelectedItem="{Binding SelectedManualControl}">
+            <ListView Grid.Column="0" ItemsSource="{Binding ManualControlsView}" SelectedItem="{Binding SelectedManualControl}"
+                      VirtualizingPanel.IsVirtualizing="True"
+                      VirtualizingPanel.VirtualizationMode="Recycling"
+                      ScrollViewer.CanContentScroll="True">
             <ListView.View>
               <GridView>
                 <GridViewColumn Header="Rule" DisplayMemberBinding="{Binding Control.ExternalIds.RuleId}" />
@@ -520,11 +668,22 @@
                     <Button Content="Browse" Width="80" Command="{Binding BrowseBundleCommand}" />
                     <Button Content="Open" Width="80" Margin="6,0,0,0" Command="{Binding OpenBundleFolderCommand}" />
                   </WrapPanel>
-                  <TextBlock Text="Recent Bundles" />
-                  <WrapPanel Margin="0,6,0,0">
-                    <ComboBox Width="520" ItemsSource="{Binding RecentBundles}" SelectedItem="{Binding SelectedRecentBundle}" />
-                    <Button Content="Use" Width="80" Margin="6,0,0,0" Command="{Binding UseRecentBundleCommand}" />
-                  </WrapPanel>
+                  <TextBlock Text="Recent Bundles" Margin="0,0,0,4" />
+                   <ListBox ItemsSource="{Binding RecentBundles}" SelectedItem="{Binding SelectedRecentBundle}"
+                            MaxHeight="120" MinHeight="28"
+                            Background="{DynamicResource SurfaceBrush}"
+                            BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                            VirtualizingPanel.IsVirtualizing="True"
+                            VirtualizingPanel.VirtualizationMode="Recycling"
+                            ScrollViewer.CanContentScroll="True">
+                     <ListBox.ItemTemplate>
+                       <DataTemplate>
+                         <TextBlock Text="{Binding}" TextTrimming="CharacterEllipsis"
+                                    ToolTipService.ToolTip="{Binding}"/>
+                       </DataTemplate>
+                     </ListBox.ItemTemplate>
+                   </ListBox>
+                  <Button Content="Use Selected" Width="110" Margin="0,4,0,0" Command="{Binding UseRecentBundleCommand}" />
                   <Button Content="Export eMASS" Width="140" Command="{Binding ExportEmassCommand}" IsEnabled="{Binding ActionsEnabled}" />
                   <TextBlock Text="Exports eMASS package from bundle" Margin="0,8,0,0" />
                   <TextBlock Text="{Binding ExportStatus}" Margin="0,6,0,0" Foreground="{StaticResource TextMutedBrush}" />
@@ -559,7 +718,10 @@
 
                 <TextBlock Grid.Row="1" Text="{Binding AuditVerifyResult}" Margin="0,0,0,8" FontWeight="SemiBold"/>
 
-                <ListView Grid.Row="2" ItemsSource="{Binding AuditEntries}">
+                <ListView Grid.Row="2" ItemsSource="{Binding AuditEntries}"
+                          VirtualizingPanel.IsVirtualizing="True"
+                          VirtualizingPanel.VirtualizationMode="Recycling"
+                          ScrollViewer.CanContentScroll="True">
                   <ListView.View>
                     <GridView>
                       <GridViewColumn Header="Id" DisplayMemberBinding="{Binding Id}" />

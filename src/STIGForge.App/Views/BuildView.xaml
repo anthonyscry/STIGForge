@@ -63,14 +63,34 @@
       <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="12" Background="{DynamicResource SurfaceBrush}">
         <StackPanel>
           <TextBlock Text="Recent Bundles" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
-          <WrapPanel>
-            <ComboBox Width="600" ItemsSource="{Binding RecentBundles}" SelectedItem="{Binding SelectedRecentBundle}"
-                      AutomationProperties.Name="Recent bundles"
-                      ToolTipService.ToolTip="Previously built bundle paths."/>
-            <Button Content="Use" MinWidth="80" Height="28" Padding="14,0" Margin="6,0,0,0"
+           <ListBox ItemsSource="{Binding RecentBundles}"
+                    SelectedItem="{Binding SelectedRecentBundle, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
+                    IsSynchronizedWithCurrentItem="True"
+                    SelectionMode="Single"
+                    MaxHeight="160" MinHeight="32"
+                    Background="{DynamicResource SurfaceBrush}"
+                    BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1"
+                    VirtualizingPanel.IsVirtualizing="True"
+                    VirtualizingPanel.VirtualizationMode="Recycling"
+                    ScrollViewer.CanContentScroll="True"
+                    AutomationProperties.Name="Recent bundles"
+                    ToolTipService.ToolTip="Previously built bundle paths. Click to select, then Use or Delete.">
+             <ListBox.ItemTemplate>
+               <DataTemplate>
+                 <TextBlock Text="{Binding}" TextTrimming="CharacterEllipsis"
+                            ToolTipService.ToolTip="{Binding}"/>
+               </DataTemplate>
+             </ListBox.ItemTemplate>
+           </ListBox>
+          <WrapPanel Margin="0,6,0,0">
+            <Button Content="Use Selected" MinWidth="110" Height="28" Padding="14,0" Margin="0,0,6,0"
                     Command="{Binding UseRecentBundleCommand}"
                     AutomationProperties.Name="Use recent bundle"
                     ToolTipService.ToolTip="Load the selected recent bundle as the active bundle."/>
+            <Button Content="Delete Selected" MinWidth="110" Height="28" Padding="14,0"
+                    Command="{Binding DeleteSelectedRecentBundleCommand}"
+                    AutomationProperties.Name="Delete selected recent bundle"
+                    ToolTipService.ToolTip="Permanently delete the selected recent bundle folder."/>
           </WrapPanel>
         </StackPanel>
       </Border>
