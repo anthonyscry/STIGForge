@@ -59,6 +59,11 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
+      - name: Enforce repository root layout
+        shell: pwsh
+        run: |
+          powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\ci\Invoke-RepoRootGuard.ps1
+
       - name: Pre-package release gate
         if: ${{ inputs.run_release_gate }}
         shell: pwsh
