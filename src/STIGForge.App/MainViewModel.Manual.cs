@@ -13,6 +13,7 @@ using ControlStatusStrings = STIGForge.Core.Constants.ControlStatus;
 using PackTypes = STIGForge.Core.Constants.PackTypes;
 using STIGForge.Core.Models;
 using STIGForge.Core.Services;
+using STIGForge.Core.Utilities;
 using STIGForge.Evidence;
 
 namespace STIGForge.App;
@@ -1188,38 +1189,7 @@ public partial class MainViewModel
 
   private static List<string> ParseCsvLine(string line)
   {
-    var fields = new List<string>();
-    var current = new System.Text.StringBuilder();
-    var inQuotes = false;
-
-    for (var i = 0; i < line.Length; i++)
-    {
-      var ch = line[i];
-      if (ch == '"')
-      {
-        if (inQuotes && i + 1 < line.Length && line[i + 1] == '"')
-        {
-          current.Append('"');
-          i++;
-        }
-        else
-        {
-          inQuotes = !inQuotes;
-        }
-      }
-      else if (ch == ',' && !inQuotes)
-      {
-        fields.Add(current.ToString().Trim());
-        current.Clear();
-      }
-      else
-      {
-        current.Append(ch);
-      }
-    }
-
-    fields.Add(current.ToString().Trim());
-    return fields;
+    return CsvUtility.ParseLine(line).Select(static p => p.Trim()).ToList();
   }
 
   private static string GetSelectedManualEvidenceFolder(ControlRecord control, string bundleRoot)

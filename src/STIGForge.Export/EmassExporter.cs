@@ -3,6 +3,7 @@ using System.Text.Json;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Constants;
 using STIGForge.Core.Models;
+using STIGForge.Core.Utilities;
 using STIGForge.Verify;
 
 namespace STIGForge.Export;
@@ -611,36 +612,7 @@ public sealed class EmassExporter
 
   private static string[] ParseCsvLine(string line)
   {
-    var list = new List<string>();
-    var sb = new StringBuilder();
-    bool inQuotes = false;
-    for (int i = 0; i < line.Length; i++)
-    {
-      var ch = line[i];
-      if (ch == '"')
-      {
-        if (inQuotes && i + 1 < line.Length && line[i + 1] == '"')
-        {
-          sb.Append('"');
-          i++;
-        }
-        else
-        {
-          inQuotes = !inQuotes;
-        }
-      }
-      else if (ch == ',' && !inQuotes)
-      {
-        list.Add(sb.ToString());
-        sb.Clear();
-      }
-      else
-      {
-        sb.Append(ch);
-      }
-    }
-    list.Add(sb.ToString());
-    return list.ToArray();
+    return CsvUtility.ParseLine(line);
   }
 
   private sealed class BundleManifestDto

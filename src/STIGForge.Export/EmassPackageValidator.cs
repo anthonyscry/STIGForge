@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using STIGForge.Core.Constants;
+using STIGForge.Core.Utilities;
 
 namespace STIGForge.Export;
 
@@ -476,38 +477,7 @@ public sealed class EmassPackageValidator
 
   private static string[] ParseCsvLine(string line)
   {
-    var list = new List<string>();
-    var sb = new StringBuilder();
-    var inQuotes = false;
-
-    for (var i = 0; i < line.Length; i++)
-    {
-      var ch = line[i];
-      if (ch == '"')
-      {
-        if (inQuotes && i + 1 < line.Length && line[i + 1] == '"')
-        {
-          sb.Append('"');
-          i++;
-        }
-        else
-        {
-          inQuotes = !inQuotes;
-        }
-      }
-      else if (ch == ',' && !inQuotes)
-      {
-        list.Add(sb.ToString());
-        sb.Clear();
-      }
-      else
-      {
-        sb.Append(ch);
-      }
-    }
-
-    list.Add(sb.ToString());
-    return list.ToArray();
+    return CsvUtility.ParseLine(line);
   }
 
   private static bool IsValidationReportRelativePath(string relativePath)

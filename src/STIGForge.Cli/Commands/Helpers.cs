@@ -1,4 +1,5 @@
 using STIGForge.Core.Models;
+using STIGForge.Core.Utilities;
 using BundlePaths = STIGForge.Core.Constants.BundlePaths;
 
 namespace STIGForge.Cli.Commands;
@@ -36,22 +37,7 @@ internal static class Helpers
 
   public static string[] ParseCsvLine(string line)
   {
-    var list = new List<string>();
-    var sb = new System.Text.StringBuilder();
-    bool inQuotes = false;
-    for (int i = 0; i < line.Length; i++)
-    {
-      var ch = line[i];
-      if (ch == '"')
-      {
-        if (inQuotes && i + 1 < line.Length && line[i + 1] == '"') { sb.Append('"'); i++; }
-        else inQuotes = !inQuotes;
-      }
-      else if (ch == ',' && !inQuotes) { list.Add(sb.ToString()); sb.Clear(); }
-      else sb.Append(ch);
-    }
-    list.Add(sb.ToString());
-    return list.ToArray();
+    return CsvUtility.ParseLine(line);
   }
 
   public static void WritePowerStigMapCsv(string path, IReadOnlyList<ControlRecord> controls)
