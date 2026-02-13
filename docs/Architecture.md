@@ -160,6 +160,8 @@ Main view orchestration now follows a hybrid approach:
 
 ViewModels are organized under `src/STIGForge.App/ViewModels/` by domain (`Main/`, `Manual/`, `Import/`, `Common/`) to keep related UI logic together while preserving namespace compatibility.
 
+Large MainViewModel tab partials are also split by responsibility (for example, import applicability scan and dashboard toolkit activation helpers are in dedicated partial files) to keep individual files maintainable without changing bindings.
+
 This allows progressive modularization while preserving stability for existing UI bindings and tests.
 
 ### Shared Utility Consolidation

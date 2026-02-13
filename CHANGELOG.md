@@ -8,6 +8,9 @@ All notable changes to STIGForge are documented in this file.
 - Centralized CSV parsing into `STIGForge.Core/Utilities/CsvUtility.cs` and routed App/CLI/Export/Core callers to shared parsing logic.
 - Removed duplicated local CSV parser implementations in export/core services.
 - Split `VerificationWorkflowService` into partial files to reduce class-size concentration while preserving behavior (`VerificationWorkflowService.cs` + `VerificationWorkflowService.Diagnostics.cs`).
+- Split large App partials into focused files while preserving behavior:
+  - `MainViewModel.Import.cs` + `MainViewModel.Import.Applicability.cs`
+  - `MainViewModel.Dashboard.cs` + `MainViewModel.Dashboard.Toolkit.cs`
 
 ### Performance and Reliability
 - Replaced remaining `File.ReadAllLines(...)` hot paths with streaming `File.ReadLines(...)` usage in App/CLI/Export to reduce peak memory usage on large files.
