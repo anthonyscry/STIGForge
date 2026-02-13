@@ -98,22 +98,22 @@ public partial class MainViewModel
           var imported = await _importer.ImportConsolidatedZipAsync(zip, sourceLabel, ct);
           lock (importLock)
           {
-            System.Windows.Application.Current.Dispatcher.Invoke(() =>
-            {
-              foreach (var pack in imported)
-                AddImportedPack(pack);
-            });
             totalImported += imported.Count;
-            ProgressValue++;
           }
+          System.Windows.Application.Current.Dispatcher.Invoke(() =>
+          {
+            foreach (var pack in imported)
+              AddImportedPack(pack);
+            ProgressValue++;
+          });
         }
         catch (Exception ex)
         {
           lock (importLock)
           {
             failed.Add(GetSafeFileLabel(zip) + ": " + ex.Message);
-            ProgressValue++;
           }
+          System.Windows.Application.Current.Dispatcher.Invoke(() => ProgressValue++);
         }
       });
 
