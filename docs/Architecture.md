@@ -151,3 +151,11 @@ Services like `IAuditTrailService` and `ICredentialStore` are injected as option
 
 ### MVVM Pattern (WPF)
 The WPF app uses CommunityToolkit.Mvvm source generators with partial classes for view models (e.g., `MainViewModel.cs` + `MainViewModel.Import.cs` + `MainViewModel.Dashboard.cs` etc.).
+
+### ViewModel Decomposition
+Main view orchestration now follows a hybrid approach:
+- `MainViewModel` remains the binding root for backwards-compatible XAML bindings.
+- Feature facades are exposed as dedicated sub-viewmodels (`DashboardViewModel`, `ImportViewModel`, `ManualReviewViewModel`).
+- Shared cross-tab state is defined via `IMainSharedState` to support incremental extraction without breaking behavior.
+
+This allows progressive modularization while preserving stability for existing UI bindings and tests.

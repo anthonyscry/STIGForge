@@ -23,3 +23,9 @@ Thumbs.db
 
 # Planning docs
 .planning/
+
+# Local scratch and temporary extracts
+.scratch/
+.tmp_scc_extract/
+.tmp_scc_manual/
+logs/
