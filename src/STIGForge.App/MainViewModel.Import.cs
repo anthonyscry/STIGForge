@@ -6,6 +6,8 @@ using System.Text.Json;
 using System.Windows.Data;
 using STIGForge.Build;
 using STIGForge.Core.Models;
+using STIGForge.Content.Import;
+using STIGForge.Infrastructure.Hashing;
 using STIGForge.App.Views;
 
 namespace STIGForge.App;
@@ -14,6 +16,7 @@ public partial class MainViewModel
 {
   public List<ContentPack> SelectedMissionPacks { get; } = new();
   private readonly Dictionary<string, string> _formatCache = new(StringComparer.OrdinalIgnoreCase);
+  private readonly Dictionary<string, HashSet<string>> _benchmarkIdCache = new(StringComparer.OrdinalIgnoreCase);
 
   [RelayCommand]
   private async Task ImportContentPackAsync()
@@ -62,6 +65,161 @@ public partial class MainViewModel
     if (ofd.ShowDialog() != true) return;
 
     await SmartImportAsync(ofd.FileNames, "gpo_lgpo_import", "GPO");
+  }
+
+  [RelayCommand]
+  private async Task ScanImportFolderAsync()
+  {
+    if (IsBusy) return;
+
+    try
+    {
+      IsBusy = true;
+      var importFolder = ResolveScanImportFolderPath();
+      if (!Directory.Exists(importFolder))
+      {
+        StatusText = "Import folder not found: " + importFolder;
+        return;
+      }
+
+      StatusText = "Scanning import folder...";
+      var scanner = new ImportInboxScanner(new Sha256HashingService());
+      var scan = await scanner.ScanAsync(importFolder, _cts.Token);
+      var dedup = new ImportDedupService();
+      var deduped = dedup.Resolve(scan.Candidates);
+
+      var contentWinners = deduped.Winners
+        .Where(c => c.ArtifactKind != ImportArtifactKind.Tool && c.ArtifactKind != ImportArtifactKind.Unknown)
+        .ToList();
+      var toolWinners = deduped.Winners
+        .Where(c => c.ArtifactKind == ImportArtifactKind.Tool)
+        .ToList();
+
+      var importedPackCount = 0;
+      var importedToolCount = 0;
+      var failures = new List<string>();
+
+      foreach (var candidate in contentWinners)
+      {
+        try
+        {
+          var imported = await _importer.ImportConsolidatedZipAsync(
+            candidate.ZipPath,
+            MapSourceLabel(candidate.ArtifactKind),
+            _cts.Token);
+          importedPackCount += imported.Count;
+          foreach (var pack in imported)
+            AddImportedPack(pack);
+        }
+        catch (Exception ex)
+        {
+          failures.Add(candidate.FileName + ": " + ex.Message);
+        }
+      }
+
+      if (toolWinners.Count > 0)
+      {
+        try
+        {
+          importedToolCount = ImportToolBundles(toolWinners);
+        }
+        catch (Exception ex)
+        {
+          failures.Add("Tool import failed: " + ex.Message);
+        }
+      }
+
+      RefreshImportLibrary();
+      var warningCount = scan.Warnings.Count + deduped.Suppressed.Count;
+
+      StatusText = "Scan complete: imported packs=" + importedPackCount
+        + ", tools=" + importedToolCount
+        + ", warnings=" + warningCount
+        + (failures.Count > 0 ? ", failures=" + failures.Count : "");
+    }
+    catch (Exception ex)
+    {
+      StatusText = "Scan import folder failed: " + ex.Message;
+    }
+    finally
+    {
+      IsBusy = false;
+    }
+  }
+
+  private string ResolveScanImportFolderPath()
+  {
+    var appRoot = _paths.GetAppDataRoot();
+    var repoRoot = Directory.GetParent(appRoot)?.FullName;
+    if (!string.IsNullOrWhiteSpace(repoRoot))
+    {
+      var projectImport = Path.Combine(repoRoot, "import");
+      if (Directory.Exists(projectImport))
+        return projectImport;
+    }
+
+    var fallback = _paths.GetImportInboxRoot();
+    Directory.CreateDirectory(fallback);
+    return fallback;
+  }
+
+  private static string MapSourceLabel(ImportArtifactKind kind)
+  {
+    return kind switch
+    {
+      ImportArtifactKind.Stig => "stig_import",
+      ImportArtifactKind.Scap => "scap_import",
+      ImportArtifactKind.Gpo => "gpo_lgpo_import",
+      ImportArtifactKind.Admx => "admx_import",
+      _ => "import_scan"
+    };
+  }
+
+  private int ImportToolBundles(IReadOnlyList<ImportInboxCandidate> toolCandidates)
+  {
+    var imported = 0;
+    var toolsRoot = _paths.GetToolsRoot();
+    Directory.CreateDirectory(toolsRoot);
+    var notes = new List<string>();
+
+    foreach (var candidate in toolCandidates)
+    {
+      var destination = candidate.ToolKind switch
+      {
+        ToolArtifactKind.EvaluateStig => Path.Combine(toolsRoot, "Evaluate-STIG"),
+        ToolArtifactKind.Scc => Path.Combine(toolsRoot, "SCC"),
+        ToolArtifactKind.PowerStig => Path.Combine(toolsRoot, "PowerSTIG"),
+        _ => string.Empty
+      };
+
+      if (string.IsNullOrWhiteSpace(destination))
+        continue;
+
+      ExtractArchiveWithNestedZips(candidate.ZipPath, destination, nestedPasses: 2, notes);
+      imported++;
+
+      if (candidate.ToolKind == ToolArtifactKind.EvaluateStig)
+      {
+        var script = FindFirstFileByName(destination, "Evaluate-STIG.ps1");
+        if (!string.IsNullOrWhiteSpace(script))
+          EvaluateStigRoot = Path.GetDirectoryName(script) ?? EvaluateStigRoot;
+      }
+      else if (candidate.ToolKind == ToolArtifactKind.Scc)
+      {
+        var scc = FindFirstFileByName(destination, "scc.exe");
+        if (!string.IsNullOrWhiteSpace(scc))
+          ScapCommandPath = scc;
+      }
+      else if (candidate.ToolKind == ToolArtifactKind.PowerStig)
+      {
+        var module = FindFirstFileByName(destination, "PowerSTIG.psd1")
+          ?? FindFirstFileByName(destination, "PowerStig.psd1");
+        if (!string.IsNullOrWhiteSpace(module))
+          PowerStigModulePath = module;
+      }
+    }
+
+    return imported;
   }
 
   private async Task SmartImportAsync(IEnumerable<string> zipFiles, string sourceLabel, string contentLabel)
@@ -143,6 +301,7 @@ public partial class MainViewModel
   private void AddImportedPack(ContentPack pack)
   {
     ContentPacks.Insert(0, pack);
+    _benchmarkIdCache.Remove(pack.PackId);
     SelectedPack = pack;
   }
 
@@ -153,6 +312,8 @@ public partial class MainViewModel
      {
        StigLibraryItems.Clear();
        ScapLibraryItems.Clear();
+       GpoLibraryItems.Clear();
+       AdmxLibraryItems.Clear();
        OtherLibraryItems.Clear();
        AllLibraryItems.Clear();
 
@@ -173,26 +334,36 @@ public partial class MainViewModel
 
          AllLibraryItems.Add(item);
 
-         if (string.Equals(format, "STIG", StringComparison.OrdinalIgnoreCase))
-         {
-           StigLibraryItems.Add(item);
-         }
-         else if (string.Equals(format, "SCAP", StringComparison.OrdinalIgnoreCase))
-         {
-           ScapLibraryItems.Add(item);
-         }
-         else
-         {
-           OtherLibraryItems.Add(item);
-         }
-       }
+          if (string.Equals(format, "STIG", StringComparison.OrdinalIgnoreCase))
+          {
+            StigLibraryItems.Add(item);
+          }
+          else if (string.Equals(format, "SCAP", StringComparison.OrdinalIgnoreCase))
+          {
+            ScapLibraryItems.Add(item);
+          }
+          else if (string.Equals(format, "GPO", StringComparison.OrdinalIgnoreCase))
+          {
+            GpoLibraryItems.Add(item);
+          }
+          else if (string.Equals(format, "ADMX", StringComparison.OrdinalIgnoreCase))
+          {
+            AdmxLibraryItems.Add(item);
+          }
+          else
+          {
+            OtherLibraryItems.Add(item);
+          }
+        }
 
-       _filteredContentLibrary?.Refresh();
-       ImportLibraryStatus = "STIG: " + StigLibraryItems.Count
-         + " | SCAP: " + ScapLibraryItems.Count
-         + " | Other: " + OtherLibraryItems.Count;
-     });
-   }
+        _filteredContentLibrary?.Refresh();
+        ImportLibraryStatus = "STIG: " + StigLibraryItems.Count
+          + " | SCAP: " + ScapLibraryItems.Count
+          + " | GPO: " + GpoLibraryItems.Count
+          + " | ADMX: " + AdmxLibraryItems.Count
+          + " | Other: " + OtherLibraryItems.Count;
+      });
+    }
 
   [RelayCommand]
   private void OpenSelectedLibraryItem()
@@ -245,7 +416,19 @@ public partial class MainViewModel
             string result;
             if (string.Equals(detectedValue, "Scap", StringComparison.OrdinalIgnoreCase)) result = "SCAP";
             else if (string.Equals(detectedValue, "Stig", StringComparison.OrdinalIgnoreCase)) result = "STIG";
-            else if (string.Equals(detectedValue, "Gpo", StringComparison.OrdinalIgnoreCase)) result = "GPO";
+            else if (string.Equals(detectedValue, "Gpo", StringComparison.OrdinalIgnoreCase))
+            {
+              var isAdmx = false;
+              if (doc.RootElement.TryGetProperty("support", out var support)
+                  && support.ValueKind == JsonValueKind.Object
+                  && support.TryGetProperty("admx", out var admx)
+                  && admx.ValueKind == JsonValueKind.True)
+              {
+                isAdmx = true;
+              }
+
+              result = isAdmx ? "ADMX" : "GPO";
+            }
             else result = detectedValue.ToUpperInvariant();
             _formatCache[pack.PackId] = result;
             return result;
@@ -261,7 +444,8 @@ public partial class MainViewModel
     var hint = (pack.SourceLabel + " " + pack.Name);
     string format;
     if (hint.IndexOf("scap", StringComparison.OrdinalIgnoreCase) >= 0) format = "SCAP";
-    else if (hint.IndexOf("gpo", StringComparison.OrdinalIgnoreCase) >= 0 || hint.IndexOf("admx", StringComparison.OrdinalIgnoreCase) >= 0) format = "GPO";
+    else if (hint.IndexOf("admx", StringComparison.OrdinalIgnoreCase) >= 0) format = "ADMX";
+    else if (hint.IndexOf("gpo", StringComparison.OrdinalIgnoreCase) >= 0 || hint.IndexOf("lgpo", StringComparison.OrdinalIgnoreCase) >= 0) format = "GPO";
     else format = "STIG";
     _formatCache[pack.PackId] = format;
     return format;
@@ -298,6 +482,16 @@ public partial class MainViewModel
         return;
       }
 
+      var stigPacks = packs
+        .Where(p => string.Equals(ResolvePackFormat(p), "STIG", StringComparison.OrdinalIgnoreCase))
+        .ToList();
+
+      if (stigPacks.Count == 0)
+      {
+        StatusText = "No STIG content selected. Select at least one STIG pack.";
+        return;
+      }
+
       var profile = SelectedProfile;
       if (profile == null)
       {
@@ -318,12 +512,12 @@ public partial class MainViewModel
 
       var built = 0;
       BundleBuildResult? lastResult = null;
-      foreach (var pack in packs)
+      foreach (var pack in stigPacks)
       {
         built++;
-        StatusText = packs.Count == 1
+        StatusText = stigPacks.Count == 1
           ? "Building bundle for " + pack.Name + "..."
-          : "Building bundle " + built + " of " + packs.Count + ": " + pack.Name + "...";
+          : "Building bundle " + built + " of " + stigPacks.Count + ": " + pack.Name + "...";
 
         var controlList = await _controls.ListControlsAsync(pack.PackId, CancellationToken.None);
         lastResult = await _builder.BuildAsync(new BundleBuildRequest
@@ -346,9 +540,9 @@ public partial class MainViewModel
         BundleRoot = lastResult.BundleRoot;
       }
 
-      StatusText = packs.Count == 1
-        ? "Build complete: " + packs[0].Name
-        : "Build complete: " + packs.Count + " bundles built.";
+      StatusText = stigPacks.Count == 1
+        ? "Build complete: " + stigPacks[0].Name
+        : "Build complete: " + stigPacks.Count + " STIG bundles built.";
     }
     catch (Exception ex)
     {
@@ -456,6 +650,7 @@ public partial class MainViewModel
         await _packs.DeleteAsync(pack.PackId, CancellationToken.None);
         ContentPacks.Remove(pack);
         _formatCache.Remove(pack.PackId);
+        _benchmarkIdCache.Remove(pack.PackId);
         deleted++;
       }
 
@@ -592,6 +787,7 @@ public partial class MainViewModel
      OnPropertyChanged(nameof(IsFilterStig));
      OnPropertyChanged(nameof(IsFilterScap));
      OnPropertyChanged(nameof(IsFilterGpo));
+     OnPropertyChanged(nameof(IsFilterAdmx));
      OnPropertyChanged(nameof(FilteredContentLibrary));
    }
 
@@ -641,10 +837,16 @@ public partial class MainViewModel
      var root = _paths.GetPackRoot(pack.PackId);
      PackDetailRoot = root;
 
-     var controls = await _controls.ListControlsAsync(pack.PackId, CancellationToken.None);
-     var manual = controls.Count(c => c.IsManual);
-     PackDetailControls = "Total: " + controls.Count + ", Manual: " + manual;
-   }
+      if (!string.Equals(PackDetailFormat, "STIG", StringComparison.OrdinalIgnoreCase))
+      {
+        PackDetailControls = "Total: 0, Manual: 0 (STIG-only count)";
+        return;
+      }
+
+      var controls = await _controls.ListControlsAsync(pack.PackId, CancellationToken.None);
+      var manual = controls.Count(c => c.IsManual);
+      PackDetailControls = "Total: " + controls.Count + ", Manual: " + manual;
+    }
 
    private void ClearPackDetails()
    {
@@ -750,7 +952,7 @@ public partial class MainViewModel
   // ── Content Picker ─────────────────────────────────────────────────
 
   [RelayCommand]
-  private void OpenContentPicker()
+  private async Task OpenContentPicker()
   {
     if (ContentPacks.Count == 0)
     {
@@ -758,21 +960,134 @@ public partial class MainViewModel
       return;
     }
 
-    var items = ContentPacks.Select(pack => new ContentPickerItem
+    MachineInfo? machineInfo = null;
+    try
     {
-      PackId = pack.PackId,
-      Name = pack.Name,
-      Format = ResolvePackFormat(pack),
-      SourceLabel = pack.SourceLabel,
-      ImportedAtLabel = pack.ImportedAt.ToString("yyyy-MM-dd HH:mm"),
-      IsSelected = SelectedMissionPacks.Any(s => s.PackId == pack.PackId)
+      machineInfo = await Task.Run(() => DetectMachineInfo(), _cts.Token);
+    }
+    catch
+    {
+      machineInfo = null;
+    }
+
+    var selectedStigIds = SelectedMissionPacks
+      .Where(p => string.Equals(ResolvePackFormat(p), "STIG", StringComparison.OrdinalIgnoreCase))
+      .Select(p => p.PackId)
+      .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+    var allStigPacks = ContentPacks
+      .Where(p => string.Equals(ResolvePackFormat(p), "STIG", StringComparison.OrdinalIgnoreCase))
+      .ToList();
+    var allScapPacks = ContentPacks
+      .Where(p => string.Equals(ResolvePackFormat(p), "SCAP", StringComparison.OrdinalIgnoreCase))
+      .ToList();
+
+    var benchmarkIdsByPackId = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
+    foreach (var pack in allStigPacks.Concat(allScapPacks))
+      benchmarkIdsByPackId[pack.PackId] = await GetPackBenchmarkIdsAsync(pack);
+
+    string BuildPickerStatus(IReadOnlyCollection<string> selectedStigPackIds)
+    {
+      if (selectedStigPackIds.Count == 0)
+        return "Select one or more STIGs to derive SCAP content.";
+      if (allScapPacks.Count == 0)
+        return "No SCAP packs imported.";
+
+      var selectedBenchmarkIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+      var selectedStigWithBenchmarkIds = 0;
+      foreach (var stigId in selectedStigPackIds)
+      {
+        if (benchmarkIdsByPackId.TryGetValue(stigId, out var ids) && ids.Count > 0)
+        {
+          selectedStigWithBenchmarkIds++;
+          selectedBenchmarkIds.UnionWith(ids);
+        }
+      }
+
+      if (selectedBenchmarkIds.Count == 0)
+      {
+        return "Warning: No SCAP benchmark match found (selected STIGs are missing benchmark IDs).";
+      }
+
+      var matchCount = 0;
+      var scapPacksWithBenchmarkIds = 0;
+      foreach (var scapPack in allScapPacks)
+      {
+        if (benchmarkIdsByPackId.TryGetValue(scapPack.PackId, out var scapIds)
+            && scapIds.Count > 0)
+        {
+          scapPacksWithBenchmarkIds++;
+          if (scapIds.Overlaps(selectedBenchmarkIds))
+            matchCount++;
+        }
+      }
+
+      return matchCount == 0
+        ? scapPacksWithBenchmarkIds == 0
+          ? "Warning: No SCAP benchmark match found (imported SCAP packs are missing benchmark IDs)."
+          : "Warning: No SCAP benchmark match found (selected STIG and imported SCAP benchmark IDs do not overlap)."
+        : "Auto SCAP matches: " + matchCount
+          + (selectedStigWithBenchmarkIds < selectedStigPackIds.Count
+              ? " (some selected STIGs are missing benchmark IDs)"
+              : string.Empty);
+    }
+
+    var initialDerived = await ResolveDerivedPackIdsAsync(selectedStigIds, machineInfo);
+    var initialSelected = new HashSet<string>(selectedStigIds, StringComparer.OrdinalIgnoreCase);
+    initialSelected.UnionWith(initialDerived);
+
+    var items = ContentPacks.Select(pack =>
+    {
+      var format = ResolvePackFormat(pack);
+      var isLocked = string.Equals(format, "SCAP", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(format, "GPO", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(format, "ADMX", StringComparison.OrdinalIgnoreCase);
+
+      var lockReason = string.Empty;
+      if (string.Equals(format, "SCAP", StringComparison.OrdinalIgnoreCase))
+        lockReason = "Auto-selected to match selected STIG content.";
+      else if (string.Equals(format, "GPO", StringComparison.OrdinalIgnoreCase))
+        lockReason = "Auto-selected based on host OS and selected STIG content.";
+      else if (string.Equals(format, "ADMX", StringComparison.OrdinalIgnoreCase))
+        lockReason = "Auto-selected based on detected host software and selected STIG content.";
+
+      return new ContentPickerItem
+      {
+        PackId = pack.PackId,
+        Name = pack.Name,
+        Format = format,
+        SourceLabel = pack.SourceLabel,
+        ImportedAtLabel = pack.ImportedAt.ToString("yyyy-MM-dd HH:mm"),
+        IsSelected = initialSelected.Contains(pack.PackId),
+        IsLocked = isLocked,
+        LockReason = lockReason
+      };
     }).ToList();
 
-    var dialog = new ContentPickerDialog(items, ApplicablePackIds);
+    var dialog = new ContentPickerDialog(items, ApplicablePackIds, BuildPickerStatus);
     dialog.Owner = System.Windows.Application.Current.MainWindow;
     if (dialog.ShowDialog() != true) return;
 
-    var selectedIds = new HashSet<string>(dialog.SelectedPackIds, StringComparer.OrdinalIgnoreCase);
+    var chosenStigIds = dialog.Items
+      .Where(i => string.Equals(i.Format, "STIG", StringComparison.OrdinalIgnoreCase) && i.IsSelected)
+      .Select(i => i.PackId)
+      .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+    if (chosenStigIds.Count == 0)
+    {
+      System.Windows.MessageBox.Show(
+        "Select at least one STIG. SCAP, GPO, and ADMX are automatically derived from STIG selection.",
+        "STIG Selection Required",
+        System.Windows.MessageBoxButton.OK,
+        System.Windows.MessageBoxImage.Warning);
+      StatusText = "Content selection not updated. No STIG selected.";
+      return;
+    }
+
+    var derivedIds = await ResolveDerivedPackIdsAsync(chosenStigIds, machineInfo);
+    var selectedIds = new HashSet<string>(chosenStigIds, StringComparer.OrdinalIgnoreCase);
+    selectedIds.UnionWith(derivedIds);
+
     SelectedMissionPacks.Clear();
     foreach (var pack in ContentPacks)
     {
@@ -780,26 +1095,342 @@ public partial class MainViewModel
         SelectedMissionPacks.Add(pack);
     }
 
+    var applicableIds = ApplicablePackIds.Count > 0
+      ? new HashSet<string>(ApplicablePackIds, StringComparer.OrdinalIgnoreCase)
+      : machineInfo != null
+        ? await ComputeApplicablePackIdsAsync(machineInfo)
+        : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+    if (applicableIds.Count > 0)
+    {
+      var nonMatchingStigs = ContentPacks
+        .Where(p => chosenStigIds.Contains(p.PackId) && !applicableIds.Contains(p.PackId))
+        .Select(p => p.Name)
+        .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)
+        .ToList();
+
+      if (nonMatchingStigs.Count > 0)
+      {
+        System.Windows.MessageBox.Show(
+          "Selected STIG(s) may not apply to this system:\n\n- " + string.Join("\n- ", nonMatchingStigs),
+          "Applicability Warning",
+          System.Windows.MessageBoxButton.OK,
+          System.Windows.MessageBoxImage.Warning);
+      }
+    }
+
     if (SelectedMissionPacks.Count == 0)
     {
       SelectedPack = null;
       SelectedContentSummary = "No content selected.";
     }
-    else if (SelectedMissionPacks.Count == 1)
-    {
-      SelectedPack = SelectedMissionPacks[0];
-      SelectedContentSummary = "Selected: " + SelectedMissionPacks[0].Name;
-    }
     else
     {
-      SelectedPack = SelectedMissionPacks[0];
-      SelectedContentSummary = SelectedMissionPacks.Count + " packs selected: "
-        + string.Join(", ", SelectedMissionPacks.Select(p => p.Name).Take(3));
-      if (SelectedMissionPacks.Count > 3)
-        SelectedContentSummary += " + " + (SelectedMissionPacks.Count - 3) + " more";
+      var firstStig = SelectedMissionPacks
+        .FirstOrDefault(p => string.Equals(ResolvePackFormat(p), "STIG", StringComparison.OrdinalIgnoreCase));
+      SelectedPack = firstStig ?? SelectedMissionPacks[0];
+
+      var stigCount = SelectedMissionPacks.Count(p => string.Equals(ResolvePackFormat(p), "STIG", StringComparison.OrdinalIgnoreCase));
+      var scapCount = SelectedMissionPacks.Count(p => string.Equals(ResolvePackFormat(p), "SCAP", StringComparison.OrdinalIgnoreCase));
+      var gpoCount = SelectedMissionPacks.Count(p => string.Equals(ResolvePackFormat(p), "GPO", StringComparison.OrdinalIgnoreCase));
+      var admxCount = SelectedMissionPacks.Count(p => string.Equals(ResolvePackFormat(p), "ADMX", StringComparison.OrdinalIgnoreCase));
+
+      SelectedContentSummary = "STIG: " + stigCount
+        + " | Auto SCAP: " + scapCount
+        + " | Auto GPO: " + gpoCount
+        + " | Auto ADMX: " + admxCount;
     }
 
-    StatusText = "Content selection updated.";
+    var pickerStatus = BuildPickerStatus(chosenStigIds);
+    StatusText = pickerStatus.StartsWith("Warning:", StringComparison.OrdinalIgnoreCase)
+      ? "Content selection updated. " + pickerStatus
+      : "Content selection updated. STIG is source-of-truth; SCAP/GPO/ADMX auto-derived.";
+  }
+
+  private async Task<HashSet<string>> ResolveDerivedPackIdsAsync(HashSet<string> selectedStigIds, MachineInfo? machineInfo)
+  {
+    var derived = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    if (selectedStigIds.Count == 0)
+      return derived;
+
+    var selectedStigPacks = ContentPacks
+      .Where(p => selectedStigIds.Contains(p.PackId))
+      .ToList();
+
+    var selectedStigTags = selectedStigPacks
+      .SelectMany(p => ExtractMatchingTags(p.Name + " " + p.SourceLabel))
+      .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+    var selectedStigBenchmarkIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    foreach (var stigPack in selectedStigPacks)
+    {
+      var ids = await GetPackBenchmarkIdsAsync(stigPack);
+      selectedStigBenchmarkIds.UnionWith(ids);
+    }
+
+    var machineFeatureTags = machineInfo != null
+      ? GetMachineFeatureTags(machineInfo)
+      : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+    foreach (var pack in ContentPacks)
+    {
+      if (selectedStigIds.Contains(pack.PackId))
+        continue;
+
+      var format = ResolvePackFormat(pack);
+      var packTags = ExtractMatchingTags(pack.Name + " " + pack.SourceLabel)
+        .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+      if (string.Equals(format, "SCAP", StringComparison.OrdinalIgnoreCase))
+      {
+        var scapBenchmarkIds = await GetPackBenchmarkIdsAsync(pack);
+        if (selectedStigBenchmarkIds.Count > 0
+            && scapBenchmarkIds.Count > 0
+            && scapBenchmarkIds.Overlaps(selectedStigBenchmarkIds))
+          derived.Add(pack.PackId);
+      }
+      else if (string.Equals(format, "GPO", StringComparison.OrdinalIgnoreCase) && machineInfo != null)
+      {
+        if (!IsPackOsCompatible(packTags, machineInfo.OsTarget, requireOsTag: true))
+          continue;
+
+        var packFeatureTags = packTags.Where(IsFeatureTag).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (packFeatureTags.Count == 0 || packFeatureTags.Overlaps(selectedStigTags))
+          derived.Add(pack.PackId);
+      }
+      else if (string.Equals(format, "ADMX", StringComparison.OrdinalIgnoreCase) && machineInfo != null)
+      {
+        if (!IsPackOsCompatible(packTags, machineInfo.OsTarget, requireOsTag: false))
+          continue;
+
+        var packFeatureTags = packTags.Where(IsFeatureTag).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        if (packFeatureTags.Count > 0 && packFeatureTags.Overlaps(machineFeatureTags))
+          derived.Add(pack.PackId);
+      }
+    }
+
+    return derived;
+  }
+
+  private async Task<HashSet<string>> GetPackBenchmarkIdsAsync(ContentPack pack)
+  {
+    if (_benchmarkIdCache.TryGetValue(pack.PackId, out var cached))
+      return new HashSet<string>(cached, StringComparer.OrdinalIgnoreCase);
+
+    var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    try
+    {
+      var controls = await _controls.ListControlsAsync(pack.PackId, CancellationToken.None);
+      foreach (var control in controls)
+      {
+        var benchmarkId = NormalizeBenchmarkIdentifier(control.ExternalIds.BenchmarkId);
+        if (!string.IsNullOrWhiteSpace(benchmarkId))
+          ids.Add(benchmarkId);
+      }
+    }
+    catch (Exception ex)
+    {
+      System.Diagnostics.Trace.TraceWarning("Failed to read benchmark ids for " + pack.PackId + ": " + ex.Message);
+    }
+
+    _benchmarkIdCache[pack.PackId] = ids;
+    return new HashSet<string>(ids, StringComparer.OrdinalIgnoreCase);
+  }
+
+  private static string NormalizeBenchmarkIdentifier(string? value)
+  {
+    if (string.IsNullOrWhiteSpace(value))
+      return string.Empty;
+
+    var source = value.Trim().ToLowerInvariant();
+    var sb = new System.Text.StringBuilder(source.Length);
+    foreach (var ch in source)
+    {
+      if (char.IsLetterOrDigit(ch))
+        sb.Append(ch);
+    }
+
+    return sb.ToString();
+  }
+
+  private static bool IsFeatureTag(string tag)
+  {
+    return tag == "defender"
+      || tag == "firewall"
+      || tag == "edge"
+      || tag == "dotnet"
+      || tag == "iis"
+      || tag == "sql"
+      || tag == "dns"
+      || tag == "dhcp"
+      || tag == "chrome"
+      || tag == "firefox"
+      || tag == "adobe"
+      || tag == "office";
+  }
+
+  private static bool IsOsTag(string tag)
+  {
+    return tag == "win11" || tag == "win10" || tag == "server2022" || tag == "server2019";
+  }
+
+  private static string GetOsTag(OsTarget target)
+  {
+    return target switch
+    {
+      OsTarget.Win11 => "win11",
+      OsTarget.Win10 => "win10",
+      OsTarget.Server2022 => "server2022",
+      OsTarget.Server2019 => "server2019",
+      _ => string.Empty
+    };
+  }
+
+  private static bool IsPackOsCompatible(HashSet<string> packTags, OsTarget machineOs, bool requireOsTag)
+  {
+    var osTags = packTags.Where(IsOsTag).ToList();
+    if (osTags.Count == 0)
+      return !requireOsTag;
+
+    var expectedTag = GetOsTag(machineOs);
+    if (string.IsNullOrWhiteSpace(expectedTag))
+      return false;
+
+    return osTags.Contains(expectedTag, StringComparer.OrdinalIgnoreCase);
+  }
+
+  private static HashSet<string> GetMachineFeatureTags(MachineInfo info)
+  {
+    var tags = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+    {
+      "defender",
+      "firewall",
+      "edge",
+      "dotnet"
+    };
+
+    foreach (var feature in info.InstalledFeatures)
+    {
+      if (feature.IndexOf("IIS", StringComparison.OrdinalIgnoreCase) >= 0) tags.Add("iis");
+      if (feature.IndexOf("SQL", StringComparison.OrdinalIgnoreCase) >= 0) tags.Add("sql");
+      if (feature.IndexOf("DNS", StringComparison.OrdinalIgnoreCase) >= 0) tags.Add("dns");
+      if (feature.IndexOf("DHCP", StringComparison.OrdinalIgnoreCase) >= 0) tags.Add("dhcp");
+      if (feature.IndexOf(".NET", StringComparison.OrdinalIgnoreCase) >= 0) tags.Add("dotnet");
+      if (feature.IndexOf("Chrome", StringComparison.OrdinalIgnoreCase) >= 0) tags.Add("chrome");
+      if (feature.IndexOf("Firefox", StringComparison.OrdinalIgnoreCase) >= 0) tags.Add("firefox");
+      if (feature.IndexOf("Adobe", StringComparison.OrdinalIgnoreCase) >= 0) tags.Add("adobe");
+      if (feature.IndexOf("Office", StringComparison.OrdinalIgnoreCase) >= 0) tags.Add("office");
+    }
+
+    return tags;
+  }
+
+  private async Task<HashSet<string>> ComputeApplicablePackIdsAsync(MachineInfo info)
+  {
+    var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    foreach (var pack in ContentPacks)
+    {
+      if (await IsPackApplicableAsync(pack, info))
+        ids.Add(pack.PackId);
+    }
+
+    return ids;
+  }
+
+  private static IEnumerable<string> ExtractMatchingTags(string text)
+  {
+    var normalized = (text ?? string.Empty).ToLowerInvariant();
+
+    if (normalized.Contains("windows 11", StringComparison.Ordinal) || normalized.Contains("win11", StringComparison.Ordinal))
+      yield return "win11";
+    if (normalized.Contains("windows 10", StringComparison.Ordinal) || normalized.Contains("win10", StringComparison.Ordinal))
+      yield return "win10";
+    if (normalized.Contains("server 2022", StringComparison.Ordinal))
+      yield return "server2022";
+    if (normalized.Contains("server 2019", StringComparison.Ordinal))
+      yield return "server2019";
+    if (normalized.Contains("defender", StringComparison.Ordinal))
+      yield return "defender";
+    if (normalized.Contains("firewall", StringComparison.Ordinal))
+      yield return "firewall";
+    if (normalized.Contains("edge", StringComparison.Ordinal))
+      yield return "edge";
+    if (normalized.Contains(".net", StringComparison.Ordinal) || normalized.Contains("dotnet", StringComparison.Ordinal))
+      yield return "dotnet";
+    if (normalized.Contains("iis", StringComparison.Ordinal))
+      yield return "iis";
+    if (normalized.Contains("sql", StringComparison.Ordinal))
+      yield return "sql";
+    if (normalized.Contains("dns", StringComparison.Ordinal))
+      yield return "dns";
+    if (normalized.Contains("dhcp", StringComparison.Ordinal))
+      yield return "dhcp";
+    if (normalized.Contains("chrome", StringComparison.Ordinal))
+      yield return "chrome";
+    if (normalized.Contains("firefox", StringComparison.Ordinal))
+      yield return "firefox";
+    if (normalized.Contains("adobe", StringComparison.Ordinal))
+      yield return "adobe";
+    if (normalized.Contains("office", StringComparison.Ordinal))
+      yield return "office";
+  }
+
+  [RelayCommand]
+  private async Task ScanRemoteMachineApplicabilityAsync()
+  {
+    if (_fleetService == null)
+    {
+      AdRemoteScanStatus = "Fleet service unavailable.";
+      return;
+    }
+
+    if (IsBusy) return;
+    if (string.IsNullOrWhiteSpace(AdRemoteTargets))
+    {
+      AdRemoteScanStatus = "Enter remote hostnames (comma or newline separated).";
+      return;
+    }
+
+    try
+    {
+      IsBusy = true;
+      AdRemoteScanStatus = "Scanning remote hosts...";
+
+      var normalizedTargets = AdRemoteTargets.Replace("\r", "\n").Replace("\n", ",");
+      var targets = ParseFleetTargets(normalizedTargets);
+      if (targets.Count == 0)
+      {
+        AdRemoteScanStatus = "No valid targets parsed.";
+        return;
+      }
+
+      var status = await _fleetService.CheckStatusAsync(targets, CancellationToken.None);
+      var lines = new List<string>
+      {
+        "Total: " + status.TotalMachines,
+        "Reachable: " + status.ReachableCount,
+        "Unreachable: " + status.UnreachableCount,
+        "",
+        "Hosts:"
+      };
+
+      foreach (var machine in status.MachineStatuses.OrderBy(m => m.MachineName, StringComparer.OrdinalIgnoreCase))
+      {
+        lines.Add("  - " + machine.MachineName + " : " + (machine.IsReachable ? "Reachable" : "Unreachable"));
+      }
+
+      AdRemoteScanStatus = string.Join("\n", lines);
+      StatusText = "Remote scan complete.";
+    }
+    catch (Exception ex)
+    {
+      AdRemoteScanStatus = "Remote scan failed: " + ex.Message;
+      StatusText = "Remote scan failed.";
+    }
+    finally
+    {
+      IsBusy = false;
+    }
   }
 
   // ── Machine Applicability Scan ──────────────────────────────────────
@@ -1197,17 +1828,18 @@ public partial class MainViewModel
         return true;
     }
 
-    // ── 6. GPO / ADMX catch-all — if the pack is a GPO/ADMX and contains
-    //    any OS-matching or "Security Baseline" keyword, include it ──
     var format = ResolvePackFormat(pack);
     if (string.Equals(format, "GPO", StringComparison.OrdinalIgnoreCase))
     {
-      // GPO security baselines typically match the OS version
       if (name.IndexOf("Baseline", StringComparison.OrdinalIgnoreCase) >= 0)
         return true;
-      if (name.IndexOf("ADMX", StringComparison.OrdinalIgnoreCase) >= 0)
-        return true;
       if (name.IndexOf("LGPO", StringComparison.OrdinalIgnoreCase) >= 0)
+        return true;
+    }
+
+    if (string.Equals(format, "ADMX", StringComparison.OrdinalIgnoreCase))
+    {
+      if (name.IndexOf("ADMX", StringComparison.OrdinalIgnoreCase) >= 0)
         return true;
     }
 

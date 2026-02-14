@@ -23,24 +23,48 @@
                   Command="{Binding ImportGpoPackageCommand}"
                   AutomationProperties.Name="Import GPO packages"
                   ToolTipService.ToolTip="Import GPO/LGPO packages — ADMX templates, local and domain controller group policy."/>
+          <Button Content="Scan Import Folder" MinWidth="170" Height="32" Padding="16,0" Margin="0,0,12,4"
+                  Command="{Binding ScanImportFolderCommand}"
+                  AutomationProperties.Name="Scan import folder"
+                  ToolTipService.ToolTip="Scan import folder for ZIP bundles and auto-import content/tools."/>
           <Button Content="Compare Packs..." MinWidth="150" Height="32" Padding="16,0" Margin="0,0,12,4"
                   Command="{Binding ComparePacksCommand}"
                   AutomationProperties.Name="Compare content packs"
                   ToolTipService.ToolTip="Compare two content packs to see added, removed, or changed controls."/>
-          <Button Content="Scan Machine..." MinWidth="150" Height="32" Padding="16,0" Margin="0,0,12,4"
-                  Command="{Binding ScanMachineApplicabilityCommand}"
-                  AutomationProperties.Name="Scan machine applicability"
-                  ToolTipService.ToolTip="Detect OS version, server roles, and installed features to recommend which STIGs apply."/>
           <Button Content="Select Content..." MinWidth="150" Height="32" Padding="16,0" Margin="0,0,0,4"
                   Command="{Binding OpenContentPickerCommand}"
                   AutomationProperties.Name="Select content for mission"
                   ToolTipService.ToolTip="Pick from imported packs for this mission. Multi-select supported."/>
         </WrapPanel>
         <TextBlock Text="{Binding ImportHint}" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,2"/>
-        <Expander Header="Machine Scan Results" IsExpanded="{Binding IsScanExpanded}" Margin="0,0,0,2">
-          <TextBlock Text="{Binding MachineApplicabilityStatus}" Foreground="{DynamicResource TextMutedBrush}" FontSize="11"
-                     TextWrapping="Wrap" Margin="4,4,0,0"/>
-        </Expander>
+        <TabControl Margin="0,0,0,2">
+          <TabItem Header="Local Machine Scan">
+            <StackPanel Margin="8">
+              <WrapPanel Margin="0,0,0,6">
+                <Button Content="Scan Local Machine" MinWidth="150" Height="28" Padding="12,0" Margin="0,0,8,0"
+                        Command="{Binding ScanMachineApplicabilityCommand}"
+                        ToolTipService.ToolTip="Detect OS version, roles, and installed features for STIG applicability."/>
+              </WrapPanel>
+              <TextBlock Text="{Binding MachineApplicabilityStatus}" Foreground="{DynamicResource TextMutedBrush}" FontSize="11"
+                         TextWrapping="Wrap" Margin="0,2,0,0"/>
+            </StackPanel>
+          </TabItem>
+          <TabItem Header="AD Remote Scan">
+            <StackPanel Margin="8">
+              <TextBlock Text="Target hosts (comma or newline separated):" Foreground="{DynamicResource TextMutedBrush}"/>
+              <TextBox Text="{Binding AdRemoteTargets, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" Height="70"
+                       VerticalScrollBarVisibility="Auto" Margin="0,4,0,6"
+                       ToolTipService.ToolTip="Example: host01,host02 or one hostname per line"/>
+              <WrapPanel Margin="0,0,0,4">
+                <Button Content="Scan Remote Hosts" MinWidth="150" Height="28" Padding="12,0"
+                        Command="{Binding ScanRemoteMachineApplicabilityCommand}"
+                        ToolTipService.ToolTip="Checks remote host reachability for AD/fleet-style scan workflows."/>
+              </WrapPanel>
+              <TextBlock Text="{Binding AdRemoteScanStatus}" Foreground="{DynamicResource TextMutedBrush}" FontSize="11"
+                         TextWrapping="Wrap" Margin="0,2,0,0"/>
+            </StackPanel>
+          </TabItem>
+        </TabControl>
         <TextBlock Text="{Binding SelectedContentSummary}" Foreground="{DynamicResource TextMutedBrush}" FontSize="11" Margin="0,2,0,0"/>
       </StackPanel>
 
@@ -63,7 +87,8 @@
               <RadioButton Content="All" GroupName="ContentFilter" IsChecked="{Binding IsFilterAll}" Padding="10,4" Margin="0,0,6,0"/>
               <RadioButton Content="STIG" GroupName="ContentFilter" IsChecked="{Binding IsFilterStig}" Padding="10,4" Margin="0,0,6,0"/>
               <RadioButton Content="SCAP" GroupName="ContentFilter" IsChecked="{Binding IsFilterScap}" Padding="10,4" Margin="0,0,6,0"/>
-              <RadioButton Content="GPO / ADMX" GroupName="ContentFilter" IsChecked="{Binding IsFilterGpo}" Padding="10,4"/>
+              <RadioButton Content="GPO" GroupName="ContentFilter" IsChecked="{Binding IsFilterGpo}" Padding="10,4" Margin="0,0,6,0"/>
+              <RadioButton Content="ADMX" GroupName="ContentFilter" IsChecked="{Binding IsFilterAdmx}" Padding="10,4"/>
             </StackPanel>
           </DockPanel>
 

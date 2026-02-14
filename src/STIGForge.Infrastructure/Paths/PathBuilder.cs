@@ -30,6 +30,10 @@ public sealed class PathBuilder : IPathBuilder
   public string GetPackRoot(string packId) => Path.Combine(GetContentPacksRoot(), packId);
   public string GetBundleRoot(string bundleId) => Path.Combine(_root, "bundles", bundleId);
   public string GetLogsRoot() => Path.Combine(_root, "logs");
+  public string GetImportRoot() => Path.Combine(_root, "import");
+  public string GetImportInboxRoot() => Path.Combine(GetImportRoot(), "inbox");
+  public string GetImportIndexPath() => Path.Combine(GetImportRoot(), "inbox_index.json");
+  public string GetToolsRoot() => Path.Combine(_root, "tools");
 
   public string GetEmassExportRoot(string systemName, string os, string role, string profileName, string packName, DateTimeOffset ts)
   {

@@ -117,6 +117,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
   [ObservableProperty] private string toolkitActivationStatus = "Toolkit activation pending.";
   [ObservableProperty] private string importLibraryStatus = "Library not loaded.";
   [ObservableProperty] private string machineApplicabilityStatus = "";
+  [ObservableProperty] private string adRemoteTargets = "";
+  [ObservableProperty] private string adRemoteScanStatus = "";
   [ObservableProperty] private bool isScanExpanded = true;
   [ObservableProperty] private string selectedContentSummary = "No content selected. Import or select packs above.";
   [ObservableProperty] private string selectedMissionPreset = "Workstation/VM Compliance";
@@ -170,6 +172,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
   public ObservableCollection<ManualControlItem> ManualControls { get; } = new();
    public ObservableCollection<ImportedLibraryItem> StigLibraryItems { get; } = new();
    public ObservableCollection<ImportedLibraryItem> ScapLibraryItems { get; } = new();
+   public ObservableCollection<ImportedLibraryItem> GpoLibraryItems { get; } = new();
+   public ObservableCollection<ImportedLibraryItem> AdmxLibraryItems { get; } = new();
    public ObservableCollection<ImportedLibraryItem> OtherLibraryItems { get; } = new();
    public ObservableCollection<ImportedLibraryItem> AllLibraryItems { get; } = new();
     public HashSet<string> ApplicablePackIds { get; } = new(StringComparer.OrdinalIgnoreCase);
@@ -257,6 +261,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
    public bool IsFilterStig { get => ContentLibraryFilter == "STIG"; set { if (value) ContentLibraryFilter = "STIG"; } }
    public bool IsFilterScap { get => ContentLibraryFilter == "SCAP"; set { if (value) ContentLibraryFilter = "SCAP"; } }
    public bool IsFilterGpo { get => ContentLibraryFilter == "GPO"; set { if (value) ContentLibraryFilter = "GPO"; } }
+   public bool IsFilterAdmx { get => ContentLibraryFilter == "ADMX"; set { if (value) ContentLibraryFilter = "ADMX"; } }
 
    public MainViewModel(ContentPackImporter importer, IContentPackRepository packs, IProfileRepository profiles, IControlRepository controls, IOverlayRepository overlays, BundleBuilder builder, STIGForge.Apply.ApplyRunner applyRunner, IVerificationWorkflowService verificationWorkflow, STIGForge.Export.EmassExporter emassExporter, IPathBuilder paths, EvidenceCollector evidence, IBundleMissionSummaryService bundleMissionSummary, VerificationArtifactAggregationService artifactAggregation, IAuditTrailService? audit = null, STIGForge.Infrastructure.System.ScheduledTaskService? scheduledTaskService = null, STIGForge.Infrastructure.System.FleetService? fleetService = null)
   {

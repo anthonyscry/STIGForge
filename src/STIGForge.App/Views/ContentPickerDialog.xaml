@@ -12,20 +12,23 @@
       <RowDefinition Height="Auto"/>
     </Grid.RowDefinitions>
 
-    <TextBlock Grid.Row="0" Text="Select the content packs to include in this mission. Check one or more from each applicable category."
+    <TextBlock Grid.Row="0" Text="Select STIG content for this mission. SCAP, GPO, and ADMX are auto-derived and not manually selectable."
                Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,12" TextWrapping="Wrap"/>
 
     <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto">
       <StackPanel x:Name="GroupedPanel"/>
     </ScrollViewer>
 
-    <StackPanel Grid.Row="2" Orientation="Horizontal" Margin="0,10,0,0">
-      <Button Content="Select All" Width="90" Height="28" Click="SelectAll_Click"/>
-      <Button Content="Select None" Width="90" Height="28" Margin="8,0,0,0" Click="SelectNone_Click"/>
-      <Button x:Name="SelectRecommendedBtn" Content="Select Recommended" MinWidth="150" Height="28"
-              Margin="8,0,0,0" Click="SelectRecommended_Click" Visibility="Collapsed"
-              ToolTipService.ToolTip="Select only the packs that match this machine (from Scan Machine results)."/>
-      <TextBlock x:Name="SelectionCount" Margin="12,6,0,0" Foreground="{DynamicResource TextMutedBrush}"/>
+    <StackPanel Grid.Row="2" Margin="0,10,0,0">
+      <StackPanel Orientation="Horizontal">
+        <Button Content="Select All" Width="90" Height="28" Click="SelectAll_Click"/>
+        <Button Content="Select None" Width="90" Height="28" Margin="8,0,0,0" Click="SelectNone_Click"/>
+        <Button x:Name="SelectRecommendedBtn" Content="Select Recommended" MinWidth="150" Height="28"
+                Margin="8,0,0,0" Click="SelectRecommended_Click" Visibility="Collapsed"
+                ToolTipService.ToolTip="Select only the packs that match this machine (from Scan Machine results)."/>
+        <TextBlock x:Name="SelectionCount" Margin="12,6,0,0" Foreground="{DynamicResource TextMutedBrush}"/>
+      </StackPanel>
+      <TextBlock x:Name="PickerStatus" Margin="0,6,0,0" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" Visibility="Collapsed"/>
     </StackPanel>
 
     <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,12,0,0">

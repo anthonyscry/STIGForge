@@ -54,6 +54,10 @@ public interface IPathBuilder
   string GetPackRoot(string packId);
   string GetBundleRoot(string bundleId);
   string GetLogsRoot();
+  string GetImportRoot();
+  string GetImportInboxRoot();
+  string GetImportIndexPath();
+  string GetToolsRoot();
   string GetEmassExportRoot(string systemName, string os, string role, string profileName, string packName, DateTimeOffset ts);
 }
 

@@ -12,19 +12,22 @@ public partial class ContentPickerDialog : Window
   public List<string> SelectedPackIds { get; private set; } = new();
   public HashSet<string> RecommendedPackIds { get; }
   private readonly List<CheckBox> _checkBoxes = new();
+  private readonly Func<IReadOnlyCollection<string>, string>? _statusProvider;
 
   private static readonly (string Key, string Label)[] SectionOrder = new[]
   {
     ("STIG", "STIG Content  —  controls and rules"),
     ("SCAP", "SCAP Benchmarks  —  XCCDF + OVAL"),
-    ("GPO", "GPO / LGPO  —  ADMX templates, group policy"),
+    ("GPO", "GPO / LGPO  —  local policy packages"),
+    ("ADMX", "ADMX Templates  —  policy templates"),
   };
 
-  public ContentPickerDialog(List<ContentPickerItem> items, HashSet<string>? recommendedIds = null)
+  public ContentPickerDialog(List<ContentPickerItem> items, HashSet<string>? recommendedIds = null, Func<IReadOnlyCollection<string>, string>? statusProvider = null)
   {
     InitializeComponent();
     Items = items;
     RecommendedPackIds = recommendedIds ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    _statusProvider = statusProvider;
     BuildGroupedUI();
     UpdateCount();
     SelectRecommendedBtn.Visibility = RecommendedPackIds.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -87,7 +90,11 @@ public partial class ContentPickerDialog : Window
       {
         IsChecked = item.IsSelected,
         VerticalAlignment = VerticalAlignment.Center,
-        Tag = item
+        Tag = item,
+        IsEnabled = !item.IsLocked,
+        ToolTip = item.IsLocked && !string.IsNullOrWhiteSpace(item.LockReason)
+          ? item.LockReason
+          : null
       };
       cb.Checked += (_, _) => { item.IsSelected = true; UpdateCount(); };
       cb.Unchecked += (_, _) => { item.IsSelected = false; UpdateCount(); };
@@ -122,6 +129,19 @@ public partial class ContentPickerDialog : Window
       row.Children.Add(name);
       row.Children.Add(imported);
       row.Children.Add(source);
+
+      if (item.IsLocked)
+      {
+        var auto = new TextBlock
+        {
+          Text = "Auto",
+          Width = 40,
+          VerticalAlignment = VerticalAlignment.Center,
+          Foreground = (Brush)FindResource("TextMutedBrush")
+        };
+        row.Children.Add(auto);
+      }
+
       stack.Children.Add(row);
     }
 
@@ -131,15 +151,15 @@ public partial class ContentPickerDialog : Window
 
   private void SelectAll_Click(object sender, RoutedEventArgs e)
   {
-    foreach (var item in Items) item.IsSelected = true;
-    foreach (var cb in _checkBoxes) cb.IsChecked = true;
+    foreach (var item in Items.Where(i => !i.IsLocked)) item.IsSelected = true;
+    foreach (var cb in _checkBoxes.Where(c => c.IsEnabled)) cb.IsChecked = true;
     UpdateCount();
   }
 
   private void SelectNone_Click(object sender, RoutedEventArgs e)
   {
-    foreach (var item in Items) item.IsSelected = false;
-    foreach (var cb in _checkBoxes) cb.IsChecked = false;
+    foreach (var item in Items.Where(i => !i.IsLocked)) item.IsSelected = false;
+    foreach (var cb in _checkBoxes.Where(c => c.IsEnabled)) cb.IsChecked = false;
     UpdateCount();
   }
 
@@ -149,6 +169,7 @@ public partial class ContentPickerDialog : Window
     {
       if (cb.Tag is ContentPickerItem item)
       {
+        if (item.IsLocked) continue;
         var match = RecommendedPackIds.Contains(item.PackId);
         item.IsSelected = match;
         cb.IsChecked = match;
@@ -181,6 +202,19 @@ public partial class ContentPickerDialog : Window
   {
     var count = Items.Count(i => i.IsSelected);
     SelectionCount.Text = count + " of " + Items.Count + " selected";
+
+    var selectedStigIds = Items
+      .Where(i => i.IsSelected && string.Equals(i.Format, "STIG", StringComparison.OrdinalIgnoreCase))
+      .Select(i => i.PackId)
+      .ToList();
+
+    var status = _statusProvider?.Invoke(selectedStigIds) ?? string.Empty;
+    PickerStatus.Text = status;
+    PickerStatus.Visibility = string.IsNullOrWhiteSpace(status) ? Visibility.Collapsed : Visibility.Visible;
+    PickerStatus.Foreground = !string.IsNullOrWhiteSpace(status)
+      && status.StartsWith("Warning:", StringComparison.OrdinalIgnoreCase)
+      ? (Brush)FindResource("WarningBrush")
+      : (Brush)FindResource("TextMutedBrush");
   }
 }
 
@@ -192,4 +226,6 @@ public class ContentPickerItem
   public string SourceLabel { get; set; } = "";
   public string ImportedAtLabel { get; set; } = "";
   public bool IsSelected { get; set; }
+  public bool IsLocked { get; set; }
+  public string LockReason { get; set; } = "";
 }
