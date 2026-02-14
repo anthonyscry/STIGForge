@@ -1,5 +1,4 @@
 using CommunityToolkit.Mvvm.Input;
-using Microsoft.Win32;
 using System.ComponentModel;
 using System.IO;
 using System.Text.Json;
@@ -19,87 +18,92 @@ public partial class MainViewModel
   private readonly Dictionary<string, HashSet<string>> _benchmarkIdCache = new(StringComparer.OrdinalIgnoreCase);
 
   [RelayCommand]
-  private async Task ImportContentPackAsync()
-  {
-    if (IsBusy) return;
-    var ofd = new OpenFileDialog
-    {
-      Filter = "STIG ZIP (*.zip)|*.zip|All Files (*.*)|*.*",
-      Title = "Select STIG content ZIP — single pack or full library",
-      Multiselect = true
-    };
-
-    if (ofd.ShowDialog() != true) return;
-
-    await SmartImportAsync(ofd.FileNames, "stig_import", "STIG");
-  }
-
-  [RelayCommand]
-  private async Task ImportScapBenchmarkAsync()
-  {
-    if (IsBusy) return;
-    var ofd = new OpenFileDialog
-    {
-      Filter = "SCAP ZIP (*.zip)|*.zip|All Files (*.*)|*.*",
-      Title = "Select SCAP benchmark ZIP — single benchmark or NIWC Atlantic bundle",
-      Multiselect = true
-    };
-
-    if (ofd.ShowDialog() != true) return;
-
-    await SmartImportAsync(ofd.FileNames, "scap_import", "SCAP");
-  }
-
-  [RelayCommand]
-  private async Task ImportGpoPackageAsync()
-  {
-    if (IsBusy) return;
-
-    var ofd = new OpenFileDialog
-    {
-      Filter = "GPO/LGPO ZIP (*.zip)|*.zip|All Files (*.*)|*.*",
-      Title = "Select GPO/LGPO package ZIP",
-      Multiselect = true
-    };
-
-    if (ofd.ShowDialog() != true) return;
-
-    await SmartImportAsync(ofd.FileNames, "gpo_lgpo_import", "GPO");
-  }
-
-  [RelayCommand]
   private async Task ScanImportFolderAsync()
   {
     if (IsBusy) return;
 
+    var startedAt = DateTimeOffset.Now;
+    var importFolder = ResolveScanImportFolderPath();
+
     try
     {
       IsBusy = true;
-      var importFolder = ResolveScanImportFolderPath();
+      ScanImportFolderPath = importFolder;
+      var createdFolder = false;
       if (!Directory.Exists(importFolder))
       {
-        StatusText = "Import folder not found: " + importFolder;
+        Directory.CreateDirectory(importFolder);
+        createdFolder = true;
+      }
+
+      StatusText = createdFolder
+        ? "Import folder created. Scanning import folder..."
+        : "Scanning import folder...";
+
+      var scanner = new ImportInboxScanner(new Sha256HashingService());
+      var scan = await scanner.ScanAsync(importFolder, _cts.Token);
+
+      if (scan.Candidates.Count == 0)
+      {
+        var emptySummary = new ImportScanSummary
+        {
+          ImportFolder = importFolder,
+          StartedAt = startedAt,
+          FinishedAt = DateTimeOffset.Now,
+          ArchiveCount = 0,
+          CandidateCount = 0,
+          WinnerCount = 0,
+          SuppressedCount = 0,
+          ImportedPackCount = 0,
+          ImportedToolCount = 0,
+          Warnings = scan.Warnings,
+          Failures = Array.Empty<string>()
+        };
+        PersistImportScanSummary(emptySummary);
+        StatusText = "No importable files found in " + importFolder + ".";
         return;
       }
 
-      StatusText = "Scanning import folder...";
-      var scanner = new ImportInboxScanner(new Sha256HashingService());
-      var scan = await scanner.ScanAsync(importFolder, _cts.Token);
       var dedup = new ImportDedupService();
       var deduped = dedup.Resolve(scan.Candidates);
 
       var contentWinners = deduped.Winners
         .Where(c => c.ArtifactKind != ImportArtifactKind.Tool && c.ArtifactKind != ImportArtifactKind.Unknown)
         .ToList();
+
       var toolWinners = deduped.Winners
         .Where(c => c.ArtifactKind == ImportArtifactKind.Tool)
+        .ToList();
+
+      var suppressedWarnings = deduped.Suppressed
+        .Select(c => "Suppressed duplicate: " + c.FileName + " [" + c.ArtifactKind + "] " + c.ContentKey)
+        .ToList();
+
+      var contentImportQueue = contentWinners
+        .GroupBy(c => c.ZipPath, StringComparer.OrdinalIgnoreCase)
+        .Select(SelectPrimaryContentCandidate)
+        .ToList();
+
+      var multiRouteWarnings = contentWinners
+        .GroupBy(c => c.ZipPath, StringComparer.OrdinalIgnoreCase)
+        .Where(g => g.Count() > 1)
+        .Select(g =>
+        {
+          var labels = string.Join(", ", g
+            .Select(c => c.ArtifactKind.ToString())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(x => x, StringComparer.OrdinalIgnoreCase));
+          return "Multiple content signatures detected in " + Path.GetFileName(g.Key)
+            + "; imported once using highest-priority route. Detected: " + labels + ".";
+        })
         .ToList();
 
       var importedPackCount = 0;
       var importedToolCount = 0;
       var failures = new List<string>();
+      var importedByType = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
 
-      foreach (var candidate in contentWinners)
+      foreach (var candidate in contentImportQueue)
       {
         try
         {
@@ -108,6 +112,7 @@ public partial class MainViewModel
             MapSourceLabel(candidate.ArtifactKind),
             _cts.Token);
           importedPackCount += imported.Count;
+          IncrementImportedType(importedByType, candidate.ArtifactKind.ToString(), imported.Count);
           foreach (var pack in imported)
             AddImportedPack(pack);
         }
@@ -122,6 +127,7 @@ public partial class MainViewModel
         try
         {
           importedToolCount = ImportToolBundles(toolWinners);
+          IncrementImportedType(importedByType, "Tool", importedToolCount);
         }
         catch (Exception ex)
         {
@@ -130,7 +136,27 @@ public partial class MainViewModel
       }
 
       RefreshImportLibrary();
-      var warningCount = scan.Warnings.Count + deduped.Suppressed.Count;
+      var warningCount = scan.Warnings.Count + suppressedWarnings.Count + multiRouteWarnings.Count;
+
+      var summary = new ImportScanSummary
+      {
+        ImportFolder = importFolder,
+        StartedAt = startedAt,
+        FinishedAt = DateTimeOffset.Now,
+        ArchiveCount = scan.Candidates
+          .Select(c => c.ZipPath)
+          .Distinct(StringComparer.OrdinalIgnoreCase)
+          .Count(),
+        CandidateCount = scan.Candidates.Count,
+        WinnerCount = deduped.Winners.Count,
+        SuppressedCount = deduped.Suppressed.Count,
+        ImportedPackCount = importedPackCount,
+        ImportedToolCount = importedToolCount,
+        ImportedByType = importedByType,
+        Warnings = scan.Warnings.Concat(suppressedWarnings).Concat(multiRouteWarnings).ToList(),
+        Failures = failures
+      };
+      PersistImportScanSummary(summary);
 
       StatusText = "Scan complete: imported packs=" + importedPackCount
         + ", tools=" + importedToolCount
@@ -140,6 +166,20 @@ public partial class MainViewModel
     catch (Exception ex)
     {
       StatusText = "Scan import folder failed: " + ex.Message;
+      PersistImportScanSummary(new ImportScanSummary
+      {
+        ImportFolder = importFolder,
+        StartedAt = startedAt,
+        FinishedAt = DateTimeOffset.Now,
+        ArchiveCount = 0,
+        CandidateCount = 0,
+        WinnerCount = 0,
+        SuppressedCount = 0,
+        ImportedPackCount = 0,
+        ImportedToolCount = 0,
+        Warnings = Array.Empty<string>(),
+        Failures = new[] { ex.Message }
+      });
     }
     finally
     {
@@ -149,18 +189,27 @@ public partial class MainViewModel
 
   private string ResolveScanImportFolderPath()
   {
-    var appRoot = _paths.GetAppDataRoot();
-    var repoRoot = Directory.GetParent(appRoot)?.FullName;
-    if (!string.IsNullOrWhiteSpace(repoRoot))
-    {
-      var projectImport = Path.Combine(repoRoot, "import");
-      if (Directory.Exists(projectImport))
-        return projectImport;
-    }
+    return _paths.GetImportRoot();
+  }
 
-    var fallback = _paths.GetImportInboxRoot();
-    Directory.CreateDirectory(fallback);
-    return fallback;
+  [RelayCommand]
+  private void OpenImportFolder()
+  {
+    var folder = ResolveScanImportFolderPath();
+    ScanImportFolderPath = folder;
+    Directory.CreateDirectory(folder);
+    try
+    {
+      System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+      {
+        FileName = folder,
+        UseShellExecute = true
+      });
+    }
+    catch (Exception ex)
+    {
+      StatusText = "Failed to open import folder: " + ex.Message;
+    }
   }
 
   private static string MapSourceLabel(ImportArtifactKind kind)
@@ -173,6 +222,110 @@ public partial class MainViewModel
       ImportArtifactKind.Admx => "admx_import",
       _ => "import_scan"
     };
+  }
+
+  private static void IncrementImportedType(IDictionary<string, int> counts, string type, int amount)
+  {
+    if (amount <= 0)
+      return;
+
+    if (!counts.TryGetValue(type, out var existing))
+      counts[type] = amount;
+    else
+      counts[type] = existing + amount;
+  }
+
+  private static ImportInboxCandidate SelectPrimaryContentCandidate(IGrouping<string, ImportInboxCandidate> group)
+  {
+    return group
+      .OrderBy(c => GetImportPriority(c.ArtifactKind))
+      .ThenByDescending(c => c.Confidence)
+      .ThenBy(c => c.ContentKey, StringComparer.OrdinalIgnoreCase)
+      .ThenBy(c => c.FileName, StringComparer.OrdinalIgnoreCase)
+      .First();
+  }
+
+  private static int GetImportPriority(ImportArtifactKind kind)
+  {
+    return kind switch
+    {
+      ImportArtifactKind.Stig => 0,
+      ImportArtifactKind.Scap => 1,
+      ImportArtifactKind.Gpo => 2,
+      ImportArtifactKind.Admx => 3,
+      _ => 10
+    };
+  }
+
+  private void PersistImportScanSummary(ImportScanSummary summary)
+  {
+    var logsRoot = _paths.GetLogsRoot();
+    Directory.CreateDirectory(logsRoot);
+    var stamp = summary.FinishedAt.ToString("yyyyMMdd_HHmmss_fff");
+    var jsonPath = BuildUniqueSummaryPath(logsRoot, stamp, ".json");
+    var textPath = BuildUniqueSummaryPath(logsRoot, stamp, ".txt");
+
+    var json = JsonSerializer.Serialize(summary, new JsonSerializerOptions
+    {
+      WriteIndented = true
+    });
+    File.WriteAllText(jsonPath, json);
+
+    var lines = new List<string>
+    {
+      "Import scan summary",
+      "Started: " + summary.StartedAt.ToString("o"),
+      "Finished: " + summary.FinishedAt.ToString("o"),
+      "Folder: " + summary.ImportFolder,
+      "Archives: " + summary.ArchiveCount,
+      "Candidates: " + summary.CandidateCount,
+      "Winners: " + summary.WinnerCount,
+      "Suppressed: " + summary.SuppressedCount,
+      "Imported packs: " + summary.ImportedPackCount,
+      "Imported tools: " + summary.ImportedToolCount,
+      ""
+    };
+
+    if (summary.ImportedByType.Count > 0)
+    {
+      lines.Add("Imported by type:");
+      foreach (var entry in summary.ImportedByType.OrderBy(x => x.Key, StringComparer.OrdinalIgnoreCase))
+        lines.Add("- " + entry.Key + ": " + entry.Value);
+      lines.Add(string.Empty);
+    }
+
+    if (summary.Warnings.Count > 0)
+    {
+      lines.Add("Warnings:");
+      foreach (var warning in summary.Warnings)
+        lines.Add("- " + warning);
+      lines.Add(string.Empty);
+    }
+
+    if (summary.Failures.Count > 0)
+    {
+      lines.Add("Failures:");
+      foreach (var failure in summary.Failures)
+        lines.Add("- " + failure);
+    }
+
+    File.WriteAllLines(textPath, lines);
+    LastOutputPath = jsonPath;
+  }
+
+  private static string BuildUniqueSummaryPath(string logsRoot, string stamp, string extension)
+  {
+    var suffix = string.Empty;
+    var attempt = 0;
+    while (true)
+    {
+      var path = Path.Combine(logsRoot, "import_scan_" + stamp + suffix + extension);
+      if (!File.Exists(path))
+        return path;
+
+      attempt++;
+      suffix = "_" + attempt.ToString("D2");
+    }
   }
 
   private int ImportToolBundles(IReadOnlyList<ImportInboxCandidate> toolCandidates)
@@ -220,82 +373,6 @@ public partial class MainViewModel
     }
 
     return imported;
-  }
-
-  private async Task SmartImportAsync(IEnumerable<string> zipFiles, string sourceLabel, string contentLabel)
-  {
-    var candidates = (zipFiles ?? Array.Empty<string>())
-      .Where(path => !string.IsNullOrWhiteSpace(path))
-      .Distinct(StringComparer.OrdinalIgnoreCase)
-      .ToList();
-
-    if (candidates.Count == 0) return;
-
-    try
-    {
-      IsBusy = true;
-      IsProgressIndeterminate = false;
-      ProgressValue = 0;
-      ProgressMax = candidates.Count;
-      StatusText = candidates.Count == 1
-        ? "Importing " + contentLabel + " content..."
-        : "Importing " + candidates.Count + " " + contentLabel + " files...";
-
-      var totalImported = 0;
-      var failed = new List<string>();
-      var importLock = new object();
-
-      await Parallel.ForEachAsync(candidates, new ParallelOptions
-      {
-          MaxDegreeOfParallelism = Math.Min(4, candidates.Count),
-          CancellationToken = _cts.Token
-      }, async (zip, ct) =>
-      {
-        try
-        {
-          var imported = await _importer.ImportConsolidatedZipAsync(zip, sourceLabel, ct);
-          lock (importLock)
-          {
-            totalImported += imported.Count;
-          }
-          System.Windows.Application.Current.Dispatcher.Invoke(() =>
-          {
-            foreach (var pack in imported)
-              AddImportedPack(pack);
-            ProgressValue++;
-          });
-        }
-        catch (Exception ex)
-        {
-          lock (importLock)
-          {
-            failed.Add(GetSafeFileLabel(zip) + ": " + ex.Message);
-          }
-          System.Windows.Application.Current.Dispatcher.Invoke(() => ProgressValue++);
-        }
-      });
-
-      RefreshImportLibrary();
-
-       var firstFailure = failed.FirstOrDefault() ?? "Unknown error";
-       if (totalImported == 0)
-         SetStatus(failed.Count > 0 ? "Import failed: " + firstFailure : "No importable content found.", failed.Count > 0 ? "Error" : "Warning");
-       else if (failed.Count == 0)
-         SetStatus(totalImported == 1
-           ? "Imported: " + (SelectedPack?.Name ?? "package")
-           : "Imported " + totalImported + " " + contentLabel + " packages.", "Success");
-       else
-         SetStatus("Imported " + totalImported + " packages; " + failed.Count + " failed. First error: " + firstFailure, "Warning");
-    }
-     catch (Exception ex)
-     {
-       SetStatus("Import failed: " + ex.Message, "Error");
-     }
-     finally
-     {
-       IsProgressIndeterminate = true;
-       IsBusy = false;
-     }
   }
 
   private void AddImportedPack(ContentPack pack)
@@ -449,19 +526,6 @@ public partial class MainViewModel
     else format = "STIG";
     _formatCache[pack.PackId] = format;
     return format;
-  }
-
-  private static string GetSafeFileLabel(string path)
-  {
-    try
-    {
-      var fileName = Path.GetFileName(path);
-      return string.IsNullOrWhiteSpace(fileName) ? "package" : fileName;
-    }
-    catch
-    {
-      return "package";
-    }
   }
 
   [RelayCommand]
@@ -956,7 +1020,7 @@ public partial class MainViewModel
   {
     if (ContentPacks.Count == 0)
     {
-      StatusText = "No content imported yet. Import STIG, SCAP, or GPO packages first.";
+      StatusText = "No content imported yet. Add ZIP files to the import folder and run Scan Import Folder first.";
       return;
     }
 
@@ -1443,15 +1507,15 @@ public partial class MainViewModel
     {
       IsBusy = true;
       MachineApplicabilityStatus = "Scanning machine...";
+      MachineScanTags.Clear();
 
       var info = await Task.Run(() => DetectMachineInfo(), _cts.Token);
+      PopulateMachineScanTags(info);
 
       var lines = new List<string>
       {
-        "Machine: " + info.Hostname,
-        "OS: " + info.ProductName + " (Build " + info.BuildNumber + ")",
-        "Role: " + info.Role,
-        "Detected target: " + info.OsTarget
+        "Detected target: " + info.OsTarget,
+        "Role: " + info.Role
       };
 
       if (info.IsServer && info.InstalledFeatures.Count > 0)
@@ -1476,6 +1540,7 @@ public partial class MainViewModel
 
         if (applicable.Count > 0)
         {
+          AddMachineScanTag("Applicable Packs", applicable.Count.ToString());
           lines.Add("");
           lines.Add("Applicable imported packs (" + applicable.Count + "):");
           foreach (var name in applicable)
@@ -1484,13 +1549,13 @@ public partial class MainViewModel
         else
         {
           lines.Add("");
-          lines.Add("No imported packs match this machine. Import the applicable STIG content above.");
+          lines.Add("No imported packs match this machine. Add ZIP files to the import folder and run Scan Import Folder.");
         }
       }
       else
       {
         lines.Add("");
-        lines.Add("No content packs imported yet. Import STIGs above, then re-scan to see which apply.");
+        lines.Add("No content packs imported yet. Add ZIP files to the import folder, scan, then re-run local machine scan.");
       }
 
       var recommendations = GetStigRecommendations(info);
@@ -1507,6 +1572,7 @@ public partial class MainViewModel
     }
     catch (Exception ex)
     {
+      MachineScanTags.Clear();
       MachineApplicabilityStatus = "Scan failed: " + ex.Message;
       StatusText = "Machine scan failed.";
     }
@@ -1514,6 +1580,46 @@ public partial class MainViewModel
     {
       IsBusy = false;
     }
+  }
+
+  private void PopulateMachineScanTags(MachineInfo info)
+  {
+    MachineScanTags.Clear();
+    AddMachineScanTag("Host", info.Hostname);
+    AddMachineScanTag("OS", info.ProductName);
+    AddMachineScanTag("Build", info.BuildNumber);
+    AddMachineScanTag("Role", info.Role);
+    AddMachineScanTag("Target", info.OsTarget.ToString());
+    AddMachineScanTag("Type", info.IsServer ? "Server" : "Workstation");
+
+    if (!string.IsNullOrWhiteSpace(info.DisplayVersion))
+      AddMachineScanTag("Version", info.DisplayVersion);
+    if (!string.IsNullOrWhiteSpace(info.EditionId))
+      AddMachineScanTag("Edition", info.EditionId);
+
+    var orderedFeatures = info.InstalledFeatures
+      .OrderBy(feature => feature, StringComparer.OrdinalIgnoreCase)
+      .ToList();
+    var topFeatures = orderedFeatures.Take(8).ToList();
+    foreach (var feature in topFeatures)
+      AddMachineScanTag("Feature", feature);
+
+    var remaining = orderedFeatures.Count - topFeatures.Count;
+    if (remaining > 0)
+      AddMachineScanTag("Features", "+" + remaining + " more");
+  }
+
+  private void AddMachineScanTag(string label, string value)
+  {
+    if (string.IsNullOrWhiteSpace(value))
+      return;
+
+    var text = label + ": " + value;
+    MachineScanTags.Add(new MachineScanTag
+    {
+      Text = text,
+      ToolTip = text
+    });
   }
 
   private static MachineInfo DetectMachineInfo()

@@ -26,17 +26,19 @@ public sealed class ImportInboxScanner
       return new ImportInboxScanResult { Candidates = candidates, Warnings = warnings };
     }
 
-    var zips = Directory.GetFiles(inboxFolder, "*.zip", SearchOption.AllDirectories)
-      .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
-      .ToList();
+    var zips = EnumerateZipFiles(inboxFolder, warnings, ct);
 
     foreach (var zip in zips)
     {
       ct.ThrowIfCancellationRequested();
       try
       {
-        var candidate = await BuildCandidateAsync(zip, ct).ConfigureAwait(false);
-        candidates.Add(candidate);
+        var detected = await BuildCandidatesAsync(zip, ct).ConfigureAwait(false);
+        candidates.AddRange(detected);
+      }
+      catch (OperationCanceledException)
+      {
+        throw;
       }
       catch (Exception ex)
       {
@@ -51,14 +53,54 @@ public sealed class ImportInboxScanner
     };
   }
 
-  private async Task<ImportInboxCandidate> BuildCandidateAsync(string zipPath, CancellationToken ct)
+  private static List<string> EnumerateZipFiles(string rootFolder, ICollection<string> warnings, CancellationToken ct)
   {
-    var candidate = new ImportInboxCandidate
+    var directories = new Stack<string>();
+    var zipFiles = new List<string>();
+    directories.Push(rootFolder);
+
+    while (directories.Count > 0)
     {
-      ZipPath = zipPath,
-      FileName = Path.GetFileName(zipPath),
-      Sha256 = await _hash.Sha256FileAsync(zipPath, ct).ConfigureAwait(false)
-    };
+      ct.ThrowIfCancellationRequested();
+      var current = directories.Pop();
+
+      try
+      {
+        var files = Directory.GetFiles(current, "*.zip", SearchOption.TopDirectoryOnly)
+          .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+          .ToList();
+        zipFiles.AddRange(files);
+      }
+      catch (Exception ex) when (ex is UnauthorizedAccessException || ex is IOException)
+      {
+        warnings.Add("Skipping inaccessible folder files: " + current + " (" + ex.Message + ")");
+      }
+
+      try
+      {
+        var children = Directory.GetDirectories(current, "*", SearchOption.TopDirectoryOnly)
+          .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+          .ToList();
+        for (var i = children.Count - 1; i >= 0; i--)
+          directories.Push(children[i]);
+      }
+      catch (Exception ex) when (ex is UnauthorizedAccessException || ex is IOException)
+      {
+        warnings.Add("Skipping inaccessible subdirectories: " + current + " (" + ex.Message + ")");
+      }
+    }
+
+    return zipFiles
+      .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+      .ToList();
+  }
+
+  private async Task<IReadOnlyList<ImportInboxCandidate>> BuildCandidatesAsync(string zipPath, CancellationToken ct)
+  {
+    var fileName = Path.GetFileName(zipPath);
+    var sha256 = await _hash.Sha256FileAsync(zipPath, ct).ConfigureAwait(false);
+    var candidates = new List<ImportInboxCandidate>();
+    var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
     using var archive = ZipFile.OpenRead(zipPath);
     var names = archive.Entries.Select(e => e.FullName.Replace('\\', '/')).ToList();
@@ -66,80 +108,93 @@ public sealed class ImportInboxScanner
 
     if (namesLower.Any(n => n.EndsWith("evaluate-stig.ps1", StringComparison.Ordinal)))
     {
+      var candidate = CreateCandidate(zipPath, fileName, sha256);
       candidate.ArtifactKind = ImportArtifactKind.Tool;
       candidate.ToolKind = ToolArtifactKind.EvaluateStig;
       candidate.Confidence = DetectionConfidence.High;
       candidate.ContentKey = "tool:evaluate-stig";
       candidate.Reasons.Add("Detected Evaluate-STIG.ps1 in archive.");
-      return candidate;
+      AddUniqueCandidate(candidates, seen, candidate);
     }
 
     if (namesLower.Any(n => n.EndsWith("scc.exe", StringComparison.Ordinal)))
     {
+      var candidate = CreateCandidate(zipPath, fileName, sha256);
       candidate.ArtifactKind = ImportArtifactKind.Tool;
       candidate.ToolKind = ToolArtifactKind.Scc;
       candidate.Confidence = DetectionConfidence.High;
       candidate.ContentKey = "tool:scc";
       candidate.Reasons.Add("Detected scc.exe in archive.");
-      return candidate;
+      AddUniqueCandidate(candidates, seen, candidate);
     }
 
     if (namesLower.Any(n => n.EndsWith("powerstig.psd1", StringComparison.Ordinal) || n.EndsWith("powerstig.psm1", StringComparison.Ordinal)))
     {
+      var candidate = CreateCandidate(zipPath, fileName, sha256);
       candidate.ArtifactKind = ImportArtifactKind.Tool;
       candidate.ToolKind = ToolArtifactKind.PowerStig;
       candidate.Confidence = DetectionConfidence.High;
       candidate.ContentKey = "tool:powerstig";
       candidate.Reasons.Add("Detected PowerSTIG module files in archive.");
-      return candidate;
+      AddUniqueCandidate(candidates, seen, candidate);
     }
 
-    var hasXccdf = namesLower.Any(n => n.EndsWith(".xml", StringComparison.Ordinal) && n.Contains("xccdf", StringComparison.Ordinal));
-    var hasOval = namesLower.Any(n => n.EndsWith(".xml", StringComparison.Ordinal) && n.Contains("oval", StringComparison.Ordinal));
+    var xccdfEntries = archive.Entries
+      .Where(e => e.FullName.EndsWith(".xml", StringComparison.OrdinalIgnoreCase)
+        && Path.GetFileName(e.FullName).IndexOf("xccdf", StringComparison.OrdinalIgnoreCase) >= 0)
+      .OrderBy(e => e.FullName, StringComparer.OrdinalIgnoreCase)
+      .ToList();
+    var hasXccdf = xccdfEntries.Count > 0;
     var hasAdmx = namesLower.Any(n => n.EndsWith(".admx", StringComparison.Ordinal));
-    var hasLocalPolicies = namesLower.Any(n => n.Contains(".support files/local policies", StringComparison.Ordinal));
+    var hasLocalPolicies = namesLower.Any(n => n.Contains(".support files/local policies"));
 
     if (hasLocalPolicies)
     {
+      var candidate = CreateCandidate(zipPath, fileName, sha256);
       candidate.ArtifactKind = ImportArtifactKind.Gpo;
       candidate.Confidence = DetectionConfidence.High;
       candidate.ContentKey = "gpo:" + Path.GetFileNameWithoutExtension(zipPath).ToLowerInvariant();
       candidate.Reasons.Add("Detected .Support Files/Local Policies content.");
-      return candidate;
+      AddUniqueCandidate(candidates, seen, candidate);
     }
 
-    if (hasAdmx && !hasXccdf && !hasOval)
+    if (hasAdmx)
     {
+      var candidate = CreateCandidate(zipPath, fileName, sha256);
       candidate.ArtifactKind = ImportArtifactKind.Admx;
       candidate.Confidence = DetectionConfidence.High;
       candidate.ContentKey = BuildAdmxContentKey(archive, zipPath);
-      candidate.Reasons.Add("Detected ADMX templates without XCCDF/OVAL content.");
-      return candidate;
-    }
-
-    if (hasXccdf && hasOval)
-    {
-      candidate.ArtifactKind = ImportArtifactKind.Scap;
-      candidate.Confidence = DetectionConfidence.High;
-      PopulateXccdfIdentity(candidate, archive, defaultPrefix: "scap");
-      candidate.Reasons.Add("Detected XCCDF + OVAL signature.");
-      return candidate;
+      candidate.Reasons.Add("Detected ADMX templates in archive.");
+      AddUniqueCandidate(candidates, seen, candidate);
     }
 
     if (hasXccdf)
     {
-      candidate.ArtifactKind = ImportArtifactKind.Stig;
-      candidate.Confidence = DetectionConfidence.High;
-      PopulateXccdfIdentity(candidate, archive, defaultPrefix: "stig");
-      candidate.Reasons.Add("Detected XCCDF signature.");
-      return candidate;
+      foreach (var xccdfEntry in xccdfEntries)
+      {
+        var hasRelatedOval = HasRelatedOval(xccdfEntry, namesLower);
+        var candidate = CreateCandidate(zipPath, fileName, sha256);
+        candidate.ArtifactKind = hasRelatedOval ? ImportArtifactKind.Scap : ImportArtifactKind.Stig;
+        candidate.Confidence = DetectionConfidence.High;
+        PopulateXccdfIdentity(candidate, xccdfEntry, hasRelatedOval ? "scap" : "stig");
+        candidate.Reasons.Add(hasRelatedOval
+          ? "Detected XCCDF + OVAL signature in " + xccdfEntry.FullName + "."
+          : "Detected XCCDF signature in " + xccdfEntry.FullName + ".");
+        candidates.Add(candidate);
+      }
     }
 
-    candidate.ArtifactKind = ImportArtifactKind.Unknown;
-    candidate.Confidence = DetectionConfidence.Low;
-    candidate.ContentKey = "unknown:" + Path.GetFileNameWithoutExtension(zipPath).ToLowerInvariant();
-    candidate.Reasons.Add("No recognized STIG/SCAP/GPO/ADMX/tool signature found.");
-    return candidate;
+    if (candidates.Count == 0)
+    {
+      var candidate = CreateCandidate(zipPath, fileName, sha256);
+      candidate.ArtifactKind = ImportArtifactKind.Unknown;
+      candidate.Confidence = DetectionConfidence.Low;
+      candidate.ContentKey = "unknown:" + Path.GetFileNameWithoutExtension(zipPath).ToLowerInvariant();
+      candidate.Reasons.Add("No recognized STIG/SCAP/GPO/ADMX/tool signature found.");
+      candidates.Add(candidate);
+    }
+
+    return candidates;
   }
 
   private static string BuildAdmxContentKey(ZipArchive archive, string zipPath)
@@ -166,18 +221,8 @@ public sealed class ImportInboxScanner
     return "admx:" + Path.GetFileNameWithoutExtension(zipPath).ToLowerInvariant();
   }
 
-  private static void PopulateXccdfIdentity(ImportInboxCandidate candidate, ZipArchive archive, string defaultPrefix)
+  private static void PopulateXccdfIdentity(ImportInboxCandidate candidate, ZipArchiveEntry xccdfEntry, string defaultPrefix)
   {
-    var xccdfEntry = archive.Entries
-      .FirstOrDefault(e => e.FullName.EndsWith(".xml", StringComparison.OrdinalIgnoreCase)
-        && Path.GetFileName(e.FullName).Contains("xccdf", StringComparison.OrdinalIgnoreCase));
-
-    if (xccdfEntry == null)
-    {
-      candidate.ContentKey = defaultPrefix + ":" + Path.GetFileNameWithoutExtension(candidate.FileName).ToLowerInvariant();
-      return;
-    }
-
     try
     {
       using var stream = xccdfEntry.Open();
@@ -185,7 +230,7 @@ public sealed class ImportInboxScanner
       var root = doc.Root;
       if (root == null)
       {
-        candidate.ContentKey = defaultPrefix + ":" + Path.GetFileNameWithoutExtension(candidate.FileName).ToLowerInvariant();
+        candidate.ContentKey = defaultPrefix + ":" + Path.GetFileNameWithoutExtension(xccdfEntry.FullName).ToLowerInvariant();
         return;
       }
 
@@ -210,14 +255,62 @@ public sealed class ImportInboxScanner
         ? benchmarkId
         : !string.IsNullOrWhiteSpace(benchmarkTitle)
           ? benchmarkTitle
-          : Path.GetFileNameWithoutExtension(candidate.FileName);
+          : Path.GetFileNameWithoutExtension(xccdfEntry.FullName);
 
       candidate.ContentKey = defaultPrefix + ":" + NormalizeKey(keyIdentity);
     }
     catch
     {
-      candidate.ContentKey = defaultPrefix + ":" + Path.GetFileNameWithoutExtension(candidate.FileName).ToLowerInvariant();
+      candidate.ContentKey = defaultPrefix + ":" + Path.GetFileNameWithoutExtension(xccdfEntry.FullName).ToLowerInvariant();
     }
+  }
+
+  private static ImportInboxCandidate CreateCandidate(string zipPath, string fileName, string sha256)
+  {
+    return new ImportInboxCandidate
+    {
+      ZipPath = zipPath,
+      FileName = fileName,
+      Sha256 = sha256
+    };
+  }
+
+  private static void AddUniqueCandidate(ICollection<ImportInboxCandidate> candidates, ISet<string> seen, ImportInboxCandidate candidate)
+  {
+    var key = candidate.ArtifactKind + "|" + candidate.ToolKind + "|" + candidate.ContentKey;
+    if (!seen.Add(key))
+      return;
+
+    candidates.Add(candidate);
+  }
+
+  private static bool HasRelatedOval(ZipArchiveEntry xccdfEntry, IReadOnlyList<string> namesLower)
+  {
+    var xccdfPath = xccdfEntry.FullName.Replace('\\', '/').ToLowerInvariant();
+    var xccdfFileName = Path.GetFileNameWithoutExtension(xccdfPath);
+    var xccdfDirectory = Path.GetDirectoryName(xccdfPath)?.Replace('\\', '/');
+
+    if (!string.IsNullOrWhiteSpace(xccdfDirectory))
+    {
+      var directoryPrefix = xccdfDirectory + "/";
+      if (namesLower.Any(n => n.StartsWith(directoryPrefix, StringComparison.Ordinal)
+        && n.EndsWith(".xml", StringComparison.Ordinal)
+        && n.Contains("oval")))
+      {
+        return true;
+      }
+    }
+
+    var xccdfStemToken = Regex.Replace(xccdfFileName, "xccdf", string.Empty, RegexOptions.IgnoreCase);
+    if (!string.IsNullOrWhiteSpace(xccdfStemToken)
+      && namesLower.Any(n => n.EndsWith(".xml", StringComparison.Ordinal)
+        && n.Contains("oval")
+        && n.Contains(xccdfStemToken)))
+    {
+      return true;
+    }
+
+    return false;
   }
 
   private static string NormalizeKey(string value)

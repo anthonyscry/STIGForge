@@ -17,7 +17,7 @@
     <KeyBinding Key="D6" Modifiers="Ctrl" Command="{Binding GoToTabCommand}" CommandParameter="5"/>
     <KeyBinding Key="D7" Modifiers="Ctrl" Command="{Binding GoToTabCommand}" CommandParameter="6"/>
     <KeyBinding Key="D8" Modifiers="Ctrl" Command="{Binding GoToTabCommand}" CommandParameter="7"/>
-    <KeyBinding Key="I" Modifiers="Ctrl" Command="{Binding ImportContentPackCommand}"/>
+    <KeyBinding Key="I" Modifiers="Ctrl" Command="{Binding ScanImportFolderCommand}"/>
     <KeyBinding Key="B" Modifiers="Ctrl" Command="{Binding BuildBundleCommand}"/>
     <KeyBinding Key="R" Modifiers="Ctrl" Command="{Binding OrchestrateCommand}"/>
     <KeyBinding Key="E" Modifiers="Ctrl" Command="{Binding ExportEmassCommand}"/>
@@ -83,7 +83,7 @@
                 SelectedIndex="{Binding SelectedTabIndex}">
       <TabItem Header="Import" TabIndex="1"
                AutomationProperties.Name="Import tab"
-               ToolTipService.ToolTip="Import STIG, SCAP, and GPO content packs; manage the content library.">
+               ToolTipService.ToolTip="Scan the STIGForge import folder and manage the imported content library.">
         <views:ImportView />
       </TabItem>
 

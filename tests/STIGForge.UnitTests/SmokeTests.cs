@@ -21,6 +21,17 @@ public class SmokeTests
   }
 
   [Fact]
+  public void PathBuilder_Should_Resolve_Project_Import_Root()
+  {
+    var pb = new PathBuilder();
+    var projectRoot = Directory.GetParent(pb.GetAppDataRoot())?.FullName;
+
+    projectRoot.Should().NotBeNullOrWhiteSpace();
+    pb.GetImportRoot().Should().Be(Path.Combine(projectRoot!, "import"));
+    pb.GetImportInboxRoot().Should().Be(Path.Combine(projectRoot!, "import", "inbox"));
+  }
+
+  [Fact]
   public void ClassifiedProfile_Should_AutoNa_UnclassifiedOnly_When_Confident()
   {
     var svc = new ClassificationScopeService();

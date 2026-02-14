@@ -22,12 +22,16 @@
                   <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="10" Margin="0,0,0,8" Background="{StaticResource SurfaceMutedBrush}">
                     <StackPanel>
                       <TextBlock FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6">
-                        <Run Text="1a)  STIG Content"/><Run Text="  —  controls and rules for build / verify / manual review" Foreground="{StaticResource TextMutedBrush}" FontWeight="Normal"/>
+                        <Run Text="1a)  Scan STIGForge Import Folder"/><Run Text="  —  add ZIP files to the import folder, then scan once" Foreground="{StaticResource TextMutedBrush}" FontWeight="Normal"/>
                       </TextBlock>
                       <StackPanel Orientation="Horizontal">
-                        <Button Content="Import STIG..." Width="140" TabIndex="10" Command="{Binding ImportContentPackCommand}"
-                                AutomationProperties.Name="Import STIG content"
-                                ToolTipService.ToolTip="Import STIG content — single pack from Cyber.mil or full DISA SRG-STIG Library. Auto-detects bundles."/>
+                        <Button Content="Scan Import Folder" Width="150" TabIndex="10" Command="{Binding ScanImportFolderCommand}"
+                                AutomationProperties.Name="Scan import folder"
+                                ToolTipService.ToolTip="Scan the STIGForge import folder for ZIP bundles and auto-import content/tools."/>
+                        <Button Content="Open Import Folder" Width="150" Margin="8,0,0,0" TabIndex="11" Command="{Binding OpenImportFolderCommand}"
+                                AutomationProperties.Name="Open import folder"
+                                ToolTipService.ToolTip="Open the STIGForge import folder in Explorer."/>
+                        <TextBlock Text="{Binding ScanImportFolderPath}" Margin="10,7,0,0" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap"/>
                       </StackPanel>
                     </StackPanel>
                   </Border>
@@ -35,36 +39,10 @@
                   <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="10" Margin="0,0,0,8" Background="{StaticResource SurfaceMutedBrush}">
                     <StackPanel>
                       <TextBlock FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6">
-                        <Run Text="1b)  SCAP Benchmarks"/><Run Text="  —  XCCDF + OVAL for automated compliance scanning" Foreground="{StaticResource TextMutedBrush}" FontWeight="Normal"/>
+                        <Run Text="1b)  Detect Applicable STIGs"/><Run Text="  —  scan this machine to see which STIGs apply" Foreground="{StaticResource TextMutedBrush}" FontWeight="Normal"/>
                       </TextBlock>
                       <StackPanel Orientation="Horizontal">
-                        <Button Content="Import SCAP..." Width="140" TabIndex="11" Command="{Binding ImportScapBenchmarkCommand}"
-                                AutomationProperties.Name="Import SCAP benchmarks"
-                                ToolTipService.ToolTip="Import SCAP benchmarks — single from Cyber.mil or NIWC Atlantic bundle. Auto-detects bundles."/>
-                      </StackPanel>
-                    </StackPanel>
-                  </Border>
-
-                  <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="10" Margin="0,0,0,8" Background="{StaticResource SurfaceMutedBrush}">
-                    <StackPanel>
-                      <TextBlock FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6">
-                        <Run Text="1c)  GPO / LGPO Packages"/><Run Text="  —  ADMX templates, local GPOs, domain controller group policy" Foreground="{StaticResource TextMutedBrush}" FontWeight="Normal"/>
-                      </TextBlock>
-                      <StackPanel Orientation="Horizontal">
-                        <Button Content="Import GPO/LGPO..." Width="160" TabIndex="12" Command="{Binding ImportGpoPackageCommand}"
-                                AutomationProperties.Name="Import GPO and LGPO packages"
-                                ToolTipService.ToolTip="Import GPO/LGPO packages with ADMX templates for local and domain controller group policy."/>
-                      </StackPanel>
-                    </StackPanel>
-                  </Border>
-
-                  <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="10" Margin="0,0,0,8" Background="{StaticResource SurfaceMutedBrush}">
-                    <StackPanel>
-                      <TextBlock FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6">
-                        <Run Text="1d)  Detect Applicable STIGs"/><Run Text="  —  scan this machine to see which STIGs apply" Foreground="{StaticResource TextMutedBrush}" FontWeight="Normal"/>
-                      </TextBlock>
-                      <StackPanel Orientation="Horizontal">
-                        <Button Content="Scan Machine..." Width="150" TabIndex="13" Command="{Binding ScanMachineApplicabilityCommand}"
+                        <Button Content="Scan Machine..." Width="150" TabIndex="12" Command="{Binding ScanMachineApplicabilityCommand}"
                                 AutomationProperties.Name="Scan machine applicability"
                                 ToolTipService.ToolTip="Detect OS version, server roles, and installed features to recommend which STIGs are applicable to this machine."/>
                         <TextBlock Text="{Binding MachineApplicabilityStatus}" Margin="10,7,0,0" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap"/>
@@ -75,10 +53,10 @@
                   <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="10" Background="{StaticResource SurfaceMutedBrush}">
                     <StackPanel>
                       <TextBlock FontSize="12" FontWeight="SemiBold" Margin="0,0,0,6">
-                        <Run Text="1e)  Select Content for Mission"/><Run Text="  —  choose which imported packs to use" Foreground="{StaticResource TextMutedBrush}" FontWeight="Normal"/>
+                        <Run Text="1c)  Select Content for Mission"/><Run Text="  —  choose which imported packs to use" Foreground="{StaticResource TextMutedBrush}" FontWeight="Normal"/>
                       </TextBlock>
                       <StackPanel Orientation="Horizontal">
-                        <Button Content="Select Content..." Width="150" TabIndex="14" Command="{Binding OpenContentPickerCommand}"
+                        <Button Content="Select Content..." Width="150" TabIndex="13" Command="{Binding OpenContentPickerCommand}"
                                 AutomationProperties.Name="Select content for mission"
                                 ToolTipService.ToolTip="Pick from already-imported content packs. Multi-select supported."/>
                         <TextBlock Text="{Binding SelectedContentSummary}" Margin="10,7,0,0" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap"/>

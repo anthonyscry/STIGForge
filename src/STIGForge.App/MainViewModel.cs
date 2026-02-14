@@ -87,7 +87,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
     }
     catch { /* Silently ignore on older Windows versions */ }
   }
-  [ObservableProperty] private string importHint = "Import single ZIPs, consolidated bundles, or GPO/LGPO ZIPs (ADMX auto-import enabled).";
+  [ObservableProperty] private string importHint = "Drop ZIP files into the STIGForge import folder, then click Scan Import Folder.";
+  [ObservableProperty] private string scanImportFolderPath = "";
   [ObservableProperty] private string buildGateStatus = "";
   [ObservableProperty] private string applyStatus = "";
   [ObservableProperty] private string verifyStatus = "";
@@ -176,8 +177,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
    public ObservableCollection<ImportedLibraryItem> AdmxLibraryItems { get; } = new();
    public ObservableCollection<ImportedLibraryItem> OtherLibraryItems { get; } = new();
    public ObservableCollection<ImportedLibraryItem> AllLibraryItems { get; } = new();
-    public HashSet<string> ApplicablePackIds { get; } = new(StringComparer.OrdinalIgnoreCase);
-    private ICollectionView? _filteredContentLibrary;
+   public ObservableCollection<MachineScanTag> MachineScanTags { get; } = new();
+     public HashSet<string> ApplicablePackIds { get; } = new(StringComparer.OrdinalIgnoreCase);
+     private ICollectionView? _filteredContentLibrary;
    public ICollectionView FilteredContentLibrary => _filteredContentLibrary ??= CreateFilteredLibraryView();
    public ICollectionView ManualControlsView => _manualView ??= CollectionViewSource.GetDefaultView(ManualControls);
 
@@ -347,6 +349,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
       LoadCoverageOverlap();
       LoadManualControlsAsync();
       ConfigureManualView();
+      ScanImportFolderPath = ResolveScanImportFolderPath();
     }
     catch (Exception ex)
     {
@@ -428,6 +431,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
     public string ImportedAtLabel { get; set; } = string.Empty;
     public string ReleaseDateLabel { get; set; } = string.Empty;
     public string RootPath { get; set; } = string.Empty;
+  }
+
+  public sealed class MachineScanTag
+  {
+    public string Text { get; set; } = string.Empty;
+    public string ToolTip { get; set; } = string.Empty;
   }
 
   private sealed class UiState

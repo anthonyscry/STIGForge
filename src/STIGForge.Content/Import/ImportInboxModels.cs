@@ -34,12 +34,12 @@ public sealed class ImportInboxCandidate
 
 public sealed class ImportInboxScanResult
 {
-  public IReadOnlyList<ImportInboxCandidate> Candidates { get; init; } = Array.Empty<ImportInboxCandidate>();
-  public IReadOnlyList<string> Warnings { get; init; } = Array.Empty<string>();
+  public IReadOnlyList<ImportInboxCandidate> Candidates { get; set; } = Array.Empty<ImportInboxCandidate>();
+  public IReadOnlyList<string> Warnings { get; set; } = Array.Empty<string>();
 }
 
 public sealed class ImportDedupOutcome
 {
-  public IReadOnlyList<ImportInboxCandidate> Winners { get; init; } = Array.Empty<ImportInboxCandidate>();
-  public IReadOnlyList<ImportInboxCandidate> Suppressed { get; init; } = Array.Empty<ImportInboxCandidate>();
+  public IReadOnlyList<ImportInboxCandidate> Winners { get; set; } = Array.Empty<ImportInboxCandidate>();
+  public IReadOnlyList<ImportInboxCandidate> Suppressed { get; set; } = Array.Empty<ImportInboxCandidate>();
 }

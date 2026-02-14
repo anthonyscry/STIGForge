@@ -67,4 +67,70 @@ public sealed class ImportDedupServiceTests
     Assert.Single(outcome.Suppressed);
     Assert.Equal("V1R9", outcome.Suppressed[0].VersionTag);
   }
+
+  [Fact]
+  public void Resolve_KeepsDifferentArtifactKindsFromSameArchive()
+  {
+    var service = new ImportDedupService();
+    var scap = new ImportInboxCandidate
+    {
+      ZipPath = "C:/import/mixed.zip",
+      FileName = "mixed.zip",
+      Sha256 = "same-archive-sha",
+      ArtifactKind = ImportArtifactKind.Scap,
+      ContentKey = "scap:benchmark-win11",
+      Confidence = DetectionConfidence.High
+    };
+    var gpo = new ImportInboxCandidate
+    {
+      ZipPath = "C:/import/mixed.zip",
+      FileName = "mixed.zip",
+      Sha256 = "same-archive-sha",
+      ArtifactKind = ImportArtifactKind.Gpo,
+      ContentKey = "gpo:win11-baseline",
+      Confidence = DetectionConfidence.High
+    };
+
+    var outcome = service.Resolve(new[] { scap, gpo });
+
+    Assert.Equal(2, outcome.Winners.Count);
+    Assert.Contains(outcome.Winners, c => c.ArtifactKind == ImportArtifactKind.Scap);
+    Assert.Contains(outcome.Winners, c => c.ArtifactKind == ImportArtifactKind.Gpo);
+    Assert.Empty(outcome.Suppressed);
+  }
+
+  [Fact]
+  public void Resolve_UsesDeterministicFilenameTieBreakWhenVersionAndDateMissing()
+  {
+    var service = new ImportDedupService();
+    var zulu = new ImportInboxCandidate
+    {
+      ZipPath = "C:/import/zulu.zip",
+      FileName = "zulu.zip",
+      Sha256 = "sha-z",
+      ArtifactKind = ImportArtifactKind.Stig,
+      ContentKey = "stig:win11",
+      Confidence = DetectionConfidence.High,
+      VersionTag = string.Empty,
+      BenchmarkDate = null
+    };
+    var alpha = new ImportInboxCandidate
+    {
+      ZipPath = "C:/import/alpha.zip",
+      FileName = "alpha.zip",
+      Sha256 = "sha-a",
+      ArtifactKind = ImportArtifactKind.Stig,
+      ContentKey = "stig:win11",
+      Confidence = DetectionConfidence.High,
+      VersionTag = string.Empty,
+      BenchmarkDate = null
+    };
+
+    var outcome = service.Resolve(new[] { zulu, alpha });
+
+    var winner = Assert.Single(outcome.Winners);
+    Assert.Equal("alpha.zip", winner.FileName);
+    Assert.Single(outcome.Suppressed);
+    Assert.Equal("zulu.zip", outcome.Suppressed[0].FileName);
+  }
 }
