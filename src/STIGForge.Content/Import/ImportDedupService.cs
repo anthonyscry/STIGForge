@@ -11,46 +11,52 @@ public sealed class ImportDedupService
     if (candidates.Count == 0)
       return new ImportDedupOutcome();
 
-    var bySha = candidates
-      .GroupBy(c => c.Sha256, StringComparer.OrdinalIgnoreCase)
+    var byLogicalContent = candidates
+      .GroupBy(BuildLogicalKey, StringComparer.OrdinalIgnoreCase)
       .Select(group => SelectPreferred(group.ToList(), forStig: group.Any(x => x.ArtifactKind == ImportArtifactKind.Stig)))
       .ToList();
 
-    var shaWinners = bySha.Select(x => x.Winner).ToList();
-    var shaSuppressed = bySha.SelectMany(x => x.Suppressed).ToList();
-
-    var finalWinners = new List<ImportInboxCandidate>();
-    var finalSuppressed = new List<ImportInboxCandidate>(shaSuppressed);
-
-    var withKey = shaWinners
-      .Where(c => !string.IsNullOrWhiteSpace(c.ContentKey))
-      .GroupBy(c => c.ContentKey, StringComparer.OrdinalIgnoreCase)
-      .ToList();
-
-    var withoutKey = shaWinners
-      .Where(c => string.IsNullOrWhiteSpace(c.ContentKey))
-      .ToList();
-
-    foreach (var group in withKey)
-    {
-      var selection = SelectPreferred(group.ToList(), forStig: group.Any(x => x.ArtifactKind == ImportArtifactKind.Stig));
-      finalWinners.Add(selection.Winner);
-      finalSuppressed.AddRange(selection.Suppressed);
-    }
-
-    finalWinners.AddRange(withoutKey);
+    var winners = byLogicalContent.Select(x => x.Winner).ToList();
+    var suppressed = byLogicalContent.SelectMany(x => x.Suppressed).ToList();
 
     return new ImportDedupOutcome
     {
-      Winners = finalWinners
-        .DistinctBy(c => c.ZipPath, StringComparer.OrdinalIgnoreCase)
+      Winners = winners
+        .GroupBy(BuildPhysicalKey, StringComparer.OrdinalIgnoreCase)
+        .Select(group => group.First())
         .OrderBy(c => c.ZipPath, StringComparer.OrdinalIgnoreCase)
+        .ThenBy(c => c.ArtifactKind.ToString(), StringComparer.OrdinalIgnoreCase)
+        .ThenBy(c => c.ContentKey, StringComparer.OrdinalIgnoreCase)
         .ToList(),
-      Suppressed = finalSuppressed
-        .DistinctBy(c => c.ZipPath, StringComparer.OrdinalIgnoreCase)
+      Suppressed = suppressed
+        .GroupBy(BuildPhysicalKey, StringComparer.OrdinalIgnoreCase)
+        .Select(group => group.First())
         .OrderBy(c => c.ZipPath, StringComparer.OrdinalIgnoreCase)
+        .ThenBy(c => c.ArtifactKind.ToString(), StringComparer.OrdinalIgnoreCase)
+        .ThenBy(c => c.ContentKey, StringComparer.OrdinalIgnoreCase)
         .ToList()
     };
+  }
+
+  private static string BuildLogicalKey(ImportInboxCandidate candidate)
+  {
+    var contentKey = candidate.ContentKey ?? string.Empty;
+    if (!string.IsNullOrWhiteSpace(contentKey))
+      return candidate.ArtifactKind + "|" + contentKey.Trim().ToLowerInvariant();
+
+    if (candidate.ArtifactKind == ImportArtifactKind.Tool)
+      return "tool|" + candidate.ToolKind;
+
+    var sha = candidate.Sha256 ?? string.Empty;
+    return candidate.ArtifactKind + "|" + sha.Trim().ToLowerInvariant();
+  }
+
+  private static string BuildPhysicalKey(ImportInboxCandidate candidate)
+  {
+    return (candidate.ZipPath ?? string.Empty).Trim().ToLowerInvariant()
+      + "|" + candidate.ArtifactKind
+      + "|" + candidate.ToolKind
+      + "|" + (candidate.ContentKey ?? string.Empty).Trim().ToLowerInvariant();
   }
 
   private static (ImportInboxCandidate Winner, List<ImportInboxCandidate> Suppressed) SelectPreferred(List<ImportInboxCandidate> group, bool forStig)

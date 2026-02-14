@@ -38,7 +38,7 @@
           <StackPanel>
             <TextBlock Text="Quick Start (5 Minutes)" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8" Foreground="{DynamicResource TextPrimaryBrush}"/>
             <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"
-                       Text="1. Go to the Import tab. Click 'Import STIG...' and pick the ZIP file you downloaded from cyber.mil. This loads the security rules into the app."/>
+                       Text="1. Go to the Import tab. Click 'Open Import Folder', copy your STIG/SCAP/GPO ZIP files into that folder, then click 'Scan Import Folder'. This loads the security rules into the app."/>
             <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"
                        Text="2. Go to the Profile tab. Give your profile a name (like 'My Server'). Pick a mode: AuditOnly just checks things, Safe makes non-breaking changes, Full applies everything. Click 'Save Profile'."/>
             <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"
@@ -57,11 +57,9 @@
             <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4"
                        Text="This is where you load security rules into STIGForge. Think of it as stocking your toolbox before you start work."/>
             <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4"
-                       Text="'Import STIG...' - Load a STIG ZIP file from DISA/cyber.mil. This is the most common import. It can handle single packs or the whole SRG-STIG library bundle."/>
+                       Text="'Scan Import Folder' - The primary ingest action. It scans the STIGForge import folder and auto-detects STIG, SCAP, GPO/LGPO, ADMX, and tool bundles."/>
             <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4"
-                       Text="'Import SCAP...' - Load SCAP benchmark files (a different format of security checks). Also from DISA or NIWC Atlantic."/>
-            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4"
-                       Text="'Import GPO / LGPO...' - Load Group Policy templates. These are Windows-specific configuration rules."/>
+                       Text="'Open Import Folder' - Opens the fixed STIGForge import folder so you can drop in ZIP files before scanning."/>
             <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4"
                        Text="'Compare Packs...' - See what changed between two versions of the same content pack."/>
             <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4"

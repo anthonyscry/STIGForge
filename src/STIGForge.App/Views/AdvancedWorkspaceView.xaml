@@ -13,12 +13,10 @@
 
           <StackPanel Margin="0,0,0,8">
             <WrapPanel Margin="0,0,0,6">
-              <Button Content="Import STIG..." Width="150" Height="30" Margin="0,0,8,0" Command="{Binding ImportContentPackCommand}"
-                      ToolTipService.ToolTip="Import STIG content — single pack or full library. Auto-detects bundles."/>
-              <Button Content="Import SCAP..." Width="150" Height="30" Margin="0,0,8,0" Command="{Binding ImportScapBenchmarkCommand}"
-                      ToolTipService.ToolTip="Import SCAP benchmarks — single or NIWC Atlantic bundle. Auto-detects bundles."/>
-              <Button Content="Import GPO/LGPO..." Width="160" Height="30" Margin="0,0,8,0" Command="{Binding ImportGpoPackageCommand}"
-                      ToolTipService.ToolTip="Import GPO/LGPO packages — ADMX templates, local and domain controller group policy."/>
+              <Button Content="Scan Import Folder" Width="160" Height="30" Margin="0,0,8,0" Command="{Binding ScanImportFolderCommand}"
+                      ToolTipService.ToolTip="Scan the STIGForge import folder for ZIP bundles and auto-import content/tools."/>
+              <Button Content="Open Import Folder" Width="160" Height="30" Margin="0,0,8,0" Command="{Binding OpenImportFolderCommand}"
+                      ToolTipService.ToolTip="Open the STIGForge import folder in Explorer."/>
               <Button Content="Compare Packs..." Width="150" Height="30" Command="{Binding ComparePacksCommand}"
                       AutomationProperties.Name="Compare content packs"
                       ToolTipService.ToolTip="Compare two content packs to see added, removed, or changed controls."/>
