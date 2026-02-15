@@ -37,6 +37,10 @@ Manage imported DISA STIG content packs.
 - **Import ZIP**: Opens file dialog to select a STIG pack ZIP. Parses XCCDF/SCAP and stores in the database.
 - **Compare Packs**: Opens pack diff dialog.
 
+**Readability hierarchy**:
+- Import tab presentation emphasizes four zones: **Primary Actions**, **Machine Context**, **Content Library**, and **Pack Details**.
+- Command bindings and behavior are unchanged; this update is presentation-only for scannability.
+
 **Diff Output**:
 - Comparison opens a dedicated diff viewer with Added, Removed, Changed, and Review Required tabs.
 - Use **Export Markdown** for operator-readable review output.
