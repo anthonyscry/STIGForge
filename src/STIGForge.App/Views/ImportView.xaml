@@ -37,6 +37,7 @@
         <TextBlock Text="{Binding ImportHint}" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,2"/>
 
         <TextBlock Text="Machine Context" FontWeight="SemiBold" Margin="0,8,0,4"/>
+        <TextBlock Text="Scan context" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,4"/>
 
         <TabControl Margin="0,4,0,2">
           <TabItem Header="Local Machine Scan">
@@ -188,8 +189,9 @@
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0" Text="Content Library" FontWeight="SemiBold" Margin="0,0,0,6"/>
+        <TextBlock Grid.Row="1" Text="Library filters" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,4"/>
 
-        <DockPanel Grid.Row="1" Margin="0,0,0,8">
+        <DockPanel Grid.Row="1" Margin="0,18,0,8">
           <TextBox DockPanel.Dock="Right" Width="180" Text="{Binding ContentSearchText, UpdateSourceTrigger=PropertyChanged}"
                    AutomationProperties.Name="Search content library"
                    ToolTipService.ToolTip="Filter by name or pack ID"/>
@@ -226,7 +228,9 @@
           </ListView>
         </Border>
 
-        <WrapPanel Grid.Row="3">
+        <TextBlock Grid.Row="3" Text="Library actions" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,4"/>
+
+        <WrapPanel Grid.Row="3" Margin="0,18,0,0">
           <Button Content="Select All" MinWidth="100" Height="30" Padding="14,0" Margin="0,0,10,4"
                   Click="SelectAllLibraryItems_Click"
                   AutomationProperties.Name="Select all library items"

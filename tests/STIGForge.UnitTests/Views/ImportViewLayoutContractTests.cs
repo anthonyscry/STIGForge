@@ -24,6 +24,16 @@ public sealed class ImportViewLayoutContractTests
     Assert.Contains("{Binding OpenContentPickerCommand}", xaml, StringComparison.Ordinal);
   }
 
+  [Fact]
+  public void ImportView_ContainsMachineAndLibraryReadabilityLabels()
+  {
+    var xaml = LoadImportViewXaml();
+
+    Assert.Contains("Scan context", xaml, StringComparison.Ordinal);
+    Assert.Contains("Library filters", xaml, StringComparison.Ordinal);
+    Assert.Contains("Library actions", xaml, StringComparison.Ordinal);
+  }
+
   private static string LoadImportViewXaml()
   {
     var current = new DirectoryInfo(AppContext.BaseDirectory);
