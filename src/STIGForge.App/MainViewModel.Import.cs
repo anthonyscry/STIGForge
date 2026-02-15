@@ -1224,7 +1224,7 @@ public partial class MainViewModel
       };
     }).ToList();
 
-    var dialog = new ContentPickerDialog(items, ApplicablePackIds, BuildPickerStatus);
+    var dialog = new ContentPickerDialog(items, ApplicablePackIds, BuildPickerStatus, initialPlan.WarningLines);
     dialog.Owner = System.Windows.Application.Current.MainWindow;
     if (dialog.ShowDialog() != true) return;
 

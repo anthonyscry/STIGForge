@@ -44,6 +44,21 @@ public sealed class ImportSelectionOrchestratorTests
   }
 
   [Fact]
+  public void BuildPlan_WithMissingDependency_ExposesWarningLinesForPicker()
+  {
+    var orchestrator = new ImportSelectionOrchestrator();
+    var input = new[]
+    {
+      new ImportSelectionCandidate { ArtifactType = ImportSelectionArtifactType.Stig, Id = "stig-a", IsSelected = true },
+      new ImportSelectionCandidate { ArtifactType = ImportSelectionArtifactType.Gpo, Id = "gpo-a" }
+    };
+
+    var plan = orchestrator.BuildPlan(input);
+
+    plan.WarningLines.Should().Contain(line => line.Contains("missing SCAP", StringComparison.OrdinalIgnoreCase));
+  }
+
+  [Fact]
   public void BuildPlan_SelectedStig_AutoIncludesScapGpoAndAdmxAsLocked()
   {
     var orchestrator = new ImportSelectionOrchestrator();

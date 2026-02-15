@@ -13,6 +13,7 @@ public partial class ContentPickerDialog : Window
   public HashSet<string> RecommendedPackIds { get; }
   private readonly List<CheckBox> _checkBoxes = new();
   private readonly Func<IReadOnlyCollection<string>, string>? _statusProvider;
+  private readonly IReadOnlyList<string> _warningLines;
 
   private static readonly (string Key, string Label)[] SectionOrder = new[]
   {
@@ -22,12 +23,17 @@ public partial class ContentPickerDialog : Window
     ("ADMX", "ADMX Templates  —  policy templates"),
   };
 
-  public ContentPickerDialog(List<ContentPickerItem> items, HashSet<string>? recommendedIds = null, Func<IReadOnlyCollection<string>, string>? statusProvider = null)
+  public ContentPickerDialog(
+    List<ContentPickerItem> items,
+    HashSet<string>? recommendedIds = null,
+    Func<IReadOnlyCollection<string>, string>? statusProvider = null,
+    IReadOnlyList<string>? warningLines = null)
   {
     InitializeComponent();
     Items = items;
     RecommendedPackIds = recommendedIds ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
     _statusProvider = statusProvider;
+    _warningLines = warningLines ?? Array.Empty<string>();
     BuildGroupedUI();
     UpdateCount();
     SelectRecommendedBtn.Visibility = RecommendedPackIds.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -134,8 +140,8 @@ public partial class ContentPickerDialog : Window
       {
         var auto = new TextBlock
         {
-          Text = "Auto",
-          Width = 40,
+          Text = "Auto-included",
+          Width = 90,
           VerticalAlignment = VerticalAlignment.Center,
           Foreground = (Brush)FindResource("TextMutedBrush")
         };
@@ -215,6 +221,9 @@ public partial class ContentPickerDialog : Window
       && status.StartsWith("Warning:", StringComparison.OrdinalIgnoreCase)
       ? (Brush)FindResource("WarningBrush")
       : (Brush)FindResource("TextMutedBrush");
+
+    WarningLinesList.ItemsSource = _warningLines;
+    WarningLinesList.Visibility = _warningLines.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
   }
 }
 

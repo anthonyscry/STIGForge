@@ -34,6 +34,7 @@ public sealed class ImportSelectionPlan
 {
   public IReadOnlyList<ImportSelectionPlanRow> Rows { get; init; } = Array.Empty<ImportSelectionPlanRow>();
   public IReadOnlyList<ImportSelectionPlanWarning> Warnings { get; init; } = Array.Empty<ImportSelectionPlanWarning>();
+  public IReadOnlyList<string> WarningLines { get; init; } = Array.Empty<string>();
   public ImportSelectionPlanCounts Counts { get; init; } = new();
   public string StatusSummaryText { get; init; } = string.Empty;
   public string Fingerprint { get; init; } = string.Empty;
@@ -118,10 +119,30 @@ public sealed class ImportSelectionOrchestrator
     {
       Rows = rows,
       Warnings = warnings,
+      WarningLines = BuildWarningLines(warnings),
       Counts = counts,
       StatusSummaryText = BuildStatusSummaryText(rows),
       Fingerprint = BuildFingerprint(rows, warnings, counts)
     };
+  }
+
+  private static IReadOnlyList<string> BuildWarningLines(IReadOnlyList<ImportSelectionPlanWarning> warnings)
+  {
+    if (warnings.Count == 0)
+      return Array.Empty<string>();
+
+    var lines = new List<string>(warnings.Count);
+    foreach (var warning in warnings
+      .OrderBy(x => x.Code, StringComparer.Ordinal)
+      .ThenBy(x => x.Severity, StringComparer.Ordinal))
+    {
+      if (string.Equals(warning.Code, "missing_scap_dependency", StringComparison.Ordinal))
+        lines.Add("Missing SCAP dependency: selected STIG content has no matching SCAP package.");
+      else
+        lines.Add("Warning: " + warning.Code);
+    }
+
+    return lines;
   }
 
   private static string BuildStatusSummaryText(IReadOnlyList<ImportSelectionPlanRow> rows)
