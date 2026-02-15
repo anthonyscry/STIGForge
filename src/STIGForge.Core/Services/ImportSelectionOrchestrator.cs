@@ -35,6 +35,7 @@ public sealed class ImportSelectionPlan
   public IReadOnlyList<ImportSelectionPlanRow> Rows { get; init; } = Array.Empty<ImportSelectionPlanRow>();
   public IReadOnlyList<ImportSelectionPlanWarning> Warnings { get; init; } = Array.Empty<ImportSelectionPlanWarning>();
   public ImportSelectionPlanCounts Counts { get; init; } = new();
+  public string StatusSummaryText { get; init; } = string.Empty;
   public string Fingerprint { get; init; } = string.Empty;
 }
 
@@ -118,8 +119,22 @@ public sealed class ImportSelectionOrchestrator
       Rows = rows,
       Warnings = warnings,
       Counts = counts,
+      StatusSummaryText = BuildStatusSummaryText(rows),
       Fingerprint = BuildFingerprint(rows, warnings, counts)
     };
+  }
+
+  private static string BuildStatusSummaryText(IReadOnlyList<ImportSelectionPlanRow> rows)
+  {
+    var stigCount = rows.Count(x => x.ArtifactType == ImportSelectionArtifactType.Stig && x.IsSelected);
+    var scapCount = rows.Count(x => x.ArtifactType == ImportSelectionArtifactType.Scap && x.IsSelected);
+    var gpoCount = rows.Count(x => x.ArtifactType == ImportSelectionArtifactType.Gpo && x.IsSelected);
+    var admxCount = rows.Count(x => x.ArtifactType == ImportSelectionArtifactType.Admx && x.IsSelected);
+
+    return "STIG: " + stigCount
+      + " | Auto SCAP: " + scapCount
+      + " | Auto GPO: " + gpoCount
+      + " | Auto ADMX: " + admxCount;
   }
 
   private static string BuildFingerprint(

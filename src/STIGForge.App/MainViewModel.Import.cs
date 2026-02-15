@@ -1159,9 +1159,42 @@ public partial class MainViewModel
               : string.Empty);
     }
 
+    ImportSelectionPlan BuildImportSelectionPlan(IReadOnlyCollection<string> selectedStigPackIds, IReadOnlyCollection<string> autoDerivedPackIds)
+    {
+      var selectedStigSet = selectedStigPackIds.ToHashSet(StringComparer.OrdinalIgnoreCase);
+      var autoDerivedSet = autoDerivedPackIds.ToHashSet(StringComparer.OrdinalIgnoreCase);
+      var candidates = new List<ImportSelectionCandidate>();
+
+      foreach (var pack in ContentPacks)
+      {
+        var artifactType = ResolveImportSelectionArtifactType(pack);
+        if (artifactType == null)
+          continue;
+
+        var include = artifactType == ImportSelectionArtifactType.Stig
+          ? selectedStigSet.Contains(pack.PackId)
+          : autoDerivedSet.Contains(pack.PackId);
+
+        if (!include)
+          continue;
+
+        candidates.Add(new ImportSelectionCandidate
+        {
+          ArtifactType = artifactType.Value,
+          Id = pack.PackId,
+          IsSelected = artifactType == ImportSelectionArtifactType.Stig && selectedStigSet.Contains(pack.PackId)
+        });
+      }
+
+      return _importSelectionOrchestrator.BuildPlan(candidates);
+    }
+
     var initialDerived = await ResolveDerivedPackIdsAsync(selectedStigIds, machineInfo);
-    var initialSelected = new HashSet<string>(selectedStigIds, StringComparer.OrdinalIgnoreCase);
-    initialSelected.UnionWith(initialDerived);
+    var initialPlan = BuildImportSelectionPlan(selectedStigIds, initialDerived);
+    var initialSelected = initialPlan.Rows
+      .Where(x => x.IsSelected)
+      .Select(x => x.Id)
+      .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
     var items = ContentPacks.Select(pack =>
     {
@@ -1212,13 +1245,17 @@ public partial class MainViewModel
     }
 
     var derivedIds = await ResolveDerivedPackIdsAsync(chosenStigIds, machineInfo);
-    var selectedIds = new HashSet<string>(chosenStigIds, StringComparer.OrdinalIgnoreCase);
-    selectedIds.UnionWith(derivedIds);
+    var selectionPlan = BuildImportSelectionPlan(chosenStigIds, derivedIds);
+    var selectedIds = selectionPlan.Rows
+      .Where(x => x.IsSelected)
+      .Select(x => x.Id)
+      .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
     SelectedMissionPacks.Clear();
-    foreach (var pack in ContentPacks)
+    var packsById = ContentPacks.ToDictionary(p => p.PackId, StringComparer.OrdinalIgnoreCase);
+    foreach (var row in selectionPlan.Rows.Where(x => x.IsSelected))
     {
-      if (selectedIds.Contains(pack.PackId))
+      if (packsById.TryGetValue(row.Id, out var pack))
         SelectedMissionPacks.Add(pack);
     }
 
@@ -1256,22 +1293,31 @@ public partial class MainViewModel
       var firstStig = SelectedMissionPacks
         .FirstOrDefault(p => string.Equals(ResolvePackFormat(p), "STIG", StringComparison.OrdinalIgnoreCase));
       SelectedPack = firstStig ?? SelectedMissionPacks[0];
-
-      var stigCount = SelectedMissionPacks.Count(p => string.Equals(ResolvePackFormat(p), "STIG", StringComparison.OrdinalIgnoreCase));
-      var scapCount = SelectedMissionPacks.Count(p => string.Equals(ResolvePackFormat(p), "SCAP", StringComparison.OrdinalIgnoreCase));
-      var gpoCount = SelectedMissionPacks.Count(p => string.Equals(ResolvePackFormat(p), "GPO", StringComparison.OrdinalIgnoreCase));
-      var admxCount = SelectedMissionPacks.Count(p => string.Equals(ResolvePackFormat(p), "ADMX", StringComparison.OrdinalIgnoreCase));
-
-      SelectedContentSummary = "STIG: " + stigCount
-        + " | Auto SCAP: " + scapCount
-        + " | Auto GPO: " + gpoCount
-        + " | Auto ADMX: " + admxCount;
+      SelectedContentSummary = selectionPlan.StatusSummaryText;
     }
 
-    var pickerStatus = BuildPickerStatus(chosenStigIds);
-    StatusText = pickerStatus.StartsWith("Warning:", StringComparison.OrdinalIgnoreCase)
-      ? "Content selection updated. " + pickerStatus
-      : "Content selection updated. STIG is source-of-truth; SCAP/GPO/ADMX auto-derived from machine scan + mapping.";
+    var warningCodes = selectionPlan.Warnings
+      .Select(x => x.Code)
+      .Distinct(StringComparer.OrdinalIgnoreCase)
+      .ToList();
+    StatusText = warningCodes.Count > 0
+      ? "Content selection updated with warnings (" + selectionPlan.StatusSummaryText + "). Warnings: " + string.Join(", ", warningCodes)
+      : "Content selection updated. " + selectionPlan.StatusSummaryText;
+  }
+
+  private ImportSelectionArtifactType? ResolveImportSelectionArtifactType(ContentPack pack)
+  {
+    var format = ResolvePackFormat(pack);
+    if (string.Equals(format, "STIG", StringComparison.OrdinalIgnoreCase))
+      return ImportSelectionArtifactType.Stig;
+    if (string.Equals(format, "SCAP", StringComparison.OrdinalIgnoreCase))
+      return ImportSelectionArtifactType.Scap;
+    if (string.Equals(format, "GPO", StringComparison.OrdinalIgnoreCase))
+      return ImportSelectionArtifactType.Gpo;
+    if (string.Equals(format, "ADMX", StringComparison.OrdinalIgnoreCase))
+      return ImportSelectionArtifactType.Admx;
+
+    return null;
   }
 
   private async Task<HashSet<string>> ResolveDerivedPackIdsAsync(HashSet<string> selectedStigIds, MachineInfo? machineInfo)

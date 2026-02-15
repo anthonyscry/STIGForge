@@ -31,6 +31,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
   private readonly ManualAnswerService _manualAnswerService;
   private readonly IBundleMissionSummaryService _bundleMissionSummary;
   private readonly VerificationArtifactAggregationService _artifactAggregation;
+  private readonly ImportSelectionOrchestrator _importSelectionOrchestrator;
   private readonly IAuditTrailService? _audit;
   private readonly STIGForge.Infrastructure.System.ScheduledTaskService? _scheduledTaskService;
   private readonly STIGForge.Infrastructure.System.FleetService? _fleetService;
@@ -296,7 +297,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
    public bool IsFilterGpo { get => ContentLibraryFilter == "GPO"; set { if (value) ContentLibraryFilter = "GPO"; } }
    public bool IsFilterAdmx { get => ContentLibraryFilter == "ADMX"; set { if (value) ContentLibraryFilter = "ADMX"; } }
 
-   public MainViewModel(ContentPackImporter importer, IContentPackRepository packs, IProfileRepository profiles, IControlRepository controls, IOverlayRepository overlays, BundleBuilder builder, STIGForge.Apply.ApplyRunner applyRunner, IVerificationWorkflowService verificationWorkflow, STIGForge.Export.EmassExporter emassExporter, IPathBuilder paths, EvidenceCollector evidence, IBundleMissionSummaryService bundleMissionSummary, VerificationArtifactAggregationService artifactAggregation, IAuditTrailService? audit = null, STIGForge.Infrastructure.System.ScheduledTaskService? scheduledTaskService = null, STIGForge.Infrastructure.System.FleetService? fleetService = null)
+   public MainViewModel(ContentPackImporter importer, IContentPackRepository packs, IProfileRepository profiles, IControlRepository controls, IOverlayRepository overlays, BundleBuilder builder, STIGForge.Apply.ApplyRunner applyRunner, IVerificationWorkflowService verificationWorkflow, STIGForge.Export.EmassExporter emassExporter, IPathBuilder paths, EvidenceCollector evidence, IBundleMissionSummaryService bundleMissionSummary, VerificationArtifactAggregationService artifactAggregation, ImportSelectionOrchestrator importSelectionOrchestrator, IAuditTrailService? audit = null, STIGForge.Infrastructure.System.ScheduledTaskService? scheduledTaskService = null, STIGForge.Infrastructure.System.FleetService? fleetService = null)
   {
     _importer = importer;
     _packs = packs;
@@ -311,6 +312,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
     _evidence = evidence;
     _bundleMissionSummary = bundleMissionSummary;
     _artifactAggregation = artifactAggregation;
+    _importSelectionOrchestrator = importSelectionOrchestrator;
     _audit = audit;
     _manualAnswerService = new ManualAnswerService(_audit);
     _scheduledTaskService = scheduledTaskService;

@@ -90,6 +90,7 @@ public partial class App : Application
           services.AddSingleton<IVerificationWorkflowService, VerificationWorkflowService>();
           services.AddSingleton<VerificationArtifactAggregationService>();
           services.AddSingleton<IBundleMissionSummaryService, BundleMissionSummaryService>();
+          services.AddSingleton<ImportSelectionOrchestrator>();
           services.AddSingleton<BundleOrchestrator>();
           services.AddSingleton<STIGForge.Export.EmassExporter>();
           services.AddSingleton<STIGForge.Evidence.EvidenceCollector>();
@@ -131,6 +132,8 @@ public partial class App : Application
             TraceStartup("MainViewModel factory got IBundleMissionSummaryService");
             var artifactAggregation = sp.GetRequiredService<VerificationArtifactAggregationService>();
             TraceStartup("MainViewModel factory got VerificationArtifactAggregationService");
+            var importSelectionOrchestrator = sp.GetRequiredService<ImportSelectionOrchestrator>();
+            TraceStartup("MainViewModel factory got ImportSelectionOrchestrator");
             var audit = sp.GetRequiredService<IAuditTrailService>();
             TraceStartup("MainViewModel factory got IAuditTrailService");
             var scheduledTaskService = sp.GetRequiredService<ScheduledTaskService>();
@@ -152,6 +155,7 @@ public partial class App : Application
               evidence,
               bundleMissionSummary,
               artifactAggregation,
+              importSelectionOrchestrator,
               audit,
               scheduledTaskService,
               fleetService);

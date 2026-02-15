@@ -139,6 +139,23 @@ public sealed class ImportSelectionOrchestratorTests
     planB.Fingerprint.Should().Be(BuildExpectedCanonicalFingerprint(planB));
   }
 
+  [Fact]
+  public void BuildPlan_ProducesStatusSummaryTextUsedByViewModel()
+  {
+    var orchestrator = new ImportSelectionOrchestrator();
+    var input = new[]
+    {
+      new ImportSelectionCandidate { ArtifactType = ImportSelectionArtifactType.Stig, Id = "stig-a", IsSelected = true },
+      new ImportSelectionCandidate { ArtifactType = ImportSelectionArtifactType.Scap, Id = "scap-a" },
+      new ImportSelectionCandidate { ArtifactType = ImportSelectionArtifactType.Gpo, Id = "gpo-a" },
+      new ImportSelectionCandidate { ArtifactType = ImportSelectionArtifactType.Admx, Id = "admx-a" }
+    };
+
+    var plan = orchestrator.BuildPlan(input);
+
+    plan.StatusSummaryText.Should().Be("STIG: 1 | Auto SCAP: 1 | Auto GPO: 1 | Auto ADMX: 1");
+  }
+
   private static string BuildExpectedCanonicalFingerprint(ImportSelectionPlan plan)
   {
     var canonical = new
