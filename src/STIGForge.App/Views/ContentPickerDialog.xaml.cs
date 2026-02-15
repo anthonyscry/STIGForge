@@ -13,7 +13,7 @@ public partial class ContentPickerDialog : Window
   public HashSet<string> RecommendedPackIds { get; }
   private readonly List<CheckBox> _checkBoxes = new();
   private readonly Func<IReadOnlyCollection<string>, string>? _statusProvider;
-  private readonly IReadOnlyList<string> _warningLines;
+  private readonly Func<IReadOnlyCollection<string>, IReadOnlyList<string>>? _warningLinesProvider;
 
   private static readonly (string Key, string Label)[] SectionOrder = new[]
   {
@@ -27,13 +27,13 @@ public partial class ContentPickerDialog : Window
     List<ContentPickerItem> items,
     HashSet<string>? recommendedIds = null,
     Func<IReadOnlyCollection<string>, string>? statusProvider = null,
-    IReadOnlyList<string>? warningLines = null)
+    Func<IReadOnlyCollection<string>, IReadOnlyList<string>>? warningLinesProvider = null)
   {
     InitializeComponent();
     Items = items;
     RecommendedPackIds = recommendedIds ?? new HashSet<string>(StringComparer.OrdinalIgnoreCase);
     _statusProvider = statusProvider;
-    _warningLines = warningLines ?? Array.Empty<string>();
+    _warningLinesProvider = warningLinesProvider;
     BuildGroupedUI();
     UpdateCount();
     SelectRecommendedBtn.Visibility = RecommendedPackIds.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
@@ -222,8 +222,9 @@ public partial class ContentPickerDialog : Window
       ? (Brush)FindResource("WarningBrush")
       : (Brush)FindResource("TextMutedBrush");
 
-    WarningLinesList.ItemsSource = _warningLines;
-    WarningLinesList.Visibility = _warningLines.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
+    var warningLines = _warningLinesProvider?.Invoke(selectedStigIds) ?? Array.Empty<string>();
+    WarningLinesList.ItemsSource = warningLines;
+    WarningLinesList.Visibility = warningLines.Count > 0 ? Visibility.Visible : Visibility.Collapsed;
   }
 }
 

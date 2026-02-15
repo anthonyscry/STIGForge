@@ -1159,6 +1159,15 @@ public partial class MainViewModel
               : string.Empty);
     }
 
+    IReadOnlyList<string> BuildPickerWarningLines(IReadOnlyCollection<string> selectedStigPackIds)
+    {
+      var status = BuildPickerStatus(selectedStigPackIds);
+      if (!status.StartsWith("Warning:", StringComparison.OrdinalIgnoreCase))
+        return Array.Empty<string>();
+
+      return new[] { status };
+    }
+
     ImportSelectionPlan BuildImportSelectionPlan(IReadOnlyCollection<string> selectedStigPackIds, IReadOnlyCollection<string> autoDerivedPackIds)
     {
       var selectedStigSet = selectedStigPackIds.ToHashSet(StringComparer.OrdinalIgnoreCase);
@@ -1224,7 +1233,7 @@ public partial class MainViewModel
       };
     }).ToList();
 
-    var dialog = new ContentPickerDialog(items, ApplicablePackIds, BuildPickerStatus, initialPlan.WarningLines);
+    var dialog = new ContentPickerDialog(items, ApplicablePackIds, BuildPickerStatus, BuildPickerWarningLines);
     dialog.Owner = System.Windows.Application.Current.MainWindow;
     if (dialog.ShowDialog() != true) return;
 
