@@ -105,10 +105,12 @@ public sealed class ImportInboxScanner
     using var archive = ZipFile.OpenRead(zipPath);
     var names = archive.Entries.Select(e => e.FullName.Replace('\\', '/')).ToList();
     var namesLower = names.Select(n => n.ToLowerInvariant()).ToList();
+    var importedFrom = DetectProvenance(zipPath, namesLower);
+    var isNiwcEnhanced = DetectNiwcEnhanced(zipPath, namesLower);
 
     if (namesLower.Any(n => n.EndsWith("evaluate-stig.ps1", StringComparison.Ordinal)))
     {
-      var candidate = CreateCandidate(zipPath, fileName, sha256);
+      var candidate = CreateCandidate(zipPath, fileName, sha256, importedFrom, isNiwcEnhanced);
       candidate.ArtifactKind = ImportArtifactKind.Tool;
       candidate.ToolKind = ToolArtifactKind.EvaluateStig;
       candidate.Confidence = DetectionConfidence.High;
@@ -119,7 +121,7 @@ public sealed class ImportInboxScanner
 
     if (namesLower.Any(n => n.EndsWith("scc.exe", StringComparison.Ordinal)))
     {
-      var candidate = CreateCandidate(zipPath, fileName, sha256);
+      var candidate = CreateCandidate(zipPath, fileName, sha256, importedFrom, isNiwcEnhanced);
       candidate.ArtifactKind = ImportArtifactKind.Tool;
       candidate.ToolKind = ToolArtifactKind.Scc;
       candidate.Confidence = DetectionConfidence.High;
@@ -130,7 +132,7 @@ public sealed class ImportInboxScanner
 
     if (namesLower.Any(n => n.EndsWith("powerstig.psd1", StringComparison.Ordinal) || n.EndsWith("powerstig.psm1", StringComparison.Ordinal)))
     {
-      var candidate = CreateCandidate(zipPath, fileName, sha256);
+      var candidate = CreateCandidate(zipPath, fileName, sha256, importedFrom, isNiwcEnhanced);
       candidate.ArtifactKind = ImportArtifactKind.Tool;
       candidate.ToolKind = ToolArtifactKind.PowerStig;
       candidate.Confidence = DetectionConfidence.High;
@@ -150,7 +152,7 @@ public sealed class ImportInboxScanner
 
     if (hasLocalPolicies)
     {
-      var candidate = CreateCandidate(zipPath, fileName, sha256);
+      var candidate = CreateCandidate(zipPath, fileName, sha256, importedFrom, isNiwcEnhanced);
       candidate.ArtifactKind = ImportArtifactKind.Gpo;
       candidate.Confidence = DetectionConfidence.High;
       candidate.ContentKey = "gpo:" + Path.GetFileNameWithoutExtension(zipPath).ToLowerInvariant();
@@ -160,7 +162,7 @@ public sealed class ImportInboxScanner
 
     if (hasAdmx)
     {
-      var candidate = CreateCandidate(zipPath, fileName, sha256);
+      var candidate = CreateCandidate(zipPath, fileName, sha256, importedFrom, isNiwcEnhanced);
       candidate.ArtifactKind = ImportArtifactKind.Admx;
       candidate.Confidence = DetectionConfidence.High;
       candidate.ContentKey = BuildAdmxContentKey(archive, zipPath);
@@ -173,7 +175,7 @@ public sealed class ImportInboxScanner
       foreach (var xccdfEntry in xccdfEntries)
       {
         var hasRelatedOval = HasRelatedOval(xccdfEntry, namesLower);
-        var candidate = CreateCandidate(zipPath, fileName, sha256);
+        var candidate = CreateCandidate(zipPath, fileName, sha256, importedFrom, isNiwcEnhanced);
         candidate.ArtifactKind = hasRelatedOval ? ImportArtifactKind.Scap : ImportArtifactKind.Stig;
         candidate.Confidence = DetectionConfidence.High;
         PopulateXccdfIdentity(candidate, xccdfEntry, hasRelatedOval ? "scap" : "stig");
@@ -186,7 +188,7 @@ public sealed class ImportInboxScanner
 
     if (candidates.Count == 0)
     {
-      var candidate = CreateCandidate(zipPath, fileName, sha256);
+      var candidate = CreateCandidate(zipPath, fileName, sha256, importedFrom, isNiwcEnhanced);
       candidate.ArtifactKind = ImportArtifactKind.Unknown;
       candidate.Confidence = DetectionConfidence.Low;
       candidate.ContentKey = "unknown:" + Path.GetFileNameWithoutExtension(zipPath).ToLowerInvariant();
@@ -210,9 +212,30 @@ public sealed class ImportInboxScanner
       var doc = XDocument.Load(stream, LoadOptions.None);
       var root = doc.Root;
       var targetNs = root?.Attribute("targetNamespace")?.Value?.Trim() ?? string.Empty;
+      if (string.IsNullOrWhiteSpace(targetNs))
+      {
+        targetNs = root?
+          .Elements()
+          .FirstOrDefault(e => e.Name.LocalName == "policyNamespaces")?
+          .Elements()
+          .FirstOrDefault(e => e.Name.LocalName == "target")?
+          .Attribute("namespace")?
+          .Value?
+          .Trim() ?? string.Empty;
+      }
+
       var revision = root?.Attribute("revision")?.Value?.Trim() ?? string.Empty;
       if (!string.IsNullOrWhiteSpace(targetNs) || !string.IsNullOrWhiteSpace(revision))
-        return "admx:" + targetNs.ToLowerInvariant() + ":" + revision.ToLowerInvariant();
+      {
+        var identity = string.IsNullOrWhiteSpace(targetNs)
+          ? Path.GetFileNameWithoutExtension(admxEntry.FullName).ToLowerInvariant()
+          : targetNs.ToLowerInvariant();
+        var normalizedRevision = string.IsNullOrWhiteSpace(revision)
+          ? "unknown"
+          : revision.ToLowerInvariant();
+
+        return "admx:" + identity + ":" + normalizedRevision;
+      }
     }
     catch
     {
@@ -265,14 +288,45 @@ public sealed class ImportInboxScanner
     }
   }
 
-  private static ImportInboxCandidate CreateCandidate(string zipPath, string fileName, string sha256)
+  private static ImportInboxCandidate CreateCandidate(string zipPath, string fileName, string sha256, ImportProvenance importedFrom, bool isNiwcEnhanced)
   {
     return new ImportInboxCandidate
     {
       ZipPath = zipPath,
       FileName = fileName,
-      Sha256 = sha256
+      Sha256 = sha256,
+      ImportedFrom = importedFrom,
+      IsNiwcEnhanced = isNiwcEnhanced
     };
+  }
+
+  private static ImportProvenance DetectProvenance(string zipPath, IReadOnlyList<string> entryPathsLower)
+  {
+    var source = (zipPath ?? string.Empty).ToLowerInvariant();
+    if (source.IndexOf("consolidated", StringComparison.Ordinal) >= 0
+      || source.IndexOf("bundle", StringComparison.Ordinal) >= 0
+      || entryPathsLower.Any(p => p.IndexOf("consolidated", StringComparison.Ordinal) >= 0))
+      return ImportProvenance.ConsolidatedBundle;
+
+    if (source.EndsWith(".zip", StringComparison.Ordinal))
+      return ImportProvenance.StandaloneZip;
+
+    return ImportProvenance.Other;
+  }
+
+  private static bool DetectNiwcEnhanced(string zipPath, IReadOnlyList<string> entryPathsLower)
+  {
+    var source = (zipPath ?? string.Empty).ToLowerInvariant();
+    var sourceLooksNiwc = source.IndexOf("niwc", StringComparison.Ordinal) >= 0
+      || source.IndexOf("atlantic", StringComparison.Ordinal) >= 0;
+    var sourceLooksEnhanced = source.IndexOf("enhanced", StringComparison.Ordinal) >= 0
+      || source.IndexOf("consolidated", StringComparison.Ordinal) >= 0;
+
+    if (sourceLooksNiwc && sourceLooksEnhanced)
+      return true;
+
+    return entryPathsLower.Any(p => p.IndexOf("niwc", StringComparison.Ordinal) >= 0
+      && (p.IndexOf("enhanced", StringComparison.Ordinal) >= 0 || p.IndexOf("consolidated", StringComparison.Ordinal) >= 0));
   }
 
   private static void AddUniqueCandidate(ICollection<ImportInboxCandidate> candidates, ISet<string> seen, ImportInboxCandidate candidate)

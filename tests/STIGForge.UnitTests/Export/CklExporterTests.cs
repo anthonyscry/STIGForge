@@ -1,5 +1,6 @@
 using System.Text.Json;
 using System.Xml.Linq;
+using System.IO.Compression;
 using FluentAssertions;
 using STIGForge.Export;
 using STIGForge.Verify;
@@ -82,16 +83,98 @@ public sealed class CklExporterTests : IDisposable
     act.Should().Throw<DirectoryNotFoundException>();
   }
 
-  private string CreateTestBundle()
+  [Fact]
+  public void ExportCkl_WithCklbFormat_CreatesCklbArchive()
   {
-    var bundleRoot = Path.Combine(_tempDir, "bundle");
+    var bundleRoot = CreateTestBundle("bundle-cklb");
+    var outputDir = Path.Combine(_tempDir, "output-cklb");
+
+    var result = CklExporter.ExportCkl(new CklExportRequest
+    {
+      BundleRoot = bundleRoot,
+      OutputDirectory = outputDir,
+      FileFormat = CklFileFormat.Cklb
+    });
+
+    result.OutputPath.Should().EndWith(".cklb");
+    File.Exists(result.OutputPath).Should().BeTrue();
+
+    using var archive = ZipFile.OpenRead(result.OutputPath);
+    archive.Entries.Should().Contain(e => e.FullName.EndsWith(".ckl", StringComparison.OrdinalIgnoreCase));
+  }
+
+  [Fact]
+  public void ExportCkl_WithCklbFormat_AllowsOverwriteOnRepeatExport()
+  {
+    var bundleRoot = CreateTestBundle("bundle-cklb-repeat");
+    var outputDir = Path.Combine(_tempDir, "output-cklb-repeat");
+
+    var request = new CklExportRequest
+    {
+      BundleRoot = bundleRoot,
+      OutputDirectory = outputDir,
+      FileFormat = CklFileFormat.Cklb
+    };
+
+    var first = CklExporter.ExportCkl(request);
+    var second = CklExporter.ExportCkl(request);
+
+    second.OutputPath.Should().Be(first.OutputPath);
+    File.Exists(second.OutputPath).Should().BeTrue();
+  }
+
+  [Fact]
+  public void ExportCkl_WithCsvEnabled_WritesCsvCompanion()
+  {
+    var bundleRoot = CreateTestBundle("bundle-csv");
+    var outputDir = Path.Combine(_tempDir, "output-csv");
+
+    var result = CklExporter.ExportCkl(new CklExportRequest
+    {
+      BundleRoot = bundleRoot,
+      OutputDirectory = outputDir,
+      IncludeCsv = true
+    });
+
+    result.OutputPaths.Should().Contain(path => path.EndsWith(".csv", StringComparison.OrdinalIgnoreCase));
+    var csvPath = result.OutputPaths.First(path => path.EndsWith(".csv", StringComparison.OrdinalIgnoreCase));
+    File.ReadAllText(csvPath).Should().Contain("PackId,PackName,VulnId");
+  }
+
+  [Fact]
+  public void ExportCkl_WithMultipleBundleRoots_CombinesIntoSingleChecklist()
+  {
+    var bundleOne = CreateTestBundle("bundle-one", new List<ControlResult>
+    {
+      new() { VulnId = "V-111111", RuleId = "SV-111111r1_rule", Title = "Rule A", Severity = "high", Status = "Open", Tool = "SCAP" }
+    });
+    var bundleTwo = CreateTestBundle("bundle-two", new List<ControlResult>
+    {
+      new() { VulnId = "V-222222", RuleId = "SV-222222r1_rule", Title = "Rule B", Severity = "medium", Status = "NotAFinding", Tool = "SCAP" }
+    });
+
+    var result = CklExporter.ExportCkl(new CklExportRequest
+    {
+      BundleRoots = new[] { bundleOne, bundleTwo }
+    });
+
+    result.ControlCount.Should().Be(2);
+    var doc = XDocument.Load(result.OutputPath);
+    doc.Descendants("iSTIG").Count().Should().Be(2);
+  }
+
+  private string CreateTestBundle(string folderName = "bundle", IReadOnlyList<ControlResult>? controls = null)
+  {
+    var bundleRoot = Path.Combine(_tempDir, folderName);
     var verifyDir = Path.Combine(bundleRoot, "Verify", "run1");
+    var manifestDir = Path.Combine(bundleRoot, "Manifest");
     Directory.CreateDirectory(verifyDir);
+    Directory.CreateDirectory(manifestDir);
 
     var report = new VerifyReport
     {
       Tool = "Test",
-      Results = new List<ControlResult>
+      Results = controls ?? new List<ControlResult>
       {
         new() { VulnId = "V-100001", RuleId = "SV-100001r1_rule", Title = "Test Rule 1", Severity = "high", Status = "NotAFinding", Tool = "SCAP" },
         new() { VulnId = "V-100002", RuleId = "SV-100002r1_rule", Title = "Test Rule 2", Severity = "medium", Status = "Open", Tool = "SCAP", Comments = "Needs fix" }
@@ -100,6 +183,17 @@ public sealed class CklExporterTests : IDisposable
 
     File.WriteAllText(Path.Combine(verifyDir, "consolidated-results.json"),
       JsonSerializer.Serialize(report, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
+
+    var manifest = new
+    {
+      run = new
+      {
+        packId = folderName + "-pack",
+        packName = "Pack " + folderName,
+        profileName = "Test Profile"
+      }
+    };
+    File.WriteAllText(Path.Combine(manifestDir, "manifest.json"), JsonSerializer.Serialize(manifest));
 
     return bundleRoot;
   }

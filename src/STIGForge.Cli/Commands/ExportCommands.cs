@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.CommandLine.Invocation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -58,15 +59,39 @@ internal static class ExportCommands
     var ipOpt = new Option<string>("--host-ip", () => string.Empty, "Host IP for CKL ASSET section");
     var macOpt = new Option<string>("--host-mac", () => string.Empty, "Host MAC for CKL ASSET section");
     var stigIdOpt = new Option<string>("--stig-id", () => string.Empty, "STIG ID for CKL header");
-    cmd.AddOption(bundleOpt); cmd.AddOption(outOpt); cmd.AddOption(fileNameOpt);
-    cmd.AddOption(hostOpt); cmd.AddOption(ipOpt); cmd.AddOption(macOpt); cmd.AddOption(stigIdOpt);
-
-    cmd.SetHandler(async (bundle, output, fileName, hostName, hostIp, hostMac, stigId) =>
+    var formatOpt = new Option<string>("--format", () => "ckl", "Checklist format: ckl or cklb");
+    var includeCsvOpt = new Option<bool>("--include-csv", () => false, "Also emit CSV checklist rows");
+    formatOpt.AddValidator(result =>
     {
+      var value = result.GetValueOrDefault<string>() ?? string.Empty;
+      if (!string.Equals(value, "ckl", StringComparison.OrdinalIgnoreCase)
+          && !string.Equals(value, "cklb", StringComparison.OrdinalIgnoreCase))
+      {
+        result.ErrorMessage = "Invalid --format value '" + value + "'. Allowed values: ckl, cklb.";
+      }
+    });
+
+    cmd.AddOption(bundleOpt); cmd.AddOption(outOpt); cmd.AddOption(fileNameOpt);
+    cmd.AddOption(hostOpt); cmd.AddOption(ipOpt); cmd.AddOption(macOpt); cmd.AddOption(stigIdOpt); cmd.AddOption(formatOpt); cmd.AddOption(includeCsvOpt);
+
+    cmd.SetHandler(async (InvocationContext context) =>
+    {
+      var bundle = context.ParseResult.GetValueForOption(bundleOpt) ?? string.Empty;
+      var output = context.ParseResult.GetValueForOption(outOpt) ?? string.Empty;
+      var fileName = context.ParseResult.GetValueForOption(fileNameOpt) ?? string.Empty;
+      var hostName = context.ParseResult.GetValueForOption(hostOpt) ?? string.Empty;
+      var hostIp = context.ParseResult.GetValueForOption(ipOpt) ?? string.Empty;
+      var hostMac = context.ParseResult.GetValueForOption(macOpt) ?? string.Empty;
+      var stigId = context.ParseResult.GetValueForOption(stigIdOpt) ?? string.Empty;
+      var format = context.ParseResult.GetValueForOption(formatOpt) ?? "ckl";
+      var includeCsv = context.ParseResult.GetValueForOption(includeCsvOpt);
+
       using var host = buildHost();
       await host.StartAsync();
       var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("ExportCommands");
       logger.LogInformation("export-ckl started: bundle={Bundle}", bundle);
+
+      var checklistFormat = ParseChecklistFormat(format);
 
       var result = CklExporter.ExportCkl(new CklExportRequest
       {
@@ -76,17 +101,30 @@ internal static class ExportCommands
         HostName = string.IsNullOrWhiteSpace(hostName) ? null : hostName,
         HostIp = string.IsNullOrWhiteSpace(hostIp) ? null : hostIp,
         HostMac = string.IsNullOrWhiteSpace(hostMac) ? null : hostMac,
-        StigId = string.IsNullOrWhiteSpace(stigId) ? null : stigId
+        StigId = string.IsNullOrWhiteSpace(stigId) ? null : stigId,
+        FileFormat = checklistFormat,
+        IncludeCsv = includeCsv
       });
 
       Console.WriteLine("CKL export:");
-      Console.WriteLine("  File: " + result.OutputPath);
+      Console.WriteLine("  File(s): " + string.Join(" | ", result.OutputPaths));
       Console.WriteLine("  Controls: " + result.ControlCount);
 
       logger.LogInformation("export-ckl completed: {ControlCount} controls exported to {Output}", result.ControlCount, result.OutputPath);
       await host.StopAsync();
-    }, bundleOpt, outOpt, fileNameOpt, hostOpt, ipOpt, macOpt, stigIdOpt);
+    });
 
     rootCmd.AddCommand(cmd);
+  }
+
+  private static CklFileFormat ParseChecklistFormat(string format)
+  {
+    if (string.Equals(format, "cklb", StringComparison.OrdinalIgnoreCase))
+      return CklFileFormat.Cklb;
+
+    if (string.Equals(format, "ckl", StringComparison.OrdinalIgnoreCase))
+      return CklFileFormat.Ckl;
+
+    throw new ArgumentException("Invalid --format value '" + format + "'. Allowed values: ckl, cklb.", nameof(format));
   }
 }
