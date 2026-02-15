@@ -14,6 +14,17 @@ public partial class PackComparisonDialog : Window
   {
     InitializeComponent();
     DataContext = new { AvailablePacks = availablePacks };
+    SourceInitialized += (_, _) => MainViewModel.SetDarkTitleBar(this, IsDarkThemeActive());
+  }
+
+  private static bool IsDarkThemeActive()
+  {
+    var app = Application.Current;
+    if (app == null)
+      return true;
+
+    return app.Resources.MergedDictionaries
+      .Any(d => d.Source?.OriginalString.IndexOf("DarkTheme", StringComparison.OrdinalIgnoreCase) >= 0);
   }
 
   private void Compare_Click(object sender, RoutedEventArgs e)

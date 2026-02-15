@@ -36,7 +36,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
   private readonly STIGForge.Infrastructure.System.FleetService? _fleetService;
   private readonly CancellationTokenSource _cts = new();
   private bool _disposed;
+  private int _initialLoadStarted;
   private ICollectionView? _manualView;
+  private ICollectionView? _remoteDiscoveredHostsView;
+  private bool _suppressScapArgsSync;
 
   [ObservableProperty] private string statusText = "Ready.";
   [ObservableProperty] private string statusSeverity = "Info";
@@ -97,7 +100,12 @@ public partial class MainViewModel : ObservableObject, IDisposable
   [ObservableProperty] private string evaluateStigRoot = "";
   [ObservableProperty] private string evaluateStigArgs = "";
   [ObservableProperty] private string scapCommandPath = "";
-  [ObservableProperty] private string scapArgs = "";
+  [ObservableProperty] private string scapArgs = "-u -s -r -f";
+  [ObservableProperty] private bool scapIncludeU = true;
+  [ObservableProperty] private bool scapIncludeS = true;
+  [ObservableProperty] private bool scapIncludeR = true;
+  [ObservableProperty] private bool scapIncludeF = true;
+  [ObservableProperty] private string scapAdditionalArgs = "";
   [ObservableProperty] private string scapLabel = "DISA SCAP";
   [ObservableProperty] private string lastOutputPath = "";
   [ObservableProperty] private string reportSummary = "";
@@ -118,9 +126,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
   [ObservableProperty] private string toolkitActivationStatus = "Toolkit activation pending.";
   [ObservableProperty] private string importLibraryStatus = "Library not loaded.";
   [ObservableProperty] private string machineApplicabilityStatus = "";
+  [ObservableProperty] private string machineScanSummary = "Run Scan Local Machine to detect applicable content.";
+  [ObservableProperty] private string machineSelectionDiagnostics = "";
   [ObservableProperty] private string adRemoteTargets = "";
   [ObservableProperty] private string adRemoteScanStatus = "";
-  [ObservableProperty] private bool isScanExpanded = true;
+  [ObservableProperty] private string adRemoteDiscoveryStatus = "";
+  [ObservableProperty] private string adRemoteFilterText = "";
+  [ObservableProperty] private bool isScanExpanded = false;
   [ObservableProperty] private string selectedContentSummary = "No content selected. Import or select packs above.";
   [ObservableProperty] private string selectedMissionPreset = "Workstation/VM Compliance";
   [ObservableProperty] private string missionPresetGuidance = "Use snapshot-protected apply for managed endpoints.";
@@ -157,6 +169,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
   [ObservableProperty] private string orchLog = "";
 
   public bool ActionsEnabled => !IsBusy;
+  public string ScapArgsPreview => string.IsNullOrWhiteSpace(ScapArgs) ? "(none)" : ScapArgs;
 
   public IReadOnlyList<string> MissionPresets { get; } = new[]
   {
@@ -178,10 +191,16 @@ public partial class MainViewModel : ObservableObject, IDisposable
    public ObservableCollection<ImportedLibraryItem> OtherLibraryItems { get; } = new();
    public ObservableCollection<ImportedLibraryItem> AllLibraryItems { get; } = new();
    public ObservableCollection<MachineScanTag> MachineScanTags { get; } = new();
-     public HashSet<string> ApplicablePackIds { get; } = new(StringComparer.OrdinalIgnoreCase);
-     private ICollectionView? _filteredContentLibrary;
-   public ICollectionView FilteredContentLibrary => _filteredContentLibrary ??= CreateFilteredLibraryView();
-   public ICollectionView ManualControlsView => _manualView ??= CollectionViewSource.GetDefaultView(ManualControls);
+   public ObservableCollection<ApplicablePackPair> ApplicablePackPairs { get; } = new();
+   public ObservableCollection<SelectionReasonRow> SelectionReasons { get; } = new();
+   public ObservableCollection<RemoteHostScanItem> AdRemoteDiscoveredHosts { get; } = new();
+      public HashSet<string> ApplicablePackIds { get; } = new(StringComparer.OrdinalIgnoreCase);
+      private ICollectionView? _filteredContentLibrary;
+    public ICollectionView FilteredContentLibrary => _filteredContentLibrary ??= CreateFilteredLibraryView();
+    public ICollectionView ManualControlsView => _manualView ??= CollectionViewSource.GetDefaultView(ManualControls);
+    public ICollectionView AdRemoteDiscoveredHostsView => _remoteDiscoveredHostsView ??= CreateAdRemoteDiscoveredHostsView();
+    public bool HasApplicablePackPairs => ApplicablePackPairs.Count > 0;
+    public bool HasSelectionReasons => SelectionReasons.Count > 0;
 
   [ObservableProperty] private ContentPack? selectedPack;
   [ObservableProperty] private Profile? selectedProfile;
@@ -220,6 +239,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
   [ObservableProperty] private string evidenceFilePath = "";
   [ObservableProperty] private string evidenceStatus = "";
   [ObservableProperty] private string selectedRecentBundle = "";
+  [ObservableProperty] private string selectedRecentBundleProfileName = "";
+  [ObservableProperty] private string selectedRecentBundlePackName = "";
   [ObservableProperty] private ManualControlItem? selectedManualControl;
   [ObservableProperty] private ImportedLibraryItem? selectedStigLibraryItem;
   [ObservableProperty] private ImportedLibraryItem? selectedScapLibraryItem;
@@ -229,6 +250,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
   [ObservableProperty] private string manualComment = "";
   [ObservableProperty] private string manualFilterText = "";
   [ObservableProperty] private string manualStatusFilter = "All";
+  [ObservableProperty] private string manualCatFilter = "All";
   [ObservableProperty] private string manualSummary = "";
 
   public IReadOnlyList<string> EvidenceTypes { get; } = new[]
@@ -258,6 +280,15 @@ public partial class MainViewModel : ObservableObject, IDisposable
      "Open"
    };
 
+   public IReadOnlyList<string> ManualCatFilters { get; } = new[]
+   {
+     "All",
+     "CAT I",
+     "CAT II",
+     "CAT III",
+     "Unknown"
+   };
+
    // Content Library Filter Properties
    public bool IsFilterAll { get => ContentLibraryFilter == "All"; set { if (value) ContentLibraryFilter = "All"; } }
    public bool IsFilterStig { get => ContentLibraryFilter == "STIG"; set { if (value) ContentLibraryFilter = "STIG"; } }
@@ -284,6 +315,16 @@ public partial class MainViewModel : ObservableObject, IDisposable
     _manualAnswerService = new ManualAnswerService(_audit);
     _scheduledTaskService = scheduledTaskService;
     _fleetService = fleetService;
+
+    ApplicablePackPairs.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasApplicablePackPairs));
+    SelectionReasons.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasSelectionReasons));
+  }
+
+  public void StartInitialLoad()
+  {
+    if (Interlocked.Exchange(ref _initialLoadStarted, 1) != 0)
+      return;
+
     _ = LoadAsync().ContinueWith(t =>
     {
       if (t.IsFaulted)
@@ -295,7 +336,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
   {
     try
     {
-      IsBusy = true;
       var list = await _packs.ListAsync(CancellationToken.None);
       var profiles = await _profiles.ListAsync(CancellationToken.None);
       var overlays = await _overlays.ListAsync(CancellationToken.None);
@@ -345,7 +385,13 @@ public partial class MainViewModel : ObservableObject, IDisposable
         EvaluateStigArgs = defaultArgs;
 
       if (string.IsNullOrWhiteSpace(EvaluateStigRoot) && string.IsNullOrWhiteSpace(ScapCommandPath))
-        await TryActivateToolkitAsync(userInitiated: false, _cts.Token);
+      {
+        _ = TryActivateToolkitAsync(userInitiated: false, _cts.Token).ContinueWith(t =>
+        {
+          if (t.IsFaulted)
+            System.Diagnostics.Trace.TraceWarning("Background toolkit activation failed: " + t.Exception?.Flatten().Message);
+        }, System.Threading.Tasks.TaskScheduler.Default);
+      }
       LoadCoverageOverlap();
       LoadManualControlsAsync();
       ConfigureManualView();
@@ -354,10 +400,6 @@ public partial class MainViewModel : ObservableObject, IDisposable
     catch (Exception ex)
     {
       StatusText = "Load failed: " + ex.Message;
-    }
-    finally
-    {
-      IsBusy = false;
     }
   }
 
@@ -390,6 +432,26 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     public ControlRecord Control { get; }
 
+    public string RuleId => !string.IsNullOrWhiteSpace(Control.ExternalIds.RuleId)
+      ? Control.ExternalIds.RuleId!
+      : Control.ExternalIds.VulnId ?? string.Empty;
+
+    public string Title => Control.Title;
+
+    public string StigGroup => string.IsNullOrWhiteSpace(Control.Revision.PackName)
+      ? "(unknown)"
+      : Control.Revision.PackName;
+
+    public string CatLevel => MapCatLevel(Control.Severity);
+
+    public int CatSortOrder => CatLevel switch
+    {
+      "CAT I" => 1,
+      "CAT II" => 2,
+      "CAT III" => 3,
+      _ => 99
+    };
+
     private string _status;
     public string Status
     {
@@ -409,6 +471,18 @@ public partial class MainViewModel : ObservableObject, IDisposable
     {
       get => _comment;
       set => SetProperty(ref _comment, value);
+    }
+
+    private static string MapCatLevel(string? severity)
+    {
+      var normalized = (severity ?? string.Empty).Trim().ToLowerInvariant();
+      return normalized switch
+      {
+        "high" => "CAT I",
+        "medium" => "CAT II",
+        "low" => "CAT III",
+        _ => "Unknown"
+      };
     }
   }
 
@@ -439,6 +513,40 @@ public partial class MainViewModel : ObservableObject, IDisposable
     public string ToolTip { get; set; } = string.Empty;
   }
 
+  public sealed class ApplicablePackPair
+  {
+    public string StigName { get; set; } = string.Empty;
+    public string StigId { get; set; } = string.Empty;
+    public string ScapName { get; set; } = string.Empty;
+    public string ScapId { get; set; } = string.Empty;
+    public string MatchState { get; set; } = string.Empty;
+    public string Reason { get; set; } = string.Empty;
+  }
+
+  public sealed class SelectionReasonRow
+  {
+    public string Type { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+    public bool Selected { get; set; }
+    public string Reason { get; set; } = string.Empty;
+  }
+
+  public partial class RemoteHostScanItem : ObservableObject
+  {
+    [ObservableProperty] private bool isSelected;
+    [ObservableProperty] private string hostName = string.Empty;
+    [ObservableProperty] private string winRmStatus = "Unknown";
+    [ObservableProperty] private string scanStatus = "Not Scanned";
+    [ObservableProperty] private string details = string.Empty;
+
+    public bool IsWinRmReachable => string.Equals(WinRmStatus, "Available", StringComparison.OrdinalIgnoreCase);
+
+    partial void OnWinRmStatusChanged(string value)
+    {
+      OnPropertyChanged(nameof(IsWinRmReachable));
+    }
+  }
+
   private sealed class UiState
   {
     public string? BundleRoot { get; set; }
@@ -446,6 +554,11 @@ public partial class MainViewModel : ObservableObject, IDisposable
     public string? EvaluateStigArgs { get; set; }
     public string? ScapCommandPath { get; set; }
     public string? ScapArgs { get; set; }
+    public bool? ScapIncludeU { get; set; }
+    public bool? ScapIncludeS { get; set; }
+    public bool? ScapIncludeR { get; set; }
+    public bool? ScapIncludeF { get; set; }
+    public string? ScapAdditionalArgs { get; set; }
     public string? ScapLabel { get; set; }
     public string? PowerStigModulePath { get; set; }
     public string? PowerStigDataFile { get; set; }

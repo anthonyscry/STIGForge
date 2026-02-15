@@ -4,7 +4,7 @@
 
 ### Delegation System Non-Functional
 **Status:** BLOCKED - Cannot use delegate_task()
-**Error:** "oh-my-opencode requires a default model"
+**Error:** "Delegation plugin requires a default model"
 **Impact:** Must complete tasks directly instead of delegating to specialized agents
 **Workaround:** Direct implementation with manual verification
 

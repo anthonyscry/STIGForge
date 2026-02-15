@@ -11,9 +11,11 @@ public sealed class ImportDedupService
     if (candidates.Count == 0)
       return new ImportDedupOutcome();
 
+    var decisions = new List<string>();
+
     var byLogicalContent = candidates
       .GroupBy(BuildLogicalKey, StringComparer.OrdinalIgnoreCase)
-      .Select(group => SelectPreferred(group.ToList(), forStig: group.Any(x => x.ArtifactKind == ImportArtifactKind.Stig)))
+      .Select(group => SelectPreferred(group.ToList(), forStig: group.Any(x => x.ArtifactKind == ImportArtifactKind.Stig), decisions))
       .ToList();
 
     var winners = byLogicalContent.Select(x => x.Winner).ToList();
@@ -34,7 +36,8 @@ public sealed class ImportDedupService
         .OrderBy(c => c.ZipPath, StringComparer.OrdinalIgnoreCase)
         .ThenBy(c => c.ArtifactKind.ToString(), StringComparer.OrdinalIgnoreCase)
         .ThenBy(c => c.ContentKey, StringComparer.OrdinalIgnoreCase)
-        .ToList()
+        .ToList(),
+      Decisions = decisions
     };
   }
 
@@ -59,8 +62,25 @@ public sealed class ImportDedupService
       + "|" + (candidate.ContentKey ?? string.Empty).Trim().ToLowerInvariant();
   }
 
-  private static (ImportInboxCandidate Winner, List<ImportInboxCandidate> Suppressed) SelectPreferred(List<ImportInboxCandidate> group, bool forStig)
+  private static (ImportInboxCandidate Winner, List<ImportInboxCandidate> Suppressed) SelectPreferred(List<ImportInboxCandidate> group, bool forStig, ICollection<string> decisions)
   {
+    if (group.Count == 0)
+      throw new InvalidOperationException("Group must contain at least one candidate.");
+
+    if (group.All(c => c.ArtifactKind == ImportArtifactKind.Scap)
+      && HasSameVersionDifferentHashes(group)
+      && TrySelectNiwcEnhanced(group, out var niwcWinner))
+    {
+      var suppressedByNiwc = group
+        .Where(c => !ReferenceEquals(c, niwcWinner))
+        .ToList();
+
+      decisions.Add("SCAP conflict: same version, different hash -> selected NIWC Enhanced (Consolidated Bundle): "
+        + niwcWinner.FileName + " [" + niwcWinner.ContentKey + "]");
+
+      return (niwcWinner, suppressedByNiwc);
+    }
+
     var ordered = group
       .OrderByDescending(c => c.Confidence)
       .ThenByDescending(c => GetDateRank(c))
@@ -79,7 +99,55 @@ public sealed class ImportDedupService
 
     var winner = ordered[0];
     var suppressed = ordered.Skip(1).ToList();
+
+    if (group.All(c => c.ArtifactKind == ImportArtifactKind.Scap)
+      && HasSameVersionDifferentHashes(group)
+      && suppressed.Count > 0)
+    {
+      decisions.Add("SCAP conflict: same version, different hash -> NIWC Enhanced not found; selected deterministic fallback: "
+        + winner.FileName + " [" + winner.ContentKey + "]");
+    }
+
     return (winner, suppressed);
+  }
+
+  private static bool HasSameVersionDifferentHashes(IReadOnlyList<ImportInboxCandidate> group)
+  {
+    var normalizedVersions = group
+      .Select(c => (c.VersionTag ?? string.Empty).Trim())
+      .Where(v => v.Length > 0)
+      .Distinct(StringComparer.OrdinalIgnoreCase)
+      .ToList();
+
+    if (normalizedVersions.Count != 1)
+      return false;
+
+    var hashes = group
+      .Select(c => (c.Sha256 ?? string.Empty).Trim())
+      .Where(h => h.Length > 0)
+      .Distinct(StringComparer.OrdinalIgnoreCase)
+      .ToList();
+
+    return hashes.Count > 1;
+  }
+
+  private static bool TrySelectNiwcEnhanced(IReadOnlyList<ImportInboxCandidate> group, out ImportInboxCandidate winner)
+  {
+    var niwcCandidates = group
+      .Where(c => c.ImportedFrom == ImportProvenance.ConsolidatedBundle && c.IsNiwcEnhanced)
+      .OrderByDescending(GetDateRank)
+      .ThenByDescending(c => c.Confidence)
+      .ThenBy(c => c.FileName, StringComparer.OrdinalIgnoreCase)
+      .ToList();
+
+    if (niwcCandidates.Count == 0)
+    {
+      winner = null!;
+      return false;
+    }
+
+    winner = niwcCandidates[0];
+    return true;
   }
 
   private static long GetDateRank(ImportInboxCandidate candidate)

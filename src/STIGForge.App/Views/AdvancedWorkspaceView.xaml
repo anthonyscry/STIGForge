@@ -290,6 +290,30 @@
                 <Button Content="Browse" Width="80" Margin="6,0,0,0" Command="{Binding BrowseScapCommandCommand}" />
               </WrapPanel>
 
+              <TextBlock Text="Tool paths auto-populate from imported tool bundles and managed cache."
+                         Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,8" TextWrapping="Wrap"/>
+              <WrapPanel Margin="0,0,0,8">
+                <TextBlock Text="Tools:" Width="120" VerticalAlignment="Center" />
+                <Button Content="Auto-detect Tools" Width="130" Command="{Binding ActivateToolkitCommand}"
+                        ToolTipService.ToolTip="Auto-configure Evaluate-STIG, SCC, and PowerSTIG from imported tools or managed cache."/>
+                <Button Content="Open Import Folder" Width="140" Margin="6,0,0,0" Command="{Binding OpenImportFolderCommand}"
+                        ToolTipService.ToolTip="Open the import folder used for tool and content ingestion."/>
+              </WrapPanel>
+              <TextBlock Text="{Binding ToolkitActivationStatus}" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,8" TextWrapping="Wrap"/>
+
+              <WrapPanel Margin="0,0,0,8">
+                <TextBlock Text="SCAP opts:" Width="120" VerticalAlignment="Center" />
+                <CheckBox Content="-u" IsChecked="{Binding ScapIncludeU}" Margin="0,0,10,0" ToolTipService.ToolTip="Include -u switch."/>
+                <CheckBox Content="-s" IsChecked="{Binding ScapIncludeS}" Margin="0,0,10,0" ToolTipService.ToolTip="Include -s switch."/>
+                <CheckBox Content="-r" IsChecked="{Binding ScapIncludeR}" Margin="0,0,10,0" ToolTipService.ToolTip="Include -r switch."/>
+                <CheckBox Content="-f" IsChecked="{Binding ScapIncludeF}" ToolTipService.ToolTip="Include -f switch."/>
+              </WrapPanel>
+              <WrapPanel Margin="0,0,0,8">
+                <TextBlock Text="Extra args:" Width="120" VerticalAlignment="Center" />
+                <TextBox Width="520" Text="{Binding ScapAdditionalArgs}" />
+              </WrapPanel>
+              <TextBlock Text="{Binding ScapArgsPreview}" Foreground="{StaticResource TextMutedBrush}" Margin="120,0,0,8" TextWrapping="Wrap"/>
+
               <WrapPanel>
                 <CheckBox Content="Run Apply" IsChecked="{Binding OrchRunApply}" Margin="0,0,16,0"/>
                 <CheckBox Content="Run Verify" IsChecked="{Binding OrchRunVerify}" Margin="0,0,16,0"/>
@@ -368,8 +392,19 @@
               <Button Content="Browse" Width="80" Margin="6,0,0,0" Command="{Binding BrowseScapCommandCommand}" />
             </WrapPanel>
             <WrapPanel Margin="0,0,0,8">
-              <TextBlock Text="SCAP Args:" Width="120" VerticalAlignment="Center" />
-              <TextBox Width="520" Text="{Binding ScapArgs}" />
+              <TextBlock Text="SCAP opts:" Width="120" VerticalAlignment="Center" />
+              <CheckBox Content="-u" IsChecked="{Binding ScapIncludeU}" Margin="0,0,10,0" ToolTipService.ToolTip="Include -u switch."/>
+              <CheckBox Content="-s" IsChecked="{Binding ScapIncludeS}" Margin="0,0,10,0" ToolTipService.ToolTip="Include -s switch."/>
+              <CheckBox Content="-r" IsChecked="{Binding ScapIncludeR}" Margin="0,0,10,0" ToolTipService.ToolTip="Include -r switch."/>
+              <CheckBox Content="-f" IsChecked="{Binding ScapIncludeF}" ToolTipService.ToolTip="Include -f switch."/>
+            </WrapPanel>
+            <WrapPanel Margin="0,0,0,8">
+              <TextBlock Text="Extra args:" Width="120" VerticalAlignment="Center" />
+              <TextBox Width="520" Text="{Binding ScapAdditionalArgs}" />
+            </WrapPanel>
+            <WrapPanel Margin="0,0,0,8">
+              <TextBlock Text="SCAP args:" Width="120" VerticalAlignment="Center" />
+              <TextBlock Width="520" TextWrapping="Wrap" Foreground="{StaticResource TextMutedBrush}" Text="{Binding ScapArgsPreview}" />
             </WrapPanel>
             <WrapPanel Margin="0,0,0,8">
               <TextBlock Text="SCAP Label:" Width="120" VerticalAlignment="Center" />
@@ -619,8 +654,8 @@
                     <WrapPanel Margin="0,0,0,8">
                       <TextBlock Text="Host Name:" Width="100" VerticalAlignment="Center"/>
                       <TextBox Width="200" Text="{Binding CklHostName}"/>
-                      <TextBlock Text="STIG ID:" Width="70" Margin="12,0,0,0" VerticalAlignment="Center"/>
-                      <TextBox Width="200" Text="{Binding CklStigId}"/>
+                      <TextBlock Text="Format:" Width="70" Margin="12,0,0,0" VerticalAlignment="Center"/>
+                      <ComboBox Width="200" ItemsSource="{Binding CklOutputFormats}" SelectedItem="{Binding CklOutputFormat}"/>
                     </WrapPanel>
                     <Button Content="Export CKL" Width="140" Command="{Binding ExportCklCommand}" IsEnabled="{Binding ActionsEnabled}"/>
                     <TextBlock Text="{Binding CklStatus}" Margin="0,8,0,0" Foreground="{StaticResource TextMutedBrush}"/>

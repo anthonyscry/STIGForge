@@ -82,7 +82,7 @@ public partial class ContentPickerDialog : Window
 
     var stack = new StackPanel();
 
-    foreach (var item in items)
+    foreach (var item in items.OrderBy(i => i.Name, StringComparer.OrdinalIgnoreCase))
     {
       var row = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 2, 0, 2) };
 

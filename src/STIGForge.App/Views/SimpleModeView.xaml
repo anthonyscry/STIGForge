@@ -46,49 +46,55 @@
               <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="12" Margin="0,0,0,8" Background="{StaticResource SurfaceBrush}">
                 <StackPanel>
                   <TextBlock Text="Question 3: Which scanner(s) will validate results?" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                  <TextBlock Text="Tool paths auto-populate from imported tool bundles and managed cache." Margin="0,0,0,8" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap"/>
                   <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                    <TextBlock Text="Toolkit root:" Width="140" VerticalAlignment="Center"/>
-                    <TextBox Width="520" TabIndex="30" Text="{Binding LocalToolkitRoot}"
-                             AutomationProperties.Name="Toolkit root folder"
-                             ToolTipService.ToolTip="Folder containing STIG_SCAP tooling archives or extracted tool folders."/>
-                    <Button Content="Activate" Width="80" Margin="6,0,0,0" TabIndex="31" Command="{Binding ActivateToolkitCommand}"
-                            AutomationProperties.Name="Activate toolkit"
-                            ToolTipService.ToolTip="Auto-configure Evaluate-STIG, SCC, and PowerSTIG from the toolkit folder."/>
-                    <Button Content="Open" Width="80" Margin="6,0,0,0" TabIndex="32" Command="{Binding OpenToolkitRootCommand}"
-                            AutomationProperties.Name="Open toolkit folder"
-                            ToolTipService.ToolTip="Open the toolkit root folder in Windows Explorer."/>
+                    <TextBlock Text="Tools:" Width="140" VerticalAlignment="Center"/>
+                    <Button Content="Auto-detect Tools" Width="130" Margin="0,0,6,0" TabIndex="30" Command="{Binding ActivateToolkitCommand}"
+                            AutomationProperties.Name="Auto-detect tools"
+                            ToolTipService.ToolTip="Auto-configure Evaluate-STIG, SCC, and PowerSTIG from imported tools or managed cache."/>
+                    <Button Content="Open Import Folder" Width="140" TabIndex="31" Command="{Binding OpenImportFolderCommand}"
+                            AutomationProperties.Name="Open import folder"
+                            ToolTipService.ToolTip="Open the import folder used for tool and content ingestion."/>
                   </StackPanel>
                   <TextBlock Text="{Binding ToolkitActivationStatus}" Margin="0,0,0,8" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap"/>
                   <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                     <TextBlock Text="Evaluate-STIG root:" Width="140" VerticalAlignment="Center"/>
-                    <TextBox Width="540" TabIndex="33" Text="{Binding EvaluateStigRoot}"
+                    <TextBox Width="540" TabIndex="32" Text="{Binding EvaluateStigRoot}"
                              AutomationProperties.Name="Evaluate-STIG root path"
                              ToolTipService.ToolTip="Folder containing Evaluate-STIG.ps1."/>
-                    <Button Content="Browse" Width="80" Margin="6,0,0,0" TabIndex="34" Command="{Binding BrowseEvaluateStigCommand}"
+                    <Button Content="Browse" Width="80" Margin="6,0,0,0" TabIndex="33" Command="{Binding BrowseEvaluateStigCommand}"
                             AutomationProperties.Name="Browse for Evaluate-STIG"
                             ToolTipService.ToolTip="Select the folder containing Evaluate-STIG.ps1."/>
                   </StackPanel>
                   <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                     <TextBlock Text="Evaluate args:" Width="140" VerticalAlignment="Center"/>
-                    <TextBox Width="626" TabIndex="35" Text="{Binding EvaluateStigArgs}"
+                    <TextBox Width="626" TabIndex="34" Text="{Binding EvaluateStigArgs}"
                              AutomationProperties.Name="Evaluate-STIG arguments"
                              ToolTipService.ToolTip="Optional Evaluate-STIG arguments, including answer-file switches."/>
                   </StackPanel>
                   <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                     <TextBlock Text="SCAP command:" Width="140" VerticalAlignment="Center"/>
-                    <TextBox Width="540" TabIndex="36" Text="{Binding ScapCommandPath}"
+                    <TextBox Width="540" TabIndex="35" Text="{Binding ScapCommandPath}"
                              AutomationProperties.Name="SCAP command path"
                              ToolTipService.ToolTip="Path to SCAP/SCC executable."/>
-                    <Button Content="Browse" Width="80" Margin="6,0,0,0" TabIndex="37" Command="{Binding BrowseScapCommandCommand}"
+                    <Button Content="Browse" Width="80" Margin="6,0,0,0" TabIndex="36" Command="{Binding BrowseScapCommandCommand}"
                             AutomationProperties.Name="Browse for SCAP command"
                             ToolTipService.ToolTip="Select the SCAP/SCC executable."/>
                   </StackPanel>
                   <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                    <TextBlock Text="SCAP args:" Width="140" VerticalAlignment="Center"/>
-                    <TextBox Width="626" TabIndex="38" Text="{Binding ScapArgs}"
-                             AutomationProperties.Name="SCAP arguments"
-                             ToolTipService.ToolTip="Arguments that make the tool emit CKL output into the verify folder."/>
+                    <TextBlock Text="SCAP options:" Width="140" VerticalAlignment="Center"/>
+                    <CheckBox Content="-u" IsChecked="{Binding ScapIncludeU}" Margin="0,0,10,0" TabIndex="37" ToolTipService.ToolTip="Include -u switch."/>
+                    <CheckBox Content="-s" IsChecked="{Binding ScapIncludeS}" Margin="0,0,10,0" TabIndex="38" ToolTipService.ToolTip="Include -s switch."/>
+                    <CheckBox Content="-r" IsChecked="{Binding ScapIncludeR}" Margin="0,0,10,0" TabIndex="39" ToolTipService.ToolTip="Include -r switch."/>
+                    <CheckBox Content="-f" IsChecked="{Binding ScapIncludeF}" TabIndex="40" ToolTipService.ToolTip="Include -f switch."/>
                   </StackPanel>
+                  <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <TextBlock Text="Extra args:" Width="140" VerticalAlignment="Center"/>
+                    <TextBox Width="626" TabIndex="41" Text="{Binding ScapAdditionalArgs}"
+                             AutomationProperties.Name="SCAP additional arguments"
+                             ToolTipService.ToolTip="Optional advanced SCAP arguments appended after selected common switches."/>
+                  </StackPanel>
+                  <TextBlock Text="{Binding ScapArgsPreview}" Margin="140,0,0,0" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap"/>
                 </StackPanel>
               </Border>
 
@@ -96,16 +102,16 @@
                 <StackPanel>
                   <TextBlock Text="Question 4: What is your safety posture?" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
                   <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                    <CheckBox Content="Skip snapshot (high risk)" IsChecked="{Binding ApplySkipSnapshot}" Margin="0,0,16,0" TabIndex="40"
+                    <CheckBox Content="Skip snapshot (high risk)" IsChecked="{Binding ApplySkipSnapshot}" Margin="0,0,16,0" TabIndex="42"
                               AutomationProperties.Name="Skip snapshot"
                               ToolTipService.ToolTip="Use only for controlled image bake workflows with external rollback controls."/>
-                    <CheckBox Content="Break-glass acknowledged" IsChecked="{Binding BreakGlassAcknowledged}" TabIndex="41"
+                    <CheckBox Content="Break-glass acknowledged" IsChecked="{Binding BreakGlassAcknowledged}" TabIndex="43"
                               AutomationProperties.Name="Break-glass acknowledged"
                               ToolTipService.ToolTip="Required when snapshot is skipped."/>
                   </StackPanel>
                   <StackPanel Orientation="Horizontal">
                     <TextBlock Text="Break-glass reason:" Width="140" VerticalAlignment="Center"/>
-                    <TextBox Width="626" TabIndex="42" Text="{Binding BreakGlassReason}" IsEnabled="{Binding BreakGlassAcknowledged}"
+                    <TextBox Width="626" TabIndex="44" Text="{Binding BreakGlassReason}" IsEnabled="{Binding BreakGlassAcknowledged}"
                              AutomationProperties.Name="Break-glass reason"
                              ToolTipService.ToolTip="Specific operator justification recorded in audit log."/>
                   </StackPanel>

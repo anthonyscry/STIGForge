@@ -240,6 +240,11 @@ public partial class MainViewModel
     RefreshManualView();
   }
 
+  partial void OnManualCatFilterChanged(string value)
+  {
+    RefreshManualView();
+  }
+
   private async void LoadManualControlsAsync()
   {
     System.Windows.Application.Current.Dispatcher.Invoke(() =>
@@ -292,15 +297,25 @@ public partial class MainViewModel
           !string.Equals(item.Status, statusFilter, StringComparison.OrdinalIgnoreCase))
         return false;
 
+      var catFilter = ManualCatFilter ?? "All";
+      if (!string.Equals(catFilter, "All", StringComparison.OrdinalIgnoreCase)
+          && !string.Equals(item.CatLevel, catFilter, StringComparison.OrdinalIgnoreCase))
+        return false;
+
       var text = ManualFilterText?.Trim();
       if (string.IsNullOrWhiteSpace(text)) return true;
 
       return Contains(item.Control.ExternalIds.RuleId, text)
         || Contains(item.Control.ExternalIds.VulnId, text)
         || Contains(item.Control.Title, text)
+        || Contains(item.StigGroup, text)
+        || Contains(item.CatLevel, text)
         || Contains(item.Reason, text)
         || Contains(item.Comment, text);
     };
+
+    view.SortDescriptions.Clear();
+    view.SortDescriptions.Add(new System.ComponentModel.SortDescription(nameof(ManualControlItem.RuleId), System.ComponentModel.ListSortDirection.Ascending));
 
     RefreshManualView();
   }

@@ -18,6 +18,14 @@ public enum ToolArtifactKind
   PowerStig
 }
 
+public enum ImportProvenance
+{
+  Unknown,
+  ConsolidatedBundle,
+  StandaloneZip,
+  Other
+}
+
 public sealed class ImportInboxCandidate
 {
   public string ZipPath { get; set; } = string.Empty;
@@ -30,6 +38,8 @@ public sealed class ImportInboxCandidate
   public string VersionTag { get; set; } = string.Empty;
   public DateTimeOffset? BenchmarkDate { get; set; }
   public List<string> Reasons { get; set; } = new();
+  public ImportProvenance ImportedFrom { get; set; } = ImportProvenance.Unknown;
+  public bool IsNiwcEnhanced { get; set; }
 }
 
 public sealed class ImportInboxScanResult
@@ -42,4 +52,5 @@ public sealed class ImportDedupOutcome
 {
   public IReadOnlyList<ImportInboxCandidate> Winners { get; set; } = Array.Empty<ImportInboxCandidate>();
   public IReadOnlyList<ImportInboxCandidate> Suppressed { get; set; } = Array.Empty<ImportInboxCandidate>();
+  public IReadOnlyList<string> Decisions { get; set; } = Array.Empty<string>();
 }

@@ -203,9 +203,13 @@
                       <TextBlock Text="Host Name:" Width="80" VerticalAlignment="Center"/>
                       <TextBox Width="160" Text="{Binding CklHostName}" AutomationProperties.Name="CKL host name"
                                ToolTipService.ToolTip="Host name for the CKL file. Auto-filled with machine name."/>
-                      <TextBlock Text="STIG ID:" Width="70" Margin="12,0,0,0" VerticalAlignment="Center"/>
-                      <TextBox Width="160" Text="{Binding CklStigId}" AutomationProperties.Name="CKL STIG ID"/>
+                      <TextBlock Text="Format:" Width="60" Margin="12,0,0,0" VerticalAlignment="Center"/>
+                      <ComboBox Width="150" ItemsSource="{Binding CklOutputFormats}" SelectedItem="{Binding CklOutputFormat}"
+                                AutomationProperties.Name="Checklist export format"
+                                ToolTipService.ToolTip="Choose CKL or CKLB output, with optional CSV companion export."/>
                     </WrapPanel>
+                    <TextBlock Text="Exports a combined checklist from latest machine-scan applicable STIG bundles when available."
+                               Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,8" TextWrapping="Wrap"/>
                     <Button Content="Export CKL" MinWidth="140" Height="32" Padding="14,0"
                             Command="{Binding ExportCklCommand}" IsEnabled="{Binding ActionsEnabled}"
                             AutomationProperties.Name="Export CKL"/>

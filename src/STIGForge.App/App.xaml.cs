@@ -1,4 +1,5 @@
 using System.IO;
+using System.Text;
 using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -19,14 +20,18 @@ namespace STIGForge.App;
 public partial class App : Application
 {
   private IHost? _host;
+  private static readonly object StartupTraceLock = new();
   public IServiceProvider Services => _host!.Services;
 
   protected override void OnStartup(StartupEventArgs e)
   {
+    TraceStartup("OnStartup begin");
     RegisterUnhandledExceptionHandlers();
+    TraceStartup("Unhandled exception handlers registered");
 
     try
     {
+      TraceStartup("Host build begin");
       _host = Host.CreateDefaultBuilder()
         .UseSerilog((ctx, lc) =>
         {
@@ -48,18 +53,23 @@ public partial class App : Application
           services.AddSingleton<IClassificationScopeService, ClassificationScopeService>();
           services.AddSingleton<STIGForge.Core.Services.ReleaseAgeGate>();
 
-          services.AddSingleton<IPathBuilder, PathBuilder>();
+          services.AddSingleton<IPathBuilder>(_ => new PathBuilder());
           services.AddSingleton<IHashingService, Sha256HashingService>();
 
           services.AddSingleton(sp =>
           {
+            TraceStartup("Connection string factory begin");
             var paths = sp.GetRequiredService<IPathBuilder>();
+            TraceStartup("Connection string factory got IPathBuilder");
             Directory.CreateDirectory(paths.GetAppDataRoot());
             Directory.CreateDirectory(paths.GetLogsRoot());
+            TraceStartup("Connection string factory ensured app directories");
             var dbPath = Path.Combine(paths.GetAppDataRoot(), "data", "stigforge.db");
             Directory.CreateDirectory(Path.GetDirectoryName(dbPath)!);
             var cs = "Data Source=" + dbPath;
+            TraceStartup("Connection string factory calling DbBootstrap.EnsureCreated: " + dbPath);
             DbBootstrap.EnsureCreated(cs);
+            TraceStartup("Connection string factory EnsureCreated complete");
             return cs;
           });
 
@@ -92,36 +102,89 @@ public partial class App : Application
             new FleetService(sp.GetRequiredService<ICredentialStore>()));
           services.AddSingleton<OverlayEditorViewModel>();
 
-          services.AddSingleton<MainViewModel>(sp => new MainViewModel(
-            sp.GetRequiredService<ContentPackImporter>(),
-            sp.GetRequiredService<IContentPackRepository>(),
-            sp.GetRequiredService<IProfileRepository>(),
-            sp.GetRequiredService<IControlRepository>(),
-            sp.GetRequiredService<IOverlayRepository>(),
-            sp.GetRequiredService<BundleBuilder>(),
-            sp.GetRequiredService<STIGForge.Apply.ApplyRunner>(),
-            sp.GetRequiredService<IVerificationWorkflowService>(),
-            sp.GetRequiredService<STIGForge.Export.EmassExporter>(),
-            sp.GetRequiredService<IPathBuilder>(),
-            sp.GetRequiredService<STIGForge.Evidence.EvidenceCollector>(),
-            sp.GetRequiredService<IBundleMissionSummaryService>(),
-            sp.GetRequiredService<VerificationArtifactAggregationService>(),
-            sp.GetRequiredService<IAuditTrailService>(),
-            sp.GetRequiredService<ScheduledTaskService>(),
-            sp.GetRequiredService<FleetService>()));
+          services.AddSingleton<MainViewModel>(sp =>
+          {
+            TraceStartup("MainViewModel factory begin");
+            var importer = sp.GetRequiredService<ContentPackImporter>();
+            TraceStartup("MainViewModel factory got ContentPackImporter");
+            var packs = sp.GetRequiredService<IContentPackRepository>();
+            TraceStartup("MainViewModel factory got IContentPackRepository");
+            var profiles = sp.GetRequiredService<IProfileRepository>();
+            TraceStartup("MainViewModel factory got IProfileRepository");
+            var controls = sp.GetRequiredService<IControlRepository>();
+            TraceStartup("MainViewModel factory got IControlRepository");
+            var overlays = sp.GetRequiredService<IOverlayRepository>();
+            TraceStartup("MainViewModel factory got IOverlayRepository");
+            var builder = sp.GetRequiredService<BundleBuilder>();
+            TraceStartup("MainViewModel factory got BundleBuilder");
+            var applyRunner = sp.GetRequiredService<STIGForge.Apply.ApplyRunner>();
+            TraceStartup("MainViewModel factory got ApplyRunner");
+            var verificationWorkflow = sp.GetRequiredService<IVerificationWorkflowService>();
+            TraceStartup("MainViewModel factory got IVerificationWorkflowService");
+            var emassExporter = sp.GetRequiredService<STIGForge.Export.EmassExporter>();
+            TraceStartup("MainViewModel factory got EmassExporter");
+            var paths = sp.GetRequiredService<IPathBuilder>();
+            TraceStartup("MainViewModel factory got IPathBuilder");
+            var evidence = sp.GetRequiredService<STIGForge.Evidence.EvidenceCollector>();
+            TraceStartup("MainViewModel factory got EvidenceCollector");
+            var bundleMissionSummary = sp.GetRequiredService<IBundleMissionSummaryService>();
+            TraceStartup("MainViewModel factory got IBundleMissionSummaryService");
+            var artifactAggregation = sp.GetRequiredService<VerificationArtifactAggregationService>();
+            TraceStartup("MainViewModel factory got VerificationArtifactAggregationService");
+            var audit = sp.GetRequiredService<IAuditTrailService>();
+            TraceStartup("MainViewModel factory got IAuditTrailService");
+            var scheduledTaskService = sp.GetRequiredService<ScheduledTaskService>();
+            TraceStartup("MainViewModel factory got ScheduledTaskService");
+            var fleetService = sp.GetRequiredService<FleetService>();
+            TraceStartup("MainViewModel factory got FleetService");
+
+            return new MainViewModel(
+              importer,
+              packs,
+              profiles,
+              controls,
+              overlays,
+              builder,
+              applyRunner,
+              verificationWorkflow,
+              emassExporter,
+              paths,
+              evidence,
+              bundleMissionSummary,
+              artifactAggregation,
+              audit,
+              scheduledTaskService,
+              fleetService);
+          });
           services.AddSingleton<MainWindow>();
         })
         .Build();
+      TraceStartup("Host build complete");
 
-      _host.Start();
+      var main = new MainWindow();
+      TraceStartup("Main window constructed");
 
-      var main = _host.Services.GetRequiredService<MainWindow>();
+      MainWindow = main;
       main.Show();
+      TraceStartup("Main window shown");
+
+      TraceStartup("MainViewModel resolve begin");
+      var vm = _host.Services.GetRequiredService<MainViewModel>();
+      TraceStartup("MainViewModel resolve complete");
+      main.BindViewModel(vm);
+      TraceStartup("MainViewModel bound to main window");
+      vm.StartInitialLoad();
+      TraceStartup("MainViewModel initial load started");
+
+      _ = StartHostAsync(_host);
+      TraceStartup("Host start scheduled");
 
       base.OnStartup(e);
+      TraceStartup("OnStartup complete");
     }
     catch (Exception ex)
     {
+      TraceStartup("OnStartup failed", ex);
       Log.Fatal(ex, "Unhandled exception during application startup.");
       MessageBox.Show(
         "STIGForge failed to start.\n\n" + ex.Message,
@@ -130,6 +193,54 @@ public partial class App : Application
         MessageBoxImage.Error);
       Log.CloseAndFlush();
       Shutdown(-1);
+    }
+  }
+
+  private async Task StartHostAsync(IHost host)
+  {
+    try
+    {
+      TraceStartup("Host start begin");
+      await host.StartAsync().ConfigureAwait(false);
+      TraceStartup("Host start complete");
+    }
+    catch (Exception ex)
+    {
+      TraceStartup("Host start failed", ex);
+      Log.Error(ex, "Host failed to start after main window initialization.");
+
+      Dispatcher.Invoke(() =>
+      {
+        MessageBox.Show(
+          "STIGForge started with a background startup error.\n\n" + ex.Message,
+          "STIGForge Startup Warning",
+          MessageBoxButton.OK,
+          MessageBoxImage.Warning);
+      });
+    }
+  }
+
+  private static void TraceStartup(string message, Exception? ex = null)
+  {
+    try
+    {
+      var root = Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "STIGForge");
+      Directory.CreateDirectory(root);
+
+      var line = DateTimeOffset.Now.ToString("o") + " | " + message;
+      if (ex != null)
+        line += " | " + ex.GetType().FullName + ": " + ex.Message;
+
+      var path = Path.Combine(root, "startup-trace.log");
+      lock (StartupTraceLock)
+      {
+        File.AppendAllText(path, line + Environment.NewLine, Encoding.UTF8);
+      }
+    }
+    catch
+    {
     }
   }
 
@@ -172,6 +283,7 @@ public partial class App : Application
   {
     try
     {
+      TraceStartup("OnExit begin");
       DispatcherUnhandledException -= OnDispatcherUnhandledException;
       AppDomain.CurrentDomain.UnhandledException -= OnAppDomainUnhandledException;
       System.Threading.Tasks.TaskScheduler.UnobservedTaskException -= OnUnobservedTaskException;
@@ -182,10 +294,12 @@ public partial class App : Application
       {
         _host.StopAsync().GetAwaiter().GetResult();
         _host.Dispose();
+        TraceStartup("Host stopped and disposed");
       }
     }
     catch (Exception ex)
     {
+      TraceStartup("OnExit failed", ex);
       try
       {
         Log.Error(ex, "Error during application shutdown.");

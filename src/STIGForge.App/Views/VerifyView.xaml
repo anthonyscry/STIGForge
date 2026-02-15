@@ -37,8 +37,19 @@
                     Command="{Binding BrowseScapCommandCommand}" AutomationProperties.Name="Browse for SCAP command"/>
           </WrapPanel>
           <WrapPanel Margin="0,0,0,8">
+            <TextBlock Text="SCAP options:" Width="120" VerticalAlignment="Center"/>
+            <CheckBox Content="-u" IsChecked="{Binding ScapIncludeU}" Margin="0,0,10,0" ToolTipService.ToolTip="Include -u switch."/>
+            <CheckBox Content="-s" IsChecked="{Binding ScapIncludeS}" Margin="0,0,10,0" ToolTipService.ToolTip="Include -s switch."/>
+            <CheckBox Content="-r" IsChecked="{Binding ScapIncludeR}" Margin="0,0,10,0" ToolTipService.ToolTip="Include -r switch."/>
+            <CheckBox Content="-f" IsChecked="{Binding ScapIncludeF}" ToolTipService.ToolTip="Include -f switch."/>
+          </WrapPanel>
+          <WrapPanel Margin="0,0,0,8">
+            <TextBlock Text="Extra args:" Width="120" VerticalAlignment="Center"/>
+            <TextBox Width="520" Text="{Binding ScapAdditionalArgs}" AutomationProperties.Name="SCAP additional arguments"/>
+          </WrapPanel>
+          <WrapPanel Margin="0,0,0,8">
             <TextBlock Text="SCAP args:" Width="120" VerticalAlignment="Center"/>
-            <TextBox Width="520" Text="{Binding ScapArgs}" AutomationProperties.Name="SCAP arguments"/>
+            <TextBlock Text="{Binding ScapArgsPreview}" Foreground="{DynamicResource TextMutedBrush}" Width="520" TextWrapping="Wrap"/>
           </WrapPanel>
           <WrapPanel Margin="0,0,0,8">
             <TextBlock Text="SCAP label:" Width="120" VerticalAlignment="Center"/>

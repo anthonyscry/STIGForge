@@ -8,23 +8,46 @@ public sealed class PathBuilder : IPathBuilder
   private readonly string _projectRoot;
 
   public PathBuilder()
+    : this(AppContext.BaseDirectory, Environment.CurrentDirectory)
   {
-    _root = ResolveRoot();
-    _projectRoot = Directory.GetParent(_root)?.FullName ?? Environment.CurrentDirectory;
   }
 
-  private static string ResolveRoot()
+  public PathBuilder(string appBaseDirectory, string currentDirectory)
   {
-    var dir = new DirectoryInfo(Environment.CurrentDirectory);
+    _root = ResolveRoot(appBaseDirectory, currentDirectory);
+    _projectRoot = Directory.GetParent(_root)?.FullName ?? NormalizeDirectory(currentDirectory, Environment.CurrentDirectory);
+  }
+
+  private static string ResolveRoot(string appBaseDirectory, string currentDirectory)
+  {
+    var appBase = NormalizeDirectory(appBaseDirectory, AppContext.BaseDirectory);
+    var current = NormalizeDirectory(currentDirectory, Environment.CurrentDirectory);
+
+    var repoRoot = FindRepositoryRoot(appBase) ?? FindRepositoryRoot(current);
+    if (!string.IsNullOrWhiteSpace(repoRoot))
+      return Path.Combine(repoRoot, ".stigforge");
+
+    return Path.Combine(current, ".stigforge");
+  }
+
+  private static string? FindRepositoryRoot(string startDirectory)
+  {
+    var dir = new DirectoryInfo(startDirectory);
     while (dir != null)
     {
       var git = Path.Combine(dir.FullName, ".git");
-      if (Directory.Exists(git))
-        return Path.Combine(dir.FullName, ".stigforge");
+      if (Directory.Exists(git) || File.Exists(git))
+        return dir.FullName;
       dir = dir.Parent;
     }
 
-    return Path.Combine(Environment.CurrentDirectory, ".stigforge");
+    return null;
+  }
+
+  private static string NormalizeDirectory(string? candidate, string fallback)
+  {
+    var value = string.IsNullOrWhiteSpace(candidate) ? fallback : candidate;
+    return Path.GetFullPath(value);
   }
 
   public string GetAppDataRoot() => _root;
