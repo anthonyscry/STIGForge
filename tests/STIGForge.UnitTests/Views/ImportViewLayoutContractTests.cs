@@ -13,6 +13,17 @@ public sealed class ImportViewLayoutContractTests
     Assert.Contains("Pack Details", xaml, StringComparison.Ordinal);
   }
 
+  [Fact]
+  public void ImportView_PreservesPrimaryActionBindings_WhenSectioned()
+  {
+    var xaml = LoadImportViewXaml();
+
+    Assert.Contains("{Binding ScanImportFolderCommand}", xaml, StringComparison.Ordinal);
+    Assert.Contains("{Binding OpenImportFolderCommand}", xaml, StringComparison.Ordinal);
+    Assert.Contains("{Binding ComparePacksCommand}", xaml, StringComparison.Ordinal);
+    Assert.Contains("{Binding OpenContentPickerCommand}", xaml, StringComparison.Ordinal);
+  }
+
   private static string LoadImportViewXaml()
   {
     var current = new DirectoryInfo(AppContext.BaseDirectory);

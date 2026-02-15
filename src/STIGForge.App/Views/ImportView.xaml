@@ -9,6 +9,7 @@
 
     <ScrollViewer Grid.Row="0" Margin="0,0,0,10" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" MaxHeight="420">
       <StackPanel>
+        <TextBlock Text="Primary Actions" FontWeight="SemiBold" Margin="0,0,0,6"/>
         <WrapPanel Margin="0,0,0,8">
           <Button Content="Scan Import Folder" MinWidth="170" Height="32" Padding="16,0" Margin="0,0,12,4"
                   Command="{Binding ScanImportFolderCommand}"
@@ -34,6 +35,8 @@
         </WrapPanel>
 
         <TextBlock Text="{Binding ImportHint}" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,2"/>
+
+        <TextBlock Text="Machine Context" FontWeight="SemiBold" Margin="0,8,0,4"/>
 
         <TabControl Margin="0,4,0,2">
           <TabItem Header="Local Machine Scan">
@@ -179,11 +182,14 @@
       <Grid Grid.Column="0">
         <Grid.RowDefinitions>
           <RowDefinition Height="Auto"/>
+          <RowDefinition Height="Auto"/>
           <RowDefinition Height="*" MinHeight="260"/>
           <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <DockPanel Grid.Row="0" Margin="0,0,0,8">
+        <TextBlock Grid.Row="0" Text="Content Library" FontWeight="SemiBold" Margin="0,0,0,6"/>
+
+        <DockPanel Grid.Row="1" Margin="0,0,0,8">
           <TextBox DockPanel.Dock="Right" Width="180" Text="{Binding ContentSearchText, UpdateSourceTrigger=PropertyChanged}"
                    AutomationProperties.Name="Search content library"
                    ToolTipService.ToolTip="Filter by name or pack ID"/>
@@ -198,7 +204,7 @@
           </StackPanel>
         </DockPanel>
 
-        <Border Grid.Row="1" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Margin="0,0,0,8">
+        <Border Grid.Row="2" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Margin="0,0,0,8">
           <ListView x:Name="ContentLibraryList" ItemsSource="{Binding FilteredContentLibrary}" SelectedItem="{Binding SelectedLibraryItem}"
                      SelectionMode="Extended" MinHeight="80"
                      SelectionChanged="ContentLibraryList_SelectionChanged"
@@ -220,7 +226,7 @@
           </ListView>
         </Border>
 
-        <WrapPanel Grid.Row="2">
+        <WrapPanel Grid.Row="3">
           <Button Content="Select All" MinWidth="100" Height="30" Padding="14,0" Margin="0,0,10,4"
                   Click="SelectAllLibraryItems_Click"
                   AutomationProperties.Name="Select all library items"
