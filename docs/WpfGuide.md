@@ -158,6 +158,11 @@ One-click Apply -> Verify -> Export workflow.
 
 **Log Output**: Scrollable Consolas-font log showing real-time progress.
 
+**Import selection behavior**:
+- STIG packages are operator-selected; SCAP/GPO/ADMX dependencies are auto-included and locked in the selection grid.
+- Missing SCAP dependency is emitted as a warning and does not block mission setup.
+- Selection summary counters use STIG-selected content as the source of truth for deterministic totals.
+
 ### 10. Reports
 
 Export management and bundle reporting.

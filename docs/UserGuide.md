@@ -203,6 +203,11 @@ STIGForge.Cli.exe orchestrate --bundle C:\bundles\my-bundle --evaluate-stig "C:\
 
 **WPF**: The **Orchestrate** tab provides a one-click workflow with real-time log output.
 
+Import selection is deterministic and STIG-driven:
+- STIG selection is manual, while SCAP/GPO/ADMX are auto-included and locked when required.
+- A missing SCAP dependency is warning-only and does not block mission setup.
+- Selection summary counts are computed with STIG selections as the source-of-truth semantics.
+
 ### Audit Trail
 
 Every compliance-relevant action is recorded in a tamper-evident audit log with chained SHA-256 hashes:
