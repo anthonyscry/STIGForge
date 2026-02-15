@@ -1296,12 +1296,8 @@ public partial class MainViewModel
       SelectedContentSummary = selectionPlan.StatusSummaryText;
     }
 
-    var warningCodes = selectionPlan.Warnings
-      .Select(x => x.Code)
-      .Distinct(StringComparer.OrdinalIgnoreCase)
-      .ToList();
-    StatusText = warningCodes.Count > 0
-      ? "Content selection updated with warnings (" + selectionPlan.StatusSummaryText + "). Warnings: " + string.Join(", ", warningCodes)
+    StatusText = selectionPlan.Warnings.Count > 0
+      ? "Content selection updated with warnings. " + selectionPlan.StatusSummaryText
       : "Content selection updated. " + selectionPlan.StatusSummaryText;
   }
 
