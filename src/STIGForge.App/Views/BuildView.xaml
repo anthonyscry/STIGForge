@@ -71,7 +71,21 @@
                     Command="{Binding UseRecentBundleCommand}"
                     AutomationProperties.Name="Use recent bundle"
                     ToolTipService.ToolTip="Load the selected recent bundle as the active bundle."/>
+            <Button Content="Remove" MinWidth="80" Height="28" Padding="14,0" Margin="6,0,0,0"
+                    Command="{Binding RemoveRecentBundleCommand}"
+                    AutomationProperties.Name="Remove recent bundle"
+                    ToolTipService.ToolTip="Remove the selected entry from the recent bundle list (does not delete files)."/>
+            <Button Content="Delete Folder" MinWidth="110" Height="28" Padding="14,0" Margin="6,0,0,0"
+                    Command="{Binding DeleteSelectedRecentBundleCommand}"
+                    AutomationProperties.Name="Delete selected recent bundle"
+                    ToolTipService.ToolTip="Permanently delete the selected bundle folder after confirmation."/>
           </WrapPanel>
+          <StackPanel Margin="0,8,0,0">
+            <TextBlock Text="{Binding SelectedRecentBundleProfileName, StringFormat=Linked profile: {0}}"
+                       Foreground="{DynamicResource TextMutedBrush}"/>
+            <TextBlock Text="{Binding SelectedRecentBundlePackName, StringFormat=Linked pack: {0}}"
+                       Foreground="{DynamicResource TextMutedBrush}"/>
+          </StackPanel>
         </StackPanel>
       </Border>
 

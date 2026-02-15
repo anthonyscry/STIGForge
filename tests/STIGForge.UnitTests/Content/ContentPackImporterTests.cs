@@ -96,6 +96,68 @@ public sealed class ContentPackImporterTests : IDisposable
     controlsMock.Verify(c => c.SaveControlsAsync(It.IsAny<string>(), It.Is<IReadOnlyList<ControlRecord>>(list => list.Count > 0), It.IsAny<CancellationToken>()), Times.Once);
   }
 
+  [Fact]
+  public async Task ImportAdmxTemplatesFromZipAsync_ImportsOnePackPerTemplate()
+  {
+    var zipPath = Path.Combine(_tempRoot, "admx-templates.zip");
+    using (var archive = ZipFile.Open(zipPath, ZipArchiveMode.Create))
+    {
+      var windowsAdmx = archive.CreateEntry("PolicyDefinitions/windows.admx");
+      await using (var writer = new StreamWriter(windowsAdmx.Open()))
+      {
+        await writer.WriteAsync(CreateMinimalAdmx("WindowsPolicy"));
+      }
+
+      var officeAdmx = archive.CreateEntry("PolicyDefinitions/office.admx");
+      await using (var writer = new StreamWriter(officeAdmx.Open()))
+      {
+        await writer.WriteAsync(CreateMinimalAdmx("OfficePolicy"));
+      }
+    }
+
+    var importer = CreateImporter(out var packsMock, out var controlsMock);
+    var imported = await importer.ImportAdmxTemplatesFromZipAsync(zipPath, "admx_template_import", CancellationToken.None);
+
+    Assert.Equal(2, imported.Count);
+    Assert.All(imported, pack => Assert.StartsWith("ADMX Templates - ", pack.Name, StringComparison.OrdinalIgnoreCase));
+    packsMock.Verify(p => p.SaveAsync(It.IsAny<ContentPack>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+    controlsMock.Verify(c => c.SaveControlsAsync(It.IsAny<string>(), It.Is<IReadOnlyList<ControlRecord>>(list => list.Count > 0), It.IsAny<CancellationToken>()), Times.Exactly(2));
+  }
+
+  [Fact]
+  public async Task ImportAdmxTemplatesFromZipAsync_ImportsTemplatesFromNestedZip()
+  {
+    var nestedZipPath = Path.Combine(_tempRoot, "nested-admx.zip");
+    using (var nested = ZipFile.Open(nestedZipPath, ZipArchiveMode.Create))
+    {
+      var edgeAdmx = nested.CreateEntry("PolicyDefinitions/msedge.admx");
+      await using (var writer = new StreamWriter(edgeAdmx.Open()))
+      {
+        await writer.WriteAsync(CreateMinimalAdmx("EdgePolicy"));
+      }
+
+      var windowsAdmx = nested.CreateEntry("PolicyDefinitions/windows.admx");
+      await using (var writer = new StreamWriter(windowsAdmx.Open()))
+      {
+        await writer.WriteAsync(CreateMinimalAdmx("WindowsPolicy"));
+      }
+    }
+
+    var outerZipPath = Path.Combine(_tempRoot, "outer-admx-bundle.zip");
+    using (var outer = ZipFile.Open(outerZipPath, ZipArchiveMode.Create))
+    {
+      outer.CreateEntryFromFile(nestedZipPath, "payload/admx-templates.zip");
+    }
+
+    var importer = CreateImporter(out var packsMock, out var controlsMock);
+    var imported = await importer.ImportAdmxTemplatesFromZipAsync(outerZipPath, "admx_template_import", CancellationToken.None);
+
+    Assert.Equal(2, imported.Count);
+    Assert.All(imported, pack => Assert.StartsWith("ADMX Templates - ", pack.Name, StringComparison.OrdinalIgnoreCase));
+    packsMock.Verify(p => p.SaveAsync(It.IsAny<ContentPack>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+    controlsMock.Verify(c => c.SaveControlsAsync(It.IsAny<string>(), It.Is<IReadOnlyList<ControlRecord>>(list => list.Count > 0), It.IsAny<CancellationToken>()), Times.Exactly(2));
+  }
+
   [Theory]
   [MemberData(nameof(CompatibilityMatrixScenarios))]
   public async Task ImportZipAsync_CompatibilityMatrixContractMatchesFixtureScenario(
@@ -364,6 +426,23 @@ public sealed class ContentPackImporterTests : IDisposable
     <fixtext>Apply fix.</fixtext>
   </Rule>
 </Benchmark>
+""";
+  }
+
+  private static string CreateMinimalAdmx(string policyName)
+  {
+    return $"""
+<?xml version="1.0" encoding="utf-8"?>
+<policyDefinitions revision="1.0" schemaVersion="1.0">
+  <target namespace="Microsoft.Policies.Test"/>
+  <policies>
+    <policy name="{policyName}" class="Machine" displayName="{policyName}" key="Software\\Policies\\Test" valueName="Enabled">
+      <enabledValue>
+        <decimal value="1"/>
+      </enabledValue>
+    </policy>
+  </policies>
+</policyDefinitions>
 """;
   }
 }

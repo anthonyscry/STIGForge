@@ -186,13 +186,13 @@
                               ToolTipService.ToolTip="Enable verbose PowerSTIG compile output in apply logs."/>
                   </StackPanel>
                   <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                    <TextBlock Text="Toolkit root:" Width="130" VerticalAlignment="Center"/>
-                    <TextBox Width="560" TabIndex="56" Text="{Binding LocalToolkitRoot}"
-                             AutomationProperties.Name="Toolkit root path"
-                             ToolTipService.ToolTip="Folder containing STIG_SCAP tooling archives or extracted tool folders."/>
-                    <Button Content="Activate" Width="80" Margin="6,0,0,0" TabIndex="57" Command="{Binding ActivateToolkitCommand}"
-                            AutomationProperties.Name="Activate toolkit"
-                            ToolTipService.ToolTip="Auto-configure Evaluate-STIG, SCC, and PowerSTIG from toolkit files."/>
+                    <TextBlock Text="Tools:" Width="130" VerticalAlignment="Center"/>
+                    <Button Content="Auto-detect Tools" Width="140" TabIndex="56" Command="{Binding ActivateToolkitCommand}"
+                            AutomationProperties.Name="Auto-detect tools"
+                            ToolTipService.ToolTip="Auto-configure Evaluate-STIG, SCC, and PowerSTIG from imported tools or managed cache."/>
+                    <Button Content="Open Import Folder" Width="140" Margin="6,0,0,0" TabIndex="57" Command="{Binding OpenImportFolderCommand}"
+                            AutomationProperties.Name="Open import folder"
+                            ToolTipService.ToolTip="Open the import folder used for tool and content ingestion."/>
                   </StackPanel>
                   <TextBlock Text="{Binding ToolkitActivationStatus}" Margin="0,0,0,8" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap"/>
                   <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
@@ -214,7 +214,21 @@
                             ToolTipService.ToolTip="Select the SCAP/SCC executable."/>
                   </StackPanel>
                   <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                    <Button Content="Run Orchestration" Width="170" Height="34" FontWeight="SemiBold" TabIndex="62"
+                    <TextBlock Text="SCAP options:" Width="130" VerticalAlignment="Center"/>
+                    <CheckBox Content="-u" IsChecked="{Binding ScapIncludeU}" Margin="0,0,10,0" TabIndex="62" ToolTipService.ToolTip="Include -u switch."/>
+                    <CheckBox Content="-s" IsChecked="{Binding ScapIncludeS}" Margin="0,0,10,0" TabIndex="63" ToolTipService.ToolTip="Include -s switch."/>
+                    <CheckBox Content="-r" IsChecked="{Binding ScapIncludeR}" Margin="0,0,10,0" TabIndex="64" ToolTipService.ToolTip="Include -r switch."/>
+                    <CheckBox Content="-f" IsChecked="{Binding ScapIncludeF}" TabIndex="65" ToolTipService.ToolTip="Include -f switch."/>
+                  </StackPanel>
+                  <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <TextBlock Text="Extra args:" Width="130" VerticalAlignment="Center"/>
+                    <TextBox Width="560" TabIndex="66" Text="{Binding ScapAdditionalArgs}"
+                             AutomationProperties.Name="SCAP additional arguments"
+                             ToolTipService.ToolTip="Optional advanced SCAP arguments appended after selected common switches."/>
+                  </StackPanel>
+                  <TextBlock Text="{Binding ScapArgsPreview}" Margin="130,0,0,8" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap"/>
+                  <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                    <Button Content="Run Orchestration" Width="170" Height="34" FontWeight="SemiBold" TabIndex="67"
                             Command="{Binding OrchestrateCommand}" IsEnabled="{Binding ActionsEnabled}"
                             AutomationProperties.Name="Run orchestration"
                             ToolTipService.ToolTip="Execute apply -> verify -> export according to selected toggles and inputs."/>

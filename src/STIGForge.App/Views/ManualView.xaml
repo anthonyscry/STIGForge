@@ -29,6 +29,10 @@
         <ComboBox Width="140" ItemsSource="{Binding ManualStatusFilters}" SelectedItem="{Binding ManualStatusFilter}"
                   AutomationProperties.Name="Status filter"
                   ToolTipService.ToolTip="Filter controls by disposition status."/>
+        <TextBlock Text="CAT:" VerticalAlignment="Center" Margin="16,0,6,0"/>
+        <ComboBox Width="110" ItemsSource="{Binding ManualCatFilters}" SelectedItem="{Binding ManualCatFilter}"
+                  AutomationProperties.Name="CAT filter"
+                  ToolTipService.ToolTip="Filter controls by CAT level (I/II/III)."/>
       </WrapPanel>
 
       <!-- Summary -->
@@ -42,13 +46,16 @@
         </Grid.ColumnDefinitions>
 
         <ListView Grid.Column="0" ItemsSource="{Binding ManualControlsView}" SelectedItem="{Binding SelectedManualControl}"
+                  GridViewColumnHeader.Click="ManualGridHeader_Click"
                   VirtualizingStackPanel.IsVirtualizing="True"
                   VirtualizingStackPanel.VirtualizationMode="Recycling"
                   ScrollViewer.CanContentScroll="True">
           <ListView.View>
             <GridView>
-              <GridViewColumn Header="Rule" DisplayMemberBinding="{Binding Control.ExternalIds.RuleId}"/>
-              <GridViewColumn Header="Title" DisplayMemberBinding="{Binding Control.Title}" Width="260"/>
+              <GridViewColumn Header="Rule" DisplayMemberBinding="{Binding RuleId}" Width="140"/>
+              <GridViewColumn Header="Title" DisplayMemberBinding="{Binding Title}" Width="260"/>
+              <GridViewColumn Header="CAT" DisplayMemberBinding="{Binding CatLevel}" Width="70"/>
+              <GridViewColumn Header="STIG Group" DisplayMemberBinding="{Binding StigGroup}" Width="180"/>
               <GridViewColumn Header="Stat" DisplayMemberBinding="{Binding Status}"/>
             </GridView>
           </ListView.View>

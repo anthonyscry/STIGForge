@@ -9,5 +9,21 @@ public partial class DiffViewer : Window
   {
     InitializeComponent();
     DataContext = viewModel;
+    SourceInitialized += (_, _) => MainViewModel.SetDarkTitleBar(this, IsDarkThemeActive());
+  }
+
+  private static bool IsDarkThemeActive()
+  {
+    var app = Application.Current;
+    if (app == null)
+      return true;
+
+    foreach (var dict in app.Resources.MergedDictionaries)
+    {
+      if (dict.Source?.OriginalString.IndexOf("DarkTheme", StringComparison.OrdinalIgnoreCase) >= 0)
+        return true;
+    }
+
+    return false;
   }
 }

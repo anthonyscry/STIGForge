@@ -168,6 +168,59 @@ public sealed class ContentPackImporter
         }
     }
 
+    public async Task<IReadOnlyList<ContentPack>> ImportAdmxTemplatesFromZipAsync(string zipPath, string sourceLabel, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(zipPath))
+            throw new ArgumentException("ZIP path cannot be empty.", nameof(zipPath));
+
+        if (!File.Exists(zipPath))
+            throw new FileNotFoundException("ADMX ZIP not found", zipPath);
+
+        var extractionRoot = Path.Combine(Path.GetTempPath(), "stigforge-admx-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(extractionRoot);
+
+        try
+        {
+            ExtractZipSafely(zipPath, extractionRoot, ct);
+            ExpandNestedZipArchives(extractionRoot, maxPasses: 2, ct);
+
+            var admxFiles = Directory.GetFiles(extractionRoot, "*.admx", SearchOption.AllDirectories)
+                .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (admxFiles.Count == 0)
+                return await ImportConsolidatedZipAsync(zipPath, sourceLabel, ct).ConfigureAwait(false);
+
+            var imported = new List<ContentPack>(admxFiles.Count);
+            foreach (var admxFile in admxFiles)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                var templateRoot = Path.Combine(Path.GetTempPath(), "stigforge-admx-template-" + Guid.NewGuid().ToString("N"));
+                Directory.CreateDirectory(templateRoot);
+                try
+                {
+                    var destination = Path.Combine(templateRoot, Path.GetFileName(admxFile));
+                    File.Copy(admxFile, destination, true);
+
+                    var packName = BuildAdmxTemplatePackName(admxFile);
+                    var pack = await ImportDirectoryAsPackAsync(templateRoot, packName, sourceLabel, ct).ConfigureAwait(false);
+                    imported.Add(pack);
+                }
+                finally
+                {
+                    try { Directory.Delete(templateRoot, true); } catch { }
+                }
+            }
+
+            return imported;
+        }
+        finally
+        {
+            try { Directory.Delete(extractionRoot, true); } catch { }
+        }
+    }
+
     public async Task<ContentPack> ImportDirectoryAsPackAsync(string extractedDir, string packName, string sourceLabel, CancellationToken ct)
     {
         var packId = Guid.NewGuid().ToString("n");
@@ -810,6 +863,54 @@ public sealed class ContentPackImporter
         }
 
         return null;
+    }
+
+    private static string BuildAdmxTemplatePackName(string admxPath)
+    {
+        var baseName = Path.GetFileNameWithoutExtension(admxPath);
+        if (string.IsNullOrWhiteSpace(baseName))
+            return "ADMX Templates - Imported";
+
+        var normalized = baseName.Replace('_', ' ').Replace('-', ' ').Trim();
+        return "ADMX Templates - " + normalized;
+    }
+
+    private static void ExpandNestedZipArchives(string extractionRoot, int maxPasses, CancellationToken ct)
+    {
+        for (var pass = 0; pass < maxPasses; pass++)
+        {
+            ct.ThrowIfCancellationRequested();
+
+            var nestedArchives = Directory.GetFiles(extractionRoot, "*.zip", SearchOption.AllDirectories)
+                .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            if (nestedArchives.Count == 0)
+                break;
+
+            var extractedAny = false;
+            foreach (var nestedArchive in nestedArchives)
+            {
+                ct.ThrowIfCancellationRequested();
+
+                var nestedExtractRoot = Path.Combine(
+                    Path.GetDirectoryName(nestedArchive) ?? extractionRoot,
+                    Path.GetFileNameWithoutExtension(nestedArchive));
+
+                if (Directory.Exists(nestedExtractRoot)
+                    && Directory.EnumerateFileSystemEntries(nestedExtractRoot).Any())
+                {
+                    continue;
+                }
+
+                Directory.CreateDirectory(nestedExtractRoot);
+                ExtractZipSafely(nestedArchive, nestedExtractRoot, ct);
+                extractedAny = true;
+            }
+
+            if (!extractedAny)
+                break;
+        }
     }
 
     private static int? ParseYear(string text)

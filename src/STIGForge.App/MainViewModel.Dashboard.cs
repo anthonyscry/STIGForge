@@ -23,6 +23,7 @@ public partial class MainViewModel
       }
 
       var dialog = new Views.PackComparisonDialog(ContentPacks.ToList());
+      dialog.Owner = System.Windows.Application.Current?.MainWindow;
       if (dialog.ShowDialog() != true)
         return;
 
@@ -50,9 +51,10 @@ public partial class MainViewModel
       var baselinePack = ContentPacks.First(p => p.PackId == baselinePackId);
       var targetPack = ContentPacks.First(p => p.PackId == targetPackId);
 
-       var viewModel = new ViewModels.DiffViewerViewModel(diff, baselinePack.Name, targetPack.Name);
-       var diffViewer = new Views.DiffViewer(viewModel);
-       diffViewer.ShowDialog();
+        var viewModel = new ViewModels.DiffViewerViewModel(diff, baselinePack.Name, targetPack.Name);
+        var diffViewer = new Views.DiffViewer(viewModel);
+        diffViewer.Owner = System.Windows.Application.Current?.MainWindow;
+        diffViewer.ShowDialog();
 
        SetStatus("Comparison complete.", "Success");
      }
@@ -276,6 +278,7 @@ public partial class MainViewModel
       ContentPacks.Count,
       Profiles.Count,
       OverlayItems.Count);
+    dialog.Owner = System.Windows.Application.Current?.MainWindow;
     dialog.ShowDialog();
   }
 
@@ -498,6 +501,74 @@ public partial class MainViewModel
   }
 
   [RelayCommand]
+  private void RemoveRecentBundle()
+  {
+    if (string.IsNullOrWhiteSpace(SelectedRecentBundle))
+      return;
+
+    var bundlePath = SelectedRecentBundle;
+    var removed = RecentBundles.Remove(bundlePath);
+    if (!removed)
+      return;
+
+    if (string.Equals(BundleRoot, bundlePath, StringComparison.OrdinalIgnoreCase))
+      BundleRoot = string.Empty;
+
+    SelectedRecentBundle = RecentBundles.FirstOrDefault() ?? string.Empty;
+    StatusText = "Removed recent bundle entry: " + Path.GetFileName(bundlePath);
+    SaveUiState();
+  }
+
+  [RelayCommand]
+  private void DeleteSelectedRecentBundle()
+  {
+    if (string.IsNullOrWhiteSpace(SelectedRecentBundle))
+    {
+      StatusText = "Select a recent bundle first.";
+      return;
+    }
+
+    var bundlePath = SelectedRecentBundle;
+    if (!Directory.Exists(bundlePath))
+    {
+      RecentBundles.Remove(bundlePath);
+      SelectedRecentBundle = RecentBundles.FirstOrDefault() ?? string.Empty;
+      StatusText = "Bundle path no longer exists; removed from recent list.";
+      SaveUiState();
+      return;
+    }
+
+    TryReadBundleLink(bundlePath, out var profileName, out var packName);
+    var linkage = !string.IsNullOrWhiteSpace(profileName)
+      ? $"\n\nLinked profile: {profileName}" + (string.IsNullOrWhiteSpace(packName) ? string.Empty : $"\nLinked pack: {packName}")
+      : string.Empty;
+
+    var result = System.Windows.MessageBox.Show(
+      $"Delete selected recent bundle folder?\n\n{bundlePath}{linkage}\n\nThis permanently removes bundle artifacts (Apply/Verify/Manual/Evidence/Export).",
+      "Confirm Delete Recent Bundle",
+      System.Windows.MessageBoxButton.YesNo,
+      System.Windows.MessageBoxImage.Warning);
+
+    if (result != System.Windows.MessageBoxResult.Yes)
+      return;
+
+    try
+    {
+      Directory.Delete(bundlePath, true);
+      RecentBundles.Remove(bundlePath);
+      if (string.Equals(BundleRoot, bundlePath, StringComparison.OrdinalIgnoreCase))
+        BundleRoot = string.Empty;
+      SelectedRecentBundle = RecentBundles.FirstOrDefault() ?? string.Empty;
+      StatusText = "Deleted bundle folder: " + Path.GetFileName(bundlePath);
+      SaveUiState();
+    }
+    catch (Exception ex)
+    {
+      StatusText = "Delete failed: " + ex.Message;
+    }
+  }
+
+  [RelayCommand]
   private void DeleteBundle()
   {
     if (string.IsNullOrWhiteSpace(BundleRoot) || !Directory.Exists(BundleRoot))
@@ -548,6 +619,20 @@ public partial class MainViewModel
     RefreshDashboard();
   }
 
+  partial void OnSelectedRecentBundleChanged(string value)
+  {
+    if (TryReadBundleLink(value, out var profileName, out var packName))
+    {
+      SelectedRecentBundleProfileName = profileName;
+      SelectedRecentBundlePackName = packName;
+    }
+    else
+    {
+      SelectedRecentBundleProfileName = string.Empty;
+      SelectedRecentBundlePackName = string.Empty;
+    }
+  }
+
   partial void OnEvaluateStigRootChanged(string value)
   {
     DebouncedSaveUiState();
@@ -565,6 +650,60 @@ public partial class MainViewModel
 
   partial void OnScapArgsChanged(string value)
   {
+    if (_suppressScapArgsSync)
+    {
+      OnPropertyChanged(nameof(ScapArgsPreview));
+      return;
+    }
+
+    ApplyScapOptionStateFromArgs(value);
+
+    OnPropertyChanged(nameof(ScapArgsPreview));
+    DebouncedSaveUiState();
+  }
+
+  partial void OnScapIncludeUChanged(bool value)
+  {
+    if (_suppressScapArgsSync)
+      return;
+
+    UpdateScapArgsFromOptions();
+    DebouncedSaveUiState();
+  }
+
+  partial void OnScapIncludeSChanged(bool value)
+  {
+    if (_suppressScapArgsSync)
+      return;
+
+    UpdateScapArgsFromOptions();
+    DebouncedSaveUiState();
+  }
+
+  partial void OnScapIncludeRChanged(bool value)
+  {
+    if (_suppressScapArgsSync)
+      return;
+
+    UpdateScapArgsFromOptions();
+    DebouncedSaveUiState();
+  }
+
+  partial void OnScapIncludeFChanged(bool value)
+  {
+    if (_suppressScapArgsSync)
+      return;
+
+    UpdateScapArgsFromOptions();
+    DebouncedSaveUiState();
+  }
+
+  partial void OnScapAdditionalArgsChanged(string value)
+  {
+    if (_suppressScapArgsSync)
+      return;
+
+    UpdateScapArgsFromOptions();
     DebouncedSaveUiState();
   }
 
@@ -611,6 +750,72 @@ public partial class MainViewModel
   partial void OnSelectedMissionPresetChanged(string value)
   {
     ApplyMissionPreset(value);
+  }
+
+  private void UpdateScapArgsFromOptions()
+  {
+    var parts = new List<string>();
+    if (ScapIncludeU)
+      parts.Add("-u");
+    if (ScapIncludeS)
+      parts.Add("-s");
+    if (ScapIncludeR)
+      parts.Add("-r");
+    if (ScapIncludeF)
+      parts.Add("-f");
+
+    var custom = (ScapAdditionalArgs ?? string.Empty).Trim();
+    if (!string.IsNullOrWhiteSpace(custom))
+      parts.Add(custom);
+
+    var combined = string.Join(" ", parts);
+    if (string.Equals(ScapArgs, combined, StringComparison.Ordinal))
+    {
+      OnPropertyChanged(nameof(ScapArgsPreview));
+      return;
+    }
+
+    _suppressScapArgsSync = true;
+    ScapArgs = combined;
+    _suppressScapArgsSync = false;
+    OnPropertyChanged(nameof(ScapArgsPreview));
+  }
+
+  private void ApplyScapOptionStateFromArgs(string? args)
+  {
+    var includeU = false;
+    var includeS = false;
+    var includeR = false;
+    var includeF = false;
+    var extras = new List<string>();
+
+    var tokens = (args ?? string.Empty)
+      .Split(new[] { ' ', '\t', '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+
+    foreach (var token in tokens)
+    {
+      var normalized = token.Trim();
+      if (string.Equals(normalized, "-u", StringComparison.OrdinalIgnoreCase))
+        includeU = true;
+      else if (string.Equals(normalized, "-s", StringComparison.OrdinalIgnoreCase))
+        includeS = true;
+      else if (string.Equals(normalized, "-r", StringComparison.OrdinalIgnoreCase))
+        includeR = true;
+      else if (string.Equals(normalized, "-f", StringComparison.OrdinalIgnoreCase))
+        includeF = true;
+      else
+        extras.Add(token);
+    }
+
+    _suppressScapArgsSync = true;
+    ScapIncludeU = includeU;
+    ScapIncludeS = includeS;
+    ScapIncludeR = includeR;
+    ScapIncludeF = includeF;
+    ScapAdditionalArgs = string.Join(" ", extras);
+    _suppressScapArgsSync = false;
+
+    OnPropertyChanged(nameof(ScapArgsPreview));
   }
 
   private void ApplyMissionPreset(string preset)
@@ -680,6 +885,29 @@ public partial class MainViewModel
       EvaluateStigArgs = state.EvaluateStigArgs ?? EvaluateStigArgs;
       ScapCommandPath = state.ScapCommandPath ?? ScapCommandPath;
       ScapArgs = state.ScapArgs ?? ScapArgs;
+
+      var hasScapOptionState = state.ScapIncludeU.HasValue
+        || state.ScapIncludeS.HasValue
+        || state.ScapIncludeR.HasValue
+        || state.ScapIncludeF.HasValue
+        || state.ScapAdditionalArgs != null;
+
+      if (hasScapOptionState)
+      {
+        _suppressScapArgsSync = true;
+        ScapIncludeU = state.ScapIncludeU ?? true;
+        ScapIncludeS = state.ScapIncludeS ?? true;
+        ScapIncludeR = state.ScapIncludeR ?? true;
+        ScapIncludeF = state.ScapIncludeF ?? true;
+        ScapAdditionalArgs = state.ScapAdditionalArgs ?? string.Empty;
+        _suppressScapArgsSync = false;
+        UpdateScapArgsFromOptions();
+      }
+      else
+      {
+        ApplyScapOptionStateFromArgs(ScapArgs);
+      }
+
       ScapLabel = state.ScapLabel ?? ScapLabel;
       PowerStigModulePath = state.PowerStigModulePath ?? PowerStigModulePath;
       PowerStigDataFile = state.PowerStigDataFile ?? PowerStigDataFile;
@@ -701,6 +929,16 @@ public partial class MainViewModel
           foreach (var b in state.RecentBundles)
             RecentBundles.Add(b);
         }
+
+        if (!string.IsNullOrWhiteSpace(BundleRoot)
+            && RecentBundles.Any(b => string.Equals(b, BundleRoot, StringComparison.OrdinalIgnoreCase)))
+        {
+          SelectedRecentBundle = BundleRoot;
+        }
+        else
+        {
+          SelectedRecentBundle = RecentBundles.FirstOrDefault() ?? string.Empty;
+        }
       });
     }
     catch (Exception ex)
@@ -721,9 +959,41 @@ public partial class MainViewModel
 
       RecentBundles.Insert(0, bundlePath);
       while (RecentBundles.Count > 5) RecentBundles.RemoveAt(RecentBundles.Count - 1);
+      SelectedRecentBundle = bundlePath;
     });
 
     SaveUiState();
+  }
+
+  private static bool TryReadBundleLink(string bundlePath, out string profileName, out string packName)
+  {
+    profileName = string.Empty;
+    packName = string.Empty;
+
+    if (string.IsNullOrWhiteSpace(bundlePath) || !Directory.Exists(bundlePath))
+      return false;
+
+    var manifestPath = Path.Combine(bundlePath, "Manifest", "manifest.json");
+    if (!File.Exists(manifestPath))
+      return false;
+
+    try
+    {
+      using var doc = JsonDocument.Parse(File.ReadAllText(manifestPath));
+      if (!doc.RootElement.TryGetProperty("run", out var run) || run.ValueKind != JsonValueKind.Object)
+        return false;
+
+      if (run.TryGetProperty("profileName", out var profileElement) && profileElement.ValueKind == JsonValueKind.String)
+        profileName = profileElement.GetString() ?? string.Empty;
+      if (run.TryGetProperty("packName", out var packElement) && packElement.ValueKind == JsonValueKind.String)
+        packName = packElement.GetString() ?? string.Empty;
+
+      return !string.IsNullOrWhiteSpace(profileName) || !string.IsNullOrWhiteSpace(packName);
+    }
+    catch
+    {
+      return false;
+    }
   }
 
   private void SaveUiState()
@@ -741,6 +1011,11 @@ public partial class MainViewModel
         EvaluateStigArgs = EvaluateStigArgs,
         ScapCommandPath = ScapCommandPath,
         ScapArgs = ScapArgs,
+        ScapIncludeU = ScapIncludeU,
+        ScapIncludeS = ScapIncludeS,
+        ScapIncludeR = ScapIncludeR,
+        ScapIncludeF = ScapIncludeF,
+        ScapAdditionalArgs = ScapAdditionalArgs,
         ScapLabel = ScapLabel,
         PowerStigModulePath = PowerStigModulePath,
         PowerStigDataFile = PowerStigDataFile,
@@ -782,15 +1057,10 @@ public partial class MainViewModel
       : LocalToolkitRoot.Trim();
     LocalToolkitRoot = sourceRoot;
 
-    if (!Directory.Exists(sourceRoot))
-    {
-      ToolkitActivationStatus = "Toolkit root not found: " + sourceRoot;
-      if (userInitiated)
-        StatusText = ToolkitActivationStatus;
-      return false;
-    }
-
-    ToolkitActivationStatus = "Activating toolkit from " + sourceRoot + "...";
+    var sourceExists = Directory.Exists(sourceRoot);
+    ToolkitActivationStatus = sourceExists
+      ? "Activating toolkit from " + sourceRoot + "..."
+      : "Toolkit root not found; resolving tools from managed cache...";
 
     ToolkitActivationResult result;
     try
@@ -815,12 +1085,24 @@ public partial class MainViewModel
       PowerStigModulePath = result.PowerStigModulePath;
 
     if (string.IsNullOrWhiteSpace(ScapArgs))
-      ScapArgs = "-u -s -r -f";
+    {
+      _suppressScapArgsSync = true;
+      ScapIncludeU = true;
+      ScapIncludeS = true;
+      ScapIncludeR = true;
+      ScapIncludeF = true;
+      ScapAdditionalArgs = string.Empty;
+      _suppressScapArgsSync = false;
+      UpdateScapArgsFromOptions();
+    }
 
     if (string.IsNullOrWhiteSpace(ScapLabel))
       ScapLabel = "DISA SCAP";
 
     var scannerReady = !string.IsNullOrWhiteSpace(EvaluateStigRoot) || !string.IsNullOrWhiteSpace(ScapCommandPath);
+    if (!sourceExists)
+      result.Notes.Insert(0, "Toolkit root missing; checked imported tools cache.");
+
     var notes = result.Notes.Count == 0
       ? string.Empty
       : " " + string.Join(" | ", result.Notes.Take(3));

@@ -133,4 +133,79 @@ public sealed class ImportDedupServiceTests
     Assert.Single(outcome.Suppressed);
     Assert.Equal("zulu.zip", outcome.Suppressed[0].FileName);
   }
+
+  [Fact]
+  public void Resolve_ScapSameVersionDifferentHash_PrefersNiwcEnhancedFromConsolidatedBundle()
+  {
+    var service = new ImportDedupService();
+    var standalone = new ImportInboxCandidate
+    {
+      ZipPath = "C:/import/scap_standalone.zip",
+      FileName = "scap_standalone.zip",
+      Sha256 = "sha-standalone",
+      ArtifactKind = ImportArtifactKind.Scap,
+      ContentKey = "scap:win11-benchmark",
+      VersionTag = "V2R1",
+      ImportedFrom = ImportProvenance.StandaloneZip,
+      IsNiwcEnhanced = false,
+      Confidence = DetectionConfidence.High
+    };
+    var niwc = new ImportInboxCandidate
+    {
+      ZipPath = "C:/import/niwc_consolidated.zip",
+      FileName = "niwc_consolidated.zip",
+      Sha256 = "sha-niwc",
+      ArtifactKind = ImportArtifactKind.Scap,
+      ContentKey = "scap:win11-benchmark",
+      VersionTag = "V2R1",
+      ImportedFrom = ImportProvenance.ConsolidatedBundle,
+      IsNiwcEnhanced = true,
+      Confidence = DetectionConfidence.High
+    };
+
+    var outcome = service.Resolve(new[] { standalone, niwc });
+
+    var winner = Assert.Single(outcome.Winners);
+    Assert.Equal("niwc_consolidated.zip", winner.FileName);
+    Assert.Single(outcome.Suppressed);
+    Assert.Contains(outcome.Decisions, d => d.Contains("selected NIWC Enhanced", StringComparison.OrdinalIgnoreCase));
+  }
+
+  [Fact]
+  public void Resolve_ScapSameVersionDifferentHash_UsesDeterministicFallbackWhenNiwcMissing()
+  {
+    var service = new ImportDedupService();
+    var oldDate = new ImportInboxCandidate
+    {
+      ZipPath = "C:/import/scap_old.zip",
+      FileName = "scap_old.zip",
+      Sha256 = "sha-old",
+      ArtifactKind = ImportArtifactKind.Scap,
+      ContentKey = "scap:win11-benchmark",
+      VersionTag = "V2R1",
+      ImportedFrom = ImportProvenance.StandaloneZip,
+      IsNiwcEnhanced = false,
+      BenchmarkDate = new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero),
+      Confidence = DetectionConfidence.High
+    };
+    var newDate = new ImportInboxCandidate
+    {
+      ZipPath = "C:/import/scap_new.zip",
+      FileName = "scap_new.zip",
+      Sha256 = "sha-new",
+      ArtifactKind = ImportArtifactKind.Scap,
+      ContentKey = "scap:win11-benchmark",
+      VersionTag = "V2R1",
+      ImportedFrom = ImportProvenance.StandaloneZip,
+      IsNiwcEnhanced = false,
+      BenchmarkDate = new DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero),
+      Confidence = DetectionConfidence.High
+    };
+
+    var outcome = service.Resolve(new[] { oldDate, newDate });
+
+    var winner = Assert.Single(outcome.Winners);
+    Assert.Equal("scap_new.zip", winner.FileName);
+    Assert.Contains(outcome.Decisions, d => d.Contains("deterministic fallback", StringComparison.OrdinalIgnoreCase));
+  }
 }

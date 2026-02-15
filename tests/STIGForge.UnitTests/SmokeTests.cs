@@ -32,6 +32,35 @@ public class SmokeTests
   }
 
   [Fact]
+  public void PathBuilder_Should_Prefer_AppBase_Over_CurrentDirectory()
+  {
+    var expectedRoot = Path.Combine(Path.GetTempPath(), "stigforge-pathbuilder-expected-" + Guid.NewGuid().ToString("n"));
+    var fallbackRoot = Path.Combine(Path.GetTempPath(), "stigforge-pathbuilder-fallback-" + Guid.NewGuid().ToString("n"));
+    var appBase = Path.Combine(expectedRoot, "src", "STIGForge.App", "bin", "Debug", "net8.0-windows");
+    var currentDirectory = Path.Combine(fallbackRoot, "legacy");
+
+    Directory.CreateDirectory(Path.Combine(expectedRoot, ".git"));
+    Directory.CreateDirectory(Path.Combine(fallbackRoot, ".git"));
+    Directory.CreateDirectory(appBase);
+    Directory.CreateDirectory(currentDirectory);
+
+    try
+    {
+      var pb = new PathBuilder(appBase, currentDirectory);
+
+      pb.GetImportRoot().Should().Be(Path.Combine(expectedRoot, "import"));
+      pb.GetImportInboxRoot().Should().Be(Path.Combine(expectedRoot, "import", "inbox"));
+    }
+    finally
+    {
+      if (Directory.Exists(expectedRoot))
+        Directory.Delete(expectedRoot, true);
+      if (Directory.Exists(fallbackRoot))
+        Directory.Delete(fallbackRoot, true);
+    }
+  }
+
+  [Fact]
   public void ClassifiedProfile_Should_AutoNa_UnclassifiedOnly_When_Confident()
   {
     var svc = new ClassificationScopeService();

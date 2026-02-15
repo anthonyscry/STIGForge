@@ -38,13 +38,13 @@
           <StackPanel>
             <TextBlock Text="Quick Start (5 Minutes)" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8" Foreground="{DynamicResource TextPrimaryBrush}"/>
             <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"
-                       Text="1. Go to the Import tab. Click 'Open Import Folder', copy your STIG/SCAP/GPO ZIP files into that folder, then click 'Scan Import Folder'. This loads the security rules into the app."/>
+                       Text="1. Go to the Import tab. Click 'Open Import Folder', copy your STIG/SCAP/GPO/ADMX/tool ZIP files into that folder, then click 'Scan Import Folder'. This loads security rules and scanner tools into the app."/>
             <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"
                        Text="2. Go to the Profile tab. Give your profile a name (like 'My Server'). Pick a mode: AuditOnly just checks things, Safe makes non-breaking changes, Full applies everything. Click 'Save Profile'."/>
             <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"
                        Text="3. Go to the Build tab. Pick your content pack and profile from the dropdowns, then click 'Build Bundle'. This creates a folder with all the scripts and files needed."/>
             <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,6"
-                       Text="4. Go to the Orchestrate tab. Check the boxes for what you want to run (Apply, Verify, Export), then click 'Run Orchestration'. Sit back and watch the log."/>
+                       Text="4. Go to the Orchestrate tab. Use the Bundle / PowerSTIG / Toolkit-Scanners sections to confirm settings, then click 'Run Orchestration'. Sit back and watch the log."/>
             <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}"
                        Text="5. When it's done, go to the Export tab to see your results and download reports for your security team."/>
           </StackPanel>
@@ -65,9 +65,11 @@
             <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4"
                        Text="'Scan Machine...' - Let STIGForge look at this computer and tell you which STIGs apply to it. Saves you from guessing."/>
             <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4"
-                       Text="'Select Content...' - Pick which imported packs you want to use for your current mission. You can pick more than one."/>
+                       Text="The scan area is split into Local Machine Scan and AD Remote Scan subtabs so you can run local applicability checks separately from remote host discovery/scans."/>
+            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4"
+                       Text="'Select Content...' - Pick which STIG packs you want to use for your mission. Related SCAP/GPO-LGPO/ADMX entries are derived automatically from machine scan signals and mapping logic."/>
             <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}"
-                       Text="The table below shows everything you've imported. Use the filter buttons (All / STIG / SCAP / GPO-ADMX) to narrow the list. Click a row to see its details on the right."/>
+                       Text="The table below shows everything you've imported. Use the filter buttons (All / STIG / SCAP / GPO-LGPO / ADMX) to narrow the list. Click a row to see details on the right."/>
           </StackPanel>
         </Border>
 
@@ -120,7 +122,9 @@
             <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4"
                        Text="PowerSTIG (optional): If you use Microsoft's PowerSTIG module, point to it here. It compiles extra DSC configurations during the apply phase."/>
             <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4"
-                       Text="Toolkit &amp; Scanners: Point to your Evaluate-STIG and SCAP scanner folders. Click 'Activate' to auto-detect tools from a toolkit folder."/>
+                       Text="Toolkit &amp; Scanners: Click 'Auto-detect Tools' to load Evaluate-STIG and SCAP paths from imported tool bundles or the managed cache. You can still browse paths manually if needed."/>
+            <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4"
+                       Text="SCAP options: Use the -u / -s / -r / -f checkboxes for common switches, then add any advanced flags in Extra args. STIGForge shows the final combined SCAP args preview."/>
             <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}"
                        Text="The log at the bottom shows real-time output as the pipeline runs."/>
           </StackPanel>
@@ -225,7 +229,7 @@
             <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4"
                        Text="Snapshot fails — You need to run STIGForge as Administrator. The snapshot uses secedit and auditpol which require elevated privileges."/>
             <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4"
-                       Text="Verify shows 0 results — Make sure Evaluate-STIG or SCAP scanner paths are set correctly in the Orchestrate or Verify tab. Click 'Activate' on the toolkit to auto-detect."/>
+                       Text="Verify shows 0 results — Make sure Evaluate-STIG or SCAP scanner paths are set correctly in the Orchestrate or Verify tab. Click 'Auto-detect Tools' to refresh scanner paths from imported tools/cache."/>
             <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}" Margin="0,0,0,4"
                        Text="Fleet: WinRM test fails — The remote machine needs WinRM enabled. Run 'winrm quickconfig' on the target machine, and make sure the firewall allows port 5985/5986."/>
             <TextBlock TextWrapping="Wrap" Foreground="{DynamicResource TextPrimaryBrush}"

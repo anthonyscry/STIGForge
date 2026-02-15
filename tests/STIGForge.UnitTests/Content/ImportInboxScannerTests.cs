@@ -86,6 +86,25 @@ public sealed class ImportInboxScannerTests : IDisposable
   }
 
   [Fact]
+  public async Task ScanAsync_UsesPolicyNamespaceForAdmxContentKey()
+  {
+    var zipPath = Path.Combine(_tempRoot, "admx_namespace.zip");
+    using (var archive = ZipFile.Open(zipPath, ZipArchiveMode.Create))
+    {
+      await WriteEntryAsync(
+        archive,
+        "PolicyDefinitions/windows.admx",
+        "<policyDefinitions revision=\"1.0\"><policyNamespaces><target prefix=\"windows\" namespace=\"Microsoft.Policies.Windows\" /></policyNamespaces></policyDefinitions>");
+    }
+
+    var scanner = new ImportInboxScanner(new TestHashingService());
+    var result = await scanner.ScanAsync(_tempRoot, CancellationToken.None);
+
+    var candidate = result.Candidates.Single(c => c.FileName == "admx_namespace.zip" && c.ArtifactKind == ImportArtifactKind.Admx);
+    Assert.Equal("admx:microsoft.policies.windows:1.0", candidate.ContentKey);
+  }
+
+  [Fact]
   public async Task ScanAsync_DoesNotClassifyXccdfAsScapWhenOnlyUnrelatedOvalExists()
   {
     var zipPath = Path.Combine(_tempRoot, "unrelated_oval_bundle.zip");
