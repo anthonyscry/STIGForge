@@ -32,19 +32,19 @@ public sealed class ImportSelectionPlanWarning
 
 public sealed class ImportSelectionPlan
 {
-  public IReadOnlyList<ImportSelectionPlanRow> Rows { get; init; } = Array.Empty<ImportSelectionPlanRow>();
-  public IReadOnlyList<ImportSelectionPlanWarning> Warnings { get; init; } = Array.Empty<ImportSelectionPlanWarning>();
-  public IReadOnlyList<string> WarningLines { get; init; } = Array.Empty<string>();
-  public ImportSelectionPlanCounts Counts { get; init; } = new();
-  public string StatusSummaryText { get; init; } = string.Empty;
-  public string Fingerprint { get; init; } = string.Empty;
+  public IReadOnlyList<ImportSelectionPlanRow> Rows { get; set; } = Array.Empty<ImportSelectionPlanRow>();
+  public IReadOnlyList<ImportSelectionPlanWarning> Warnings { get; set; } = Array.Empty<ImportSelectionPlanWarning>();
+  public IReadOnlyList<string> WarningLines { get; set; } = Array.Empty<string>();
+  public ImportSelectionPlanCounts Counts { get; set; } = new();
+  public string StatusSummaryText { get; set; } = string.Empty;
+  public string Fingerprint { get; set; } = string.Empty;
 }
 
 public sealed class ImportSelectionPlanCounts
 {
-  public int StigSelected { get; init; }
-  public int ScapAutoIncluded { get; init; }
-  public int RuleCount { get; init; }
+  public int StigSelected { get; set; }
+  public int ScapAutoIncluded { get; set; }
+  public int RuleCount { get; set; }
 }
 
 public sealed class ImportSelectionOrchestrator
@@ -189,8 +189,9 @@ public sealed class ImportSelectionOrchestrator
     };
 
     var payload = System.Text.Json.JsonSerializer.Serialize(canonical);
-    var hash = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(payload));
-    return Convert.ToHexString(hash).ToLowerInvariant();
+    using var sha = System.Security.Cryptography.SHA256.Create();
+    var hash = sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes(payload));
+    return BitConverter.ToString(hash).Replace("-", string.Empty).ToLowerInvariant();
   }
 
   private static int GetPriority(ImportSelectionArtifactType artifactType)
