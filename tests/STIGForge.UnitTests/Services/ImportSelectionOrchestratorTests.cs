@@ -1,5 +1,8 @@
 using FluentAssertions;
 using STIGForge.Core.Services;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
 
 namespace STIGForge.UnitTests.Services;
 
@@ -104,5 +107,67 @@ public sealed class ImportSelectionOrchestratorTests
     var planB = orchestrator.BuildPlan(inputB);
 
     planA.Fingerprint.Should().Be(planB.Fingerprint);
+  }
+
+  [Fact]
+  public void BuildPlan_DelimiterRichDistinctPlans_ProduceDistinctFingerprints()
+  {
+    var orchestrator = new ImportSelectionOrchestrator();
+
+    var inputA = new[]
+    {
+      new ImportSelectionCandidate { ArtifactType = ImportSelectionArtifactType.Scap, Id = "aaa", IsSelected = true },
+      new ImportSelectionCandidate { ArtifactType = ImportSelectionArtifactType.Gpo, Id = "bbb" }
+    };
+
+    var inputB = new[]
+    {
+      new ImportSelectionCandidate
+      {
+        ArtifactType = ImportSelectionArtifactType.Scap,
+        Id = "aaa:True:False|row:2:bbb",
+        IsSelected = false
+      }
+    };
+
+    var planA = orchestrator.BuildPlan(inputA);
+    var planB = orchestrator.BuildPlan(inputB);
+
+    planA.Rows.Should().NotBeEquivalentTo(planB.Rows);
+    planA.Fingerprint.Should().NotBe(planB.Fingerprint);
+    planA.Fingerprint.Should().Be(BuildExpectedCanonicalFingerprint(planA));
+    planB.Fingerprint.Should().Be(BuildExpectedCanonicalFingerprint(planB));
+  }
+
+  private static string BuildExpectedCanonicalFingerprint(ImportSelectionPlan plan)
+  {
+    var canonical = new
+    {
+      rows = plan.Rows.Select(x => new
+      {
+        artifactType = (int)x.ArtifactType,
+        id = x.Id.ToUpperInvariant(),
+        isSelected = x.IsSelected,
+        isLocked = x.IsLocked
+      }),
+      warnings = plan.Warnings
+        .OrderBy(x => x.Code, StringComparer.Ordinal)
+        .ThenBy(x => x.Severity, StringComparer.Ordinal)
+        .Select(x => new
+        {
+          code = x.Code,
+          severity = x.Severity
+        }),
+      counts = new
+      {
+        stigSelected = plan.Counts.StigSelected,
+        scapAutoIncluded = plan.Counts.ScapAutoIncluded,
+        ruleCount = plan.Counts.RuleCount
+      }
+    };
+
+    var json = JsonSerializer.Serialize(canonical);
+    var hash = SHA256.HashData(Encoding.UTF8.GetBytes(json));
+    return Convert.ToHexString(hash).ToLowerInvariant();
   }
 }

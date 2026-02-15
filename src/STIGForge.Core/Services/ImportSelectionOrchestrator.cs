@@ -127,15 +127,32 @@ public sealed class ImportSelectionOrchestrator
     IReadOnlyList<ImportSelectionPlanWarning> warnings,
     ImportSelectionPlanCounts counts)
   {
-    var fingerprintSource = string.Join("|", rows.Select(x =>
-      $"row:{(int)x.ArtifactType}:{x.Id.ToUpperInvariant()}:{x.IsSelected}:{x.IsLocked}"));
-    var warningSource = string.Join("|", warnings
-      .OrderBy(x => x.Code, StringComparer.Ordinal)
-      .ThenBy(x => x.Severity, StringComparer.Ordinal)
-      .Select(x => $"warn:{x.Code}:{x.Severity}"));
-    var countSource = $"counts:{counts.StigSelected}:{counts.ScapAutoIncluded}:{counts.RuleCount}";
-    var payload = string.Join("|", fingerprintSource, warningSource, countSource);
+    var canonical = new
+    {
+      rows = rows.Select(x => new
+      {
+        artifactType = (int)x.ArtifactType,
+        id = x.Id.ToUpperInvariant(),
+        isSelected = x.IsSelected,
+        isLocked = x.IsLocked
+      }),
+      warnings = warnings
+        .OrderBy(x => x.Code, StringComparer.Ordinal)
+        .ThenBy(x => x.Severity, StringComparer.Ordinal)
+        .Select(x => new
+        {
+          code = x.Code,
+          severity = x.Severity
+        }),
+      counts = new
+      {
+        stigSelected = counts.StigSelected,
+        scapAutoIncluded = counts.ScapAutoIncluded,
+        ruleCount = counts.RuleCount
+      }
+    };
 
+    var payload = System.Text.Json.JsonSerializer.Serialize(canonical);
     var hash = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(payload));
     return Convert.ToHexString(hash).ToLowerInvariant();
   }
