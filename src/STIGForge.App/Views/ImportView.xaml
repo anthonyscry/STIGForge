@@ -170,7 +170,7 @@
           </TabItem>
         </TabControl>
 
-        <TextBlock Text="{Binding SelectedContentSummary}" Foreground="{DynamicResource TextMutedBrush}" FontSize="11" Margin="0,2,0,0"/>
+        <TextBlock Text="{Binding SelectedContentSummary}" Foreground="{DynamicResource TextMutedBrush}" FontSize="11" Margin="0,2,0,0" TextWrapping="Wrap"/>
       </StackPanel>
     </ScrollViewer>
 

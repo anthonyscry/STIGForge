@@ -34,6 +34,23 @@ public sealed class ImportViewLayoutContractTests
     Assert.Contains("Library actions", xaml, StringComparison.Ordinal);
   }
 
+  [Fact]
+  public void ImportView_UsesTextWrappingOnLongStatusAndDetailFields()
+  {
+    var xaml = LoadImportViewXaml();
+
+    Assert.Contains("<TextBlock Grid.Row=\"2\" Text=\"{Binding MachineScanSummary}\"", xaml, StringComparison.Ordinal);
+    Assert.Contains("Text=\"{Binding MachineScanSummary}\"", xaml, StringComparison.Ordinal);
+    Assert.Contains("Text=\"{Binding MachineScanSummary}\" Foreground=\"{DynamicResource TextMutedBrush}\" Margin=\"0,0,0,6\" TextWrapping=\"Wrap\"", xaml, StringComparison.Ordinal);
+
+    Assert.Contains("Text=\"{Binding SelectedContentSummary}\"", xaml, StringComparison.Ordinal);
+    Assert.Contains("Text=\"{Binding SelectedContentSummary}\" Foreground=\"{DynamicResource TextMutedBrush}\" FontSize=\"11\" Margin=\"0,2,0,0\" TextWrapping=\"Wrap\"", xaml, StringComparison.Ordinal);
+
+    Assert.Contains("Text=\"Root:\"", xaml, StringComparison.Ordinal);
+    Assert.Contains("Text=\"{Binding PackDetailRoot}\"", xaml, StringComparison.Ordinal);
+    Assert.Contains("Text=\"{Binding PackDetailRoot}\" Foreground=\"{DynamicResource TextMutedBrush}\" TextWrapping=\"Wrap\"", xaml, StringComparison.Ordinal);
+  }
+
   private static string LoadImportViewXaml()
   {
     var current = new DirectoryInfo(AppContext.BaseDirectory);
