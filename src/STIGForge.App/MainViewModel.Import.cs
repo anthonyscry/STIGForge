@@ -517,22 +517,7 @@ public partial class MainViewModel
 
   private static bool IsAdmxTemplatePack(ContentPack pack)
   {
-    var sourceLabel = pack.SourceLabel ?? string.Empty;
-    var name = pack.Name ?? string.Empty;
-
-    if (sourceLabel.IndexOf("admx_template_import", StringComparison.OrdinalIgnoreCase) >= 0)
-      return true;
-
-    if (name.IndexOf("STIG GPO Package", StringComparison.OrdinalIgnoreCase) >= 0)
-      return false;
-
-    if (sourceLabel.IndexOf("gpo_lgpo_import", StringComparison.OrdinalIgnoreCase) >= 0)
-      return false;
-
-    if (name.IndexOf("ADMX Templates", StringComparison.OrdinalIgnoreCase) >= 0)
-      return true;
-
-    return sourceLabel.IndexOf("admx_import", StringComparison.OrdinalIgnoreCase) >= 0;
+    return PackFormatClassifier.IsAdmxTemplatePack(pack.SourceLabel, pack.Name);
   }
 
   [RelayCommand]
