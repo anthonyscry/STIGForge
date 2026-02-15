@@ -1,3 +1,5 @@
+using System.Xml.Linq;
+
 namespace STIGForge.UnitTests.Views;
 
 public sealed class ImportViewLayoutContractTests
@@ -38,17 +40,22 @@ public sealed class ImportViewLayoutContractTests
   public void ImportView_UsesTextWrappingOnLongStatusAndDetailFields()
   {
     var xaml = LoadImportViewXaml();
+    var view = XDocument.Parse(xaml);
+    XNamespace presentation = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
 
-    Assert.Contains("<TextBlock Grid.Row=\"2\" Text=\"{Binding MachineScanSummary}\"", xaml, StringComparison.Ordinal);
-    Assert.Contains("Text=\"{Binding MachineScanSummary}\"", xaml, StringComparison.Ordinal);
-    Assert.Contains("Text=\"{Binding MachineScanSummary}\" Foreground=\"{DynamicResource TextMutedBrush}\" Margin=\"0,0,0,6\" TextWrapping=\"Wrap\"", xaml, StringComparison.Ordinal);
+    AssertWrappedTextBlock(view, presentation, "{Binding MachineScanSummary}");
+    AssertWrappedTextBlock(view, presentation, "{Binding SelectedContentSummary}");
+    AssertWrappedTextBlock(view, presentation, "{Binding PackDetailRoot}");
 
-    Assert.Contains("Text=\"{Binding SelectedContentSummary}\"", xaml, StringComparison.Ordinal);
-    Assert.Contains("Text=\"{Binding SelectedContentSummary}\" Foreground=\"{DynamicResource TextMutedBrush}\" FontSize=\"11\" Margin=\"0,2,0,0\" TextWrapping=\"Wrap\"", xaml, StringComparison.Ordinal);
+    static void AssertWrappedTextBlock(XDocument view, XNamespace presentation, string binding)
+    {
+      var textBlock = view
+        .Descendants(presentation + "TextBlock")
+        .FirstOrDefault(node => string.Equals((string?)node.Attribute("Text"), binding, StringComparison.Ordinal));
 
-    Assert.Contains("Text=\"Root:\"", xaml, StringComparison.Ordinal);
-    Assert.Contains("Text=\"{Binding PackDetailRoot}\"", xaml, StringComparison.Ordinal);
-    Assert.Contains("Text=\"{Binding PackDetailRoot}\" Foreground=\"{DynamicResource TextMutedBrush}\" TextWrapping=\"Wrap\"", xaml, StringComparison.Ordinal);
+      Assert.True(textBlock is not null, $"Expected TextBlock with Text='{binding}'.");
+      Assert.Equal("Wrap", (string?)textBlock!.Attribute("TextWrapping"));
+    }
   }
 
   private static string LoadImportViewXaml()
