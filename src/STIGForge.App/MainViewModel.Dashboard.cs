@@ -609,6 +609,20 @@ public partial class MainViewModel
   partial void OnIsBusyChanged(bool value)
   {
     OnPropertyChanged(nameof(ActionsEnabled));
+
+    var app = System.Windows.Application.Current;
+    if (app == null)
+      return;
+
+    var dispatcher = app.Dispatcher;
+    if (dispatcher.CheckAccess())
+    {
+      System.Windows.Input.Mouse.OverrideCursor = value ? System.Windows.Input.Cursors.Wait : null;
+      return;
+    }
+
+    dispatcher.Invoke(() =>
+      System.Windows.Input.Mouse.OverrideCursor = value ? System.Windows.Input.Cursors.Wait : null);
   }
 
   partial void OnBundleRootChanged(string value)

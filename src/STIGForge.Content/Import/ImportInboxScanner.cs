@@ -1,5 +1,6 @@
 using System.IO.Compression;
 using System.Text.RegularExpressions;
+using System.Xml;
 using System.Xml.Linq;
 using STIGForge.Core.Abstractions;
 
@@ -141,12 +142,36 @@ public sealed class ImportInboxScanner
       AddUniqueCandidate(candidates, seen, candidate);
     }
 
-    var xccdfEntries = archive.Entries
-      .Where(e => e.FullName.EndsWith(".xml", StringComparison.OrdinalIgnoreCase)
-        && Path.GetFileName(e.FullName).IndexOf("xccdf", StringComparison.OrdinalIgnoreCase) >= 0)
+    var xmlEntries = archive.Entries
+      .Where(e => e.FullName.EndsWith(".xml", StringComparison.OrdinalIgnoreCase))
       .OrderBy(e => e.FullName, StringComparer.OrdinalIgnoreCase)
       .ToList();
-    var hasXccdf = xccdfEntries.Count > 0;
+
+    var benchmarkEntries = new List<ZipArchiveEntry>();
+    var scapDataStreamEntries = new List<ZipArchiveEntry>();
+    foreach (var xmlEntry in xmlEntries)
+    {
+      var xmlFileName = Path.GetFileName(xmlEntry.FullName);
+      if (xmlFileName.IndexOf("xccdf", StringComparison.OrdinalIgnoreCase) >= 0)
+      {
+        benchmarkEntries.Add(xmlEntry);
+        continue;
+      }
+
+      if (!TryReadXmlRootLocalName(xmlEntry, out var rootLocalName))
+        continue;
+
+      if (string.Equals(rootLocalName, "Benchmark", StringComparison.OrdinalIgnoreCase))
+      {
+        benchmarkEntries.Add(xmlEntry);
+        continue;
+      }
+
+      if (string.Equals(rootLocalName, "data-stream-collection", StringComparison.OrdinalIgnoreCase))
+        scapDataStreamEntries.Add(xmlEntry);
+    }
+
+    var hasXccdf = benchmarkEntries.Count > 0 || scapDataStreamEntries.Count > 0;
     var hasAdmx = namesLower.Any(n => n.EndsWith(".admx", StringComparison.Ordinal));
     var hasLocalPolicies = namesLower.Any(n =>
       n.IndexOf("support files/local policies", StringComparison.Ordinal) >= 0);
@@ -181,17 +206,52 @@ public sealed class ImportInboxScanner
 
     if (hasXccdf)
     {
-      foreach (var xccdfEntry in xccdfEntries)
+      foreach (var benchmarkEntry in benchmarkEntries)
       {
-        var hasRelatedOval = HasRelatedOval(xccdfEntry, namesLower);
+        var hasRelatedOval = HasRelatedOval(benchmarkEntry, namesLower);
         var candidate = CreateCandidate(zipPath, fileName, sha256, importedFrom, isNiwcEnhanced);
         candidate.ArtifactKind = hasRelatedOval ? ImportArtifactKind.Scap : ImportArtifactKind.Stig;
         candidate.Confidence = DetectionConfidence.High;
-        PopulateXccdfIdentity(candidate, xccdfEntry, hasRelatedOval ? "scap" : "stig");
+        PopulateXccdfIdentity(candidate, benchmarkEntry, hasRelatedOval ? "scap" : "stig");
         candidate.Reasons.Add(hasRelatedOval
-          ? "Detected XCCDF + OVAL signature in " + xccdfEntry.FullName + "."
-          : "Detected XCCDF signature in " + xccdfEntry.FullName + ".");
+          ? "Detected XCCDF + OVAL signature in " + benchmarkEntry.FullName + "."
+          : "Detected XCCDF benchmark signature in " + benchmarkEntry.FullName + ".");
         candidates.Add(candidate);
+      }
+
+      foreach (var dataStreamEntry in scapDataStreamEntries)
+      {
+        var candidate = CreateCandidate(zipPath, fileName, sha256, importedFrom, isNiwcEnhanced);
+        candidate.ArtifactKind = ImportArtifactKind.Scap;
+        candidate.Confidence = DetectionConfidence.High;
+        PopulateXccdfIdentity(candidate, dataStreamEntry, "scap");
+        candidate.Reasons.Add("Detected SCAP data stream signature in " + dataStreamEntry.FullName + ".");
+        candidates.Add(candidate);
+      }
+    }
+
+    if (candidates.Count == 0)
+    {
+      var nestedZipEntries = namesLower
+        .Where(n => n.EndsWith(".zip", StringComparison.Ordinal))
+        .ToList();
+
+      if (nestedZipEntries.Count > 0)
+      {
+        var hasNestedScap = nestedZipEntries.Any(n => n.IndexOf("scap", StringComparison.Ordinal) >= 0);
+        var hasNestedStig = nestedZipEntries.Any(n =>
+          n.IndexOf("stig", StringComparison.Ordinal) >= 0
+          || n.IndexOf("srg", StringComparison.Ordinal) >= 0);
+
+        if (hasNestedScap || hasNestedStig)
+        {
+          var candidate = CreateCandidate(zipPath, fileName, sha256, importedFrom, isNiwcEnhanced);
+          candidate.ArtifactKind = hasNestedScap ? ImportArtifactKind.Scap : ImportArtifactKind.Stig;
+          candidate.Confidence = DetectionConfidence.Medium;
+          candidate.ContentKey = (hasNestedScap ? "scap:" : "stig:") + Path.GetFileNameWithoutExtension(zipPath).ToLowerInvariant();
+          candidate.Reasons.Add("Detected nested STIG/SCAP ZIP archive entries.");
+          AddUniqueCandidate(candidates, seen, candidate);
+        }
       }
     }
 
@@ -266,18 +326,32 @@ public sealed class ImportInboxScanner
         return;
       }
 
-      var benchmarkId = root.Attribute("id")?.Value?.Trim() ?? string.Empty;
-      var benchmarkVersion = root.Elements().FirstOrDefault(e => e.Name.LocalName == "version")?.Value?.Trim() ?? string.Empty;
-      var benchmarkTitle = root.Elements().FirstOrDefault(e => e.Name.LocalName == "title")?.Value?.Trim() ?? string.Empty;
-      var statusDateRaw = root.Elements().FirstOrDefault(e => e.Name.LocalName == "status")?.Attribute("date")?.Value?.Trim();
+      var metadataRoot = root;
+      var isDataStreamRoot = string.Equals(root.Name.LocalName, "data-stream-collection", StringComparison.OrdinalIgnoreCase);
+      if (isDataStreamRoot)
+      {
+        var embeddedBenchmark = root.Descendants().FirstOrDefault(e =>
+          string.Equals(e.Name.LocalName, "Benchmark", StringComparison.OrdinalIgnoreCase));
+        if (embeddedBenchmark != null)
+          metadataRoot = embeddedBenchmark;
+      }
+
+      var benchmarkId = metadataRoot.Attribute("id")?.Value?.Trim() ?? string.Empty;
+      if (isDataStreamRoot && ReferenceEquals(metadataRoot, root))
+        benchmarkId = string.Empty;
+
+      var benchmarkVersion = metadataRoot.Elements().FirstOrDefault(e => e.Name.LocalName == "version")?.Value?.Trim() ?? string.Empty;
+      var benchmarkTitle = metadataRoot.Elements().FirstOrDefault(e => e.Name.LocalName == "title")?.Value?.Trim() ?? string.Empty;
+      var statusDateRaw = metadataRoot.Elements().FirstOrDefault(e => e.Name.LocalName == "status")?.Attribute("date")?.Value?.Trim();
 
       if (!string.IsNullOrWhiteSpace(statusDateRaw) && DateTimeOffset.TryParse(statusDateRaw, out var parsedDate))
         candidate.BenchmarkDate = parsedDate;
 
-      var releasePlainText = root.Elements()
+      var releasePlainText = metadataRoot.Elements()
         .FirstOrDefault(e => e.Name.LocalName == "plain-text")?.Value ?? string.Empty;
       var versionTag = ParseVersionTag(releasePlainText)
         ?? ParseVersionTag(benchmarkVersion)
+        ?? ParseVersionTag(xccdfEntry.FullName)
         ?? ParseVersionTag(candidate.FileName)
         ?? string.Empty;
 
@@ -345,6 +419,38 @@ public sealed class ImportInboxScanner
       return;
 
     candidates.Add(candidate);
+  }
+
+  private static bool TryReadXmlRootLocalName(ZipArchiveEntry xmlEntry, out string rootLocalName)
+  {
+    rootLocalName = string.Empty;
+
+    try
+    {
+      using var stream = xmlEntry.Open();
+      var settings = new XmlReaderSettings
+      {
+        DtdProcessing = DtdProcessing.Prohibit,
+        IgnoreWhitespace = true,
+        IgnoreComments = true,
+        XmlResolver = null
+      };
+
+      using var reader = XmlReader.Create(stream, settings);
+      while (reader.Read())
+      {
+        if (reader.NodeType != XmlNodeType.Element)
+          continue;
+
+        rootLocalName = reader.LocalName;
+        return !string.IsNullOrWhiteSpace(rootLocalName);
+      }
+    }
+    catch
+    {
+    }
+
+    return false;
   }
 
   private static bool HasRelatedOval(ZipArchiveEntry xccdfEntry, IReadOnlyList<string> namesLower)

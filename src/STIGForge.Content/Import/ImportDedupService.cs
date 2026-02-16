@@ -68,14 +68,14 @@ public sealed class ImportDedupService
       throw new InvalidOperationException("Group must contain at least one candidate.");
 
     if (group.All(c => c.ArtifactKind == ImportArtifactKind.Scap)
-      && HasSameVersionDifferentHashes(group)
+      && HasDifferentHashes(group)
       && TrySelectNiwcEnhanced(group, out var niwcWinner))
     {
       var suppressedByNiwc = group
         .Where(c => !ReferenceEquals(c, niwcWinner))
         .ToList();
 
-      decisions.Add("SCAP conflict: same version, different hash -> selected NIWC Enhanced (Consolidated Bundle): "
+      decisions.Add("SCAP conflict: same logical content, different hash -> selected NIWC Enhanced (Consolidated Bundle): "
         + niwcWinner.FileName + " [" + niwcWinner.ContentKey + "]");
 
       return (niwcWinner, suppressedByNiwc);
@@ -101,27 +101,18 @@ public sealed class ImportDedupService
     var suppressed = ordered.Skip(1).ToList();
 
     if (group.All(c => c.ArtifactKind == ImportArtifactKind.Scap)
-      && HasSameVersionDifferentHashes(group)
+      && HasDifferentHashes(group)
       && suppressed.Count > 0)
     {
-      decisions.Add("SCAP conflict: same version, different hash -> NIWC Enhanced not found; selected deterministic fallback: "
+      decisions.Add("SCAP conflict: same logical content, different hash -> NIWC Enhanced not found; selected deterministic fallback: "
         + winner.FileName + " [" + winner.ContentKey + "]");
     }
 
     return (winner, suppressed);
   }
 
-  private static bool HasSameVersionDifferentHashes(IReadOnlyList<ImportInboxCandidate> group)
+  private static bool HasDifferentHashes(IReadOnlyList<ImportInboxCandidate> group)
   {
-    var normalizedVersions = group
-      .Select(c => (c.VersionTag ?? string.Empty).Trim())
-      .Where(v => v.Length > 0)
-      .Distinct(StringComparer.OrdinalIgnoreCase)
-      .ToList();
-
-    if (normalizedVersions.Count != 1)
-      return false;
-
     var hashes = group
       .Select(c => (c.Sha256 ?? string.Empty).Trim())
       .Where(h => h.Length > 0)

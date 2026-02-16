@@ -97,6 +97,74 @@ public sealed class ContentPackImporterTests : IDisposable
   }
 
   [Fact]
+  public async Task ImportZipAsync_ParsesScapDataStreamBenchmarkXml()
+  {
+    var zipPath = Path.Combine(_tempRoot, "scap-datastream-benchmark.zip");
+    using (var archive = ZipFile.Open(zipPath, ZipArchiveMode.Create))
+    {
+      var benchmark = archive.CreateEntry("U_MS_Windows_11_V2R7_STIG_SCAP_1-3_Benchmark.xml");
+      await using var writer = new StreamWriter(benchmark.Open());
+      await writer.WriteAsync(CreateMinimalScapDataStream("xccdf_org.test.win11_benchmark", "V2R7"));
+    }
+
+    var importer = CreateImporter(out var packsMock, out var controlsMock);
+    var result = await importer.ImportZipAsync(zipPath, "win11_scap", "scap_import", CancellationToken.None);
+
+    Assert.Equal("win11_scap", result.Name);
+    packsMock.Verify(p => p.SaveAsync(It.IsAny<ContentPack>(), It.IsAny<CancellationToken>()), Times.Once);
+    controlsMock.Verify(c => c.SaveControlsAsync(It.IsAny<string>(), It.Is<IReadOnlyList<ControlRecord>>(list => list.Count > 0), It.IsAny<CancellationToken>()), Times.Once);
+  }
+
+  [Fact]
+  public async Task ImportZipAsync_ClassifiesScapDataStreamAsScapFormat()
+  {
+    var zipPath = Path.Combine(_tempRoot, "scap-datastream-format-detection.zip");
+    using (var archive = ZipFile.Open(zipPath, ZipArchiveMode.Create))
+    {
+      var benchmark = archive.CreateEntry("U_MS_Windows_11_V2R7_STIG_SCAP_1-3_Benchmark.xml");
+      await using var writer = new StreamWriter(benchmark.Open());
+      await writer.WriteAsync(CreateMinimalScapDataStream("xccdf_org.test.win11_benchmark", "V2R7"));
+    }
+
+    var importer = CreateImporter(out _, out _);
+    var result = await importer.ImportZipAsync(zipPath, "win11_scap", "scap_import", CancellationToken.None);
+
+    var compatibilityPath = Path.Combine(_tempRoot, "packs", result.PackId, "compatibility_matrix.json");
+    using var matrixDoc = JsonDocument.Parse(File.ReadAllText(compatibilityPath));
+    var root = matrixDoc.RootElement;
+
+    Assert.Equal("Scap", root.GetProperty("detectedFormat").GetString());
+    Assert.True(root.GetProperty("support").GetProperty("ovalMetadata").GetBoolean());
+  }
+
+  [Fact]
+  public async Task ImportConsolidatedZipAsync_SplitsFlatScapDataStreamsIntoIndividualPacks()
+  {
+    var zipPath = Path.Combine(_tempRoot, "flat-scap-consolidated.zip");
+    using (var archive = ZipFile.Open(zipPath, ZipArchiveMode.Create))
+    {
+      var benchmarkA = archive.CreateEntry("U_Product_A_V1R1_STIG_SCAP_1-3_Benchmark.xml");
+      await using (var writer = new StreamWriter(benchmarkA.Open()))
+      {
+        await writer.WriteAsync(CreateMinimalScapDataStream("xccdf_org.test.product_a", "V1R1"));
+      }
+
+      var benchmarkB = archive.CreateEntry("U_Product_B_V1R1_STIG_SCAP_1-3_Benchmark.xml");
+      await using (var writer = new StreamWriter(benchmarkB.Open()))
+      {
+        await writer.WriteAsync(CreateMinimalScapDataStream("xccdf_org.test.product_b", "V1R1"));
+      }
+    }
+
+    var importer = CreateImporter(out var packsMock, out var controlsMock);
+    var imported = await importer.ImportConsolidatedZipAsync(zipPath, "scap_import", CancellationToken.None);
+
+    Assert.Equal(2, imported.Count);
+    packsMock.Verify(p => p.SaveAsync(It.IsAny<ContentPack>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+    controlsMock.Verify(c => c.SaveControlsAsync(It.IsAny<string>(), It.Is<IReadOnlyList<ControlRecord>>(list => list.Count > 0), It.IsAny<CancellationToken>()), Times.Exactly(2));
+  }
+
+  [Fact]
   public async Task ImportAdmxTemplatesFromZipAsync_ImportsOnePackPerTemplate()
   {
     var zipPath = Path.Combine(_tempRoot, "admx-templates.zip");
@@ -490,16 +558,16 @@ public sealed class ContentPackImporterTests : IDisposable
     var imported = await importer.ImportConsolidatedZipAsync(zipPath, "gpo_lgpo_import", CancellationToken.None);
 
     Assert.Equal(3, imported.Count);
-    Assert.Contains(imported, pack => pack.Name.Contains("Local Policy - Windows 11", StringComparison.Ordinal));
-    Assert.Contains(imported, pack => pack.Name.Contains("Local Policy - Windows Server 2022", StringComparison.Ordinal));
-    Assert.Contains(imported, pack => pack.Name.Contains("Domain GPO - example.com", StringComparison.Ordinal));
+    Assert.Contains(imported, pack => string.Equals(pack.Name, "Local Policy - Windows 11", StringComparison.Ordinal));
+    Assert.Contains(imported, pack => string.Equals(pack.Name, "Local Policy - Windows Server 2022", StringComparison.Ordinal));
+    Assert.Contains(imported, pack => string.Equals(pack.Name, "Domain GPO - example.com", StringComparison.Ordinal));
 
-    Assert.Contains(imported, pack => pack.Name.Contains("Local Policy - Windows 11", StringComparison.Ordinal)
-      && string.Equals(pack.SourceLabel, "gpo_lgpo_import", StringComparison.Ordinal));
-    Assert.Contains(imported, pack => pack.Name.Contains("Local Policy - Windows Server 2022", StringComparison.Ordinal)
-      && string.Equals(pack.SourceLabel, "gpo_lgpo_import", StringComparison.Ordinal));
-    Assert.Contains(imported, pack => pack.Name.Contains("Domain GPO - example.com", StringComparison.Ordinal)
+    Assert.Contains(imported, pack => string.Equals(pack.Name, "Domain GPO - example.com", StringComparison.Ordinal)
       && string.Equals(pack.SourceLabel, "gpo_domain_import", StringComparison.Ordinal));
+    Assert.Contains(imported, pack => string.Equals(pack.Name, "Local Policy - Windows 11", StringComparison.Ordinal)
+      && string.Equals(pack.SourceLabel, "gpo_lgpo_import", StringComparison.Ordinal));
+    Assert.Contains(imported, pack => string.Equals(pack.Name, "Local Policy - Windows Server 2022", StringComparison.Ordinal)
+      && string.Equals(pack.SourceLabel, "gpo_lgpo_import", StringComparison.Ordinal));
 
     var outerBaseName = Path.GetFileNameWithoutExtension(zipPath);
     Assert.DoesNotContain(imported, pack => string.Equals(pack.Name, outerBaseName, StringComparison.OrdinalIgnoreCase));
@@ -536,21 +604,58 @@ public sealed class ContentPackImporterTests : IDisposable
     var imported = await importer.ImportConsolidatedZipAsync(zipPath, "gpo_lgpo_import", CancellationToken.None);
 
     Assert.Equal(3, imported.Count);
-    Assert.Contains(imported, pack => pack.Name.Contains("Local Policy - Windows 11", StringComparison.Ordinal));
-    Assert.Contains(imported, pack => pack.Name.Contains("Local Policy - Windows Server 2022", StringComparison.Ordinal));
-    Assert.Contains(imported, pack => pack.Name.Contains("Domain GPO - example.com", StringComparison.Ordinal));
+    Assert.Contains(imported, pack => string.Equals(pack.Name, "Local Policy - Windows 11", StringComparison.Ordinal));
+    Assert.Contains(imported, pack => string.Equals(pack.Name, "Local Policy - Windows Server 2022", StringComparison.Ordinal));
+    Assert.Contains(imported, pack => string.Equals(pack.Name, "Domain GPO - example.com", StringComparison.Ordinal));
 
-    Assert.Contains(imported, pack => pack.Name.Contains("Local Policy - Windows 11", StringComparison.Ordinal)
+    Assert.Contains(imported, pack => string.Equals(pack.Name, "Local Policy - Windows 11", StringComparison.Ordinal)
       && string.Equals(pack.SourceLabel, "gpo_lgpo_import", StringComparison.Ordinal));
-    Assert.Contains(imported, pack => pack.Name.Contains("Local Policy - Windows Server 2022", StringComparison.Ordinal)
+    Assert.Contains(imported, pack => string.Equals(pack.Name, "Local Policy - Windows Server 2022", StringComparison.Ordinal)
       && string.Equals(pack.SourceLabel, "gpo_lgpo_import", StringComparison.Ordinal));
-    Assert.Contains(imported, pack => pack.Name.Contains("Domain GPO - example.com", StringComparison.Ordinal)
+    Assert.Contains(imported, pack => string.Equals(pack.Name, "Domain GPO - example.com", StringComparison.Ordinal)
       && string.Equals(pack.SourceLabel, "gpo_domain_import", StringComparison.Ordinal));
 
     var outerBaseName = Path.GetFileNameWithoutExtension(zipPath);
     Assert.DoesNotContain(imported, pack => string.Equals(pack.Name, outerBaseName, StringComparison.OrdinalIgnoreCase));
 
     packsMock.Verify(p => p.SaveAsync(It.IsAny<ContentPack>(), It.IsAny<CancellationToken>()), Times.Exactly(3));
+  }
+
+  [Fact]
+  public async Task ImportConsolidatedZipAsync_DodStyleDomainGpoBundle_GroupsByParentFolder()
+  {
+    var zipPath = Path.Combine(_tempRoot, "consolidated-dod-domain-gpos.zip");
+    using (var archive = ZipFile.Open(zipPath, ZipArchiveMode.Create))
+    {
+      var windows11Machine = archive.CreateEntry("DoD Windows 11 v2r6/GPOs/{11111111-1111-1111-1111-111111111111}/DomainSysvol/GPO/Machine/registry.pol");
+      await using (var writer = new StreamWriter(windows11Machine.Open()))
+      {
+        await writer.WriteAsync("stub");
+      }
+
+      var windows11User = archive.CreateEntry("DoD Windows 11 v2r6/GPOs/{22222222-2222-2222-2222-222222222222}/DomainSysvol/GPO/User/registry.pol");
+      await using (var writer = new StreamWriter(windows11User.Open()))
+      {
+        await writer.WriteAsync("stub");
+      }
+
+      var edgeMachine = archive.CreateEntry("DoD Microsoft Edge v2r4/GPOs/{33333333-3333-3333-3333-333333333333}/DomainSysvol/GPO/Machine/registry.pol");
+      await using (var writer = new StreamWriter(edgeMachine.Open()))
+      {
+        await writer.WriteAsync("stub");
+      }
+    }
+
+    var importer = CreateImporter(out var packsMock, out _);
+    var imported = await importer.ImportConsolidatedZipAsync(zipPath, "gpo_lgpo_import", CancellationToken.None);
+
+    Assert.Equal(2, imported.Count);
+    Assert.Contains(imported, pack => string.Equals(pack.Name, "Domain GPO - DoD Windows 11 v2r6", StringComparison.Ordinal));
+    Assert.Contains(imported, pack => string.Equals(pack.Name, "Domain GPO - DoD Microsoft Edge v2r4", StringComparison.Ordinal));
+    Assert.All(imported, pack => Assert.Equal("gpo_domain_import", pack.SourceLabel));
+    Assert.DoesNotContain(imported, pack => pack.Name.IndexOf("{", StringComparison.Ordinal) >= 0);
+
+    packsMock.Verify(p => p.SaveAsync(It.IsAny<ContentPack>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
   }
 
   private ContentPackImporter CreateImporter(out Mock<IContentPackRepository> packsMock, out Mock<IControlRepository> controlsMock)
@@ -711,6 +816,28 @@ public sealed class ContentPackImporterTests : IDisposable
   </policies>
 </policyDefinitions>
 """;
+  }
+
+  private static string CreateMinimalScapDataStream(string benchmarkId, string releaseTag)
+  {
+    return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+      + "<data-stream-collection xmlns=\"http://scap.nist.gov/schema/scap/source/1.2\" xmlns:xccdf=\"http://checklists.nist.gov/xccdf/1.2\">"
+      + "<data-stream id=\"scap_stream\">"
+      + "<component id=\"xccdf_component\">"
+      + "<xccdf:Benchmark id=\"" + benchmarkId + "\">"
+      + "<xccdf:title>Windows 11 STIG</xccdf:title>"
+      + "<xccdf:version>2.7</xccdf:version>"
+      + "<xccdf:status date=\"2026-01-01\">accepted</xccdf:status>"
+      + "<xccdf:plain-text>Release: " + releaseTag + " Benchmark Date: 2026-01-01</xccdf:plain-text>"
+      + "<xccdf:Rule id=\"SV-1000r1_rule\" severity=\"medium\">"
+      + "<xccdf:title>Sample Rule</xccdf:title>"
+      + "<xccdf:check system=\"manual\"><xccdf:check-content>Verify manually.</xccdf:check-content></xccdf:check>"
+      + "<xccdf:fixtext>Apply fix.</xccdf:fixtext>"
+      + "</xccdf:Rule>"
+      + "</xccdf:Benchmark>"
+      + "</component>"
+      + "</data-stream>"
+      + "</data-stream-collection>";
   }
 
   private sealed class NoopHashingService : IHashingService

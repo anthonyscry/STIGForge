@@ -46,6 +46,9 @@ public partial class MainViewModel
     {
       IsBusy = true;
       EnsureImportProcessedLedgerLoaded();
+      ProgressValue = 0;
+      ProgressMax = 1;
+      IsProgressIndeterminate = true;
       ScanImportFolderPath = importFolder;
       var createdFolder = false;
       if (!Directory.Exists(importFolder))
@@ -64,7 +67,7 @@ public partial class MainViewModel
       AppendImportActivityLog((autoMode ? "AUTO" : "MANUAL") + " scan started");
 
       var scanner = new ImportInboxScanner(new Sha256HashingService());
-      var scan = await scanner.ScanAsync(importFolder, _cts.Token);
+      var scan = await Task.Run(() => scanner.ScanAsync(importFolder, _cts.Token), _cts.Token);
 
       if (scan.Candidates.Count == 0)
       {
@@ -187,30 +190,41 @@ public partial class MainViewModel
       var importedToolCount = 0;
       var failures = new List<string>();
       var importedByType = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+      var importedPacks = new List<ContentPack>();
 
-      foreach (var planned in contentImportQueue)
+      var totalWorkItems = contentImportQueue.Count + (toolWinners.Count > 0 ? 1 : 0);
+      ProgressMax = Math.Max(1, totalWorkItems);
+      ProgressValue = 0;
+      IsProgressIndeterminate = false;
+
+      for (var i = 0; i < contentImportQueue.Count; i++)
       {
+        var planned = contentImportQueue[i];
+        StatusText = "Importing " + (i + 1) + " of " + contentImportQueue.Count + ": " + planned.FileName + "...";
+
         try
         {
-          var imported = planned.Route == ContentImportRoute.AdmxTemplatesFromZip
-            ? await _importer.ImportAdmxTemplatesFromZipAsync(planned.ZipPath, planned.SourceLabel, _cts.Token)
-            : await _importer.ImportConsolidatedZipAsync(planned.ZipPath, planned.SourceLabel, _cts.Token);
+          var imported = await Task.Run(
+            () => ImportPlannedContentAsync(planned, _cts.Token),
+            _cts.Token);
 
           importedPackCount += imported.Count;
           IncrementImportedType(importedByType, planned.ArtifactKind.ToString(), imported.Count);
-          foreach (var pack in imported)
-            AddImportedPack(pack);
-
+          importedPacks.AddRange(imported);
           _importProcessedArtifactLedger.MarkProcessed(planned.Sha256, planned.Route);
         }
         catch (Exception ex)
         {
           failures.Add(planned.FileName + " (" + planned.Route + "): " + ex.Message);
         }
+
+        ProgressValue = i + 1;
       }
 
       if (toolWinners.Count > 0)
       {
+        StatusText = "Importing tool bundles...";
+
         try
         {
           importedToolCount = ImportToolBundles(toolWinners);
@@ -220,7 +234,11 @@ public partial class MainViewModel
         {
           failures.Add("Tool import failed: " + ex.Message);
         }
+
+        ProgressValue = contentImportQueue.Count + 1;
       }
+
+      AddImportedPacks(importedPacks);
 
       RefreshImportLibrary();
       var warnings = scan.Warnings
@@ -341,6 +359,9 @@ public partial class MainViewModel
     }
     finally
     {
+      ProgressValue = 0;
+      ProgressMax = 1;
+      IsProgressIndeterminate = true;
       IsBusy = false;
       Interlocked.Exchange(ref _importScanInFlight, 0);
     }
@@ -370,6 +391,13 @@ public partial class MainViewModel
       AppendImportActivityLog("AUTO warning: " + warning);
       System.Diagnostics.Trace.TraceWarning(warning);
     }
+  }
+
+  private Task<IReadOnlyList<ContentPack>> ImportPlannedContentAsync(PlannedContentImport planned, CancellationToken ct)
+  {
+    return planned.Route == ContentImportRoute.AdmxTemplatesFromZip
+      ? _importer.ImportAdmxTemplatesFromZipAsync(planned.ZipPath, planned.SourceLabel, ct)
+      : _importer.ImportConsolidatedZipAsync(planned.ZipPath, planned.SourceLabel, ct);
   }
 
   private string ResolveScanImportFolderPath()
@@ -605,11 +633,18 @@ public partial class MainViewModel
     return imported;
   }
 
-  private void AddImportedPack(ContentPack pack)
+  private void AddImportedPacks(IReadOnlyList<ContentPack> packs)
   {
-    ContentPacks.Insert(0, pack);
-    _benchmarkIdCache.Remove(pack.PackId);
-    SelectedPack = pack;
+    if (packs.Count == 0)
+      return;
+
+    foreach (var pack in packs)
+    {
+      ContentPacks.Insert(0, pack);
+      _benchmarkIdCache.Remove(pack.PackId);
+    }
+
+    SelectedPack = packs[^1];
   }
 
   [RelayCommand]

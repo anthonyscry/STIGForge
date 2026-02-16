@@ -208,4 +208,78 @@ public sealed class ImportDedupServiceTests
     Assert.Equal("scap_new.zip", winner.FileName);
     Assert.Contains(outcome.Decisions, d => d.Contains("deterministic fallback", StringComparison.OrdinalIgnoreCase));
   }
+
+  [Fact]
+  public void Resolve_ScapHashConflictWithVersionMismatch_PrefersNiwcEnhanced()
+  {
+    var service = new ImportDedupService();
+    var standaloneNewer = new ImportInboxCandidate
+    {
+      ZipPath = "C:/import/win11_standalone_v2r7.zip",
+      FileName = "win11_standalone_v2r7.zip",
+      Sha256 = "sha-standalone-v2r7",
+      ArtifactKind = ImportArtifactKind.Scap,
+      ContentKey = "scap:win11-benchmark",
+      VersionTag = "V2R7",
+      ImportedFrom = ImportProvenance.StandaloneZip,
+      IsNiwcEnhanced = false,
+      Confidence = DetectionConfidence.High
+    };
+    var niwc = new ImportInboxCandidate
+    {
+      ZipPath = "C:/import/niwc_consolidated.zip",
+      FileName = "niwc_consolidated.zip",
+      Sha256 = "sha-niwc-v2r6",
+      ArtifactKind = ImportArtifactKind.Scap,
+      ContentKey = "scap:win11-benchmark",
+      VersionTag = "V2R6",
+      ImportedFrom = ImportProvenance.ConsolidatedBundle,
+      IsNiwcEnhanced = true,
+      Confidence = DetectionConfidence.High
+    };
+
+    var outcome = service.Resolve(new[] { standaloneNewer, niwc });
+
+    var winner = Assert.Single(outcome.Winners);
+    Assert.Equal("niwc_consolidated.zip", winner.FileName);
+    Assert.Single(outcome.Suppressed);
+    Assert.Contains(outcome.Decisions, d => d.Contains("selected NIWC Enhanced", StringComparison.OrdinalIgnoreCase));
+  }
+
+  [Fact]
+  public void Resolve_ScapHashConflictWithMissingVersion_PrefersNiwcEnhanced()
+  {
+    var service = new ImportDedupService();
+    var standaloneMissingVersion = new ImportInboxCandidate
+    {
+      ZipPath = "C:/import/win11_standalone_missing_version.zip",
+      FileName = "win11_standalone_missing_version.zip",
+      Sha256 = "sha-standalone-no-version",
+      ArtifactKind = ImportArtifactKind.Scap,
+      ContentKey = "scap:win11-benchmark",
+      VersionTag = string.Empty,
+      ImportedFrom = ImportProvenance.StandaloneZip,
+      IsNiwcEnhanced = false,
+      Confidence = DetectionConfidence.High
+    };
+    var niwc = new ImportInboxCandidate
+    {
+      ZipPath = "C:/import/niwc_consolidated.zip",
+      FileName = "niwc_consolidated.zip",
+      Sha256 = "sha-niwc-v2r7",
+      ArtifactKind = ImportArtifactKind.Scap,
+      ContentKey = "scap:win11-benchmark",
+      VersionTag = "V2R7",
+      ImportedFrom = ImportProvenance.ConsolidatedBundle,
+      IsNiwcEnhanced = true,
+      Confidence = DetectionConfidence.High
+    };
+
+    var outcome = service.Resolve(new[] { standaloneMissingVersion, niwc });
+
+    var winner = Assert.Single(outcome.Winners);
+    Assert.Equal("niwc_consolidated.zip", winner.FileName);
+    Assert.Single(outcome.Suppressed);
+    Assert.Contains(outcome.Decisions, d => d.Contains("selected NIWC Enhanced", StringComparison.OrdinalIgnoreCase));
+  }
 }

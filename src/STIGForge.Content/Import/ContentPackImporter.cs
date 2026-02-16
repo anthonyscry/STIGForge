@@ -1,5 +1,6 @@
 using System.IO.Compression;
 using System.Text.Json;
+using System.Xml;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
 using STIGForge.Content.Models;
@@ -122,10 +123,7 @@ public sealed class ContentPackImporter
 
                 // NIWC-style bundles: no nested ZIPs, but multiple benchmark folders with XCCDF files.
                 // Split by parent directory of each XCCDF so each benchmark becomes its own pack.
-                var xccdfFiles = Directory
-                    .GetFiles(extractionRoot, "*.xml", SearchOption.AllDirectories)
-                    .Where(p => Path.GetFileName(p).IndexOf("xccdf", StringComparison.OrdinalIgnoreCase) >= 0)
-                    .ToList();
+                var xccdfFiles = GetXccdfCandidateXmlFiles(extractionRoot);
 
                 var benchmarkDirs = xccdfFiles
                     .Select(f => Path.GetDirectoryName(f)!)
@@ -150,6 +148,51 @@ public sealed class ContentPackImporter
                         }
                         finally { semaphore.Release(); }
                     }).ToList();
+                    return (await Task.WhenAll(tasks).ConfigureAwait(false)).ToList();
+                }
+
+                if (xccdfFiles.Count > 1)
+                {
+                    var allXmlFiles = Directory.GetFiles(extractionRoot, "*.xml", SearchOption.AllDirectories)
+                        .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+                        .ToList();
+
+                    var semaphore = new SemaphoreSlim(4);
+                    var tasks = xccdfFiles.Select(async benchmarkFile =>
+                    {
+                        await semaphore.WaitAsync(ct).ConfigureAwait(false);
+                        try
+                        {
+                            ct.ThrowIfCancellationRequested();
+                            var tempRoot = Path.Combine(Path.GetTempPath(), "stigforge-benchmark-" + Guid.NewGuid().ToString("N"));
+                            Directory.CreateDirectory(tempRoot);
+
+                            try
+                            {
+                                var filesToCopy = BuildBenchmarkImportFiles(benchmarkFile, allXmlFiles);
+                                foreach (var sourceFile in filesToCopy)
+                                {
+                                    ct.ThrowIfCancellationRequested();
+                                    var relativePath = Path.GetRelativePath(extractionRoot, sourceFile);
+                                    var destination = Path.Combine(tempRoot, relativePath);
+                                    var destinationDir = Path.GetDirectoryName(destination);
+                                    if (!string.IsNullOrWhiteSpace(destinationDir))
+                                        Directory.CreateDirectory(destinationDir);
+
+                                    File.Copy(sourceFile, destination, true);
+                                }
+
+                                var packName = BuildImportedPackName(benchmarkFile, "Imported");
+                                return await ImportDirectoryAsPackAsync(tempRoot, packName, sourceLabel, ct).ConfigureAwait(false);
+                            }
+                            finally
+                            {
+                                try { Directory.Delete(tempRoot, true); } catch { }
+                            }
+                        }
+                        finally { semaphore.Release(); }
+                    }).ToList();
+
                     return (await Task.WhenAll(tasks).ConfigureAwait(false)).ToList();
                 }
 
@@ -672,28 +715,87 @@ public sealed class ContentPackImporter
 
     private static SourceArtifactStats CountSourceArtifacts(string extractedRoot)
     {
-        var xmlFiles = Directory.GetFiles(extractedRoot, "*.xml", SearchOption.AllDirectories)
+        var xmlPaths = Directory.GetFiles(extractedRoot, "*.xml", SearchOption.AllDirectories)
+            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var xmlFiles = xmlPaths
             .Select(Path.GetFileName)
             .Where(n => !string.IsNullOrWhiteSpace(n))
             .ToList();
 
-        var xccdf = xmlFiles.Count(f => f!.IndexOf("xccdf", StringComparison.OrdinalIgnoreCase) >= 0);
+        var xccdf = GetXccdfCandidateXmlFiles(extractedRoot).Count;
         var oval = xmlFiles.Count(f => f!.IndexOf("oval", StringComparison.OrdinalIgnoreCase) >= 0);
+        var scapDataStreams = xmlPaths.Count(path =>
+            TryReadXmlRootLocalName(path, out var rootLocalName)
+            && string.Equals(rootLocalName, "data-stream-collection", StringComparison.OrdinalIgnoreCase));
         var admx = Directory.GetFiles(extractedRoot, "*.admx", SearchOption.AllDirectories).Length;
 
         return new SourceArtifactStats
         {
             XccdfXmlCount = xccdf,
             OvalXmlCount = oval,
+            ScapDataStreamXmlCount = scapDataStreams,
             AdmxCount = admx,
             TotalXmlCount = xmlFiles.Count
         };
+    }
+
+    private static IReadOnlyList<string> GetXccdfCandidateXmlFiles(string root)
+    {
+        return Directory.GetFiles(root, "*.xml", SearchOption.AllDirectories)
+            .Where(path =>
+            {
+                var fileName = Path.GetFileName(path);
+                if (fileName.IndexOf("xccdf", StringComparison.OrdinalIgnoreCase) >= 0)
+                    return true;
+
+                if (!TryReadXmlRootLocalName(path, out var rootLocalName))
+                    return false;
+
+                return string.Equals(rootLocalName, "Benchmark", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(rootLocalName, "data-stream-collection", StringComparison.OrdinalIgnoreCase);
+            })
+            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+    }
+
+    private static bool TryReadXmlRootLocalName(string xmlPath, out string rootLocalName)
+    {
+        rootLocalName = string.Empty;
+
+        try
+        {
+            var settings = new XmlReaderSettings
+            {
+                DtdProcessing = DtdProcessing.Prohibit,
+                IgnoreWhitespace = true,
+                IgnoreComments = true,
+                XmlResolver = null
+            };
+
+            using var reader = XmlReader.Create(xmlPath, settings);
+            while (reader.Read())
+            {
+                if (reader.NodeType != XmlNodeType.Element)
+                    continue;
+
+                rootLocalName = reader.LocalName;
+                return !string.IsNullOrWhiteSpace(rootLocalName);
+            }
+        }
+        catch
+        {
+        }
+
+        return false;
     }
 
     private sealed class SourceArtifactStats
     {
         public int XccdfXmlCount { get; set; }
         public int OvalXmlCount { get; set; }
+        public int ScapDataStreamXmlCount { get; set; }
         public int AdmxCount { get; set; }
         public int TotalXmlCount { get; set; }
     }
@@ -708,14 +810,28 @@ public sealed class ContentPackImporter
 
         var hasXccdf = stats.XccdfXmlCount > 0;
         var hasOval = stats.OvalXmlCount > 0;
+        var hasDataStream = stats.ScapDataStreamXmlCount > 0;
         var hasAdmx = stats.AdmxCount > 0;
 
-        // SCAP bundles: XCCDF + OVAL
-        if (hasXccdf && hasOval)
+        // SCAP bundles: XCCDF + OVAL and/or SCAP data stream XML
+        if (hasXccdf && (hasOval || hasDataStream))
         {
             result.Format = PackFormat.Scap;
             result.Confidence = DetectionConfidence.High;
-            result.Reasons.Add($"Found {stats.XccdfXmlCount} XCCDF and {stats.OvalXmlCount} OVAL files - characteristic SCAP bundle signature.");
+
+            if (hasOval && hasDataStream)
+            {
+                result.Reasons.Add($"Found {stats.XccdfXmlCount} XCCDF, {stats.OvalXmlCount} OVAL, and {stats.ScapDataStreamXmlCount} SCAP data stream XML files - characteristic SCAP bundle signature.");
+            }
+            else if (hasOval)
+            {
+                result.Reasons.Add($"Found {stats.XccdfXmlCount} XCCDF and {stats.OvalXmlCount} OVAL files - characteristic SCAP bundle signature.");
+            }
+            else
+            {
+                result.Reasons.Add($"Found {stats.XccdfXmlCount} XCCDF files including {stats.ScapDataStreamXmlCount} SCAP data stream XML file(s) - characteristic SCAP bundle signature.");
+            }
+
             return result;
         }
 
@@ -749,9 +865,7 @@ public sealed class ContentPackImporter
 
     private List<ControlRecord> ImportStigZip(string rawRoot, string packName, List<ParsingError> errors)
     {
-        var xccdfFiles = Directory.GetFiles(rawRoot, "*.xml", SearchOption.AllDirectories)
-            .Where(p => Path.GetFileName(p).IndexOf("xccdf", StringComparison.OrdinalIgnoreCase) >= 0)
-            .ToList();
+        var xccdfFiles = GetXccdfCandidateXmlFiles(rawRoot);
 
         var parsed = new List<ControlRecord>();
         foreach (var f in xccdfFiles)
@@ -791,9 +905,7 @@ public sealed class ContentPackImporter
         // ScapBundleParser expects a ZIP path, so we need to handle this differently
         
         // Find all XCCDF files and parse them
-        var xccdfFiles = Directory.GetFiles(rawRoot, "*.xml", SearchOption.AllDirectories)
-            .Where(p => Path.GetFileName(p).IndexOf("xccdf", StringComparison.OrdinalIgnoreCase) >= 0)
-            .ToList();
+        var xccdfFiles = GetXccdfCandidateXmlFiles(rawRoot);
 
         var parsed = new List<ControlRecord>();
         foreach (var f in xccdfFiles)
@@ -999,11 +1111,21 @@ public sealed class ContentPackImporter
                 if (i + 1 < segments.Length
                     && string.Equals(segments[i], "gpos", StringComparison.OrdinalIgnoreCase))
                 {
-                    var scope = segments[i + 1].Trim();
-                    if (!string.IsNullOrWhiteSpace(scope) && !domainByScope.ContainsKey(scope))
+                    if (TryGetParentScopedGpoRoot(segments, i, out var parentScope, out var parentRootSegments))
                     {
-                        var rootSegments = segments.Take(i + 2).ToArray();
-                        domainByScope[scope] = Path.Combine(extractionRoot, CombinePathSegments(rootSegments));
+                        if (!domainByScope.ContainsKey(parentScope))
+                            domainByScope[parentScope] = Path.Combine(extractionRoot, CombinePathSegments(parentRootSegments));
+                    }
+                    else
+                    {
+                        var scope = segments[i + 1].Trim();
+                        if (!string.IsNullOrWhiteSpace(scope)
+                            && !IsGuidLikeScope(scope)
+                            && !domainByScope.ContainsKey(scope))
+                        {
+                            var rootSegments = segments.Take(i + 2).ToArray();
+                            domainByScope[scope] = Path.Combine(extractionRoot, CombinePathSegments(rootSegments));
+                        }
                     }
 
                     break;
@@ -1065,6 +1187,47 @@ public sealed class ContentPackImporter
         return combined;
     }
 
+    private static bool TryGetParentScopedGpoRoot(string[] segments, int gposIndex, out string scope, out string[] rootSegments)
+    {
+        scope = string.Empty;
+        rootSegments = Array.Empty<string>();
+
+        if (gposIndex <= 0 || gposIndex + 1 >= segments.Length)
+            return false;
+
+        var guidSegment = segments[gposIndex + 1].Trim();
+        if (!IsGuidLikeScope(guidSegment))
+            return false;
+
+        var parentScope = segments[gposIndex - 1].Trim();
+        if (string.IsNullOrWhiteSpace(parentScope))
+            return false;
+
+        var candidateRoot = segments.Take(gposIndex).ToArray();
+        if (candidateRoot.Length == 0)
+            return false;
+
+        scope = parentScope;
+        rootSegments = candidateRoot;
+        return true;
+    }
+
+    private static bool IsGuidLikeScope(string value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return false;
+
+        var candidate = value.Trim();
+        if (candidate.Length >= 2
+            && candidate[0] == '{'
+            && candidate[^1] == '}')
+        {
+            candidate = candidate.Substring(1, candidate.Length - 2);
+        }
+
+        return Guid.TryParse(candidate, out _);
+    }
+
     private static int? ParseYear(string text)
     {
         for (int i = 0; i < text.Length - 3; i++)
@@ -1115,6 +1278,45 @@ public sealed class ContentPackImporter
         return string.IsNullOrWhiteSpace(baseName)
             ? prefix + "_Pack_" + DateTimeOffset.Now.ToString("yyyyMMdd_HHmmss")
             : baseName;
+    }
+
+    private static IReadOnlyList<string> BuildBenchmarkImportFiles(string benchmarkFile, IReadOnlyList<string> allXmlFiles)
+    {
+        var selected = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            benchmarkFile
+        };
+
+        var benchmarkDirectory = Path.GetDirectoryName(benchmarkFile) ?? string.Empty;
+        var benchmarkName = Path.GetFileNameWithoutExtension(benchmarkFile);
+        var benchmarkToken = System.Text.RegularExpressions.Regex.Replace(benchmarkName, "xccdf", string.Empty, System.Text.RegularExpressions.RegexOptions.IgnoreCase)
+            .ToLowerInvariant();
+
+        foreach (var candidate in allXmlFiles)
+        {
+            if (string.Equals(candidate, benchmarkFile, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            var candidateDirectory = Path.GetDirectoryName(candidate) ?? string.Empty;
+            if (!string.Equals(candidateDirectory, benchmarkDirectory, StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            var candidateFileName = Path.GetFileName(candidate).ToLowerInvariant();
+            if (candidateFileName.IndexOf("oval", StringComparison.Ordinal) < 0)
+                continue;
+
+            if (!string.IsNullOrWhiteSpace(benchmarkToken)
+                && candidateFileName.IndexOf(benchmarkToken, StringComparison.Ordinal) < 0)
+            {
+                continue;
+            }
+
+            selected.Add(candidate);
+        }
+
+        return selected
+            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+            .ToList();
     }
 
     private static string CleanDisaPackName(string raw)

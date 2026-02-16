@@ -19,22 +19,26 @@ public static class XccdfParser
 
         using var reader = XmlReader.Create(xmlPath, settings);
         var doc = XDocument.Load(reader, LoadOptions.None);
-        var ns = doc.Root?.Name.Namespace ?? (XNamespace)XccdfNamespace;
+        var benchmarkRoot = ResolveBenchmarkRoot(doc.Root);
+        if (benchmarkRoot == null)
+            return Array.Empty<ControlRecord>();
 
-        var benchmarkId = doc.Root?.Attribute("id")?.Value ?? Path.GetFileNameWithoutExtension(xmlPath);
-        var benchmarkVersion = doc.Root?.Element(ns + "version")?.Value?.Trim();
+        var ns = benchmarkRoot.Name.Namespace;
+
+        var benchmarkId = benchmarkRoot.Attribute("id")?.Value ?? Path.GetFileNameWithoutExtension(xmlPath);
+        var benchmarkVersion = benchmarkRoot.Element(ns + "version")?.Value?.Trim();
         if (string.IsNullOrWhiteSpace(benchmarkVersion)) benchmarkVersion = null;
 
         DateTimeOffset? benchmarkDate = null;
-        var dateText = doc.Root?.Element(ns + "status")?.Attribute("date")?.Value;
+        var dateText = benchmarkRoot.Element(ns + "status")?.Attribute("date")?.Value;
         if (!string.IsNullOrWhiteSpace(dateText) && DateTimeOffset.TryParse(dateText, out var parsedBenchmarkDate))
             benchmarkDate = parsedBenchmarkDate;
 
-        var rearMatter = doc.Root?.Element(ns + "rear-matter")?.Value;
+        var rearMatter = benchmarkRoot.Element(ns + "rear-matter")?.Value;
         var benchmarkRelease = ExtractRearMatterField(rearMatter, "releaseinfo");
         var classificationText = ExtractRearMatterField(rearMatter, "classification");
 
-        var platformCpe = doc.Root?
+        var platformCpe = benchmarkRoot
             .Descendants(ns + "platform")
             .Select(p => p.Attribute("idref")?.Value?.Trim())
             .FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
@@ -45,7 +49,7 @@ public static class XccdfParser
 
         var results = new List<ControlRecord>();
 
-        foreach (var rule in doc.Descendants(ns + "Rule"))
+        foreach (var rule in benchmarkRoot.Descendants(ns + "Rule"))
         {
             var control = ParseRule(
                 rule,
@@ -62,6 +66,19 @@ public static class XccdfParser
         }
 
         return results;
+    }
+
+    private static XElement? ResolveBenchmarkRoot(XElement? root)
+    {
+        if (root == null)
+            return null;
+
+        if (string.Equals(root.Name.LocalName, "Benchmark", StringComparison.OrdinalIgnoreCase))
+            return root;
+
+        return root
+            .Descendants()
+            .FirstOrDefault(element => string.Equals(element.Name.LocalName, "Benchmark", StringComparison.OrdinalIgnoreCase));
     }
 
     private static ControlRecord? ParseRule(
