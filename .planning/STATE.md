@@ -16,7 +16,7 @@ Progress: ███████████████████████�
 ### Content Format
 - **Decision:** Use canonical ControlRecord as single source of truth
 - **Rationale:** Normalizes STIG/SCAP/PowerSTIG/GPO into unified format
-- **Status:** Implemented (models exist)
+- **Status:** Ready to plan
 
 ### Data Storage
 - **Decision:** SQLite with JSON columns for complex objects
