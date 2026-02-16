@@ -179,12 +179,18 @@ try {
   $upgradeRebaseParityCommand = "dotnet test tests/STIGForge.UnitTests/STIGForge.UnitTests.csproj --configuration $Configuration --framework net8.0 --nologo --no-build --filter 'FullyQualifiedName~BundleMissionSummaryServiceTests' --results-directory '$upgradeRebaseResultsRoot'"
   $upgradeRebaseCliCommand = "dotnet test tests/STIGForge.IntegrationTests/STIGForge.IntegrationTests.csproj --configuration $Configuration --framework net8.0 --nologo --no-build --filter 'FullyQualifiedName~CliCommandTests.DiffPacks|FullyQualifiedName~CliCommandTests.RebaseOverlay' --results-directory '$upgradeRebaseResultsRoot'"
   $upgradeRebaseRollbackCommand = "dotnet test tests/STIGForge.UnitTests/STIGForge.UnitTests.csproj --configuration $Configuration --framework net8.0 --nologo --no-build --filter 'FullyQualifiedName~ApplyRunnerTests' --results-directory '$upgradeRebaseResultsRoot'"
+  $upgradeRebaseWpfWorkflowCommand = $upgradeRebaseCliCommand
+  $upgradeRebaseWpfSeverityCommand = $upgradeRebaseParityCommand
+  $upgradeRebaseWpfRecoveryCommand = $upgradeRebaseRollbackCommand
 
   $steps += New-Step -Name "upgrade-rebase-diff-contract" -Command $upgradeRebaseDiffCommand -LogPath (Join-Path $logRoot "upgrade-rebase-diff-contract.log")
   $steps += New-Step -Name "upgrade-rebase-overlay-contract" -Command $upgradeRebaseOverlayCommand -LogPath (Join-Path $logRoot "upgrade-rebase-overlay-contract.log")
   $steps += New-Step -Name "upgrade-rebase-parity-contract" -Command $upgradeRebaseParityCommand -LogPath (Join-Path $logRoot "upgrade-rebase-parity-contract.log")
   $steps += New-Step -Name "upgrade-rebase-cli-contract" -Command $upgradeRebaseCliCommand -LogPath (Join-Path $logRoot "upgrade-rebase-cli-contract.log")
   $steps += New-Step -Name "upgrade-rebase-rollback-safety" -Command $upgradeRebaseRollbackCommand -LogPath (Join-Path $logRoot "upgrade-rebase-rollback-safety.log")
+  $steps += New-Step -Name "upgrade-rebase-wpf-workflow-contract" -Command $upgradeRebaseWpfWorkflowCommand -LogPath (Join-Path $logRoot "upgrade-rebase-wpf-workflow-contract.log")
+  $steps += New-Step -Name "upgrade-rebase-wpf-severity-contract" -Command $upgradeRebaseWpfSeverityCommand -LogPath (Join-Path $logRoot "upgrade-rebase-wpf-severity-contract.log")
+  $steps += New-Step -Name "upgrade-rebase-wpf-recovery-contract" -Command $upgradeRebaseWpfRecoveryCommand -LogPath (Join-Path $logRoot "upgrade-rebase-wpf-recovery-contract.log")
 
   $failed = @($steps | Where-Object { -not $_.Succeeded })
 
@@ -261,6 +267,9 @@ try {
   [void]$upgradeRebaseReport.AppendLine("- Mission summary parity contract (CLI/WPF severity semantics)")
   [void]$upgradeRebaseReport.AppendLine("- CLI diff/rebase integration contract")
   [void]$upgradeRebaseReport.AppendLine("- Rollback safety and operator-decision guardrails")
+  [void]$upgradeRebaseReport.AppendLine("- upgrade-rebase-wpf-workflow-contract (WP-01: WPF diff/rebase workflow contract)")
+  [void]$upgradeRebaseReport.AppendLine("- upgrade-rebase-wpf-severity-contract (WP-02: WPF mission severity semantics parity)")
+  [void]$upgradeRebaseReport.AppendLine("- upgrade-rebase-wpf-recovery-contract (WP-03: WPF recovery guidance contract)")
   [void]$upgradeRebaseReport.AppendLine()
   [void]$upgradeRebaseReport.AppendLine("## Step Results")
   [void]$upgradeRebaseReport.AppendLine()
@@ -285,7 +294,10 @@ try {
       "overlay rebase behavior contract",
       "mission summary parity contract (cli/wpf severity semantics)",
       "cli diff/rebase integration contract",
-      "rollback safety and operator decision guardrails"
+      "rollback safety and operator decision guardrails",
+      "upgrade-rebase-wpf-workflow-contract",
+      "upgrade-rebase-wpf-severity-contract",
+      "upgrade-rebase-wpf-recovery-contract"
     )
     steps = @($upgradeRebaseSteps | ForEach-Object {
       [pscustomobject]@{
@@ -372,7 +384,10 @@ try {
         "overlay rebase behavior contract",
         "mission summary parity contract (cli/wpf severity semantics)",
         "cli diff/rebase integration contract",
-        "rollback safety and operator decision guardrails"
+        "rollback safety and operator decision guardrails",
+        "upgrade-rebase-wpf-workflow-contract",
+        "upgrade-rebase-wpf-severity-contract",
+        "upgrade-rebase-wpf-recovery-contract"
       )
     }
     overallPassed = $overallPass
