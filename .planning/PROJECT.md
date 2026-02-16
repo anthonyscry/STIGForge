@@ -11,15 +11,16 @@ Build -> Apply -> Verify -> Prove.
 - v1.0 mission baseline is shipped and archived in `.planning/milestones/v1.0-ROADMAP.md`.
 - Deterministic release gate, compatibility regression, upgrade/rebase validation, and reproducibility evidence are in place.
 - Core operator workflow, export integrity, and security hardening are implemented for offline/air-gapped environments.
+- Phase 11 verification backfill closed UR orphaning with machine-verifiable cross-source requirement closure evidence.
 
-## Current Milestone: v1.1 (Planning)
+## Current Milestone: v1.1 (Execution)
 
-**Goal:** Define the next scoped milestone with explicit requirement IDs and phase mapping.
+**Goal:** Close remaining v1.1 gap-closure phases and preserve fail-closed release readiness evidence.
 
 **Initial focus candidates:**
-- Complete remaining diff/rebase operator workflow hardening and guidance.
-- Close any remaining WPF operator parity gaps.
-- Expand quality automation and maintainability guardrails for sustained releases.
+- Promote explicit WPF parity evidence through verification and release artifacts (Phase 12).
+- Enforce mandatory fail-closed release-package behavior with restored QA verification evidence (Phase 13).
+- Keep requirement traceability machine-verifiable across summaries, verification reports, and roadmap artifacts.
 
 ## Locked Technical Decisions
 
@@ -53,4 +54,4 @@ Build -> Apply -> Verify -> Prove.
 - New milestone requirements are explicitly tracked and mapped to planned phases.
 
 ---
-*Last updated: 2026-02-09 after v1.0 milestone closeout and v1.1 planning initialization*
+*Last updated: 2026-02-16 after Phase 11 completion and transition to Phase 12*

@@ -15,7 +15,7 @@ Solo developer + Claude execution, phase-by-phase delivery with small executable
 - Current milestone: `v1.1` (execution active)
 - Starting phase index: `08`
 - Requirement source: `.planning/REQUIREMENTS.md`
-- Next action: plan and execute gap-closure phases starting at Phase 11
+- Next action: plan and execute gap-closure phases starting at Phase 12
 
 ---
 
@@ -75,14 +75,14 @@ Exit Criteria:
 
 ### Phase 11: Verification Backfill for Upgrade/Rebase
 
-**Status:** Planned
+**Status:** Completed (2026-02-16)
 **Goal:** Close orphaned requirement evidence for upgrade/rebase workflows by restoring phase verification artifacts and machine-verifiable requirement closure metadata.
 **Requirements:** `UR-01`, `UR-02`, `UR-03`, `UR-04`
 **Gap Closure:** Requirement orphaning gaps from `v1.1-MILESTONE-AUDIT.md`
 **Plans:** 1/1 plans complete
 
 Plans:
-- [ ] 11-verification-backfill-for-upgrade-rebase-01-PLAN.md - Backfill Phase 08 verification artifact and reconcile UR requirement closure metadata across planning evidence sources.
+- [x] 11-verification-backfill-for-upgrade-rebase-01-PLAN.md - Backfill Phase 08 verification artifact and reconcile UR requirement closure metadata across planning evidence sources.
 
 Exit Criteria:
 - Phase 08 verification artifact exists and maps UR requirement evidence.
