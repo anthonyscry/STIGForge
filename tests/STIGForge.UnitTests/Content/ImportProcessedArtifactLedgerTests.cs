@@ -27,4 +27,22 @@ public sealed class ImportProcessedArtifactLedgerTests
     Assert.True(first);
     Assert.True(second);
   }
+
+  [Fact]
+  public void TryBegin_NullHash_ThrowsArgumentException()
+  {
+    var ledger = new ImportProcessedArtifactLedger();
+
+    Assert.Throws<ArgumentException>(() => ledger.TryBegin(null!, ContentImportRoute.ConsolidatedZip));
+  }
+
+  [Theory]
+  [InlineData("")]
+  [InlineData("   ")]
+  public void TryBegin_EmptyOrWhitespaceHash_ThrowsArgumentException(string sha256)
+  {
+    var ledger = new ImportProcessedArtifactLedger();
+
+    Assert.Throws<ArgumentException>(() => ledger.TryBegin(sha256, ContentImportRoute.ConsolidatedZip));
+  }
 }
