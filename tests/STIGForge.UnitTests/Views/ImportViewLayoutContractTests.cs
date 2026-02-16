@@ -37,6 +37,17 @@ public sealed class ImportViewLayoutContractTests
   }
 
   [Fact]
+  public void ImportView_ContainsAutoWorkspaceSubtabs()
+  {
+    var xaml = LoadImportViewXaml();
+
+    Assert.Contains("Header=\"Auto Import\"", xaml, StringComparison.Ordinal);
+    Assert.Contains("Header=\"Classification Results\"", xaml, StringComparison.Ordinal);
+    Assert.Contains("Header=\"Exceptions Queue\"", xaml, StringComparison.Ordinal);
+    Assert.Contains("Header=\"Activity Log\"", xaml, StringComparison.Ordinal);
+  }
+
+  [Fact]
   public void ImportView_UsesTextWrappingOnLongStatusAndDetailFields()
   {
     var xaml = LoadImportViewXaml();

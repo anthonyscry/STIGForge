@@ -139,6 +139,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
   [ObservableProperty] private string missionPresetGuidance = "Use snapshot-protected apply for managed endpoints.";
   [ObservableProperty] private bool simpleBuildBeforeRun = true;
   [ObservableProperty] private string guidedNextAction = "Run orchestration to generate next action.";
+  [ObservableProperty] private bool autoImportEnabled = true;
+  [ObservableProperty] private string autoImportStatus = "Auto import idle.";
+  [ObservableProperty] private int selectedImportWorkspaceTabIndex;
 
   // Dashboard
   [ObservableProperty] private string dashBundleLabel = "(no bundle selected)";
@@ -195,6 +198,10 @@ public partial class MainViewModel : ObservableObject, IDisposable
    public ObservableCollection<ApplicablePackPair> ApplicablePackPairs { get; } = new();
    public ObservableCollection<SelectionReasonRow> SelectionReasons { get; } = new();
    public ObservableCollection<RemoteHostScanItem> AdRemoteDiscoveredHosts { get; } = new();
+   public ObservableCollection<ImportQueueRow> AutoImportQueueRows { get; } = new();
+   public ObservableCollection<ImportQueueRow> ClassificationResultRows { get; } = new();
+   public ObservableCollection<ImportQueueRow> ExceptionQueueRows { get; } = new();
+   public ObservableCollection<string> ImportActivityLogRows { get; } = new();
       public HashSet<string> ApplicablePackIds { get; } = new(StringComparer.OrdinalIgnoreCase);
       private ICollectionView? _filteredContentLibrary;
     public ICollectionView FilteredContentLibrary => _filteredContentLibrary ??= CreateFilteredLibraryView();
@@ -531,6 +538,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
     public string Name { get; set; } = string.Empty;
     public bool Selected { get; set; }
     public string Reason { get; set; } = string.Empty;
+  }
+
+  public sealed class ImportQueueRow
+  {
+    public string FileName { get; set; } = string.Empty;
+    public string ArtifactKind { get; set; } = string.Empty;
+    public string State { get; set; } = string.Empty;
+    public string Detail { get; set; } = string.Empty;
   }
 
   public partial class RemoteHostScanItem : ObservableObject
