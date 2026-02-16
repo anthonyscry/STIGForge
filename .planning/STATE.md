@@ -3,12 +3,12 @@
 ## Current Position
 
 **Phase:** 12-wpf-parity-evidence-promotion-and-verification
-**Last Completed:** 12-wpf-parity-evidence-promotion-and-verification-02 (WPF promotion evidence contract enforcement)
-**Status:** Executing plans (2/3 complete)
+**Last Completed:** 12-wpf-parity-evidence-promotion-and-verification-03 (Phase 12 verification closure and WP traceability reconciliation)
+**Status:** Phase 12 complete (3/3 plans complete)
 
 **Started:** February 9, 2026
 
-Progress: ████████████████████████████████████████████████░░░░░░░░ (98%)
+Progress: ████████████████████████████████████████████████░░░░░░░░ (99%)
 
 ---
 
@@ -114,6 +114,16 @@ Progress: ███████████████████████�
 - **Rationale:** Ensure reproducibility evidence cannot report complete when WPF contract signals are missing or failed.
 - **Status:** Implemented (Phase 12 Plan 02 package evidence wiring)
 
+### WP Three-Source Closure Promotion
+- **Decision:** Mark WP requirements as completed only after REQUIREMENTS traceability, source verification evidence, and promotion wiring contract evidence align.
+- **Rationale:** Prevent closure claims that bypass machine-verifiable promotion evidence.
+- **Status:** Implemented (Phase 12 Plan 03 closure reconciliation)
+
+### WP Closure Fail-Closed Reversion
+- **Decision:** Keep WP closure verdicts fail-closed by reverting to unresolved if any closure source becomes missing, mismatched, or non-passing.
+- **Rationale:** Preserve deterministic auditability after initial closure and block silent evidence drift.
+- **Status:** Implemented (Phase 12 Plan 03 verification language in Phase 09/12 artifacts)
+
 ---
 
 ## Pending Todos
@@ -169,8 +179,8 @@ Progress: ███████████████████████�
 
 ## Session Continuity
 
-**Last session:** 2026-02-16T23:39:56.244Z
-**Stopped at:** Completed 12-wpf-parity-evidence-promotion-and-verification-02-PLAN.md
+**Last session:** 2026-02-16T23:45:58.458Z
+**Stopped at:** Completed 12-wpf-parity-evidence-promotion-and-verification-03-PLAN.md
 **Resume file:** None
 
 ---
@@ -179,4 +189,4 @@ Progress: ███████████████████████�
 
 **Date:** February 16, 2026
 **Updated By:** OpenCode Executor
-**Reason:** Completed Phase 12 Plan 02 execution and promoted explicit WPF parity contract evidence into release/package workflow enforcement
+**Reason:** Completed Phase 12 Plan 03 execution with canonical Phase 12 verification artifact and WP-01..WP-03 closure reconciliation
