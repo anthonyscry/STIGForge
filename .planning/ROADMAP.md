@@ -15,7 +15,7 @@ Solo developer + Claude execution, phase-by-phase delivery with small executable
 - Current milestone: `v1.1` (execution active)
 - Starting phase index: `08`
 - Requirement source: `.planning/REQUIREMENTS.md`
-- Next action: close manual RC checklist blockers and rerun evidence on pinned commit
+- Next action: plan and execute gap-closure phases starting at Phase 11
 
 ---
 
@@ -70,3 +70,48 @@ Exit Criteria:
 - CI and VM gates enforce v1.1 diff/rebase and parity regressions.
 - Release evidence packages include trendable compatibility/stability signals.
 - Go/No-Go review has explicit v1.1 parity and regression coverage evidence.
+
+---
+
+### Phase 11: Verification Backfill for Upgrade/Rebase
+
+**Status:** Planned
+**Goal:** Close orphaned requirement evidence for upgrade/rebase workflows by restoring phase verification artifacts and machine-verifiable requirement closure metadata.
+**Requirements:** `UR-01`, `UR-02`, `UR-03`, `UR-04`
+**Gap Closure:** Requirement orphaning gaps from `v1.1-MILESTONE-AUDIT.md`
+**Plans:** 0 plans
+
+Exit Criteria:
+- Phase 08 verification artifact exists and maps UR requirement evidence.
+- Summary metadata provides machine-verifiable requirement closure for UR requirements.
+- Requirement traceability can move from Pending to Completed after execution verification.
+
+---
+
+### Phase 12: WPF Parity Evidence Promotion and Verification
+
+**Status:** Planned
+**Goal:** Close WPF parity evidence gaps by adding explicit WPF workflow contract evidence to promotion artifacts and verification outputs.
+**Requirements:** `WP-01`, `WP-02`, `WP-03`
+**Gap Closure:** Requirement orphaning and integration/flow gaps for explicit WPF parity evidence promotion.
+**Plans:** 0 plans
+
+Exit Criteria:
+- Phase 09 verification artifact exists and maps WP requirement evidence.
+- Promotion evidence includes explicit WPF parity workflow contract signals.
+- Operator diff/rebase to WPF parity to release evidence flow is fully wired.
+
+---
+
+### Phase 13: Mandatory Release-Gate Enforcement and Verification
+
+**Status:** Planned
+**Goal:** Enforce fail-closed release-package behavior and restore QA requirement verification evidence for promotion paths.
+**Requirements:** `QA-01`, `QA-02`, `QA-03`
+**Gap Closure:** Requirement orphaning and integration/flow gaps for fail-closed release gate enforcement.
+**Plans:** 0 plans
+
+Exit Criteria:
+- Phase 10 verification artifact exists and maps QA requirement evidence.
+- `release-package.yml` cannot produce package artifacts when required release-gate evidence is missing or disabled.
+- CI, release, and VM promotion gate flow is consistently fail-closed.
