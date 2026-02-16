@@ -32,6 +32,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
   private readonly IBundleMissionSummaryService _bundleMissionSummary;
   private readonly VerificationArtifactAggregationService _artifactAggregation;
   private readonly ImportSelectionOrchestrator _importSelectionOrchestrator;
+  private readonly ImportProcessedArtifactLedger _importProcessedArtifactLedger = new();
   private readonly IAuditTrailService? _audit;
   private readonly STIGForge.Infrastructure.System.ScheduledTaskService? _scheduledTaskService;
   private readonly STIGForge.Infrastructure.System.FleetService? _fleetService;
@@ -405,6 +406,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
       LoadManualControlsAsync();
       ConfigureManualView();
       ScanImportFolderPath = ResolveScanImportFolderPath();
+      if (AutoImportEnabled)
+        _ = RunImportScanAsync(autoMode: true);
     }
     catch (Exception ex)
     {

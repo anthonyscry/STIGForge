@@ -1,4 +1,5 @@
 using CommunityToolkit.Mvvm.Input;
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Text.Json;
@@ -23,6 +24,11 @@ public partial class MainViewModel
   [RelayCommand]
   private async Task ScanImportFolderAsync()
   {
+    await RunImportScanAsync(autoMode: false);
+  }
+
+  private async Task RunImportScanAsync(bool autoMode)
+  {
     if (IsBusy) return;
 
     var startedAt = DateTimeOffset.Now;
@@ -39,15 +45,28 @@ public partial class MainViewModel
         createdFolder = true;
       }
 
+      if (autoMode)
+        AutoImportStatus = createdFolder ? "Auto import created inbox; scanning..." : "Auto import scanning inbox...";
+
       StatusText = createdFolder
         ? "Import folder created. Scanning import folder..."
         : "Scanning import folder...";
+
+      AppendImportActivityLog((autoMode ? "AUTO" : "MANUAL") + " scan started");
 
       var scanner = new ImportInboxScanner(new Sha256HashingService());
       var scan = await scanner.ScanAsync(importFolder, _cts.Token);
 
       if (scan.Candidates.Count == 0)
       {
+        ProjectImportRows(
+          classificationRows: Array.Empty<ImportQueueRow>(),
+          autoQueueRows: Array.Empty<ImportQueueRow>(),
+          exceptionRows: Array.Empty<ImportQueueRow>());
+
+        var emptyLedgerSnapshot = _importProcessedArtifactLedger.Snapshot();
+        PersistImportProcessedLedgerSnapshot(emptyLedgerSnapshot);
+
         var emptySummary = new ImportScanSummary
         {
           ImportFolder = importFolder,
@@ -60,9 +79,14 @@ public partial class MainViewModel
           ImportedPackCount = 0,
           ImportedToolCount = 0,
           Warnings = scan.Warnings,
-          Failures = Array.Empty<string>()
+          Failures = Array.Empty<string>(),
+          ProcessedArtifactLedgerSnapshot = emptyLedgerSnapshot
         };
         PersistImportScanSummary(emptySummary);
+        if (autoMode)
+          AutoImportStatus = "Auto import idle (no importable files).";
+
+        AppendImportActivityLog((autoMode ? "AUTO" : "MANUAL") + " no candidates");
         StatusText = "No importable files found in " + importFolder + ".";
         return;
       }
@@ -85,8 +109,34 @@ public partial class MainViewModel
       foreach (var decision in dedupDecisionNotes)
         System.Diagnostics.Trace.TraceInformation(decision);
 
-      var contentImportQueue = ImportQueuePlanner.BuildContentImportPlan(contentWinners)
+      var allPlannedContentRows = ImportQueuePlanner.BuildContentImportPlan(contentWinners)
         .ToList();
+
+      var contentImportQueue = ImportQueuePlanner.BuildContentImportPlan(contentWinners, _importProcessedArtifactLedger)
+        .ToList();
+
+      var queuedKeys = new HashSet<string>(
+        contentImportQueue.Select(BuildPlannedQueueKey),
+        StringComparer.OrdinalIgnoreCase);
+      var skippedAlreadyProcessed = allPlannedContentRows
+        .Where(row => !queuedKeys.Contains(BuildPlannedQueueKey(row)))
+        .ToList();
+
+      var classificationRows = allPlannedContentRows
+        .Select(row => new ImportQueueRow
+        {
+          FileName = row.FileName,
+          ArtifactKind = row.ArtifactKind.ToString(),
+          State = "Classified",
+          Detail = row.Route.ToString()
+        })
+        .ToList();
+
+      AppendImportActivityLog(
+        (autoMode ? "AUTO" : "MANUAL")
+        + " candidates=" + scan.Candidates.Count
+        + " planned=" + contentImportQueue.Count
+        + " skipped=" + skippedAlreadyProcessed.Count);
 
       var plannedByZip = contentImportQueue
         .GroupBy(p => p.ZipPath, StringComparer.OrdinalIgnoreCase)
@@ -158,6 +208,39 @@ public partial class MainViewModel
       RefreshImportLibrary();
       var warningCount = scan.Warnings.Count + suppressedWarnings.Count + dedupDecisionNotes.Count + multiRouteWarnings.Count;
 
+      var projected = ImportAutoQueueProjection.Project(contentImportQueue, failures);
+      var autoQueueRows = projected.AutoCommitted
+        .Select(row => new ImportQueueRow
+        {
+          FileName = row.Planned.FileName,
+          ArtifactKind = row.Planned.ArtifactKind.ToString(),
+          State = row.StateLabel,
+          Detail = row.Planned.Route.ToString()
+        })
+        .ToList();
+
+      var exceptionRows = projected.Exceptions
+        .Select(row => new ImportQueueRow
+        {
+          FileName = row.Planned.FileName,
+          ArtifactKind = row.Planned.ArtifactKind.ToString(),
+          State = row.StateLabel,
+          Detail = row.Planned.Route.ToString()
+        })
+        .Concat(skippedAlreadyProcessed.Select(row => new ImportQueueRow
+        {
+          FileName = row.FileName,
+          ArtifactKind = row.ArtifactKind.ToString(),
+          State = "AlreadyProcessed",
+          Detail = row.Route.ToString() + " " + row.Sha256
+        }))
+        .ToList();
+
+      ProjectImportRows(classificationRows, autoQueueRows, exceptionRows);
+
+      var ledgerSnapshot = _importProcessedArtifactLedger.Snapshot();
+      PersistImportProcessedLedgerSnapshot(ledgerSnapshot);
+
       var summary = new ImportScanSummary
       {
         ImportFolder = importFolder,
@@ -174,9 +257,22 @@ public partial class MainViewModel
         ImportedToolCount = importedToolCount,
         ImportedByType = importedByType,
         Warnings = scan.Warnings.Concat(suppressedWarnings).Concat(dedupDecisionNotes).Concat(multiRouteWarnings).ToList(),
-        Failures = failures
+        Failures = failures,
+        ProcessedArtifactLedgerSnapshot = ledgerSnapshot
       };
       PersistImportScanSummary(summary);
+
+      if (autoMode)
+      {
+        AutoImportStatus = failures.Count == 0
+          ? "Auto import completed." : "Auto import completed with exceptions.";
+      }
+
+      AppendImportActivityLog(
+        (autoMode ? "AUTO" : "MANUAL")
+        + " imported packs=" + importedPackCount
+        + " tools=" + importedToolCount
+        + " failures=" + failures.Count);
 
       StatusText = "Scan complete: imported packs=" + importedPackCount
         + ", tools=" + importedToolCount
@@ -186,6 +282,13 @@ public partial class MainViewModel
     catch (Exception ex)
     {
       StatusText = "Scan import folder failed: " + ex.Message;
+      if (autoMode)
+        AutoImportStatus = "Auto import failed: " + ex.Message;
+
+      AppendImportActivityLog((autoMode ? "AUTO" : "MANUAL") + " failed: " + ex.Message);
+      var ledgerSnapshot = _importProcessedArtifactLedger.Snapshot();
+      PersistImportProcessedLedgerSnapshot(ledgerSnapshot);
+
       PersistImportScanSummary(new ImportScanSummary
       {
         ImportFolder = importFolder,
@@ -198,7 +301,8 @@ public partial class MainViewModel
         ImportedPackCount = 0,
         ImportedToolCount = 0,
         Warnings = Array.Empty<string>(),
-        Failures = new[] { ex.Message }
+        Failures = new[] { ex.Message },
+        ProcessedArtifactLedgerSnapshot = ledgerSnapshot
       });
     }
     finally
@@ -241,6 +345,75 @@ public partial class MainViewModel
       counts[type] = amount;
     else
       counts[type] = existing + amount;
+  }
+
+  private static string BuildPlannedQueueKey(PlannedContentImport planned)
+  {
+    return planned.Route + "|" + planned.Sha256.Trim() + "|" + planned.ZipPath.Trim();
+  }
+
+  private void ProjectImportRows(
+    IReadOnlyList<ImportQueueRow> classificationRows,
+    IReadOnlyList<ImportQueueRow> autoQueueRows,
+    IReadOnlyList<ImportQueueRow> exceptionRows)
+  {
+    var dispatcher = System.Windows.Application.Current?.Dispatcher;
+    if (dispatcher == null)
+    {
+      ReplaceRows(ClassificationResultRows, classificationRows);
+      ReplaceRows(AutoImportQueueRows, autoQueueRows);
+      ReplaceRows(ExceptionQueueRows, exceptionRows);
+      return;
+    }
+
+    dispatcher.Invoke(() =>
+    {
+      ReplaceRows(ClassificationResultRows, classificationRows);
+      ReplaceRows(AutoImportQueueRows, autoQueueRows);
+      ReplaceRows(ExceptionQueueRows, exceptionRows);
+    });
+  }
+
+  private void AppendImportActivityLog(string message)
+  {
+    if (string.IsNullOrWhiteSpace(message))
+      return;
+
+    var line = DateTimeOffset.Now.ToString("HH:mm:ss") + " " + message.Trim();
+    var dispatcher = System.Windows.Application.Current?.Dispatcher;
+    if (dispatcher == null)
+    {
+      ImportActivityLogRows.Add(line);
+      while (ImportActivityLogRows.Count > 200)
+        ImportActivityLogRows.RemoveAt(0);
+      return;
+    }
+
+    dispatcher.Invoke(() =>
+    {
+      ImportActivityLogRows.Add(line);
+      while (ImportActivityLogRows.Count > 200)
+        ImportActivityLogRows.RemoveAt(0);
+    });
+  }
+
+  private void PersistImportProcessedLedgerSnapshot(IReadOnlyList<string> ledgerSnapshot)
+  {
+    var logsRoot = _paths.GetLogsRoot();
+    Directory.CreateDirectory(logsRoot);
+    var ledgerPath = Path.Combine(logsRoot, "import_auto_ledger.json");
+    var json = JsonSerializer.Serialize(ledgerSnapshot, new JsonSerializerOptions
+    {
+      WriteIndented = true
+    });
+    File.WriteAllText(ledgerPath, json);
+  }
+
+  private static void ReplaceRows(ObservableCollection<ImportQueueRow> target, IReadOnlyList<ImportQueueRow> rows)
+  {
+    target.Clear();
+    foreach (var row in rows)
+      target.Add(row);
   }
 
   private void PersistImportScanSummary(ImportScanSummary summary)

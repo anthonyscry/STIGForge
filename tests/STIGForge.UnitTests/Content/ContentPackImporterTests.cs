@@ -158,6 +158,40 @@ public sealed class ContentPackImporterTests : IDisposable
     controlsMock.Verify(c => c.SaveControlsAsync(It.IsAny<string>(), It.Is<IReadOnlyList<ControlRecord>>(list => list.Count > 0), It.IsAny<CancellationToken>()), Times.Exactly(2));
   }
 
+  [Fact]
+  public void BuildContentImportPlan_WithProcessedLedger_TracksIdempotenceByRoutePlusHash()
+  {
+    var winners = new List<ImportInboxCandidate>
+    {
+      new()
+      {
+        ZipPath = @"C:\\import\\duplicate.zip",
+        FileName = "duplicate.zip",
+        Sha256 = "same-hash",
+        ArtifactKind = ImportArtifactKind.Gpo,
+        Confidence = DetectionConfidence.High,
+        ContentKey = "gpo:duplicate"
+      },
+      new()
+      {
+        ZipPath = @"C:\\import\\duplicate.zip",
+        FileName = "duplicate.zip",
+        Sha256 = "same-hash",
+        ArtifactKind = ImportArtifactKind.Admx,
+        Confidence = DetectionConfidence.High,
+        ContentKey = "admx:duplicate"
+      }
+    };
+
+    var ledger = new ImportProcessedArtifactLedger();
+
+    var firstPlan = ImportQueuePlanner.BuildContentImportPlan(winners, ledger);
+    var secondPlan = ImportQueuePlanner.BuildContentImportPlan(winners, ledger);
+
+    Assert.Equal(2, firstPlan.Count);
+    Assert.Empty(secondPlan);
+  }
+
   [Theory]
   [MemberData(nameof(CompatibilityMatrixScenarios))]
   public async Task ImportZipAsync_CompatibilityMatrixContractMatchesFixtureScenario(

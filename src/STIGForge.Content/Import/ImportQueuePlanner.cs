@@ -10,6 +10,7 @@ public sealed class PlannedContentImport
 {
   public string ZipPath { get; set; } = string.Empty;
   public string FileName { get; set; } = string.Empty;
+  public string Sha256 { get; set; } = string.Empty;
   public ImportArtifactKind ArtifactKind { get; set; }
   public ContentImportRoute Route { get; set; }
   public string SourceLabel { get; set; } = string.Empty;
@@ -17,7 +18,9 @@ public sealed class PlannedContentImport
 
 public static class ImportQueuePlanner
 {
-  public static IReadOnlyList<PlannedContentImport> BuildContentImportPlan(IEnumerable<ImportInboxCandidate> winners)
+  public static IReadOnlyList<PlannedContentImport> BuildContentImportPlan(
+    IEnumerable<ImportInboxCandidate> winners,
+    ImportProcessedArtifactLedger? processedLedger = null)
   {
     if (winners == null)
       throw new ArgumentNullException(nameof(winners));
@@ -43,8 +46,8 @@ public static class ImportQueuePlanner
 
       if (!hasStigOrScap && bestGpo != null && bestAdmx != null)
       {
-        plan.Add(ToOperation(bestGpo, ContentImportRoute.ConsolidatedZip, "gpo_lgpo_import"));
-        plan.Add(ToOperation(bestAdmx, ContentImportRoute.AdmxTemplatesFromZip, "admx_template_import"));
+        TryAddPlannedOperation(plan, processedLedger, ToOperation(bestGpo, ContentImportRoute.ConsolidatedZip, "gpo_lgpo_import"));
+        TryAddPlannedOperation(plan, processedLedger, ToOperation(bestAdmx, ContentImportRoute.AdmxTemplatesFromZip, "admx_template_import"));
         continue;
       }
 
@@ -59,7 +62,7 @@ public static class ImportQueuePlanner
         ? ContentImportRoute.AdmxTemplatesFromZip
         : ContentImportRoute.ConsolidatedZip;
 
-      plan.Add(ToOperation(primary, route, MapSourceLabel(primary.ArtifactKind, route)));
+      TryAddPlannedOperation(plan, processedLedger, ToOperation(primary, route, MapSourceLabel(primary.ArtifactKind, route)));
     }
 
     return plan;
@@ -82,10 +85,28 @@ public static class ImportQueuePlanner
     {
       ZipPath = candidate.ZipPath,
       FileName = candidate.FileName,
+      Sha256 = candidate.Sha256,
       ArtifactKind = candidate.ArtifactKind,
       Route = route,
       SourceLabel = sourceLabel
     };
+  }
+
+  private static void TryAddPlannedOperation(
+    ICollection<PlannedContentImport> plan,
+    ImportProcessedArtifactLedger? processedLedger,
+    PlannedContentImport operation)
+  {
+    if (processedLedger == null)
+    {
+      plan.Add(operation);
+      return;
+    }
+
+    if (!processedLedger.TryBegin(operation.Sha256, operation.Route))
+      return;
+
+    plan.Add(operation);
   }
 
   private static string MapSourceLabel(ImportArtifactKind kind, ContentImportRoute route)

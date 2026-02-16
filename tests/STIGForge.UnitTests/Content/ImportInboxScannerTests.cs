@@ -154,6 +154,35 @@ public sealed class ImportInboxScannerTests : IDisposable
   }
 
   [Fact]
+  public async Task ScanAsync_RepeatedScanWithLedger_DoesNotRequeueAlreadyProcessedRouteAndHash()
+  {
+    var zipPath = Path.Combine(_tempRoot, "repeatable.zip");
+    using (var archive = ZipFile.Open(zipPath, ZipArchiveMode.Create))
+    {
+      await WriteEntryAsync(archive, "Windows/benchmark-xccdf.xml", CreateMinimalXccdf("xccdf_org.test.repeatable", "V1R1"));
+    }
+
+    var scanner = new ImportInboxScanner(new TestHashingService());
+    var firstScan = await scanner.ScanAsync(_tempRoot, CancellationToken.None);
+    var secondScan = await scanner.ScanAsync(_tempRoot, CancellationToken.None);
+
+    var dedup = new ImportDedupService();
+    var firstWinners = dedup.Resolve(firstScan.Candidates).Winners
+      .Where(c => c.ArtifactKind != ImportArtifactKind.Tool && c.ArtifactKind != ImportArtifactKind.Unknown)
+      .ToList();
+    var secondWinners = dedup.Resolve(secondScan.Candidates).Winners
+      .Where(c => c.ArtifactKind != ImportArtifactKind.Tool && c.ArtifactKind != ImportArtifactKind.Unknown)
+      .ToList();
+
+    var ledger = new ImportProcessedArtifactLedger();
+    var firstPlan = ImportQueuePlanner.BuildContentImportPlan(firstWinners, ledger);
+    var secondPlan = ImportQueuePlanner.BuildContentImportPlan(secondWinners, ledger);
+
+    Assert.Single(firstPlan);
+    Assert.Empty(secondPlan);
+  }
+
+  [Fact]
   public async Task ScanAsync_SkipsInaccessibleSubdirectoryAndContinues()
   {
     if (OperatingSystem.IsWindows())

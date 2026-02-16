@@ -14,4 +14,5 @@ public sealed class ImportScanSummary
   public Dictionary<string, int> ImportedByType { get; set; } = new(StringComparer.OrdinalIgnoreCase);
   public IReadOnlyList<string> Warnings { get; set; } = Array.Empty<string>();
   public IReadOnlyList<string> Failures { get; set; } = Array.Empty<string>();
+  public IReadOnlyList<string> ProcessedArtifactLedgerSnapshot { get; set; } = Array.Empty<string>();
 }
