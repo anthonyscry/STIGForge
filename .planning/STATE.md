@@ -3,8 +3,8 @@
 ## Current Position
 
 **Phase:** 12-wpf-parity-evidence-promotion-and-verification
-**Last Completed:** 12-wpf-parity-evidence-promotion-and-verification-01 (Phase 09 WP verification backfill)
-**Status:** Executing plans (1/3 complete)
+**Last Completed:** 12-wpf-parity-evidence-promotion-and-verification-02 (WPF promotion evidence contract enforcement)
+**Status:** Executing plans (2/3 complete)
 
 **Started:** February 9, 2026
 
@@ -104,6 +104,16 @@ Progress: ███████████████████████�
 - **Rationale:** Preserve fail-closed semantics by requiring all three closure sources to align before marking WP requirements closed.
 - **Status:** Implemented (Phase 12 Plan 01 verification backfill)
 
+### Explicit WPF Promotion Contract Signals
+- **Decision:** Promotion workflows now require explicit WPF workflow/severity/recovery contract step presence and success in upgrade/rebase summary evidence.
+- **Rationale:** Prevent WP evidence regression behind aggregate pass status and keep promotion checks machine-verifiable and fail-closed.
+- **Status:** Implemented (Phase 12 Plan 02 workflow enforcement)
+
+### Package Evidence WPF Contract Linking
+- **Decision:** Release package evidence catalog now includes explicit WPF contract keys validated against upgrade/rebase summary step outcomes.
+- **Rationale:** Ensure reproducibility evidence cannot report complete when WPF contract signals are missing or failed.
+- **Status:** Implemented (Phase 12 Plan 02 package evidence wiring)
+
 ---
 
 ## Pending Todos
@@ -159,8 +169,8 @@ Progress: ███████████████████████�
 
 ## Session Continuity
 
-**Last session:** 2026-02-16T23:38:55.062Z
-**Stopped at:** Completed 12-01-PLAN.md
+**Last session:** 2026-02-16T23:39:56.244Z
+**Stopped at:** Completed 12-wpf-parity-evidence-promotion-and-verification-02-PLAN.md
 **Resume file:** None
 
 ---
@@ -169,4 +179,4 @@ Progress: ███████████████████████�
 
 **Date:** February 16, 2026
 **Updated By:** OpenCode Executor
-**Reason:** Completed Phase 12 Plan 01 execution and recorded WP closure staging decision
+**Reason:** Completed Phase 12 Plan 02 execution and promoted explicit WPF parity contract evidence into release/package workflow enforcement
