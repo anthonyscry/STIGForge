@@ -39,6 +39,8 @@ public partial class MainViewModel : ObservableObject, IDisposable
   private readonly CancellationTokenSource _cts = new();
   private bool _disposed;
   private int _initialLoadStarted;
+  private int _importScanInFlight;
+  private int _importLedgerLoaded;
   private ICollectionView? _manualView;
   private ICollectionView? _remoteDiscoveredHostsView;
   private bool _suppressScapArgsSync;

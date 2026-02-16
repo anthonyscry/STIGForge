@@ -3,6 +3,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.IO;
 using System.Text.Json;
+using System.Threading;
 using System.Windows.Data;
 using STIGForge.Build;
 using STIGForge.Core.Models;
@@ -29,7 +30,14 @@ public partial class MainViewModel
 
   private async Task RunImportScanAsync(bool autoMode)
   {
-    if (IsBusy) return;
+    if (Interlocked.CompareExchange(ref _importScanInFlight, 1, 0) != 0)
+      return;
+
+    if (IsBusy)
+    {
+      Interlocked.Exchange(ref _importScanInFlight, 0);
+      return;
+    }
 
     var startedAt = DateTimeOffset.Now;
     var importFolder = ResolveScanImportFolderPath();
@@ -37,6 +45,7 @@ public partial class MainViewModel
     try
     {
       IsBusy = true;
+      EnsureImportProcessedLedgerLoaded();
       ScanImportFolderPath = importFolder;
       var createdFolder = false;
       if (!Directory.Exists(importFolder))
@@ -65,7 +74,13 @@ public partial class MainViewModel
           exceptionRows: Array.Empty<ImportQueueRow>());
 
         var emptyLedgerSnapshot = _importProcessedArtifactLedger.Snapshot();
-        PersistImportProcessedLedgerSnapshot(emptyLedgerSnapshot);
+        var emptyWarnings = scan.Warnings.ToList();
+        var emptyLedgerWarning = TryPersistImportProcessedLedgerSnapshot(emptyLedgerSnapshot);
+        if (!string.IsNullOrWhiteSpace(emptyLedgerWarning))
+        {
+          emptyWarnings.Add(emptyLedgerWarning);
+          AppendImportActivityLog((autoMode ? "AUTO" : "MANUAL") + " warning: " + emptyLedgerWarning);
+        }
 
         var emptySummary = new ImportScanSummary
         {
@@ -78,7 +93,7 @@ public partial class MainViewModel
           SuppressedCount = 0,
           ImportedPackCount = 0,
           ImportedToolCount = 0,
-          Warnings = scan.Warnings,
+          Warnings = emptyWarnings,
           Failures = Array.Empty<string>(),
           ProcessedArtifactLedgerSnapshot = emptyLedgerSnapshot
         };
@@ -206,7 +221,11 @@ public partial class MainViewModel
       }
 
       RefreshImportLibrary();
-      var warningCount = scan.Warnings.Count + suppressedWarnings.Count + dedupDecisionNotes.Count + multiRouteWarnings.Count;
+      var warnings = scan.Warnings
+        .Concat(suppressedWarnings)
+        .Concat(dedupDecisionNotes)
+        .Concat(multiRouteWarnings)
+        .ToList();
 
       var projected = ImportAutoQueueProjection.Project(contentImportQueue, failures);
       var autoQueueRows = projected.AutoCommitted
@@ -239,7 +258,14 @@ public partial class MainViewModel
       ProjectImportRows(classificationRows, autoQueueRows, exceptionRows);
 
       var ledgerSnapshot = _importProcessedArtifactLedger.Snapshot();
-      PersistImportProcessedLedgerSnapshot(ledgerSnapshot);
+      var ledgerPersistenceWarning = TryPersistImportProcessedLedgerSnapshot(ledgerSnapshot);
+      if (!string.IsNullOrWhiteSpace(ledgerPersistenceWarning))
+      {
+        warnings.Add(ledgerPersistenceWarning);
+        AppendImportActivityLog((autoMode ? "AUTO" : "MANUAL") + " warning: " + ledgerPersistenceWarning);
+      }
+
+      var warningCount = warnings.Count;
 
       var summary = new ImportScanSummary
       {
@@ -256,7 +282,7 @@ public partial class MainViewModel
         ImportedPackCount = importedPackCount,
         ImportedToolCount = importedToolCount,
         ImportedByType = importedByType,
-        Warnings = scan.Warnings.Concat(suppressedWarnings).Concat(dedupDecisionNotes).Concat(multiRouteWarnings).ToList(),
+        Warnings = warnings,
         Failures = failures,
         ProcessedArtifactLedgerSnapshot = ledgerSnapshot
       };
@@ -287,7 +313,13 @@ public partial class MainViewModel
 
       AppendImportActivityLog((autoMode ? "AUTO" : "MANUAL") + " failed: " + ex.Message);
       var ledgerSnapshot = _importProcessedArtifactLedger.Snapshot();
-      PersistImportProcessedLedgerSnapshot(ledgerSnapshot);
+      var scanWarnings = new List<string>();
+      var ledgerPersistenceWarning = TryPersistImportProcessedLedgerSnapshot(ledgerSnapshot);
+      if (!string.IsNullOrWhiteSpace(ledgerPersistenceWarning))
+      {
+        scanWarnings.Add(ledgerPersistenceWarning);
+        AppendImportActivityLog((autoMode ? "AUTO" : "MANUAL") + " warning: " + ledgerPersistenceWarning);
+      }
 
       PersistImportScanSummary(new ImportScanSummary
       {
@@ -300,7 +332,7 @@ public partial class MainViewModel
         SuppressedCount = 0,
         ImportedPackCount = 0,
         ImportedToolCount = 0,
-        Warnings = Array.Empty<string>(),
+        Warnings = scanWarnings,
         Failures = new[] { ex.Message },
         ProcessedArtifactLedgerSnapshot = ledgerSnapshot
       });
@@ -308,6 +340,33 @@ public partial class MainViewModel
     finally
     {
       IsBusy = false;
+      Interlocked.Exchange(ref _importScanInFlight, 0);
+    }
+  }
+
+  private void EnsureImportProcessedLedgerLoaded()
+  {
+    if (Interlocked.CompareExchange(ref _importLedgerLoaded, 1, 0) != 0)
+      return;
+
+    try
+    {
+      var logsRoot = _paths.GetLogsRoot();
+      var ledgerPath = Path.Combine(logsRoot, "import_auto_ledger.json");
+      if (!File.Exists(ledgerPath))
+        return;
+
+      var json = File.ReadAllText(ledgerPath);
+      var persisted = JsonSerializer.Deserialize<List<string>>(json) ?? new List<string>();
+      _importProcessedArtifactLedger.Load(persisted);
+      AppendImportActivityLog("AUTO ledger loaded entries=" + _importProcessedArtifactLedger.Snapshot().Count);
+    }
+    catch (Exception ex)
+    {
+      _importProcessedArtifactLedger.Load(Array.Empty<string>());
+      var warning = "Failed to load import ledger: " + ex.Message;
+      AppendImportActivityLog("AUTO warning: " + warning);
+      System.Diagnostics.Trace.TraceWarning(warning);
     }
   }
 
@@ -397,16 +456,26 @@ public partial class MainViewModel
     });
   }
 
-  private void PersistImportProcessedLedgerSnapshot(IReadOnlyList<string> ledgerSnapshot)
+  private string? TryPersistImportProcessedLedgerSnapshot(IReadOnlyList<string> ledgerSnapshot)
   {
-    var logsRoot = _paths.GetLogsRoot();
-    Directory.CreateDirectory(logsRoot);
-    var ledgerPath = Path.Combine(logsRoot, "import_auto_ledger.json");
-    var json = JsonSerializer.Serialize(ledgerSnapshot, new JsonSerializerOptions
+    try
     {
-      WriteIndented = true
-    });
-    File.WriteAllText(ledgerPath, json);
+      var logsRoot = _paths.GetLogsRoot();
+      Directory.CreateDirectory(logsRoot);
+      var ledgerPath = Path.Combine(logsRoot, "import_auto_ledger.json");
+      var json = JsonSerializer.Serialize(ledgerSnapshot, new JsonSerializerOptions
+      {
+        WriteIndented = true
+      });
+      File.WriteAllText(ledgerPath, json);
+      return null;
+    }
+    catch (Exception ex)
+    {
+      var warning = "Failed to persist import ledger: " + ex.Message;
+      System.Diagnostics.Trace.TraceWarning(warning);
+      return warning;
+    }
   }
 
   private static void ReplaceRows(ObservableCollection<ImportQueueRow> target, IReadOnlyList<ImportQueueRow> rows)
