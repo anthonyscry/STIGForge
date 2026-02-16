@@ -106,6 +106,20 @@ public sealed class ContentPackImporter
 
             if (nestedZipPaths.Count == 0)
             {
+                var scopedRoots = FindScopedGpoRoots(extractionRoot);
+                if (scopedRoots.Count > 0)
+                {
+                    var importedScoped = new List<ContentPack>(scopedRoots.Count);
+                    foreach (var scopedRoot in scopedRoots)
+                    {
+                        ct.ThrowIfCancellationRequested();
+                        var imported = await ImportDirectoryAsPackAsync(scopedRoot.RootPath, scopedRoot.PackName, scopedRoot.SourceLabel, ct).ConfigureAwait(false);
+                        importedScoped.Add(imported);
+                    }
+
+                    return importedScoped;
+                }
+
                 // NIWC-style bundles: no nested ZIPs, but multiple benchmark folders with XCCDF files.
                 // Split by parent directory of each XCCDF so each benchmark becomes its own pack.
                 var xccdfFiles = Directory
@@ -184,15 +198,40 @@ public sealed class ContentPackImporter
             ExtractZipSafely(zipPath, extractionRoot, ct);
             ExpandNestedZipArchives(extractionRoot, maxPasses: 2, ct);
 
-            var admxFiles = Directory.GetFiles(extractionRoot, "*.admx", SearchOption.AllDirectories)
-                .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
+            var admxGroups = Directory.GetFiles(extractionRoot, "*.admx", SearchOption.AllDirectories)
+                .Select(path => new
+                {
+                    FullPath = path,
+                    Segments = GetRelativePathCompat(extractionRoot, path)
+                        .Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries)
+                })
+                .Select(entry => new
+                {
+                    entry.FullPath,
+                    entry.Segments,
+                    ScopeIndex = Array.FindIndex(
+                        entry.Segments,
+                        segment => string.Equals(segment, "ADMX Templates", StringComparison.OrdinalIgnoreCase))
+                })
+                .Where(entry => entry.ScopeIndex >= 0 && entry.Segments.Length > entry.ScopeIndex + 2)
+                .GroupBy(entry => entry.Segments[entry.ScopeIndex + 1], StringComparer.OrdinalIgnoreCase)
+                .OrderBy(group => group.Key, StringComparer.OrdinalIgnoreCase)
+                .Select(group => new
+                {
+                    FolderName = group.Key,
+                    Files = group
+                        .OrderBy(
+                            entry => string.Join("/", entry.Segments.Skip(entry.ScopeIndex + 2)),
+                            StringComparer.OrdinalIgnoreCase)
+                        .ToList()
+                })
                 .ToList();
 
-            if (admxFiles.Count == 0)
+            if (admxGroups.Count == 0)
                 return await ImportConsolidatedZipAsync(zipPath, sourceLabel, ct).ConfigureAwait(false);
 
-            var imported = new List<ContentPack>(admxFiles.Count);
-            foreach (var admxFile in admxFiles)
+            var imported = new List<ContentPack>(admxGroups.Count);
+            foreach (var admxGroup in admxGroups)
             {
                 ct.ThrowIfCancellationRequested();
 
@@ -200,10 +239,20 @@ public sealed class ContentPackImporter
                 Directory.CreateDirectory(templateRoot);
                 try
                 {
-                    var destination = Path.Combine(templateRoot, Path.GetFileName(admxFile));
-                    File.Copy(admxFile, destination, true);
+                    foreach (var admxFile in admxGroup.Files)
+                    {
+                        ct.ThrowIfCancellationRequested();
 
-                    var packName = BuildAdmxTemplatePackName(admxFile);
+                        var relativeInFolder = CombinePathSegments(admxFile.Segments.Skip(admxFile.ScopeIndex + 2));
+                        var destination = Path.Combine(templateRoot, relativeInFolder);
+                        var destinationDir = Path.GetDirectoryName(destination);
+                        if (!string.IsNullOrWhiteSpace(destinationDir))
+                            Directory.CreateDirectory(destinationDir);
+
+                        File.Copy(admxFile.FullPath, destination, true);
+                    }
+
+                    var packName = BuildAdmxTemplatePackName(admxGroup.FolderName);
                     var pack = await ImportDirectoryAsPackAsync(templateRoot, packName, sourceLabel, ct).ConfigureAwait(false);
                     imported.Add(pack);
                 }
@@ -865,14 +914,13 @@ public sealed class ContentPackImporter
         return null;
     }
 
-    private static string BuildAdmxTemplatePackName(string admxPath)
+    private static string BuildAdmxTemplatePackName(string templateFolderName)
     {
-        var baseName = Path.GetFileNameWithoutExtension(admxPath);
+        var baseName = templateFolderName;
         if (string.IsNullOrWhiteSpace(baseName))
             return "ADMX Templates - Imported";
 
-        var normalized = baseName.Replace('_', ' ').Replace('-', ' ').Trim();
-        return "ADMX Templates - " + normalized;
+        return "ADMX Templates - " + baseName.Trim();
     }
 
     private static void ExpandNestedZipArchives(string extractionRoot, int maxPasses, CancellationToken ct)
@@ -911,6 +959,110 @@ public sealed class ContentPackImporter
             if (!extractedAny)
                 break;
         }
+    }
+
+    private static IReadOnlyList<(string RootPath, string PackName, string SourceLabel)> FindScopedGpoRoots(string extractionRoot)
+    {
+        var localByScope = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        var domainByScope = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        var files = Directory.GetFiles(extractionRoot, "*", SearchOption.AllDirectories)
+            .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        foreach (var file in files)
+        {
+            var fileDirectory = Path.GetDirectoryName(file);
+            if (string.IsNullOrWhiteSpace(fileDirectory))
+                continue;
+
+            var relativeDirectoryPath = GetRelativePathCompat(extractionRoot, fileDirectory);
+            var segments = relativeDirectoryPath.Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries);
+
+            for (var i = 0; i < segments.Length; i++)
+            {
+                if (i + 2 < segments.Length
+                    && (string.Equals(segments[i], "Support Files", StringComparison.OrdinalIgnoreCase)
+                        || string.Equals(segments[i], ".Support Files", StringComparison.OrdinalIgnoreCase))
+                    && string.Equals(segments[i + 1], "Local Policies", StringComparison.OrdinalIgnoreCase))
+                {
+                    var scope = segments[i + 2].Trim();
+                    if (!string.IsNullOrWhiteSpace(scope) && !localByScope.ContainsKey(scope))
+                    {
+                        var rootSegments = segments.Take(i + 3).ToArray();
+                        localByScope[scope] = Path.Combine(extractionRoot, CombinePathSegments(rootSegments));
+                    }
+
+                    break;
+                }
+
+                if (i + 1 < segments.Length
+                    && string.Equals(segments[i], "gpos", StringComparison.OrdinalIgnoreCase))
+                {
+                    var scope = segments[i + 1].Trim();
+                    if (!string.IsNullOrWhiteSpace(scope) && !domainByScope.ContainsKey(scope))
+                    {
+                        var rootSegments = segments.Take(i + 2).ToArray();
+                        domainByScope[scope] = Path.Combine(extractionRoot, CombinePathSegments(rootSegments));
+                    }
+
+                    break;
+                }
+            }
+        }
+
+        var localRoots = localByScope
+            .OrderBy(kvp => kvp.Key, StringComparer.OrdinalIgnoreCase)
+            .Select(kvp => (kvp.Value, "Local Policy - " + kvp.Key, "gpo_lgpo_import"));
+        var domainRoots = domainByScope
+            .OrderBy(kvp => kvp.Key, StringComparer.OrdinalIgnoreCase)
+            .Select(kvp => (kvp.Value, "Domain GPO - " + kvp.Key, "gpo_domain_import"));
+
+        return localRoots.Concat(domainRoots).ToList();
+    }
+
+    private static string GetRelativePathCompat(string relativeTo, string path)
+    {
+        if (string.IsNullOrWhiteSpace(relativeTo))
+            return path ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(path))
+            return string.Empty;
+
+        var relativeRoot = Path.GetFullPath(relativeTo);
+        var targetPath = Path.GetFullPath(path);
+
+        if (!relativeRoot.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal)
+            && !relativeRoot.EndsWith(Path.AltDirectorySeparatorChar.ToString(), StringComparison.Ordinal))
+        {
+            relativeRoot += Path.DirectorySeparatorChar;
+        }
+
+        var relativeRootUri = new Uri(relativeRoot, UriKind.Absolute);
+        var targetPathUri = new Uri(targetPath, UriKind.Absolute);
+        if (!string.Equals(relativeRootUri.Scheme, targetPathUri.Scheme, StringComparison.OrdinalIgnoreCase))
+            return path;
+
+        var relative = Uri.UnescapeDataString(relativeRootUri.MakeRelativeUri(targetPathUri).ToString())
+            .Replace('/', Path.DirectorySeparatorChar);
+
+        return relative;
+    }
+
+    private static string CombinePathSegments(IEnumerable<string> segments)
+    {
+        var segmentList = segments
+            .Where(segment => !string.IsNullOrWhiteSpace(segment))
+            .ToList();
+
+        if (segmentList.Count == 0)
+            return string.Empty;
+
+        var combined = segmentList[0];
+        for (var i = 1; i < segmentList.Count; i++)
+            combined = Path.Combine(combined, segmentList[i]);
+
+        return combined;
     }
 
     private static int? ParseYear(string text)
