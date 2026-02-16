@@ -232,7 +232,10 @@ try {
     [pscustomobject]@{ key = "quarterlySummary"; relativePath = "quarterly-pack/quarterly-pack-summary.json"; required = $true },
     [pscustomobject]@{ key = "quarterlyReport"; relativePath = "quarterly-pack/quarterly-pack-report.md"; required = $true },
     [pscustomobject]@{ key = "upgradeRebaseSummary"; relativePath = "upgrade-rebase/upgrade-rebase-summary.json"; required = $true },
-    [pscustomobject]@{ key = "upgradeRebaseReport"; relativePath = "upgrade-rebase/upgrade-rebase-report.md"; required = $true }
+    [pscustomobject]@{ key = "upgradeRebaseReport"; relativePath = "upgrade-rebase/upgrade-rebase-report.md"; required = $true },
+    [pscustomobject]@{ key = "upgradeRebaseWpfWorkflowContract"; relativePath = "upgrade-rebase/upgrade-rebase-summary.json"; required = $true; summaryStep = "upgrade-rebase-wpf-workflow-contract" },
+    [pscustomobject]@{ key = "upgradeRebaseWpfSeverityContract"; relativePath = "upgrade-rebase/upgrade-rebase-summary.json"; required = $true; summaryStep = "upgrade-rebase-wpf-severity-contract" },
+    [pscustomobject]@{ key = "upgradeRebaseWpfRecoveryContract"; relativePath = "upgrade-rebase/upgrade-rebase-summary.json"; required = $true; summaryStep = "upgrade-rebase-wpf-recovery-contract" }
   )
 
   $releaseGateEvidence = @()
@@ -241,16 +244,40 @@ try {
 
   if (Test-Path -LiteralPath $releaseGateRootFull) {
     $missingRequired = @()
+    $summaryCache = @{}
 
     foreach ($artifact in $releaseGateCatalog) {
       $artifactPath = Join-Path $releaseGateRootFull $artifact.relativePath
       $exists = Test-Path -LiteralPath $artifactPath
       $hashValue = ""
+      $summaryStep = if ($artifact.PSObject.Properties.Name -contains 'summaryStep') { [string]$artifact.summaryStep } else { "" }
+      $summaryStepExists = $true
+      $summaryStepSucceeded = $true
 
       if ($exists) {
         $hashValue = (Get-FileHash -Algorithm SHA256 -Path $artifactPath).Hash.ToLowerInvariant()
+
+        if (-not [string]::IsNullOrWhiteSpace($summaryStep)) {
+          $cacheKey = $artifactPath.ToLowerInvariant()
+          if (-not $summaryCache.ContainsKey($cacheKey)) {
+            $summaryCache[$cacheKey] = Get-Content -Path $artifactPath -Raw | ConvertFrom-Json
+          }
+
+          $summaryPayload = $summaryCache[$cacheKey]
+          $matchingStep = @($summaryPayload.steps | Where-Object { $_.name -eq $summaryStep })
+          $summaryStepExists = ($matchingStep.Count -eq 1)
+          $summaryStepSucceeded = ($summaryStepExists -and [bool]$matchingStep[0].succeeded)
+
+          if (-not $summaryStepExists -or -not $summaryStepSucceeded) {
+            $exists = $false
+          }
+        }
       }
       elseif ($artifact.required) {
+        $missingRequired += $artifact.key
+      }
+
+      if ($artifact.required -and -not $exists -and -not ($missingRequired -contains $artifact.key)) {
         $missingRequired += $artifact.key
       }
 
@@ -260,6 +287,9 @@ try {
         exists = [bool]$exists
         path = $artifactPath
         sha256 = $hashValue
+        summaryStep = $summaryStep
+        summaryStepExists = [bool]$summaryStepExists
+        summaryStepSucceeded = [bool]$summaryStepSucceeded
       }
     }
 

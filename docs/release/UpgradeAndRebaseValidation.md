@@ -26,6 +26,12 @@ Release evidence must show:
   - `tests/STIGForge.IntegrationTests/Cli/CliCommandTests.cs` (`DiffPacks*`, `RebaseOverlay*`)
 - `upgrade-rebase-rollback-safety`
   - `tests/STIGForge.UnitTests/Apply/ApplyRunnerTests.cs`
+- `upgrade-rebase-wpf-workflow-contract` (WP-01)
+  - Reuses deterministic CLI diff/rebase integration entry point to enforce workflow contract evidence
+- `upgrade-rebase-wpf-severity-contract` (WP-02)
+  - Reuses mission summary parity entry point to enforce WPF/CLI severity semantics contract evidence
+- `upgrade-rebase-wpf-recovery-contract` (WP-03)
+  - Reuses rollback safety entry point to enforce WPF recovery guidance contract evidence
 
 Promotion gate: every contract above must pass.
 
@@ -49,14 +55,19 @@ Release gate output root must contain:
 
 - `upgrade-rebase/upgrade-rebase-summary.json`
   - `status` must be `passed`
-  - `requiredEvidence` must list all five contract areas
+  - `requiredEvidence` must list all five baseline contract areas plus explicit WPF contracts:
+    - `upgrade-rebase-wpf-workflow-contract`
+    - `upgrade-rebase-wpf-severity-contract`
+    - `upgrade-rebase-wpf-recovery-contract`
+  - `steps` must contain each explicit WPF contract with `succeeded: true`
 - `upgrade-rebase/upgrade-rebase-report.md`
   - Must include per-step pass/fail table and log references
 
 Workflow enforcement:
 
-- `release-package.yml` fails if upgrade/rebase summary is missing or not `passed`.
-- `vm-smoke-matrix.yml` fails if upgrade/rebase summary is missing or not `passed` for any runner.
+- `ci.yml` fails if upgrade/rebase summary is missing/not `passed` or any explicit WPF contract step is missing/failed.
+- `release-package.yml` fails if upgrade/rebase summary is missing/not `passed` or any explicit WPF contract step is missing/failed.
+- `vm-smoke-matrix.yml` fails if upgrade/rebase summary is missing/not `passed` or any explicit WPF contract step is missing/failed for any runner.
 
 ## Data retention and rollback expectations
 
