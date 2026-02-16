@@ -1,13 +1,13 @@
 <UserControl x:Class="STIGForge.App.Views.ImportView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-  <Grid Margin="10">
-    <Grid.RowDefinitions>
-      <RowDefinition Height="Auto"/>
-      <RowDefinition Height="*" MinHeight="320"/>
-    </Grid.RowDefinitions>
+<Grid Margin="10">
+  <Grid.RowDefinitions>
+    <RowDefinition Height="Auto" MinHeight="260"/>
+    <RowDefinition Height="*" MinHeight="340"/>
+  </Grid.RowDefinitions>
 
-    <ScrollViewer Grid.Row="0" Margin="0,0,0,10" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" MaxHeight="420">
+  <ScrollViewer Grid.Row="0" Margin="0,0,0,10" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" MinHeight="260" MaxHeight="420">
       <StackPanel>
         <TextBlock Text="Primary Actions" FontWeight="SemiBold" Margin="0,0,0,6"/>
         <WrapPanel Margin="0,0,0,8">
@@ -75,9 +75,9 @@
 
               <TextBlock Grid.Row="2" Text="{Binding MachineScanSummary}" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,6" TextWrapping="Wrap"/>
 
-              <Expander Grid.Row="3" Header="Machine scan details" IsExpanded="{Binding IsScanExpanded}" Margin="0,2,0,0">
-                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" MaxHeight="420">
-                  <Grid Margin="0,8,0,0">
+                <Expander Grid.Row="3" Header="Machine scan details" IsExpanded="{Binding IsScanExpanded}" Margin="0,2,0,0">
+                  <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" MaxHeight="320">
+                    <Grid Margin="0,8,0,0" MinHeight="220">
                     <Grid.RowDefinitions>
                       <RowDefinition Height="Auto"/>
                       <RowDefinition Height="Auto"/>
@@ -103,15 +103,15 @@
                     <TextBlock Grid.Row="2" Text="Why applicable? (debug details)" FontWeight="SemiBold" Margin="0,10,0,4"/>
                     <TextBox Grid.Row="3" Text="{Binding MachineSelectionDiagnostics}" IsReadOnly="True"
                              TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"
-                             MinHeight="140" Height="160" ToolTipService.ToolTip="Debug diagnostics for applicability confidence, evidence signals, and canonical STIG-to-SCAP mapping decisions."/>
+                             MinHeight="120" MaxHeight="180" ToolTipService.ToolTip="Debug diagnostics for applicability confidence, evidence signals, and canonical STIG-to-SCAP mapping decisions."/>
 
                     <TextBox Grid.Row="4" Text="{Binding MachineApplicabilityStatus}" IsReadOnly="True"
                              TextWrapping="Wrap" AcceptsReturn="True" VerticalScrollBarVisibility="Auto"
-                             MinHeight="110" Height="130" Margin="0,10,0,0"
+                             MinHeight="100" MaxHeight="160" Margin="0,10,0,0"
                              ToolTipService.ToolTip="Detailed machine scan summary."/>
-                  </Grid>
-                </ScrollViewer>
-              </Expander>
+                   </Grid>
+                 </ScrollViewer>
+                </Expander>
             </Grid>
           </TabItem>
 
@@ -208,9 +208,9 @@
           </StackPanel>
         </DockPanel>
 
-        <Border Grid.Row="3" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Margin="0,0,0,8">
+        <Border Grid.Row="3" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Margin="0,0,0,8" MinHeight="180">
           <ListView x:Name="ContentLibraryList" ItemsSource="{Binding FilteredContentLibrary}" SelectedItem="{Binding SelectedLibraryItem}"
-                     SelectionMode="Extended" MinHeight="80"
+                     SelectionMode="Extended" MinHeight="180"
                      SelectionChanged="ContentLibraryList_SelectionChanged"
                      GridViewColumnHeader.Click="ColumnHeader_Click"
                      VirtualizingStackPanel.IsVirtualizing="True"
@@ -256,8 +256,8 @@
         </WrapPanel>
       </Grid>
 
-      <Border Grid.Column="1" Margin="12,0,0,0" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
-        <StackPanel Margin="10">
+          <Border Grid.Column="1" Margin="12,0,0,0" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" MinHeight="220">
+            <StackPanel Margin="10" MinHeight="220">
           <TextBlock Text="Pack Details" FontWeight="SemiBold"/>
           <TextBlock Text="Name:" Margin="0,6,0,0"/>
           <TextBlock Text="{Binding PackDetailName}" Foreground="{DynamicResource TextMutedBrush}"/>

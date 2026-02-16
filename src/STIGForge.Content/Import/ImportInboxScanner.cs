@@ -148,7 +148,8 @@ public sealed class ImportInboxScanner
       .ToList();
     var hasXccdf = xccdfEntries.Count > 0;
     var hasAdmx = namesLower.Any(n => n.EndsWith(".admx", StringComparison.Ordinal));
-    var hasLocalPolicies = namesLower.Any(n => n.Contains(".support files/local policies"));
+    var hasLocalPolicies = namesLower.Any(n =>
+      n.IndexOf("support files/local policies", StringComparison.Ordinal) >= 0);
 
     if (hasLocalPolicies)
     {
