@@ -15,4 +15,27 @@ public sealed class ImportProcessedArtifactLedger
     var key = route + ":" + normalized;
     return _keys.Add(key);
   }
+
+  public IReadOnlyList<string> Snapshot()
+  {
+    return _keys
+      .OrderBy(key => key, StringComparer.OrdinalIgnoreCase)
+      .ToArray();
+  }
+
+  public void Load(IEnumerable<string> keys)
+  {
+    if (keys == null)
+      throw new ArgumentNullException(nameof(keys));
+
+    _keys.Clear();
+
+    foreach (var key in keys)
+    {
+      if (string.IsNullOrWhiteSpace(key))
+        continue;
+
+      _keys.Add(key.Trim());
+    }
+  }
 }

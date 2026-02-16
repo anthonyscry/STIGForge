@@ -45,4 +45,46 @@ public sealed class ImportProcessedArtifactLedgerTests
 
     Assert.Throws<ArgumentException>(() => ledger.TryBegin(sha256, ContentImportRoute.ConsolidatedZip));
   }
+
+  [Fact]
+  public void Snapshot_ReturnsCaseInsensitiveSortedKeys()
+  {
+    var ledger = new ImportProcessedArtifactLedger();
+    ledger.TryBegin("bbb", ContentImportRoute.ConsolidatedZip);
+    ledger.TryBegin("AAA", ContentImportRoute.ConsolidatedZip);
+    ledger.TryBegin("ccc", ContentImportRoute.AdmxTemplatesFromZip);
+
+    var snapshot = ledger.Snapshot();
+
+    Assert.Equal(
+      new[]
+      {
+        "AdmxTemplatesFromZip:ccc",
+        "ConsolidatedZip:AAA",
+        "ConsolidatedZip:bbb"
+      },
+      snapshot);
+  }
+
+  [Fact]
+  public void Load_ClearsExistingAndNormalizesKeys()
+  {
+    var ledger = new ImportProcessedArtifactLedger();
+    ledger.TryBegin("existing", ContentImportRoute.ConsolidatedZip);
+
+    ledger.Load(new[]
+    {
+      " ConsolidatedZip:ABC123 ",
+      "consolidatedzip:abc123",
+      "AdmxTemplatesFromZip:DEF456",
+      " ",
+      null!
+    });
+
+    var snapshot = ledger.Snapshot();
+    Assert.Equal(2, snapshot.Count);
+    Assert.Contains("ConsolidatedZip:ABC123", snapshot, StringComparer.OrdinalIgnoreCase);
+    Assert.Contains("AdmxTemplatesFromZip:DEF456", snapshot, StringComparer.OrdinalIgnoreCase);
+    Assert.DoesNotContain("ConsolidatedZip:existing", snapshot, StringComparer.OrdinalIgnoreCase);
+  }
 }
