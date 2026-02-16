@@ -52,16 +52,24 @@ jobs:
             throw "Upgrade/rebase validation status is '$($summary.status)': $($summary.message)"
           }
 
-          $parityStep = @($summary.steps | Where-Object { $_.name -eq 'upgrade-rebase-parity-contract' })
-          if ($parityStep.Count -ne 1) {
-            throw "Upgrade/rebase parity evidence step missing for VM ${{ matrix.name }}."
+          $requiredSteps = @(
+            'upgrade-rebase-wpf-workflow-contract',
+            'upgrade-rebase-wpf-severity-contract',
+            'upgrade-rebase-wpf-recovery-contract'
+          )
+
+          foreach ($requiredStep in $requiredSteps) {
+            $matchingStep = @($summary.steps | Where-Object { $_.name -eq $requiredStep })
+            if ($matchingStep.Count -ne 1) {
+              throw "Required upgrade/rebase evidence step '$requiredStep' is missing for VM ${{ matrix.name }}."
+            }
+
+            if (-not [bool]$matchingStep[0].succeeded) {
+              throw "Required upgrade/rebase evidence step '$requiredStep' failed for VM ${{ matrix.name }}. See $($matchingStep[0].logPath)"
+            }
           }
 
-          if (-not [bool]$parityStep[0].succeeded) {
-            throw "Upgrade/rebase parity evidence failed for VM ${{ matrix.name }}. See $($parityStep[0].logPath)"
-          }
-
-          Write-Host "Upgrade/rebase validation passed for VM ${{ matrix.name }}." -ForegroundColor Green
+          Write-Host "Upgrade/rebase validation passed for VM ${{ matrix.name }} with explicit WPF contracts." -ForegroundColor Green
 
       - name: Validate quarterly trend evidence
         shell: pwsh

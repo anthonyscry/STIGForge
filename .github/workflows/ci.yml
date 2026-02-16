@@ -48,7 +48,7 @@ jobs:
 
           powershell @args
 
-      - name: Validate release parity evidence
+      - name: Validate upgrade/rebase evidence
         shell: pwsh
         run: |
           $summaryPath = '.\.artifacts\release-gate\latest\upgrade-rebase\upgrade-rebase-summary.json'
@@ -61,16 +61,24 @@ jobs:
             throw "Upgrade/rebase validation status is '$($summary.status)': $($summary.message)"
           }
 
-          $parityStep = @($summary.steps | Where-Object { $_.name -eq 'upgrade-rebase-parity-contract' })
-          if ($parityStep.Count -ne 1) {
-            throw "Parity contract evidence step not found in upgrade/rebase summary."
+          $requiredSteps = @(
+            'upgrade-rebase-wpf-workflow-contract',
+            'upgrade-rebase-wpf-severity-contract',
+            'upgrade-rebase-wpf-recovery-contract'
+          )
+
+          foreach ($requiredStep in $requiredSteps) {
+            $matchingStep = @($summary.steps | Where-Object { $_.name -eq $requiredStep })
+            if ($matchingStep.Count -ne 1) {
+              throw "Required upgrade/rebase evidence step '$requiredStep' is missing from summary."
+            }
+
+            if (-not [bool]$matchingStep[0].succeeded) {
+              throw "Required upgrade/rebase evidence step '$requiredStep' failed. See $($matchingStep[0].logPath)"
+            }
           }
 
-          if (-not [bool]$parityStep[0].succeeded) {
-            throw "Parity contract step failed. See $($parityStep[0].logPath)"
-          }
-
-          Write-Host "Release parity evidence validated." -ForegroundColor Green
+          Write-Host "Upgrade/rebase evidence validated for explicit WPF contracts." -ForegroundColor Green
 
       - name: Validate quarterly trend evidence
         shell: pwsh

@@ -94,16 +94,24 @@ jobs:
             throw "Upgrade/rebase validation status is '$($summary.status)': $($summary.message)"
           }
 
-          $parityStep = @($summary.steps | Where-Object { $_.name -eq 'upgrade-rebase-parity-contract' })
-          if ($parityStep.Count -ne 1) {
-            throw "Upgrade/rebase parity evidence step missing from summary."
+          $requiredSteps = @(
+            'upgrade-rebase-wpf-workflow-contract',
+            'upgrade-rebase-wpf-severity-contract',
+            'upgrade-rebase-wpf-recovery-contract'
+          )
+
+          foreach ($requiredStep in $requiredSteps) {
+            $matchingStep = @($summary.steps | Where-Object { $_.name -eq $requiredStep })
+            if ($matchingStep.Count -ne 1) {
+              throw "Required upgrade/rebase evidence step '$requiredStep' is missing from summary."
+            }
+
+            if (-not [bool]$matchingStep[0].succeeded) {
+              throw "Required upgrade/rebase evidence step '$requiredStep' failed. See $($matchingStep[0].logPath)"
+            }
           }
 
-          if (-not [bool]$parityStep[0].succeeded) {
-            throw "Upgrade/rebase parity evidence step failed. See $($parityStep[0].logPath)"
-          }
-
-          Write-Host "Upgrade/rebase validation passed with $(@($summary.steps).Count) evidence step(s)." -ForegroundColor Green
+          Write-Host "Upgrade/rebase validation passed with explicit WPF contract evidence." -ForegroundColor Green
 
       - name: Validate quarterly trend evidence
         if: ${{ inputs.run_release_gate && inputs.run_quarterly_pack }}
