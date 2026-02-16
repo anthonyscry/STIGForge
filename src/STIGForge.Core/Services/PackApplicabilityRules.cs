@@ -145,6 +145,24 @@ public static class PackApplicabilityRules
           new[] { "ADMX feature tags did not match detected host features." });
     }
 
+    if (IsDomainGpoPack(input.PackName, input.SourceLabel, format))
+    {
+      if (input.MachineRole == RoleTemplate.DomainController)
+      {
+        return CreateDecision(
+          ApplicabilityState.Applicable,
+          ApplicabilityConfidence.High,
+          "domain_gpo_dc_role_match",
+          new[] { "Domain GPO scope matched domain controller role." });
+      }
+
+      return CreateDecision(
+        ApplicabilityState.Unknown,
+        ApplicabilityConfidence.Low,
+        "domain_gpo_requires_domain_context",
+        new[] { "Domain GPO requires domain controller context for high-confidence applicability." });
+    }
+
     if (IsSecurityBaselinePack(name, format))
     {
       if (packFeatureTags.Count == 0)
@@ -518,6 +536,20 @@ public static class PackApplicabilityRules
     return name.IndexOf("Local Policy", StringComparison.OrdinalIgnoreCase) >= 0
       || name.IndexOf("Baseline", StringComparison.OrdinalIgnoreCase) >= 0
       || name.IndexOf("LGPO", StringComparison.OrdinalIgnoreCase) >= 0;
+  }
+
+  private static bool IsDomainGpoPack(string packName, string sourceLabel, string format)
+  {
+    if (!string.Equals(format, "GPO", StringComparison.OrdinalIgnoreCase))
+      return false;
+
+    if (string.Equals(sourceLabel, "gpo_domain_import", StringComparison.OrdinalIgnoreCase))
+      return true;
+
+    var normalized = (packName ?? string.Empty).ToLowerInvariant();
+    return normalized.IndexOf("domain gpo", StringComparison.Ordinal) >= 0
+      || normalized.IndexOf("active directory domain", StringComparison.Ordinal) >= 0
+      || normalized.IndexOf("ad domain", StringComparison.Ordinal) >= 0;
   }
 
   private static bool IsFirewallDeviceScopePack(string name)

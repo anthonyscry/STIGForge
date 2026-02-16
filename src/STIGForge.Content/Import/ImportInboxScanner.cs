@@ -150,14 +150,22 @@ public sealed class ImportInboxScanner
     var hasAdmx = namesLower.Any(n => n.EndsWith(".admx", StringComparison.Ordinal));
     var hasLocalPolicies = namesLower.Any(n =>
       n.IndexOf("support files/local policies", StringComparison.Ordinal) >= 0);
+    var hasDomainGpoObjects = namesLower.Any(n =>
+      (n.StartsWith("gpos/", StringComparison.Ordinal)
+      || n.IndexOf("/gpos/", StringComparison.Ordinal) >= 0)
+      && n.IndexOf("/domainsysvol/gpo/", StringComparison.Ordinal) >= 0);
+    var hasGpo = hasLocalPolicies || hasDomainGpoObjects;
 
-    if (hasLocalPolicies)
+    if (hasGpo)
     {
       var candidate = CreateCandidate(zipPath, fileName, sha256, importedFrom, isNiwcEnhanced);
       candidate.ArtifactKind = ImportArtifactKind.Gpo;
       candidate.Confidence = DetectionConfidence.High;
       candidate.ContentKey = "gpo:" + Path.GetFileNameWithoutExtension(zipPath).ToLowerInvariant();
-      candidate.Reasons.Add("Detected .Support Files/Local Policies content.");
+      if (hasLocalPolicies)
+        candidate.Reasons.Add("Detected .Support Files/Local Policies content.");
+      if (hasDomainGpoObjects)
+        candidate.Reasons.Add("Detected domain GPO structure under /gpos/ (DomainSysvol/GPO).");
       AddUniqueCandidate(candidates, seen, candidate);
     }
 

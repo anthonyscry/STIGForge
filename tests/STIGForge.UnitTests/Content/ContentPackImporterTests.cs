@@ -118,10 +118,10 @@ public sealed class ContentPackImporterTests : IDisposable
     var importer = CreateImporter(out var packsMock, out var controlsMock);
     var imported = await importer.ImportAdmxTemplatesFromZipAsync(zipPath, "admx_template_import", CancellationToken.None);
 
-    Assert.Equal(2, imported.Count);
-    Assert.All(imported, pack => Assert.StartsWith("ADMX Templates - ", pack.Name, StringComparison.OrdinalIgnoreCase));
-    packsMock.Verify(p => p.SaveAsync(It.IsAny<ContentPack>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
-    controlsMock.Verify(c => c.SaveControlsAsync(It.IsAny<string>(), It.Is<IReadOnlyList<ControlRecord>>(list => list.Count > 0), It.IsAny<CancellationToken>()), Times.Exactly(2));
+    Assert.Single(imported);
+    Assert.All(imported, pack => Assert.Equal("admx templates", pack.Name, ignoreCase: true));
+    packsMock.Verify(p => p.SaveAsync(It.IsAny<ContentPack>(), It.IsAny<CancellationToken>()), Times.Once);
+    controlsMock.Verify(c => c.SaveControlsAsync(It.IsAny<string>(), It.Is<IReadOnlyList<ControlRecord>>(list => list.Count > 0), It.IsAny<CancellationToken>()), Times.Once);
   }
 
   [Fact]
@@ -152,8 +152,60 @@ public sealed class ContentPackImporterTests : IDisposable
     var importer = CreateImporter(out var packsMock, out var controlsMock);
     var imported = await importer.ImportAdmxTemplatesFromZipAsync(outerZipPath, "admx_template_import", CancellationToken.None);
 
+    Assert.Single(imported);
+    Assert.All(imported, pack => Assert.Equal("admx templates", pack.Name, ignoreCase: true));
+    packsMock.Verify(p => p.SaveAsync(It.IsAny<ContentPack>(), It.IsAny<CancellationToken>()), Times.Once);
+    controlsMock.Verify(c => c.SaveControlsAsync(It.IsAny<string>(), It.Is<IReadOnlyList<ControlRecord>>(list => list.Count > 0), It.IsAny<CancellationToken>()), Times.Once);
+  }
+
+  [Fact]
+  public async Task ImportAdmxTemplatesFromZipAsync_GroupsByTemplateFolder_NotPerFile()
+  {
+    var zipPath = await CreateScopedAdmxTemplatesZipAsync();
+
+    var importer = CreateImporter(out var packsMock, out var controlsMock);
+    var imported = await importer.ImportAdmxTemplatesFromZipAsync(zipPath, "admx_template_import", CancellationToken.None);
+
     Assert.Equal(2, imported.Count);
     Assert.All(imported, pack => Assert.StartsWith("ADMX Templates - ", pack.Name, StringComparison.OrdinalIgnoreCase));
+    Assert.DoesNotContain(imported, pack => pack.Name.IndexOf("misc", StringComparison.OrdinalIgnoreCase) >= 0);
+    Assert.DoesNotContain(imported, pack => pack.Name.IndexOf("rogue", StringComparison.OrdinalIgnoreCase) >= 0);
+    Assert.Contains(imported, pack => pack.Name.Equals("ADMX Templates - Microsoft", StringComparison.OrdinalIgnoreCase));
+    Assert.Contains(imported, pack => pack.Name.Equals("ADMX Templates - Office 2016-2019-M365", StringComparison.OrdinalIgnoreCase));
+    packsMock.Verify(p => p.SaveAsync(It.IsAny<ContentPack>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+    controlsMock.Verify(c => c.SaveControlsAsync(It.IsAny<string>(), It.Is<IReadOnlyList<ControlRecord>>(list => list.Count > 0), It.IsAny<CancellationToken>()), Times.Exactly(2));
+  }
+
+  [Fact]
+  public async Task ImportAdmxTemplatesFromZipAsync_StrictScope_IgnoresAdmxOutsideAdmxTemplatesFolder()
+  {
+    var zipPath = await CreateScopedAdmxTemplatesZipAsync();
+
+    var importer = CreateImporter(out var packsMock, out var controlsMock);
+    var imported = await importer.ImportAdmxTemplatesFromZipAsync(zipPath, "admx_template_import", CancellationToken.None);
+
+    Assert.Equal(2, imported.Count);
+    Assert.All(imported, pack => Assert.StartsWith("ADMX Templates - ", pack.Name, StringComparison.OrdinalIgnoreCase));
+    Assert.DoesNotContain(imported, pack => pack.Name.IndexOf("misc", StringComparison.OrdinalIgnoreCase) >= 0);
+    Assert.DoesNotContain(imported, pack => pack.Name.IndexOf("rogue", StringComparison.OrdinalIgnoreCase) >= 0);
+    packsMock.Verify(p => p.SaveAsync(It.IsAny<ContentPack>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+    controlsMock.Verify(c => c.SaveControlsAsync(It.IsAny<string>(), It.Is<IReadOnlyList<ControlRecord>>(list => list.Count > 0), It.IsAny<CancellationToken>()), Times.Exactly(2));
+  }
+
+  [Fact]
+  public async Task ImportAdmxTemplatesFromZipAsync_StrictScope_WithWrapperRoot_GroupsByScopedTemplateFolderAndIgnoresRogue()
+  {
+    var zipPath = await CreateScopedAdmxTemplatesZipAsync(includeWrapperRoot: true);
+
+    var importer = CreateImporter(out var packsMock, out var controlsMock);
+    var imported = await importer.ImportAdmxTemplatesFromZipAsync(zipPath, "admx_template_import", CancellationToken.None);
+
+    Assert.Equal(new[]
+    {
+      "ADMX Templates - Microsoft",
+      "ADMX Templates - Office 2016-2019-M365"
+    }, imported.Select(pack => pack.Name).ToArray());
+    Assert.DoesNotContain(imported, pack => pack.Name.IndexOf("rogue", StringComparison.OrdinalIgnoreCase) >= 0);
     packsMock.Verify(p => p.SaveAsync(It.IsAny<ContentPack>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
     controlsMock.Verify(c => c.SaveControlsAsync(It.IsAny<string>(), It.Is<IReadOnlyList<ControlRecord>>(list => list.Count > 0), It.IsAny<CancellationToken>()), Times.Exactly(2));
   }
@@ -369,6 +421,98 @@ public sealed class ContentPackImporterTests : IDisposable
     controlsMock.Verify(c => c.SaveControlsAsync(It.IsAny<string>(), It.Is<IReadOnlyList<ControlRecord>>(list => list.Count > 0), It.IsAny<CancellationToken>()), Times.AtLeastOnce());
   }
 
+  [Fact]
+  public async Task ImportConsolidatedZipAsync_SplitsLocalPoliciesByOsAndDomainPoliciesByDomain_WithoutOuterPack()
+  {
+    var zipPath = Path.Combine(_tempRoot, "consolidated-scoped-breakout.zip");
+    using (var archive = ZipFile.Open(zipPath, ZipArchiveMode.Create))
+    {
+      var windows11 = archive.CreateEntry("Support Files/Local Policies/Windows 11/local.pol");
+      await using (var writer = new StreamWriter(windows11.Open()))
+      {
+        await writer.WriteAsync("stub");
+      }
+
+      var windowsServer = archive.CreateEntry("Support Files/Local Policies/Windows Server 2022/local.pol");
+      await using (var writer = new StreamWriter(windowsServer.Open()))
+      {
+        await writer.WriteAsync("stub");
+      }
+
+      var domainRegistry = archive.CreateEntry("gpos/example.com/DomainSysvol/GPO/{12345678-1234-1234-1234-1234567890AB}/Machine/registry.pol");
+      await using (var writer = new StreamWriter(domainRegistry.Open()))
+      {
+        await writer.WriteAsync("stub");
+      }
+    }
+
+    var importer = CreateImporter(out var packsMock, out _);
+    var imported = await importer.ImportConsolidatedZipAsync(zipPath, "gpo_lgpo_import", CancellationToken.None);
+
+    Assert.Equal(3, imported.Count);
+    Assert.Contains(imported, pack => pack.Name.Contains("Local Policy - Windows 11", StringComparison.Ordinal));
+    Assert.Contains(imported, pack => pack.Name.Contains("Local Policy - Windows Server 2022", StringComparison.Ordinal));
+    Assert.Contains(imported, pack => pack.Name.Contains("Domain GPO - example.com", StringComparison.Ordinal));
+
+    Assert.Contains(imported, pack => pack.Name.Contains("Local Policy - Windows 11", StringComparison.Ordinal)
+      && string.Equals(pack.SourceLabel, "gpo_lgpo_import", StringComparison.Ordinal));
+    Assert.Contains(imported, pack => pack.Name.Contains("Local Policy - Windows Server 2022", StringComparison.Ordinal)
+      && string.Equals(pack.SourceLabel, "gpo_lgpo_import", StringComparison.Ordinal));
+    Assert.Contains(imported, pack => pack.Name.Contains("Domain GPO - example.com", StringComparison.Ordinal)
+      && string.Equals(pack.SourceLabel, "gpo_domain_import", StringComparison.Ordinal));
+
+    var outerBaseName = Path.GetFileNameWithoutExtension(zipPath);
+    Assert.DoesNotContain(imported, pack => string.Equals(pack.Name, outerBaseName, StringComparison.OrdinalIgnoreCase));
+
+    packsMock.Verify(p => p.SaveAsync(It.IsAny<ContentPack>(), It.IsAny<CancellationToken>()), Times.Exactly(3));
+  }
+
+  [Fact]
+  public async Task ImportConsolidatedZipAsync_SplitsDottedLocalPoliciesByOsAndDomainPoliciesByDomain_WithoutOuterPack()
+  {
+    var zipPath = Path.Combine(_tempRoot, "consolidated-scoped-breakout-dotted-local.zip");
+    using (var archive = ZipFile.Open(zipPath, ZipArchiveMode.Create))
+    {
+      var windows11 = archive.CreateEntry(".Support Files/Local Policies/Windows 11/local.pol");
+      await using (var writer = new StreamWriter(windows11.Open()))
+      {
+        await writer.WriteAsync("stub");
+      }
+
+      var windowsServer = archive.CreateEntry(".Support Files/Local Policies/Windows Server 2022/local.pol");
+      await using (var writer = new StreamWriter(windowsServer.Open()))
+      {
+        await writer.WriteAsync("stub");
+      }
+
+      var domainRegistry = archive.CreateEntry("gpos/example.com/DomainSysvol/GPO/{12345678-1234-1234-1234-1234567890AB}/Machine/registry.pol");
+      await using (var writer = new StreamWriter(domainRegistry.Open()))
+      {
+        await writer.WriteAsync("stub");
+      }
+    }
+
+    var importer = CreateImporter(out var packsMock, out _);
+    var imported = await importer.ImportConsolidatedZipAsync(zipPath, "gpo_lgpo_import", CancellationToken.None);
+
+    Assert.Equal(3, imported.Count);
+    Assert.Contains(imported, pack => pack.Name.Contains("Local Policy - Windows 11", StringComparison.Ordinal));
+    Assert.Contains(imported, pack => pack.Name.Contains("Local Policy - Windows Server 2022", StringComparison.Ordinal));
+    Assert.Contains(imported, pack => pack.Name.Contains("Domain GPO - example.com", StringComparison.Ordinal));
+
+    Assert.Contains(imported, pack => pack.Name.Contains("Local Policy - Windows 11", StringComparison.Ordinal)
+      && string.Equals(pack.SourceLabel, "gpo_lgpo_import", StringComparison.Ordinal));
+    Assert.Contains(imported, pack => pack.Name.Contains("Local Policy - Windows Server 2022", StringComparison.Ordinal)
+      && string.Equals(pack.SourceLabel, "gpo_lgpo_import", StringComparison.Ordinal));
+    Assert.Contains(imported, pack => pack.Name.Contains("Domain GPO - example.com", StringComparison.Ordinal)
+      && string.Equals(pack.SourceLabel, "gpo_domain_import", StringComparison.Ordinal));
+
+    var outerBaseName = Path.GetFileNameWithoutExtension(zipPath);
+    Assert.DoesNotContain(imported, pack => string.Equals(pack.Name, outerBaseName, StringComparison.OrdinalIgnoreCase));
+
+    packsMock.Verify(p => p.SaveAsync(It.IsAny<ContentPack>(), It.IsAny<CancellationToken>()), Times.Exactly(3));
+  }
+
   private ContentPackImporter CreateImporter(out Mock<IContentPackRepository> packsMock, out Mock<IControlRepository> controlsMock)
   {
     var pathsMock = new Mock<IPathBuilder>();
@@ -409,6 +553,40 @@ public sealed class ContentPackImporterTests : IDisposable
       await using var entryStream = entry.Open();
       await using var fixtureStream = File.OpenRead(fixturePath);
       await fixtureStream.CopyToAsync(entryStream);
+    }
+
+    return zipPath;
+  }
+
+  private async Task<string> CreateScopedAdmxTemplatesZipAsync(bool includeWrapperRoot = false)
+  {
+    var zipPath = Path.Combine(_tempRoot, "admx-templates-scoped.zip");
+    using var archive = ZipFile.Open(zipPath, ZipArchiveMode.Create);
+
+    var rootPrefix = includeWrapperRoot ? "wrapper/export/" : string.Empty;
+
+    var windowsAdmx = archive.CreateEntry(rootPrefix + "ADMX Templates/Microsoft/windows.admx");
+    await using (var writer = new StreamWriter(windowsAdmx.Open()))
+    {
+      await writer.WriteAsync(CreateMinimalAdmx("WindowsPolicy"));
+    }
+
+    var edgeAdmx = archive.CreateEntry(rootPrefix + "ADMX Templates/Microsoft/edge.admx");
+    await using (var writer = new StreamWriter(edgeAdmx.Open()))
+    {
+      await writer.WriteAsync(CreateMinimalAdmx("EdgePolicy"));
+    }
+
+    var officeAdmx = archive.CreateEntry(rootPrefix + "ADMX Templates/Office 2016-2019-M365/office.admx");
+    await using (var writer = new StreamWriter(officeAdmx.Open()))
+    {
+      await writer.WriteAsync(CreateMinimalAdmx("OfficePolicy"));
+    }
+
+    var rogueAdmx = archive.CreateEntry(rootPrefix + "misc/rogue.admx");
+    await using (var writer = new StreamWriter(rogueAdmx.Open()))
+    {
+      await writer.WriteAsync(CreateMinimalAdmx("RoguePolicy"));
     }
 
     return zipPath;

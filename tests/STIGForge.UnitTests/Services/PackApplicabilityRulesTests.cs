@@ -268,4 +268,48 @@ public class PackApplicabilityRulesTests
     decision.Confidence.Should().Be(ApplicabilityConfidence.High);
     decision.ReasonCode.Should().Be("admx_microsoft_windows");
   }
+
+  [Fact]
+  public void Evaluate_DomainGpo_OnWorkstation_ReturnsUnknown()
+  {
+    var input = new PackApplicabilityInput
+    {
+      PackName = "Domain GPO - Active Directory Domain Security Baseline",
+      SourceLabel = "gpo_domain_import",
+      Format = "GPO",
+      MachineOs = OsTarget.Win11,
+      MachineRole = RoleTemplate.Workstation,
+      InstalledFeatures = Array.Empty<string>(),
+      ControlOsTargets = Array.Empty<OsTarget>(),
+      HostSignals = Array.Empty<string>()
+    };
+
+    var decision = PackApplicabilityRules.Evaluate(input);
+
+    decision.State.Should().Be(ApplicabilityState.Unknown);
+    decision.Confidence.Should().Be(ApplicabilityConfidence.Low);
+    decision.ReasonCode.Should().Be("domain_gpo_requires_domain_context");
+  }
+
+  [Fact]
+  public void Evaluate_DomainGpo_OnDomainController_ReturnsApplicableHigh()
+  {
+    var input = new PackApplicabilityInput
+    {
+      PackName = "Domain GPO - Active Directory Domain Security Baseline",
+      SourceLabel = "gpo_domain_import",
+      Format = "GPO",
+      MachineOs = OsTarget.Server2022,
+      MachineRole = RoleTemplate.DomainController,
+      InstalledFeatures = Array.Empty<string>(),
+      ControlOsTargets = Array.Empty<OsTarget>(),
+      HostSignals = Array.Empty<string>()
+    };
+
+    var decision = PackApplicabilityRules.Evaluate(input);
+
+    decision.State.Should().Be(ApplicabilityState.Applicable);
+    decision.Confidence.Should().Be(ApplicabilityConfidence.High);
+    decision.ReasonCode.Should().Be("domain_gpo_dc_role_match");
+  }
 }
