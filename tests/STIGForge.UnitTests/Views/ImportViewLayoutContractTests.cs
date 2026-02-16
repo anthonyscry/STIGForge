@@ -48,6 +48,17 @@ public sealed class ImportViewLayoutContractTests
   }
 
   [Fact]
+  public void ImportView_BindsWorkspaceCollections()
+  {
+    var xaml = LoadImportViewXaml();
+
+    Assert.Contains("{Binding AutoImportQueueRows}", xaml, StringComparison.Ordinal);
+    Assert.Contains("{Binding ClassificationResultRows}", xaml, StringComparison.Ordinal);
+    Assert.Contains("{Binding ExceptionQueueRows}", xaml, StringComparison.Ordinal);
+    Assert.Contains("{Binding ImportActivityLogRows}", xaml, StringComparison.Ordinal);
+  }
+
+  [Fact]
   public void ImportView_UsesTextWrappingOnLongStatusAndDetailFields()
   {
     var xaml = LoadImportViewXaml();
