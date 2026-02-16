@@ -41,6 +41,11 @@ Manage imported DISA STIG content packs.
 - Import tab presentation emphasizes four zones: **Primary Actions**, **Machine Context**, **Content Library**, and **Pack Details**.
 - Command bindings and behavior are unchanged; this update is presentation-only for scannability.
 
+**Auto import workflow**:
+- The import pipeline auto-processes archive files dropped in the project `import/` folder.
+- The import workspace is split into four subtabs: **Auto Import**, **Classification Results**, **Exceptions Queue**, and **Activity Log**.
+- Clean packs auto-commit into the content library, while hard blockers are routed to the **Exceptions Queue** for operator action.
+
 **Diff Output**:
 - Comparison opens a dedicated diff viewer with Added, Removed, Changed, and Review Required tabs.
 - Use **Export Markdown** for operator-readable review output.
