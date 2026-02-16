@@ -15,7 +15,7 @@ Solo developer + Claude execution, phase-by-phase delivery with small executable
 - Current milestone: `v1.1` (execution active)
 - Starting phase index: `08`
 - Requirement source: `.planning/REQUIREMENTS.md`
-- Next action: plan and execute gap-closure phases starting at Phase 12
+- Next action: plan and execute gap-closure phases starting at Phase 13
 
 ---
 
@@ -93,16 +93,16 @@ Exit Criteria:
 
 ### Phase 12: WPF Parity Evidence Promotion and Verification
 
-**Status:** Planned
+**Status:** Completed (2026-02-16)
 **Goal:** Close WPF parity evidence gaps by adding explicit WPF workflow contract evidence to promotion artifacts and verification outputs.
 **Requirements:** `WP-01`, `WP-02`, `WP-03`
 **Gap Closure:** Requirement orphaning and integration/flow gaps for explicit WPF parity evidence promotion.
 **Plans:** 3/3 plans complete
 
 Plans:
-- [ ] 12-wpf-parity-evidence-promotion-and-verification-01-PLAN.md - Backfill Phase 09 WP verification artifact and summary metadata for three-source closure inputs.
-- [ ] 12-wpf-parity-evidence-promotion-and-verification-02-PLAN.md - Promote explicit WPF workflow/severity/recovery contract signals into release-gate, workflows, and package evidence wiring.
-- [x] 12-wpf-parity-evidence-promotion-and-verification-03-PLAN.md - Create Phase 12 verification closure artifact and reconcile WP traceability status fail-closed. (completed 2026-02-16)
+- [x] 12-wpf-parity-evidence-promotion-and-verification-01-PLAN.md - Backfill Phase 09 WP verification artifact and summary metadata for three-source closure inputs.
+- [x] 12-wpf-parity-evidence-promotion-and-verification-02-PLAN.md - Promote explicit WPF workflow/severity/recovery contract signals into release-gate, workflows, and package evidence wiring.
+- [x] 12-wpf-parity-evidence-promotion-and-verification-03-PLAN.md - Create Phase 12 verification closure artifact and reconcile WP traceability status fail-closed.
 
 Exit Criteria:
 - Phase 09 verification artifact exists and maps WP requirement evidence.

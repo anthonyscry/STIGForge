@@ -12,15 +12,16 @@ Build -> Apply -> Verify -> Prove.
 - Deterministic release gate, compatibility regression, upgrade/rebase validation, and reproducibility evidence are in place.
 - Core operator workflow, export integrity, and security hardening are implemented for offline/air-gapped environments.
 - Phase 11 verification backfill closed UR orphaning with machine-verifiable cross-source requirement closure evidence.
+- Phase 12 evidence promotion closed WP orphaning with explicit WPF workflow/severity/recovery contract signals wired through release and packaging evidence.
 
 ## Current Milestone: v1.1 (Execution)
 
-**Goal:** Close remaining v1.1 gap-closure phases and preserve fail-closed release readiness evidence.
+**Goal:** Complete the final v1.1 gap-closure phase and preserve fail-closed release readiness evidence.
 
 **Initial focus candidates:**
-- Promote explicit WPF parity evidence through verification and release artifacts (Phase 12).
 - Enforce mandatory fail-closed release-package behavior with restored QA verification evidence (Phase 13).
 - Keep requirement traceability machine-verifiable across summaries, verification reports, and roadmap artifacts.
+- Close remaining manual go/no-go checklist blockers with explicit signoff evidence.
 
 ## Locked Technical Decisions
 
@@ -54,4 +55,4 @@ Build -> Apply -> Verify -> Prove.
 - New milestone requirements are explicitly tracked and mapped to planned phases.
 
 ---
-*Last updated: 2026-02-16 after Phase 11 completion and transition to Phase 12*
+*Last updated: 2026-02-16 after Phase 12 completion and transition to Phase 13*
