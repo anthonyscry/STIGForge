@@ -24,9 +24,6 @@ docker compose -f docker-compose.tests.yml build
 docker compose -f docker-compose.tests.yml run --rm unit-tests
 ```
 
-  This command excludes one ACL-permission test that is host-permission dependent on Linux:
-  `ScanAsync_SkipsInaccessibleSubdirectoryAndContinues`.
-
 - Full integration suite (`net8.0` lane):
 
 ```bash

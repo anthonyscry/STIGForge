@@ -237,6 +237,9 @@ public sealed class ImportInboxScannerTests : IDisposable
     {
       File.SetUnixFileMode(blockedDir, UnixFileMode.UserWrite | UnixFileMode.UserExecute);
 
+      if (CanEnumerateDirectory(blockedDir))
+        return;
+
       var scanner = new ImportInboxScanner(new TestHashingService());
       var result = await scanner.ScanAsync(_tempRoot, CancellationToken.None);
 
@@ -250,6 +253,23 @@ public sealed class ImportInboxScannerTests : IDisposable
         UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute |
         UnixFileMode.GroupRead | UnixFileMode.GroupWrite | UnixFileMode.GroupExecute |
         UnixFileMode.OtherRead | UnixFileMode.OtherWrite | UnixFileMode.OtherExecute);
+    }
+  }
+
+  private static bool CanEnumerateDirectory(string path)
+  {
+    try
+    {
+      _ = Directory.GetFiles(path, "*", SearchOption.TopDirectoryOnly);
+      return true;
+    }
+    catch (UnauthorizedAccessException)
+    {
+      return false;
+    }
+    catch (IOException)
+    {
+      return false;
     }
   }
 

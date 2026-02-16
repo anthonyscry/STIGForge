@@ -29,8 +29,6 @@ services:
       - --configuration
       - Release
       - --nologo
-      - --filter
-      - "FullyQualifiedName!~ScanAsync_SkipsInaccessibleSubdirectoryAndContinues"
       - --results-directory
       - /workspace/.artifacts/test-results
       - --logger

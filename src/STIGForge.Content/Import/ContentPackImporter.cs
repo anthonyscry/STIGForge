@@ -202,8 +202,7 @@ public sealed class ContentPackImporter
                 .Select(path => new
                 {
                     FullPath = path,
-                    Segments = Path
-                        .GetRelativePath(extractionRoot, path)
+                    Segments = GetRelativePathCompat(extractionRoot, path)
                         .Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries)
                 })
                 .Select(entry => new
@@ -244,7 +243,7 @@ public sealed class ContentPackImporter
                     {
                         ct.ThrowIfCancellationRequested();
 
-                        var relativeInFolder = Path.Combine(admxFile.Segments.Skip(admxFile.ScopeIndex + 2).ToArray());
+                        var relativeInFolder = CombinePathSegments(admxFile.Segments.Skip(admxFile.ScopeIndex + 2));
                         var destination = Path.Combine(templateRoot, relativeInFolder);
                         var destinationDir = Path.GetDirectoryName(destination);
                         if (!string.IsNullOrWhiteSpace(destinationDir))
@@ -977,7 +976,7 @@ public sealed class ContentPackImporter
             if (string.IsNullOrWhiteSpace(fileDirectory))
                 continue;
 
-            var relativeDirectoryPath = Path.GetRelativePath(extractionRoot, fileDirectory);
+            var relativeDirectoryPath = GetRelativePathCompat(extractionRoot, fileDirectory);
             var segments = relativeDirectoryPath.Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries);
 
             for (var i = 0; i < segments.Length; i++)
@@ -991,7 +990,7 @@ public sealed class ContentPackImporter
                     if (!string.IsNullOrWhiteSpace(scope) && !localByScope.ContainsKey(scope))
                     {
                         var rootSegments = segments.Take(i + 3).ToArray();
-                        localByScope[scope] = Path.Combine(extractionRoot, Path.Combine(rootSegments));
+                        localByScope[scope] = Path.Combine(extractionRoot, CombinePathSegments(rootSegments));
                     }
 
                     break;
@@ -1004,7 +1003,7 @@ public sealed class ContentPackImporter
                     if (!string.IsNullOrWhiteSpace(scope) && !domainByScope.ContainsKey(scope))
                     {
                         var rootSegments = segments.Take(i + 2).ToArray();
-                        domainByScope[scope] = Path.Combine(extractionRoot, Path.Combine(rootSegments));
+                        domainByScope[scope] = Path.Combine(extractionRoot, CombinePathSegments(rootSegments));
                     }
 
                     break;
@@ -1020,6 +1019,50 @@ public sealed class ContentPackImporter
             .Select(kvp => (kvp.Value, "Domain GPO - " + kvp.Key, "gpo_domain_import"));
 
         return localRoots.Concat(domainRoots).ToList();
+    }
+
+    private static string GetRelativePathCompat(string relativeTo, string path)
+    {
+        if (string.IsNullOrWhiteSpace(relativeTo))
+            return path ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(path))
+            return string.Empty;
+
+        var relativeRoot = Path.GetFullPath(relativeTo);
+        var targetPath = Path.GetFullPath(path);
+
+        if (!relativeRoot.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal)
+            && !relativeRoot.EndsWith(Path.AltDirectorySeparatorChar.ToString(), StringComparison.Ordinal))
+        {
+            relativeRoot += Path.DirectorySeparatorChar;
+        }
+
+        var relativeRootUri = new Uri(relativeRoot, UriKind.Absolute);
+        var targetPathUri = new Uri(targetPath, UriKind.Absolute);
+        if (!string.Equals(relativeRootUri.Scheme, targetPathUri.Scheme, StringComparison.OrdinalIgnoreCase))
+            return path;
+
+        var relative = Uri.UnescapeDataString(relativeRootUri.MakeRelativeUri(targetPathUri).ToString())
+            .Replace('/', Path.DirectorySeparatorChar);
+
+        return relative;
+    }
+
+    private static string CombinePathSegments(IEnumerable<string> segments)
+    {
+        var segmentList = segments
+            .Where(segment => !string.IsNullOrWhiteSpace(segment))
+            .ToList();
+
+        if (segmentList.Count == 0)
+            return string.Empty;
+
+        var combined = segmentList[0];
+        for (var i = 1; i < segmentList.Count; i++)
+            combined = Path.Combine(combined, segmentList[i]);
+
+        return combined;
     }
 
     private static int? ParseYear(string text)

@@ -538,7 +538,7 @@ public static class PackApplicabilityRules
       || name.IndexOf("LGPO", StringComparison.OrdinalIgnoreCase) >= 0;
   }
 
-  private static bool IsDomainGpoPack(string packName, string sourceLabel, string format)
+  private static bool IsDomainGpoPack(string? packName, string? sourceLabel, string format)
   {
     if (!string.Equals(format, "GPO", StringComparison.OrdinalIgnoreCase))
       return false;
