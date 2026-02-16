@@ -97,13 +97,7 @@ public static class ImportQueuePlanner
     ImportProcessedArtifactLedger? processedLedger,
     PlannedContentImport operation)
   {
-    if (processedLedger == null)
-    {
-      plan.Add(operation);
-      return;
-    }
-
-    if (!processedLedger.TryBegin(operation.Sha256, operation.Route))
+    if (processedLedger != null && processedLedger.IsProcessed(operation.Sha256, operation.Route))
       return;
 
     plan.Add(operation);

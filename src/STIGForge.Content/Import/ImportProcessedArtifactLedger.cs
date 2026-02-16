@@ -4,15 +4,15 @@ public sealed class ImportProcessedArtifactLedger
 {
   private readonly HashSet<string> _keys = new(StringComparer.OrdinalIgnoreCase);
 
-  public bool TryBegin(string sha256, ContentImportRoute route)
+  public bool IsProcessed(string sha256, ContentImportRoute route)
   {
-    if (string.IsNullOrWhiteSpace(sha256))
-    {
-      throw new ArgumentException("SHA-256 is required.", nameof(sha256));
-    }
+    var key = BuildKey(sha256, route);
+    return _keys.Contains(key);
+  }
 
-    var normalized = sha256.Trim();
-    var key = route + ":" + normalized;
+  public bool MarkProcessed(string sha256, ContentImportRoute route)
+  {
+    var key = BuildKey(sha256, route);
     return _keys.Add(key);
   }
 
@@ -59,5 +59,14 @@ public sealed class ImportProcessedArtifactLedger
 
     normalized = route + ":" + hashToken;
     return true;
+  }
+
+  private static string BuildKey(string sha256, ContentImportRoute route)
+  {
+    if (string.IsNullOrWhiteSpace(sha256))
+      throw new ArgumentException("SHA-256 is required.", nameof(sha256));
+
+    var normalized = sha256.Trim();
+    return route + ":" + normalized;
   }
 }

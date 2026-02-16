@@ -200,6 +200,8 @@ public partial class MainViewModel
           IncrementImportedType(importedByType, planned.ArtifactKind.ToString(), imported.Count);
           foreach (var pack in imported)
             AddImportedPack(pack);
+
+          _importProcessedArtifactLedger.MarkProcessed(planned.Sha256, planned.Route);
         }
         catch (Exception ex)
         {

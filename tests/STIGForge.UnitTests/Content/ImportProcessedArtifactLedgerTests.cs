@@ -5,54 +5,66 @@ namespace STIGForge.UnitTests.Content;
 public sealed class ImportProcessedArtifactLedgerTests
 {
   [Fact]
-  public void TryBegin_SameHashAndRoute_OnlyFirstRunProcesses()
+  public void MarkProcessed_SameHashAndRoute_OnlyFirstRunProcesses()
   {
     var ledger = new ImportProcessedArtifactLedger();
 
-    var first = ledger.TryBegin("ABC123", ContentImportRoute.ConsolidatedZip);
-    var second = ledger.TryBegin(" abc123 ", ContentImportRoute.ConsolidatedZip);
+    var first = ledger.MarkProcessed("ABC123", ContentImportRoute.ConsolidatedZip);
+    var second = ledger.MarkProcessed(" abc123 ", ContentImportRoute.ConsolidatedZip);
 
     Assert.True(first);
     Assert.False(second);
   }
 
   [Fact]
-  public void TryBegin_SameHashDifferentRoute_TreatsAsDistinctWorkItems()
+  public void MarkProcessed_SameHashDifferentRoute_TreatsAsDistinctWorkItems()
   {
     var ledger = new ImportProcessedArtifactLedger();
 
-    var first = ledger.TryBegin("ABC123", ContentImportRoute.ConsolidatedZip);
-    var second = ledger.TryBegin("abc123", ContentImportRoute.AdmxTemplatesFromZip);
+    var first = ledger.MarkProcessed("ABC123", ContentImportRoute.ConsolidatedZip);
+    var second = ledger.MarkProcessed("abc123", ContentImportRoute.AdmxTemplatesFromZip);
 
     Assert.True(first);
     Assert.True(second);
   }
 
   [Fact]
-  public void TryBegin_NullHash_ThrowsArgumentException()
+  public void MarkProcessed_NullHash_ThrowsArgumentException()
   {
     var ledger = new ImportProcessedArtifactLedger();
 
-    Assert.Throws<ArgumentException>(() => ledger.TryBegin(null!, ContentImportRoute.ConsolidatedZip));
+    Assert.Throws<ArgumentException>(() => ledger.MarkProcessed(null!, ContentImportRoute.ConsolidatedZip));
   }
 
   [Theory]
   [InlineData("")]
   [InlineData("   ")]
-  public void TryBegin_EmptyOrWhitespaceHash_ThrowsArgumentException(string sha256)
+  public void MarkProcessed_EmptyOrWhitespaceHash_ThrowsArgumentException(string sha256)
   {
     var ledger = new ImportProcessedArtifactLedger();
 
-    Assert.Throws<ArgumentException>(() => ledger.TryBegin(sha256, ContentImportRoute.ConsolidatedZip));
+    Assert.Throws<ArgumentException>(() => ledger.MarkProcessed(sha256, ContentImportRoute.ConsolidatedZip));
+  }
+
+  [Fact]
+  public void IsProcessed_ReturnsFalseUntilMarkProcessedRuns()
+  {
+    var ledger = new ImportProcessedArtifactLedger();
+
+    Assert.False(ledger.IsProcessed("ABC123", ContentImportRoute.ConsolidatedZip));
+
+    ledger.MarkProcessed("ABC123", ContentImportRoute.ConsolidatedZip);
+
+    Assert.True(ledger.IsProcessed(" abc123 ", ContentImportRoute.ConsolidatedZip));
   }
 
   [Fact]
   public void Snapshot_ReturnsCaseInsensitiveSortedKeys()
   {
     var ledger = new ImportProcessedArtifactLedger();
-    ledger.TryBegin("bbb", ContentImportRoute.ConsolidatedZip);
-    ledger.TryBegin("AAA", ContentImportRoute.ConsolidatedZip);
-    ledger.TryBegin("ccc", ContentImportRoute.AdmxTemplatesFromZip);
+    ledger.MarkProcessed("bbb", ContentImportRoute.ConsolidatedZip);
+    ledger.MarkProcessed("AAA", ContentImportRoute.ConsolidatedZip);
+    ledger.MarkProcessed("ccc", ContentImportRoute.AdmxTemplatesFromZip);
 
     var snapshot = ledger.Snapshot();
 
@@ -70,7 +82,7 @@ public sealed class ImportProcessedArtifactLedgerTests
   public void Load_ClearsExistingAndNormalizesKeys()
   {
     var ledger = new ImportProcessedArtifactLedger();
-    ledger.TryBegin("existing", ContentImportRoute.ConsolidatedZip);
+    ledger.MarkProcessed("existing", ContentImportRoute.ConsolidatedZip);
 
     ledger.Load(new[]
     {

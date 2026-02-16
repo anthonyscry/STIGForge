@@ -154,7 +154,7 @@ public sealed class ImportInboxScannerTests : IDisposable
   }
 
   [Fact]
-  public async Task ScanAsync_RepeatedScanWithLedger_DoesNotRequeueAlreadyProcessedRouteAndHash()
+  public async Task ScanAsync_RepeatedScanWithLedger_RequeuesUntilMarkedProcessed()
   {
     var zipPath = Path.Combine(_tempRoot, "repeatable.zip");
     using (var archive = ZipFile.Open(zipPath, ZipArchiveMode.Create))
@@ -179,7 +179,13 @@ public sealed class ImportInboxScannerTests : IDisposable
     var secondPlan = ImportQueuePlanner.BuildContentImportPlan(secondWinners, ledger);
 
     Assert.Single(firstPlan);
-    Assert.Empty(secondPlan);
+    Assert.Single(secondPlan);
+
+    var first = firstPlan.Single();
+    ledger.MarkProcessed(first.Sha256, first.Route);
+
+    var thirdPlan = ImportQueuePlanner.BuildContentImportPlan(secondWinners, ledger);
+    Assert.Empty(thirdPlan);
   }
 
   [Fact]

@@ -159,7 +159,7 @@ public sealed class ContentPackImporterTests : IDisposable
   }
 
   [Fact]
-  public void BuildContentImportPlan_WithProcessedLedger_TracksIdempotenceByRoutePlusHash()
+  public void BuildContentImportPlan_WithProcessedLedger_FiltersOnlyAfterExplicitMarkProcessed()
   {
     var winners = new List<ImportInboxCandidate>
     {
@@ -188,8 +188,14 @@ public sealed class ContentPackImporterTests : IDisposable
     var firstPlan = ImportQueuePlanner.BuildContentImportPlan(winners, ledger);
     var secondPlan = ImportQueuePlanner.BuildContentImportPlan(winners, ledger);
 
+    foreach (var planned in firstPlan)
+      ledger.MarkProcessed(planned.Sha256, planned.Route);
+
+    var thirdPlan = ImportQueuePlanner.BuildContentImportPlan(winners, ledger);
+
     Assert.Equal(2, firstPlan.Count);
-    Assert.Empty(secondPlan);
+    Assert.Equal(2, secondPlan.Count);
+    Assert.Empty(thirdPlan);
   }
 
   [Theory]

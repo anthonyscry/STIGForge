@@ -72,4 +72,36 @@ public sealed class ImportQueuePlannerTests
     Assert.Equal(ContentImportRoute.ConsolidatedZip, op.Route);
     Assert.Equal("stig_import", op.SourceLabel);
   }
+
+  [Fact]
+  public void BuildContentImportPlan_FailedThenRetriedOnlySkipsAfterSuccessfulMarkProcessed()
+  {
+    var zipPath = @"C:\import\retryable.zip";
+    var winners = new[]
+    {
+      new ImportInboxCandidate
+      {
+        ZipPath = zipPath,
+        FileName = "retryable.zip",
+        Sha256 = "retry-hash",
+        ArtifactKind = ImportArtifactKind.Stig,
+        Confidence = DetectionConfidence.High,
+        ContentKey = "stig:retryable"
+      }
+    };
+
+    var ledger = new ImportProcessedArtifactLedger();
+
+    var firstPlan = ImportQueuePlanner.BuildContentImportPlan(winners, ledger);
+    var secondPlan = ImportQueuePlanner.BuildContentImportPlan(winners, ledger);
+
+    Assert.Single(firstPlan);
+    Assert.Single(secondPlan);
+
+    var planned = firstPlan.Single();
+    ledger.MarkProcessed(planned.Sha256, planned.Route);
+
+    var thirdPlan = ImportQueuePlanner.BuildContentImportPlan(winners, ledger);
+    Assert.Empty(thirdPlan);
+  }
 }
