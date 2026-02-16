@@ -2,12 +2,12 @@
 
 ## Current Position
 
-**Phase:** v1.1-release-candidate-go-no-go (finalization)
-**Last Completed:** 10-quality-and-release-signal-hardening-02 (trend-signal promotion checks across CI/release/vm workflows)
+**Phase:** 11-verification-backfill-for-upgrade-rebase
+**Last Completed:** 11-verification-backfill-for-upgrade-rebase-01 (UR traceability closure reconciliation)
 
 **Started:** February 9, 2026
 
-Progress: ██████████████████████████████████████████████░░░░░░░░░░ (96%)
+Progress: ███████████████████████████████████████████████░░░░░░░░░ (97%)
 
 ---
 
@@ -93,6 +93,11 @@ Progress: ███████████████████████�
 - **Rationale:** Troubleshooting bundles must remain portable without leaking secrets/credentials unless operator explicitly accepts risk.
 - **Status:** Implemented (SupportBundleBuilder + BundleCommands)
 
+### Fail-Closed Requirement Closure Cross-Check
+- **Decision:** Mark UR requirements completed only when REQUIREMENTS traceability, summary `requirements-completed` metadata, and phase verification evidence all align.
+- **Rationale:** Prevent orphaned requirement closure claims and keep requirement audits machine-verifiable.
+- **Status:** Implemented (Phase 11 verification backfill for UR-01..UR-04)
+
 ---
 
 ## Pending Todos
@@ -112,6 +117,7 @@ Progress: ███████████████████████�
 - [x] Pin RC commit and regenerate release/package evidence from clean working tree
 - [x] Run `release-package.yml` for pinned RC commit (`0b0f5ed`)
 - [x] Run `vm-smoke-matrix.yml` for pinned RC commit (`0b0f5ed`) and archive outputs
+- [x] Execute `11-verification-backfill-for-upgrade-rebase-01-PLAN.md`
 
 ### Medium Priority
 - [x] Validate requirement traceability remains 100% after Phase 08 updates
@@ -147,14 +153,14 @@ Progress: ███████████████████████�
 
 ## Session Continuity
 
-**Last session:** 2026-02-09T08:39:00Z
-**Stopped at:** Brought up temporary self-hosted runners, executed `vm-smoke-matrix.yml` successfully for commit `0b0f5ed`, and refreshed go/no-go evidence references.
+**Last session:** 2026-02-16T22:50:48.189Z
+**Stopped at:** Completed 11-01-PLAN.md
 **Resume file:** None
 
 ---
 
 ## Last Updated
 
-**Date:** February 9, 2026
+**Date:** February 16, 2026
 **Updated By:** OpenCode Executor
-**Reason:** Closed automation-side workflow blockers; remaining work is manual release checklist signoff
+**Reason:** Completed Phase 11 Plan 01 verification backfill and UR closure traceability reconciliation
