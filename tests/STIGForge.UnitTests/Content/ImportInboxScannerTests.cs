@@ -86,6 +86,48 @@ public sealed class ImportInboxScannerTests : IDisposable
   }
 
   [Fact]
+  public async Task ScanAsync_DetectsGpoSupportFilesWithoutLeadingDot()
+  {
+    var zipPath = Path.Combine(_tempRoot, "gpo_without_dot.zip");
+    using (var archive = ZipFile.Open(zipPath, ZipArchiveMode.Create))
+    {
+      await WriteEntryAsync(archive, "Support Files/Local Policies/machine.pol", "stub");
+    }
+
+    var scanner = new ImportInboxScanner(new TestHashingService());
+    var result = await scanner.ScanAsync(_tempRoot, CancellationToken.None);
+
+    var candidate = Assert.Single(result.Candidates);
+    Assert.Equal(ImportArtifactKind.Gpo, candidate.ArtifactKind);
+  }
+
+  [Fact]
+  public async Task ScanAsync_EmitsBothGpoAndAdmx_WhenSupportFilesFolderHasNoLeadingDot()
+  {
+    var zipPath = Path.Combine(_tempRoot, "mixed_gpo_admx_without_dot.zip");
+    using (var archive = ZipFile.Open(zipPath, ZipArchiveMode.Create))
+    {
+      await WriteEntryAsync(archive, "Support Files/Local Policies/User/registry.pol", "stub");
+      await WriteEntryAsync(archive, "Policies/windows.admx", "<policyDefinitions revision=\"1.0\" />");
+    }
+
+    var scanner = new ImportInboxScanner(new TestHashingService());
+    var result = await scanner.ScanAsync(_tempRoot, CancellationToken.None);
+
+    Assert.Contains(result.Candidates, c => c.ArtifactKind == ImportArtifactKind.Gpo);
+    Assert.Contains(result.Candidates, c => c.ArtifactKind == ImportArtifactKind.Admx);
+
+    var winners = new ImportDedupService().Resolve(result.Candidates).Winners
+      .Where(c => c.ArtifactKind == ImportArtifactKind.Gpo || c.ArtifactKind == ImportArtifactKind.Admx)
+      .ToList();
+
+    var plan = ImportQueuePlanner.BuildContentImportPlan(winners);
+    Assert.Equal(2, plan.Count);
+    Assert.Contains(plan, p => p.ArtifactKind == ImportArtifactKind.Gpo && p.Route == ContentImportRoute.ConsolidatedZip);
+    Assert.Contains(plan, p => p.ArtifactKind == ImportArtifactKind.Admx && p.Route == ContentImportRoute.AdmxTemplatesFromZip);
+  }
+
+  [Fact]
   public async Task ScanAsync_UsesPolicyNamespaceForAdmxContentKey()
   {
     var zipPath = Path.Combine(_tempRoot, "admx_namespace.zip");

@@ -360,6 +360,55 @@ public sealed class ContentPackImporterTests : IDisposable
     Assert.Equal(firstKeys, secondKeys);
   }
 
+  [Fact]
+  public async Task ImportZipRoutes_ForNoLeadingDotGpoSupportFiles_CompletesBothRoutesWithoutHang()
+  {
+    var zipPath = Path.Combine(_tempRoot, "mixed_gpo_admx_without_dot.zip");
+    using (var archive = ZipFile.Open(zipPath, ZipArchiveMode.Create))
+    {
+      var localPolicies = archive.CreateEntry("Support Files/Local Policies/user.pol");
+      await using (var writer = new StreamWriter(localPolicies.Open()))
+      {
+        await writer.WriteAsync("stub");
+      }
+
+      var admx = archive.CreateEntry("Policies/windows.admx");
+      await using (var writer = new StreamWriter(admx.Open()))
+      {
+        await writer.WriteAsync(CreateMinimalAdmx("WindowsPolicy"));
+      }
+    }
+
+    var scanner = new ImportInboxScanner(new NoopHashingService());
+    var scan = await scanner.ScanAsync(_tempRoot, CancellationToken.None);
+    var candidates = new ImportDedupService()
+      .Resolve(scan.Candidates)
+      .Winners
+      .Where(c => c.ArtifactKind == ImportArtifactKind.Gpo || c.ArtifactKind == ImportArtifactKind.Admx)
+      .ToList();
+
+    var plan = ImportQueuePlanner.BuildContentImportPlan(candidates);
+    Assert.Equal(2, plan.Count);
+    Assert.Contains(plan, p => p.ArtifactKind == ImportArtifactKind.Gpo && p.Route == ContentImportRoute.ConsolidatedZip);
+    Assert.Contains(plan, p => p.ArtifactKind == ImportArtifactKind.Admx && p.Route == ContentImportRoute.AdmxTemplatesFromZip);
+
+    var importer = CreateImporter(out var packsMock, out var controlsMock);
+
+    var totalImported = 0;
+    foreach (var planned in plan)
+    {
+      var imported = planned.Route == ContentImportRoute.AdmxTemplatesFromZip
+        ? await importer.ImportAdmxTemplatesFromZipAsync(planned.ZipPath, planned.SourceLabel, CancellationToken.None)
+        : await importer.ImportConsolidatedZipAsync(planned.ZipPath, planned.SourceLabel, CancellationToken.None);
+
+      totalImported += imported.Count;
+    }
+
+    Assert.Equal(2, totalImported);
+    packsMock.Verify(p => p.SaveAsync(It.IsAny<ContentPack>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+    controlsMock.Verify(c => c.SaveControlsAsync(It.IsAny<string>(), It.Is<IReadOnlyList<ControlRecord>>(list => list.Count > 0), It.IsAny<CancellationToken>()), Times.AtLeastOnce());
+  }
+
   private ContentPackImporter CreateImporter(out Mock<IContentPackRepository> packsMock, out Mock<IControlRepository> controlsMock)
   {
     var pathsMock = new Mock<IPathBuilder>();
@@ -484,5 +533,14 @@ public sealed class ContentPackImporterTests : IDisposable
   </policies>
 </policyDefinitions>
 """;
+  }
+
+  private sealed class NoopHashingService : IHashingService
+  {
+    public Task<string> Sha256FileAsync(string path, CancellationToken ct)
+      => Task.FromResult("sha-stub");
+
+    public Task<string> Sha256TextAsync(string content, CancellationToken ct)
+      => Task.FromResult("sha-text");
   }
 }
