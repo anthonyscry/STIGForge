@@ -12,10 +12,10 @@ Operators can execute a deterministic offline hardening mission flow with audita
 
 ### Upgrade and Rebase Operator Workflow
 
-- [ ] **UR-01**: Operator can generate a deterministic baseline-to-target diff report that classifies `added`, `changed`, `removed`, and `review-required` controls.
-- [ ] **UR-02**: Operator can run overlay rebase with deterministic conflict classification and explicit recommended actions for each conflict.
-- [ ] **UR-03**: Rebase execution preserves non-conflicting operator intent and blocks completion when unresolved blocking conflicts remain.
-- [ ] **UR-04**: Diff/rebase artifacts include machine-readable summary plus operator-readable report with enough detail for release review.
+- [x] **UR-01**: Operator can generate a deterministic baseline-to-target diff report that classifies `added`, `changed`, `removed`, and `review-required` controls.
+- [x] **UR-02**: Operator can run overlay rebase with deterministic conflict classification and explicit recommended actions for each conflict.
+- [x] **UR-03**: Rebase execution preserves non-conflicting operator intent and blocks completion when unresolved blocking conflicts remain.
+- [x] **UR-04**: Diff/rebase artifacts include machine-readable summary plus operator-readable report with enough detail for release review.
 
 ### WPF Parity and Usability
 
@@ -46,10 +46,10 @@ Operators can execute a deterministic offline hardening mission flow with audita
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| UR-01 | Phase 11 | Pending |
-| UR-02 | Phase 11 | Pending |
-| UR-03 | Phase 11 | Pending |
-| UR-04 | Phase 11 | Pending |
+| UR-01 | Phase 11 | Completed |
+| UR-02 | Phase 11 | Completed |
+| UR-03 | Phase 11 | Completed |
+| UR-04 | Phase 11 | Completed |
 | WP-01 | Phase 12 | Pending |
 | WP-02 | Phase 12 | Pending |
 | WP-03 | Phase 12 | Pending |
@@ -60,9 +60,9 @@ Operators can execute a deterministic offline hardening mission flow with audita
 **Coverage:**
 - v1.1 requirements: 10 total
 - Mapped to phases: 10
-- Pending: 10
-- Completed: 0
+- Pending: 6
+- Completed: 4
 - Unmapped: 0
 
 ---
-*Last updated: 2026-02-16 after milestone gap-closure phase creation*
+*Last updated: 2026-02-16 after Phase 11 UR closure evidence reconciliation*

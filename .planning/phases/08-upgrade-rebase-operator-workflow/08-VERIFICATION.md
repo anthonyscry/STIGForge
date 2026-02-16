@@ -34,16 +34,16 @@ rg --line-number "^# Phase 08 Verification - Upgrade/Rebase Operator Workflow|^#
 ## Command Results
 
 - `rg` against Phase 08 summaries: evidence references for diff/rebase semantics and `UR-01`..`UR-04` requirement IDs are present in this artifact mapping.
-- `rg` against `.planning/REQUIREMENTS.md`: traceability rows for `UR-01`..`UR-04` exist and currently map to Phase 11.
+- `rg` against `.planning/REQUIREMENTS.md`: traceability rows for `UR-01`..`UR-04` exist, map to Phase 11, and are marked `Completed`.
 - `rg` against this file: required canonical headings and all four UR IDs are present.
 
 ## Three-Source Cross-Check
 
 | Requirement | REQUIREMENTS.md traceability row | Summary metadata (`requirements-completed`) | Verification evidence mapping | Verdict |
 |---|---|---|---|---|
-| UR-01 | present (`Pending` at Task 1 time) | missing at Task 1 time | present | unresolved |
-| UR-02 | present (`Pending` at Task 1 time) | missing at Task 1 time | present | unresolved |
-| UR-03 | present (`Pending` at Task 1 time) | missing at Task 1 time | present | unresolved |
-| UR-04 | present (`Pending` at Task 1 time) | missing at Task 1 time | present | unresolved |
+| UR-01 | present (`Completed`) | present (`UR-01`) | present | closed |
+| UR-02 | present (`Completed`) | present (`UR-02`) | present | closed |
+| UR-03 | present (`Completed`) | present (`UR-03`) | present | closed |
+| UR-04 | present (`Completed`) | present (`UR-04`) | present | closed |
 
 Fail-closed rule: move a requirement to `closed` only when all three sources are present and consistent.
