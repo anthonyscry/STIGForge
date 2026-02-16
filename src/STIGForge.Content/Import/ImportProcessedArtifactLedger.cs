@@ -35,7 +35,29 @@ public sealed class ImportProcessedArtifactLedger
       if (string.IsNullOrWhiteSpace(key))
         continue;
 
-      _keys.Add(key.Trim());
+      if (TryNormalizeKey(key, out var normalized))
+        _keys.Add(normalized);
     }
+  }
+
+  private static bool TryNormalizeKey(string key, out string normalized)
+  {
+    normalized = string.Empty;
+
+    var trimmed = key.Trim();
+    var colonIndex = trimmed.IndexOf(':');
+    if (colonIndex <= 0 || colonIndex != trimmed.LastIndexOf(':'))
+      return false;
+
+    var routeToken = trimmed.Substring(0, colonIndex).Trim();
+    var hashToken = trimmed.Substring(colonIndex + 1).Trim();
+    if (string.IsNullOrWhiteSpace(routeToken) || string.IsNullOrWhiteSpace(hashToken))
+      return false;
+
+    if (!Enum.TryParse<ContentImportRoute>(routeToken, true, out var route))
+      return false;
+
+    normalized = route + ":" + hashToken;
+    return true;
   }
 }

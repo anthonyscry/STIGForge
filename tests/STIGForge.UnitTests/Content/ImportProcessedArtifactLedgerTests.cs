@@ -87,4 +87,26 @@ public sealed class ImportProcessedArtifactLedgerTests
     Assert.Contains("AdmxTemplatesFromZip:DEF456", snapshot, StringComparer.OrdinalIgnoreCase);
     Assert.DoesNotContain("ConsolidatedZip:existing", snapshot, StringComparer.OrdinalIgnoreCase);
   }
+
+  [Fact]
+  public void Load_IgnoresMalformedKeys()
+  {
+    var ledger = new ImportProcessedArtifactLedger();
+
+    ledger.Load(new[]
+    {
+      "ConsolidatedZip:ABC123",
+      "ConsolidatedZip",
+      "ConsolidatedZip:",
+      ":ABC123",
+      "UnknownRoute:ABC123",
+      "AdmxTemplatesFromZip:DEF456:extra",
+      "AdmxTemplatesFromZip:DEF456"
+    });
+
+    var snapshot = ledger.Snapshot();
+    Assert.Equal(2, snapshot.Count);
+    Assert.Contains("ConsolidatedZip:ABC123", snapshot);
+    Assert.Contains("AdmxTemplatesFromZip:DEF456", snapshot);
+  }
 }
