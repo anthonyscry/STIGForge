@@ -273,13 +273,40 @@
 
             <TabControl Grid.Row="1" Margin="0,8,0,0" SelectedIndex="{Binding SelectedImportWorkspaceTabIndex}">
               <TabItem Header="Auto Import">
-                <ListView ItemsSource="{Binding AutoImportQueueRows}" ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+                <ListView ItemsSource="{Binding AutoImportQueueRows}" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                  <ListView.View>
+                    <GridView>
+                      <GridViewColumn Header="FileName" DisplayMemberBinding="{Binding FileName}" Width="180"/>
+                      <GridViewColumn Header="ArtifactKind" DisplayMemberBinding="{Binding ArtifactKind}" Width="110"/>
+                      <GridViewColumn Header="State" DisplayMemberBinding="{Binding State}" Width="110"/>
+                      <GridViewColumn Header="Detail" DisplayMemberBinding="{Binding Detail}" Width="240"/>
+                    </GridView>
+                  </ListView.View>
+                </ListView>
               </TabItem>
               <TabItem Header="Classification Results">
-                <ListView ItemsSource="{Binding ClassificationResultRows}" ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+                <ListView ItemsSource="{Binding ClassificationResultRows}" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                  <ListView.View>
+                    <GridView>
+                      <GridViewColumn Header="FileName" DisplayMemberBinding="{Binding FileName}" Width="180"/>
+                      <GridViewColumn Header="ArtifactKind" DisplayMemberBinding="{Binding ArtifactKind}" Width="110"/>
+                      <GridViewColumn Header="State" DisplayMemberBinding="{Binding State}" Width="110"/>
+                      <GridViewColumn Header="Detail" DisplayMemberBinding="{Binding Detail}" Width="240"/>
+                    </GridView>
+                  </ListView.View>
+                </ListView>
               </TabItem>
               <TabItem Header="Exceptions Queue">
-                <ListView ItemsSource="{Binding ExceptionQueueRows}" ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+                <ListView ItemsSource="{Binding ExceptionQueueRows}" ScrollViewer.VerticalScrollBarVisibility="Auto" ScrollViewer.HorizontalScrollBarVisibility="Auto">
+                  <ListView.View>
+                    <GridView>
+                      <GridViewColumn Header="FileName" DisplayMemberBinding="{Binding FileName}" Width="180"/>
+                      <GridViewColumn Header="ArtifactKind" DisplayMemberBinding="{Binding ArtifactKind}" Width="110"/>
+                      <GridViewColumn Header="State" DisplayMemberBinding="{Binding State}" Width="110"/>
+                      <GridViewColumn Header="Detail" DisplayMemberBinding="{Binding Detail}" Width="240"/>
+                    </GridView>
+                  </ListView.View>
+                </ListView>
               </TabItem>
               <TabItem Header="Activity Log">
                 <ListView ItemsSource="{Binding ImportActivityLogRows}" ScrollViewer.VerticalScrollBarVisibility="Auto"/>
@@ -289,28 +316,30 @@
         </Border>
 
         <Border Grid.Row="1" Margin="0,12,0,0" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1">
-          <StackPanel Margin="10">
-            <TextBlock Text="Pack Details" FontWeight="SemiBold"/>
-            <TextBlock Text="Name:" Margin="0,6,0,0"/>
-            <TextBlock Text="{Binding PackDetailName}" Foreground="{DynamicResource TextMutedBrush}"/>
-            <TextBlock Text="PackId:" Margin="0,6,0,0"/>
-            <TextBlock Text="{Binding PackDetailId}" Foreground="{DynamicResource TextMutedBrush}"/>
-            <TextBlock Text="Format:" Margin="0,6,0,0"/>
-            <TextBlock Text="{Binding PackDetailFormat}" Foreground="{DynamicResource TextMutedBrush}"/>
-            <TextBlock Text="Release date:" Margin="0,6,0,0"/>
-            <TextBlock Text="{Binding PackDetailReleaseDate}" Foreground="{DynamicResource TextMutedBrush}"/>
-            <TextBlock Text="Imported:" Margin="0,6,0,0"/>
-            <TextBlock Text="{Binding PackDetailImportedAt}" Foreground="{DynamicResource TextMutedBrush}"/>
-            <TextBlock Text="Source:" Margin="0,6,0,0"/>
-            <TextBlock Text="{Binding PackDetailSource}" Foreground="{DynamicResource TextMutedBrush}"/>
-            <TextBlock Text="Hash:" Margin="0,6,0,0"/>
-            <TextBlock Text="{Binding PackDetailHash}" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
-            <TextBlock Text="Controls:" Margin="0,6,0,0"/>
-            <TextBlock Text="{Binding PackDetailControls}" Foreground="{DynamicResource TextMutedBrush}"/>
-            <TextBlock Text="Root:" Margin="0,6,0,0"/>
-            <TextBlock Text="{Binding PackDetailRoot}" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
-            <TextBlock Text="{Binding ImportLibraryStatus}" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,10,0,0" FontSize="11"/>
-          </StackPanel>
+          <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="10">
+              <TextBlock Text="Pack Details" FontWeight="SemiBold"/>
+              <TextBlock Text="Name:" Margin="0,6,0,0"/>
+              <TextBlock Text="{Binding PackDetailName}" Foreground="{DynamicResource TextMutedBrush}"/>
+              <TextBlock Text="PackId:" Margin="0,6,0,0"/>
+              <TextBlock Text="{Binding PackDetailId}" Foreground="{DynamicResource TextMutedBrush}"/>
+              <TextBlock Text="Format:" Margin="0,6,0,0"/>
+              <TextBlock Text="{Binding PackDetailFormat}" Foreground="{DynamicResource TextMutedBrush}"/>
+              <TextBlock Text="Release date:" Margin="0,6,0,0"/>
+              <TextBlock Text="{Binding PackDetailReleaseDate}" Foreground="{DynamicResource TextMutedBrush}"/>
+              <TextBlock Text="Imported:" Margin="0,6,0,0"/>
+              <TextBlock Text="{Binding PackDetailImportedAt}" Foreground="{DynamicResource TextMutedBrush}"/>
+              <TextBlock Text="Source:" Margin="0,6,0,0"/>
+              <TextBlock Text="{Binding PackDetailSource}" Foreground="{DynamicResource TextMutedBrush}"/>
+              <TextBlock Text="Hash:" Margin="0,6,0,0"/>
+              <TextBlock Text="{Binding PackDetailHash}" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+              <TextBlock Text="Controls:" Margin="0,6,0,0"/>
+              <TextBlock Text="{Binding PackDetailControls}" Foreground="{DynamicResource TextMutedBrush}"/>
+              <TextBlock Text="Root:" Margin="0,6,0,0"/>
+              <TextBlock Text="{Binding PackDetailRoot}" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+              <TextBlock Text="{Binding ImportLibraryStatus}" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,10,0,0" FontSize="11"/>
+            </StackPanel>
+          </ScrollViewer>
         </Border>
       </Grid>
     </Grid>

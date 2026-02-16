@@ -52,10 +52,43 @@ public sealed class ImportViewLayoutContractTests
   {
     var xaml = LoadImportViewXaml();
 
+    Assert.Contains("SelectedIndex=\"{Binding SelectedImportWorkspaceTabIndex}\"", xaml, StringComparison.Ordinal);
     Assert.Contains("{Binding AutoImportQueueRows}", xaml, StringComparison.Ordinal);
     Assert.Contains("{Binding ClassificationResultRows}", xaml, StringComparison.Ordinal);
     Assert.Contains("{Binding ExceptionQueueRows}", xaml, StringComparison.Ordinal);
     Assert.Contains("{Binding ImportActivityLogRows}", xaml, StringComparison.Ordinal);
+  }
+
+  [Fact]
+  public void ImportView_RendersQueueRowsWithImportColumns()
+  {
+    var xaml = LoadImportViewXaml();
+    var view = XDocument.Parse(xaml);
+    XNamespace presentation = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+
+    AssertQueueTabColumns(view, presentation, "Auto Import");
+    AssertQueueTabColumns(view, presentation, "Classification Results");
+    AssertQueueTabColumns(view, presentation, "Exceptions Queue");
+
+    static void AssertQueueTabColumns(XDocument view, XNamespace presentation, string tabHeader)
+    {
+      var tabItem = view
+        .Descendants(presentation + "TabItem")
+        .FirstOrDefault(node => string.Equals((string?)node.Attribute("Header"), tabHeader, StringComparison.Ordinal));
+
+      Assert.True(tabItem is not null, $"Expected TabItem with Header='{tabHeader}'.");
+
+      var headers = tabItem!
+        .Descendants(presentation + "GridViewColumn")
+        .Select(node => (string?)node.Attribute("Header"))
+        .Where(value => !string.IsNullOrWhiteSpace(value))
+        .ToArray();
+
+      Assert.Contains("FileName", headers, StringComparer.Ordinal);
+      Assert.Contains("ArtifactKind", headers, StringComparer.Ordinal);
+      Assert.Contains("State", headers, StringComparer.Ordinal);
+      Assert.Contains("Detail", headers, StringComparer.Ordinal);
+    }
   }
 
   [Fact]
