@@ -40,8 +40,8 @@ rg --line-number "^# Phase 09 Verification|^## Requirement Evidence Mapping|^## 
 
 | Requirement | REQUIREMENTS.md traceability row | Summary metadata (`requirements-completed`) | Verification evidence mapping | Verdict |
 |---|---|---|---|---|
-| WP-01 | present (`Pending`) | present (`WP-01`) | present | ready-for-closure |
-| WP-02 | present (`Pending`) | present (`WP-02`) | present | ready-for-closure |
-| WP-03 | present (`Pending`) | present (`WP-03`) | present | ready-for-closure |
+| WP-01 | present (`Completed`) | present (`WP-01`) | present | closed |
+| WP-02 | present (`Completed`) | present (`WP-02`) | present | closed |
+| WP-03 | present (`Completed`) | present (`WP-03`) | present | closed |
 
-Fail-closed rule: move a requirement to `closed` only when all three sources are present and consistent.
+Fail-closed rule: keep a requirement `closed` only while all three sources remain present and consistent; any missing or mismatched source reverts to `unresolved`.

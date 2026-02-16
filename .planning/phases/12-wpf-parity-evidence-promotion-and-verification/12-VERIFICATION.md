@@ -52,8 +52,8 @@ Fail-closed policy: WP closure cannot be marked complete if promotion contract p
 
 | Requirement | REQUIREMENTS.md traceability row | Source evidence mapping (09-VERIFICATION + summaries) | Promotion wiring checks | Verdict |
 |---|---|---|---|---|
-| WP-01 | present (`Pending`) | present | present | ready-for-closure |
-| WP-02 | present (`Pending`) | present | present | ready-for-closure |
-| WP-03 | present (`Pending`) | present | present | ready-for-closure |
+| WP-01 | present (`Completed`) | present | present | closed |
+| WP-02 | present (`Completed`) | present | present | closed |
+| WP-03 | present (`Completed`) | present | present | closed |
 
-Fail-closed rule: change verdict to `closed` only after REQUIREMENTS traceability rows are reconciled to `Completed` and still match source evidence plus promotion wiring evidence.
+Fail-closed rule: keep verdict `closed` only while REQUIREMENTS traceability, source evidence, and promotion wiring evidence stay aligned; any missing/mismatched source reverts to `unresolved`.
