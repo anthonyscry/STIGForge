@@ -1,0 +1,57 @@
+name: stigforge-tests
+
+x-test-runner: &test-runner
+  image: stigforge-test-runner:local
+  build:
+    context: .
+    dockerfile: docker/test-runner.Dockerfile
+  working_dir: /workspace
+  environment:
+    DOTNET_NOLOGO: "1"
+    DOTNET_SKIP_FIRST_TIME_EXPERIENCE: "1"
+    DOTNET_CLI_HOME: /tmp/.dotnet
+    NUGET_PACKAGES: /root/.nuget/packages
+  volumes:
+    - ./:/workspace
+    - stigforge-nuget:/root/.nuget/packages
+    - stigforge-dotnet:/tmp/.dotnet
+    - ./.artifacts/test-results:/workspace/.artifacts/test-results
+
+services:
+  unit-tests:
+    <<: *test-runner
+    command:
+      - dotnet
+      - test
+      - tests/STIGForge.UnitTests/STIGForge.UnitTests.csproj
+      - --framework
+      - net8.0
+      - --configuration
+      - Release
+      - --nologo
+      - --filter
+      - "FullyQualifiedName!~ScanAsync_SkipsInaccessibleSubdirectoryAndContinues"
+      - --results-directory
+      - /workspace/.artifacts/test-results
+      - --logger
+      - "trx;LogFileName=unit-tests.trx"
+
+  integration-tests:
+    <<: *test-runner
+    command:
+      - dotnet
+      - test
+      - tests/STIGForge.IntegrationTests/STIGForge.IntegrationTests.csproj
+      - --framework
+      - net8.0
+      - --configuration
+      - Release
+      - --nologo
+      - --results-directory
+      - /workspace/.artifacts/test-results
+      - --logger
+      - "trx;LogFileName=integration-tests.trx"
+
+volumes:
+  stigforge-nuget:
+  stigforge-dotnet:

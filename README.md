@@ -177,3 +177,7 @@ See `docs/release/SecurityGatePolicies.md` for policy file and exception managem
 - tests/ unit + integration tests
 - tools/schemas JSON schemas (profile/overlay/manifest)
 - docs/spec contracts (bundle + eMASS export)
+
+## Docker test lane (WSL)
+
+For Docker-on-WSL unit/integration test commands, see `docs/testing/DockerWslTestLane.md`.
