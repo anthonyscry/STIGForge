@@ -41,6 +41,64 @@ public sealed class ImportInboxScannerTests : IDisposable
   }
 
   [Fact]
+  public async Task ScanAsync_ClassifiesScapDataStreamBenchmarkWithoutXccdfFilename()
+  {
+    var zipPath = Path.Combine(_tempRoot, "win11_scap_benchmark.zip");
+    using (var archive = ZipFile.Open(zipPath, ZipArchiveMode.Create))
+    {
+      var entry = archive.CreateEntry("U_MS_Windows_11_V2R7_STIG_SCAP_1-3_Benchmark.xml");
+      await using var writer = new StreamWriter(entry.Open());
+      await writer.WriteAsync(CreateMinimalScapDataStream("xccdf_org.test.win11_benchmark", "V2R7"));
+    }
+
+    var scanner = new ImportInboxScanner(new TestHashingService());
+    var result = await scanner.ScanAsync(_tempRoot, CancellationToken.None);
+
+    var candidate = Assert.Single(result.Candidates);
+    Assert.Equal(ImportArtifactKind.Scap, candidate.ArtifactKind);
+    Assert.Equal("V2R7", candidate.VersionTag);
+    Assert.StartsWith("scap:", candidate.ContentKey, StringComparison.OrdinalIgnoreCase);
+  }
+
+  [Fact]
+  public async Task ScanAsync_DedupesEnhancedAndStandardScapByBenchmarkIdentity()
+  {
+    var standardZipPath = Path.Combine(_tempRoot, "U_CAN_Ubuntu_22-04_LTS_V2R5_STIG_SCAP_1-3_Benchmark.zip");
+    using (var archive = ZipFile.Open(standardZipPath, ZipArchiveMode.Create))
+    {
+      var entry = archive.CreateEntry("U_CAN_Ubuntu_22-04_LTS_V2R5_STIG_SCAP_1-3_Benchmark.xml");
+      await using var writer = new StreamWriter(entry.Open());
+      await writer.WriteAsync(CreateMinimalScapDataStream(
+        "xccdf_mil.disa.stig_benchmark_CAN_Ubuntu_22-04_LTS_STIG",
+        "V2R5",
+        "scap_mil.disa.stig_collection_U_CAN_Ubuntu_22-04_LTS_V2R5_STIG_SCAP_1-3_Benchmark",
+        "Canonical Ubuntu 22.04 LTS STIG SCAP Benchmark"));
+    }
+
+    var enhancedZipPath = Path.Combine(_tempRoot, "NIWC_Consolidated_Enhanced_Bundle.zip");
+    using (var archive = ZipFile.Open(enhancedZipPath, ZipArchiveMode.Create))
+    {
+      var entry = archive.CreateEntry("U_CAN_Ubuntu_22-04_LTS_V2R5_STIG_SCAP_1-4_Benchmark-enhancedV8-signed.xml");
+      await using var writer = new StreamWriter(entry.Open());
+      await writer.WriteAsync(CreateMinimalScapDataStream(
+        "xccdf_mil.disa.stig_benchmark_CAN_Ubuntu_22-04_LTS_STIG",
+        "V2R5",
+        "scap_navy.navwar.niwcatlantic.scc_collection_U_CAN_Ubuntu_22-04_LTS_V2R5_STIG_SCAP_1-4_Benchmark-enhancedV8",
+        "Canonical Ubuntu 22.04 LTS STIG SCAP Benchmark - NIWC Enhanced with Manual Questions"));
+    }
+
+    var scanner = new ImportInboxScanner(new TestHashingService());
+    var result = await scanner.ScanAsync(_tempRoot, CancellationToken.None);
+
+    var deduped = new ImportDedupService().Resolve(result.Candidates);
+    var scapWinners = deduped.Winners.Where(c => c.ArtifactKind == ImportArtifactKind.Scap).ToList();
+
+    var winner = Assert.Single(scapWinners);
+    Assert.Equal(ImportProvenance.ConsolidatedBundle, winner.ImportedFrom);
+    Assert.True(winner.IsNiwcEnhanced);
+  }
+
+  [Fact]
   public async Task ScanAsync_ClassifiesToolZip()
   {
     var zipPath = Path.Combine(_tempRoot, "Evaluate-STIG.zip");
@@ -196,6 +254,34 @@ public sealed class ImportInboxScannerTests : IDisposable
   }
 
   [Fact]
+  public async Task ScanAsync_ClassifiesNestedStigZipLibraryAsStig()
+  {
+    var zipPath = Path.Combine(_tempRoot, "srg_library.zip");
+    using (var archive = ZipFile.Open(zipPath, ZipArchiveMode.Create))
+    {
+      await WriteEntryAsync(archive, "U_Windows_11_V2R7_STIG.zip", "PK");
+      await WriteEntryAsync(archive, "U_RHEL_9_V2R7_STIG.zip", "PK");
+      await WriteEntryAsync(archive, "U_DBMS_V1R1_SRG.zip", "PK");
+    }
+
+    var scanner = new ImportInboxScanner(new TestHashingService());
+    var result = await scanner.ScanAsync(_tempRoot, CancellationToken.None);
+
+    var candidate = Assert.Single(result.Candidates);
+    Assert.Equal(ImportArtifactKind.Stig, candidate.ArtifactKind);
+    Assert.StartsWith("stig:", candidate.ContentKey, StringComparison.OrdinalIgnoreCase);
+
+    var winners = new ImportDedupService()
+      .Resolve(result.Candidates)
+      .Winners
+      .Where(c => c.ArtifactKind != ImportArtifactKind.Tool && c.ArtifactKind != ImportArtifactKind.Unknown)
+      .ToList();
+
+    var plan = Assert.Single(ImportQueuePlanner.BuildContentImportPlan(winners));
+    Assert.Equal(ContentImportRoute.ConsolidatedZip, plan.Route);
+  }
+
+  [Fact]
   public async Task ScanAsync_SkipsInaccessibleSubdirectoryAndContinues()
   {
     if (OperatingSystem.IsWindows())
@@ -244,6 +330,36 @@ public sealed class ImportInboxScannerTests : IDisposable
       + "<status date=\"2026-01-01\">accepted</status>"
       + "<plain-text>Release: " + releaseTag + " Benchmark Date: 2026-01-01</plain-text>"
       + "</Benchmark>";
+  }
+
+  private static string CreateMinimalScapDataStream(
+    string benchmarkId,
+    string releaseTag,
+    string collectionId = "",
+    string benchmarkTitle = "Windows 11 STIG")
+  {
+    var collectionAttribute = string.IsNullOrWhiteSpace(collectionId)
+      ? string.Empty
+      : " id=\"" + collectionId + "\"";
+
+    return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>"
+      + "<data-stream-collection xmlns=\"http://scap.nist.gov/schema/scap/source/1.2\" xmlns:xccdf=\"http://checklists.nist.gov/xccdf/1.2\"" + collectionAttribute + ">"
+      + "<data-stream id=\"scap_stream\">"
+      + "<component id=\"xccdf_component\">"
+      + "<xccdf:Benchmark id=\"" + benchmarkId + "\">"
+      + "<xccdf:title>" + benchmarkTitle + "</xccdf:title>"
+      + "<xccdf:version>2.7</xccdf:version>"
+      + "<xccdf:status date=\"2026-01-01\">accepted</xccdf:status>"
+      + "<xccdf:plain-text>Release: " + releaseTag + " Benchmark Date: 2026-01-01</xccdf:plain-text>"
+      + "<xccdf:Rule id=\"SV-1000r1_rule\" severity=\"medium\">"
+      + "<xccdf:title>Sample Rule</xccdf:title>"
+      + "<xccdf:check system=\"manual\"><xccdf:check-content>Verify manually.</xccdf:check-content></xccdf:check>"
+      + "<xccdf:fixtext>Apply fix.</xccdf:fixtext>"
+      + "</xccdf:Rule>"
+      + "</xccdf:Benchmark>"
+      + "</component>"
+      + "</data-stream>"
+      + "</data-stream-collection>";
   }
 
   private static async Task WriteEntryAsync(ZipArchive archive, string entryPath, string content)
