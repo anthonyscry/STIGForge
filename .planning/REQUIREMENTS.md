@@ -25,9 +25,9 @@ Operators can execute a deterministic offline hardening mission flow with audita
 
 ### Quality and Release Operations
 
-- [ ] **QA-01**: CI includes deterministic automated coverage for diff/rebase core workflows and conflict handling paths.
-- [ ] **QA-02**: VM/release gate evidence includes diff/rebase and WPF parity validation signals for go/no-go review.
-- [ ] **QA-03**: Stability and compatibility gates for v1.1 emit trendable artifacts that flag regression drift before promotion.
+- [x] **QA-01**: CI includes deterministic automated coverage for diff/rebase core workflows and conflict handling paths.
+- [x] **QA-02**: VM/release gate evidence includes diff/rebase and WPF parity validation signals for go/no-go review.
+- [x] **QA-03**: Stability and compatibility gates for v1.1 emit trendable artifacts that flag regression drift before promotion.
 
 ## Future Requirements (v1.2+)
 
@@ -53,16 +53,16 @@ Operators can execute a deterministic offline hardening mission flow with audita
 | WP-01 | Phase 12 | Completed |
 | WP-02 | Phase 12 | Completed |
 | WP-03 | Phase 12 | Completed |
-| QA-01 | Phase 13 | Pending |
-| QA-02 | Phase 13 | Pending |
-| QA-03 | Phase 13 | Pending |
+| QA-01 | Phase 13 | Completed |
+| QA-02 | Phase 13 | Completed |
+| QA-03 | Phase 13 | Completed |
 
 **Coverage:**
 - v1.1 requirements: 10 total
 - Mapped to phases: 10
-- Pending: 3
-- Completed: 7
+- Pending: 0
+- Completed: 10
 - Unmapped: 0
 
 ---
-*Last updated: 2026-02-16 after Phase 12 WP closure evidence reconciliation*
+*Last updated: 2026-02-17 after Phase 13 QA closure evidence reconciliation*
