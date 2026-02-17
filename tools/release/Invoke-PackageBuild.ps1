@@ -323,7 +323,7 @@ try {
     $blockedManifest | ConvertTo-Json -Depth 6 | Set-Content -Path $manifestPath -Encoding UTF8
     $blockedReproducibility | ConvertTo-Json -Depth 8 | Set-Content -Path $reproducibilityPath -Encoding UTF8
 
-    throw "$releaseGateMessage`nnext command: $recoveryCommand"
+    throw "$releaseGateMessage`nblocker categories: missing-proof, failed-check, disabled-check`nnext command: $recoveryCommand"
   }
 
   if (Test-Path -LiteralPath $releaseGateRootFull) {
