@@ -117,7 +117,11 @@ Exit Criteria:
 **Goal:** Enforce fail-closed release-package behavior and restore QA requirement verification evidence for promotion paths.
 **Requirements:** `QA-01`, `QA-02`, `QA-03`
 **Gap Closure:** Requirement orphaning and integration/flow gaps for fail-closed release gate enforcement.
-**Plans:** 0 plans
+**Plans:** 2 plans
+
+Plans:
+- [ ] 13-mandatory-release-gate-enforcement-and-verification-01-PLAN.md - Enforce mandatory fail-closed release-evidence contract across CI, release-package, VM, and package build paths.
+- [ ] 13-mandatory-release-gate-enforcement-and-verification-02-PLAN.md - Backfill Phase 10 QA verification artifact and reconcile three-source requirement closure evidence.
 
 Exit Criteria:
 - Phase 10 verification artifact exists and maps QA requirement evidence.
