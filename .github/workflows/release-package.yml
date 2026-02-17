@@ -59,8 +59,14 @@ jobs:
         with:
           dotnet-version: 8.0.x
 
+      - name: Enforce required release gate toggle
+        shell: pwsh
+        run: |
+          if (-not [System.Convert]::ToBoolean('${{ inputs.run_release_gate }}')) {
+            throw '[disabled-check] run_release_gate=false blocks promotion packaging. next command: Re-run workflow with run_release_gate=true.'
+          }
+
       - name: Pre-package release gate
-        if: ${{ inputs.run_release_gate }}
         shell: pwsh
         run: |
           $args = @(
@@ -80,64 +86,12 @@ jobs:
 
           powershell @args
 
-      - name: Validate upgrade/rebase evidence
-        if: ${{ inputs.run_release_gate }}
+      - name: Enforce mandatory release evidence contract
         shell: pwsh
         run: |
-          $summaryPath = '.\.artifacts\release-gate\release-package\upgrade-rebase\upgrade-rebase-summary.json'
-          if (-not (Test-Path -LiteralPath $summaryPath)) {
-            throw "Upgrade/rebase summary artifact missing at $summaryPath"
-          }
-
-          $summary = Get-Content -Path $summaryPath -Raw | ConvertFrom-Json
-          if ($summary.status -ne 'passed') {
-            throw "Upgrade/rebase validation status is '$($summary.status)': $($summary.message)"
-          }
-
-          $requiredSteps = @(
-            'upgrade-rebase-wpf-workflow-contract',
-            'upgrade-rebase-wpf-severity-contract',
-            'upgrade-rebase-wpf-recovery-contract'
-          )
-
-          foreach ($requiredStep in $requiredSteps) {
-            $matchingStep = @($summary.steps | Where-Object { $_.name -eq $requiredStep })
-            if ($matchingStep.Count -ne 1) {
-              throw "Required upgrade/rebase evidence step '$requiredStep' is missing from summary."
-            }
-
-            if (-not [bool]$matchingStep[0].succeeded) {
-              throw "Required upgrade/rebase evidence step '$requiredStep' failed. See $($matchingStep[0].logPath)"
-            }
-          }
-
-          Write-Host "Upgrade/rebase validation passed with explicit WPF contract evidence." -ForegroundColor Green
-
-      - name: Validate quarterly trend evidence
-        if: ${{ inputs.run_release_gate && inputs.run_quarterly_pack }}
-        shell: pwsh
-        run: |
-          $summaryPath = '.\.artifacts\release-gate\release-package\quarterly-pack\quarterly-pack-summary.json'
-          $reportPath = '.\.artifacts\release-gate\release-package\quarterly-pack\quarterly-pack-report.md'
-
-          if (-not (Test-Path -LiteralPath $summaryPath)) {
-            throw "Quarterly trend summary artifact missing at $summaryPath"
-          }
-
-          if (-not (Test-Path -LiteralPath $reportPath)) {
-            throw "Quarterly trend report artifact missing at $reportPath"
-          }
-
-          $summary = Get-Content -Path $summaryPath -Raw | ConvertFrom-Json
-          if (-not [bool]$summary.overallPassed) {
-            throw "Quarterly trend summary indicates failure: decision=$($summary.decision)"
-          }
-
-          if ($summary.decision -ne 'pass') {
-            throw "Quarterly trend decision is '$($summary.decision)' (expected 'pass')."
-          }
-
-          Write-Host "Quarterly trend evidence validated for release package. Fixtures: pass=$($summary.fixtures.passed) warning=$($summary.fixtures.warnings) fail=$($summary.fixtures.failed)" -ForegroundColor Green
+          .\tools\release\Test-ReleaseEvidenceContract.ps1 `
+            -EvidenceRoot '.\.artifacts\release-gate\release-package' `
+            -RecoveryCommand 'powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\release\Invoke-ReleaseGate.ps1 -Configuration Release -OutputRoot .\.artifacts\release-gate\release-package'
 
       - name: Build release packages
         shell: pwsh
@@ -167,9 +121,9 @@ jobs:
           if-no-files-found: error
 
       - name: Upload release gate artifacts
-        if: always() && inputs.run_release_gate
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: release-gate-release-package-${{ github.run_id }}
           path: ./.artifacts/release-gate/release-package
-          if-no-files-found: warn
+          if-no-files-found: error

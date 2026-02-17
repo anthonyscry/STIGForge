@@ -39,63 +39,6 @@ jobs:
         shell: pwsh
         run: ./tools/release/Invoke-ReleaseGate.ps1 -Configuration ${{ inputs.configuration }} -OutputRoot ./.artifacts/release-gate/${{ matrix.name }}
 
-      - name: Validate upgrade/rebase evidence
-        shell: pwsh
-        run: |
-          $summaryPath = '.\.artifacts\release-gate\${{ matrix.name }}\upgrade-rebase\upgrade-rebase-summary.json'
-          if (-not (Test-Path -LiteralPath $summaryPath)) {
-            throw "Upgrade/rebase summary artifact missing at $summaryPath"
-          }
-
-          $summary = Get-Content -Path $summaryPath -Raw | ConvertFrom-Json
-          if ($summary.status -ne 'passed') {
-            throw "Upgrade/rebase validation status is '$($summary.status)': $($summary.message)"
-          }
-
-          $requiredSteps = @(
-            'upgrade-rebase-wpf-workflow-contract',
-            'upgrade-rebase-wpf-severity-contract',
-            'upgrade-rebase-wpf-recovery-contract'
-          )
-
-          foreach ($requiredStep in $requiredSteps) {
-            $matchingStep = @($summary.steps | Where-Object { $_.name -eq $requiredStep })
-            if ($matchingStep.Count -ne 1) {
-              throw "Required upgrade/rebase evidence step '$requiredStep' is missing for VM ${{ matrix.name }}."
-            }
-
-            if (-not [bool]$matchingStep[0].succeeded) {
-              throw "Required upgrade/rebase evidence step '$requiredStep' failed for VM ${{ matrix.name }}. See $($matchingStep[0].logPath)"
-            }
-          }
-
-          Write-Host "Upgrade/rebase validation passed for VM ${{ matrix.name }} with explicit WPF contracts." -ForegroundColor Green
-
-      - name: Validate quarterly trend evidence
-        shell: pwsh
-        run: |
-          $summaryPath = '.\.artifacts\release-gate\${{ matrix.name }}\quarterly-pack\quarterly-pack-summary.json'
-          $reportPath = '.\.artifacts\release-gate\${{ matrix.name }}\quarterly-pack\quarterly-pack-report.md'
-
-          if (-not (Test-Path -LiteralPath $summaryPath)) {
-            throw "Quarterly trend summary artifact missing for VM ${{ matrix.name }} at $summaryPath"
-          }
-
-          if (-not (Test-Path -LiteralPath $reportPath)) {
-            throw "Quarterly trend report artifact missing for VM ${{ matrix.name }} at $reportPath"
-          }
-
-          $summary = Get-Content -Path $summaryPath -Raw | ConvertFrom-Json
-          if (-not [bool]$summary.overallPassed) {
-            throw "Quarterly trend summary indicates failure for VM ${{ matrix.name }}: decision=$($summary.decision)"
-          }
-
-          if ($summary.decision -ne 'pass') {
-            throw "Quarterly trend decision for VM ${{ matrix.name }} is '$($summary.decision)' (expected 'pass')."
-          }
-
-          Write-Host "Quarterly trend evidence validated for VM ${{ matrix.name }}." -ForegroundColor Green
-
       - name: Evaluate VM stability budget
         shell: pwsh
         run: |
@@ -201,6 +144,17 @@ jobs:
 
           Write-Host "VM stability trend artifacts validated for ${{ matrix.name }}." -ForegroundColor Green
 
+      - name: Enforce mandatory release evidence contract
+        shell: pwsh
+        run: |
+          .\tools\release\Test-ReleaseEvidenceContract.ps1 `
+            -EvidenceRoot '.\.artifacts\release-gate\${{ matrix.name }}' `
+            -AdditionalRequiredArtifacts @(
+              '..\..\stability-budget\${{ matrix.name }}\stability-budget-summary.json',
+              '..\..\stability-budget\${{ matrix.name }}\stability-budget-report.md'
+            ) `
+            -RecoveryCommand 'powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\release\Invoke-ReleaseGate.ps1 -Configuration Release -OutputRoot .\.artifacts\release-gate\${{ matrix.name }}'
+
       - name: Upload VM smoke artifacts
         if: always()
         uses: actions/upload-artifact@v4
@@ -209,7 +163,7 @@ jobs:
           path: |
             ./.artifacts/release-gate/${{ matrix.name }}
             ./.artifacts/stability-budget/${{ matrix.name }}
-          if-no-files-found: warn
+          if-no-files-found: error
 
   go-no-go:
     name: go-no-go

@@ -48,63 +48,6 @@ jobs:
 
           powershell @args
 
-      - name: Validate upgrade/rebase evidence
-        shell: pwsh
-        run: |
-          $summaryPath = '.\.artifacts\release-gate\latest\upgrade-rebase\upgrade-rebase-summary.json'
-          if (-not (Test-Path -LiteralPath $summaryPath)) {
-            throw "Upgrade/rebase summary artifact missing at $summaryPath"
-          }
-
-          $summary = Get-Content -Path $summaryPath -Raw | ConvertFrom-Json
-          if ($summary.status -ne 'passed') {
-            throw "Upgrade/rebase validation status is '$($summary.status)': $($summary.message)"
-          }
-
-          $requiredSteps = @(
-            'upgrade-rebase-wpf-workflow-contract',
-            'upgrade-rebase-wpf-severity-contract',
-            'upgrade-rebase-wpf-recovery-contract'
-          )
-
-          foreach ($requiredStep in $requiredSteps) {
-            $matchingStep = @($summary.steps | Where-Object { $_.name -eq $requiredStep })
-            if ($matchingStep.Count -ne 1) {
-              throw "Required upgrade/rebase evidence step '$requiredStep' is missing from summary."
-            }
-
-            if (-not [bool]$matchingStep[0].succeeded) {
-              throw "Required upgrade/rebase evidence step '$requiredStep' failed. See $($matchingStep[0].logPath)"
-            }
-          }
-
-          Write-Host "Upgrade/rebase evidence validated for explicit WPF contracts." -ForegroundColor Green
-
-      - name: Validate quarterly trend evidence
-        shell: pwsh
-        run: |
-          $summaryPath = '.\.artifacts\release-gate\latest\quarterly-pack\quarterly-pack-summary.json'
-          $reportPath = '.\.artifacts\release-gate\latest\quarterly-pack\quarterly-pack-report.md'
-
-          if (-not (Test-Path -LiteralPath $summaryPath)) {
-            throw "Quarterly trend summary artifact missing at $summaryPath"
-          }
-
-          if (-not (Test-Path -LiteralPath $reportPath)) {
-            throw "Quarterly trend report artifact missing at $reportPath"
-          }
-
-          $summary = Get-Content -Path $summaryPath -Raw | ConvertFrom-Json
-          if (-not [bool]$summary.overallPassed) {
-            throw "Quarterly trend signal is failing: decision=$($summary.decision)"
-          }
-
-          if ($summary.decision -ne 'pass') {
-            throw "Quarterly trend decision is '$($summary.decision)' (expected 'pass')."
-          }
-
-          Write-Host "Quarterly trend evidence validated. Fixtures: pass=$($summary.fixtures.passed) warning=$($summary.fixtures.warnings) fail=$($summary.fixtures.failed)" -ForegroundColor Green
-
       - name: Evaluate stability budget
         shell: pwsh
         run: |
@@ -209,13 +152,24 @@ jobs:
 
           Write-Host "CI stability trend artifacts validated. Passes=$($summary.result.passes) Failures=$($summary.result.failures)" -ForegroundColor Green
 
+      - name: Enforce mandatory release evidence contract
+        shell: pwsh
+        run: |
+          .\tools\release\Test-ReleaseEvidenceContract.ps1 `
+            -EvidenceRoot '.\.artifacts\release-gate\latest' `
+            -AdditionalRequiredArtifacts @(
+              '..\stability-budget\ci\stability-budget-summary.json',
+              '..\stability-budget\ci\stability-budget-report.md'
+            ) `
+            -RecoveryCommand 'powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\release\Invoke-ReleaseGate.ps1 -Configuration Release -OutputRoot .\.artifacts\release-gate\latest'
+
       - name: Upload release-gate artifacts
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: release-gate-${{ github.run_id }}
           path: ./.artifacts/release-gate/latest
-          if-no-files-found: warn
+          if-no-files-found: error
 
       - name: Upload stability-budget artifacts
         if: always()
@@ -223,4 +177,4 @@ jobs:
         with:
           name: stability-budget-ci-${{ github.run_id }}
           path: ./.artifacts/stability-budget/ci
-          if-no-files-found: warn
+          if-no-files-found: error
