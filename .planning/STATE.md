@@ -4,7 +4,7 @@
 
 **Phase:** 13-mandatory-release-gate-enforcement-and-verification
 **Last Completed:** 13-mandatory-release-gate-enforcement-and-verification-02 (Canonical QA closure evidence reconciliation across verification, summaries, and requirements traceability)
-**Status:** Milestone complete
+**Status:** v1.1 milestone complete
 
 **Started:** February 9, 2026
 
