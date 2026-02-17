@@ -250,7 +250,9 @@ if ($script:Blockers.Count -gt 0) {
   }
 
   Write-ContractReport -Path $reportPathFull -Blockers $script:Blockers -Root $evidenceRootFull
-  throw "Release evidence contract blocked. See $reportPathFull"
+  $categoryList = @($script:Blockers | ForEach-Object { $_.category } | Select-Object -Unique)
+  $categoryText = $categoryList -join ","
+  throw "[$categoryText] Release evidence contract blocked. See $reportPathFull"
 }
 
 Write-ContractReport -Path $reportPathFull -Blockers @() -Root $evidenceRootFull

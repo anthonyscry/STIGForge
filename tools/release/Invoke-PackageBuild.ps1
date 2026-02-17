@@ -197,11 +197,9 @@ try {
 
   $cliZipPath = Join-Path $bundleRoot "stigforge-cli-$Runtime.zip"
   $appZipPath = Join-Path $bundleRoot "stigforge-app-$Runtime.zip"
-
-  if (Test-Path $cliZipPath) { Remove-Item -Path $cliZipPath -Force }
-  if (Test-Path $appZipPath) { Remove-Item -Path $appZipPath -Force }
-  Compress-Archive -Path (Join-Path $cliPublishDir "*") -DestinationPath $cliZipPath
-  Compress-Archive -Path (Join-Path $appPublishDir "*") -DestinationPath $appZipPath
+  $checksumsPath = Join-Path $manifestRoot "sha256-checksums.txt"
+  $manifestPath = Join-Path $manifestRoot "release-package-manifest.json"
+  $reproducibilityPath = Join-Path $manifestRoot "reproducibility-evidence.json"
 
   $isWindowsHost = if (Get-Variable -Name IsWindows -ErrorAction SilentlyContinue) {
     [bool]$IsWindows
@@ -238,47 +236,105 @@ try {
     [pscustomobject]@{ key = "upgradeRebaseWpfRecoveryContract"; relativePath = "upgrade-rebase/upgrade-rebase-summary.json"; required = $true; summaryStep = "upgrade-rebase-wpf-recovery-contract" }
   )
 
+  $recoveryCommand = "powershell -NoProfile -ExecutionPolicy Bypass -File .\\tools\\release\\Invoke-ReleaseGate.ps1 -Configuration $Configuration -OutputRoot $ReleaseGateRoot"
+  $contractValidatorPath = Join-Path $scriptRoot "Test-ReleaseEvidenceContract.ps1"
+  $contractReportPath = Join-Path $releaseGateRootFull "report/release-evidence-contract-report.md"
+
   $releaseGateEvidence = @()
   $releaseGateStatus = "unavailable"
-  $releaseGateMessage = "No release gate artifacts were linked"
+  $releaseGateMessage = "Release evidence contract not evaluated"
+
+  try {
+    & $contractValidatorPath -EvidenceRoot $releaseGateRootFull -ReportPath $contractReportPath -RecoveryCommand $recoveryCommand
+    $releaseGateStatus = "linked"
+    $releaseGateMessage = "Mandatory release evidence contract passed"
+  }
+  catch {
+    $releaseGateStatus = "blocked"
+    $releaseGateMessage = $_.Exception.Message
+
+    $blockedManifest = [pscustomobject]@{
+      generatedAtUtc = (Get-Date).ToUniversalTime().ToString("o")
+      versionTag = $VersionTag
+      configuration = $Configuration
+      runtime = $Runtime
+      repository = $repoRoot
+      outputRoot = $outputRootFull
+      signing = [pscustomobject]@{
+        required = [bool]$RequireSigning
+        performed = $signingPerformed
+      }
+      reproducibility = [pscustomobject]@{
+        checksums = $checksumsPath
+        dependencyInventory = [pscustomobject]@{
+          status = $dependencyInventoryStatus
+          message = $dependencyInventoryMessage
+          path = $dependencyInventoryPath
+          target = $sbomTarget
+        }
+        releaseGateEvidence = [pscustomobject]@{
+          status = $releaseGateStatus
+          message = $releaseGateMessage
+          root = $releaseGateRootFull
+        }
+        report = $reproducibilityPath
+      }
+      artifacts = [pscustomobject]@{
+        cliPublish = $cliPublishDir
+        appPublish = $appPublishDir
+        cliZip = ""
+        appZip = ""
+        dependencyInventory = $dependencyInventoryPath
+        checksums = $checksumsPath
+        reproducibility = $reproducibilityPath
+      }
+    }
+
+    $blockedReproducibility = [pscustomobject]@{
+      generatedAtUtc = (Get-Date).ToUniversalTime().ToString("o")
+      repository = $repoRoot
+      configuration = $Configuration
+      runtime = $Runtime
+      versionTag = $VersionTag
+      outputRoot = $outputRootFull
+      dotnetInfoLog = $dotnetInfoLogPath
+      dependencyInventory = [pscustomobject]@{
+        status = $dependencyInventoryStatus
+        message = $dependencyInventoryMessage
+        path = $dependencyInventoryPath
+        target = $sbomTarget
+      }
+      releaseGateEvidence = [pscustomobject]@{
+        status = $releaseGateStatus
+        message = $releaseGateMessage
+        root = $releaseGateRootFull
+        reportPath = $contractReportPath
+        artifacts = @()
+      }
+      packageArtifacts = [pscustomobject]@{
+        cliZip = ""
+        appZip = ""
+        manifest = $manifestPath
+      }
+      checksumsPath = $checksumsPath
+      blocked = $true
+    }
+
+    $blockedManifest | ConvertTo-Json -Depth 6 | Set-Content -Path $manifestPath -Encoding UTF8
+    $blockedReproducibility | ConvertTo-Json -Depth 8 | Set-Content -Path $reproducibilityPath -Encoding UTF8
+
+    throw "$releaseGateMessage`nnext command: $recoveryCommand"
+  }
 
   if (Test-Path -LiteralPath $releaseGateRootFull) {
-    $missingRequired = @()
-    $summaryCache = @{}
-
     foreach ($artifact in $releaseGateCatalog) {
       $artifactPath = Join-Path $releaseGateRootFull $artifact.relativePath
       $exists = Test-Path -LiteralPath $artifactPath
       $hashValue = ""
       $summaryStep = if ($artifact.PSObject.Properties.Name -contains 'summaryStep') { [string]$artifact.summaryStep } else { "" }
-      $summaryStepExists = $true
-      $summaryStepSucceeded = $true
 
       if ($exists) {
         $hashValue = (Get-FileHash -Algorithm SHA256 -Path $artifactPath).Hash.ToLowerInvariant()
-
-        if (-not [string]::IsNullOrWhiteSpace($summaryStep)) {
-          $cacheKey = $artifactPath.ToLowerInvariant()
-          if (-not $summaryCache.ContainsKey($cacheKey)) {
-            $summaryCache[$cacheKey] = Get-Content -Path $artifactPath -Raw | ConvertFrom-Json
-          }
-
-          $summaryPayload = $summaryCache[$cacheKey]
-          $matchingStep = @($summaryPayload.steps | Where-Object { $_.name -eq $summaryStep })
-          $summaryStepExists = ($matchingStep.Count -eq 1)
-          $summaryStepSucceeded = ($summaryStepExists -and [bool]$matchingStep[0].succeeded)
-
-          if (-not $summaryStepExists -or -not $summaryStepSucceeded) {
-            $exists = $false
-          }
-        }
-      }
-      elseif ($artifact.required) {
-        $missingRequired += $artifact.key
-      }
-
-      if ($artifact.required -and -not $exists -and -not ($missingRequired -contains $artifact.key)) {
-        $missingRequired += $artifact.key
       }
 
       $releaseGateEvidence += [pscustomobject]@{
@@ -288,20 +344,16 @@ try {
         path = $artifactPath
         sha256 = $hashValue
         summaryStep = $summaryStep
-        summaryStepExists = [bool]$summaryStepExists
-        summaryStepSucceeded = [bool]$summaryStepSucceeded
+        summaryStepExists = $null
+        summaryStepSucceeded = $null
       }
     }
-
-    if ($missingRequired.Count -eq 0) {
-      $releaseGateStatus = "linked"
-      $releaseGateMessage = "All required release gate artifacts are present"
-    }
-    else {
-      $releaseGateStatus = "partial"
-      $releaseGateMessage = "Missing required release gate artifacts: $($missingRequired -join ', ')"
-    }
   }
+
+  if (Test-Path $cliZipPath) { Remove-Item -Path $cliZipPath -Force }
+  if (Test-Path $appZipPath) { Remove-Item -Path $appZipPath -Force }
+  Compress-Archive -Path (Join-Path $cliPublishDir "*") -DestinationPath $cliZipPath
+  Compress-Archive -Path (Join-Path $appPublishDir "*") -DestinationPath $appZipPath
 
   $gitCommit = ""
   if (Get-Command git -ErrorAction SilentlyContinue) {
@@ -310,10 +362,6 @@ try {
       $gitCommit = ($gitCommitOutput | Select-Object -First 1).Trim()
     }
   }
-
-  $checksumsPath = Join-Path $manifestRoot "sha256-checksums.txt"
-  $manifestPath = Join-Path $manifestRoot "release-package-manifest.json"
-  $reproducibilityPath = Join-Path $manifestRoot "reproducibility-evidence.json"
 
   $manifest = [pscustomobject]@{
     generatedAtUtc = (Get-Date).ToUniversalTime().ToString("o")

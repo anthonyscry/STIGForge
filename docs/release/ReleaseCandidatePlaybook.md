@@ -27,6 +27,18 @@ Required pass conditions:
 - `upgrade-rebase/upgrade-rebase-summary.json` -> `status=passed`
 - `upgrade-rebase/upgrade-rebase-summary.json` includes `upgrade-rebase-parity-contract` with `succeeded=true`
 
+Mandatory contract enforcement uses `tools/release/Test-ReleaseEvidenceContract.ps1` and blocks promotion with explicit categories:
+
+- `[missing-proof]` required deterministic evidence artifact/step is missing.
+- `[failed-check]` required summary status or contract step is present but failing.
+- `[disabled-check]` required gate execution was disabled (for example `run_release_gate=false` in `release-package.yml`).
+
+Checklist-first blocker guidance appears in console output and in `report/release-evidence-contract-report.md`:
+
+- `what blocked`
+- `why blocked`
+- `next command`
+
 ## 3) Build package with reproducibility evidence
 
 Build package artifacts and cross-link release evidence:
@@ -37,6 +49,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\release\Invoke-Packa
   -Runtime win-x64 `
   -OutputRoot .\.artifacts\release-package\v1.1-rc1 `
   -ReleaseGateRoot .\.artifacts\release-gate\v1.1-rc1
+```
+
+`Invoke-PackageBuild.ps1` now performs mandatory preflight contract validation before `Compress-Archive` and terminates on any blocker category. Recovery command reference (copy/paste):
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\release\Invoke-ReleaseGate.ps1 -Configuration Release -OutputRoot .\.artifacts\release-gate\v1.1-rc1
 ```
 
 Required outputs:
