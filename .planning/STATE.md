@@ -3,8 +3,8 @@
 ## Current Position
 
 **Phase:** 13-mandatory-release-gate-enforcement-and-verification
-**Last Completed:** 12-wpf-parity-evidence-promotion-and-verification-03 (Phase 12 verification closure and WP traceability reconciliation)
-**Status:** Ready to plan
+**Last Completed:** 13-mandatory-release-gate-enforcement-and-verification-01 (Mandatory release evidence contract enforcement across CI/release/VM/package paths)
+**Status:** In progress
 
 **Started:** February 9, 2026
 
@@ -124,6 +124,21 @@ Progress: ███████████████████████�
 - **Rationale:** Preserve deterministic auditability after initial closure and block silent evidence drift.
 - **Status:** Implemented (Phase 12 Plan 03 verification language in Phase 09/12 artifacts)
 
+### Mandatory Release-Gate Disable Blocker
+- **Decision:** `run_release_gate=false` is a hard `[disabled-check]` blocker for promotion packaging.
+- **Rationale:** Prevent fail-open packaging when required release gate execution is disabled.
+- **Status:** Implemented (Phase 13 Plan 01 release-package workflow preflight)
+
+### Shared Release Evidence Contract Validator
+- **Decision:** Use one deterministic validator (`Test-ReleaseEvidenceContract.ps1`) across CI, release-package, VM smoke, and package-build preflight.
+- **Rationale:** Eliminate cross-flow drift and enforce identical blocker semantics (`missing-proof`, `failed-check`, `disabled-check`).
+- **Status:** Implemented (Phase 13 Plan 01 workflow + package-build wiring)
+
+### Pre-Archive Package Fail-Closed Enforcement
+- **Decision:** Package build now validates mandatory release evidence before `Compress-Archive`, persists blocked reproducibility metadata, and terminates on blockers.
+- **Rationale:** Ensure promotion artifacts are never produced when required evidence is missing, failed, or disabled.
+- **Status:** Implemented (Phase 13 Plan 01 package-build hardening)
+
 ---
 
 ## Pending Todos
@@ -179,14 +194,14 @@ Progress: ███████████████████████�
 
 ## Session Continuity
 
-**Last session:** 2026-02-17T00:17:34.244Z
-**Stopped at:** Phase 13 context gathered
-**Resume file:** .planning/phases/13-mandatory-release-gate-enforcement-and-verification/13-CONTEXT.md
+**Last session:** 2026-02-17T00:51:36.027Z
+**Stopped at:** Completed 13-mandatory-release-gate-enforcement-and-verification-01-PLAN.md
+**Resume file:** None
 
 ---
 
 ## Last Updated
 
-**Date:** February 16, 2026
+**Date:** February 17, 2026
 **Updated By:** OpenCode Executor
-**Reason:** Transitioned from Phase 12 completion to Phase 13 planning readiness
+**Reason:** Completed Phase 13 Plan 01 execution and recorded mandatory release-gate enforcement decisions
