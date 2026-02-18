@@ -58,25 +58,25 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| VER-01 | — | Pending |
-| VER-02 | — | Pending |
-| VER-03 | — | Pending |
-| VER-04 | — | Pending |
-| VER-05 | — | Pending |
-| EXP-01 | — | Pending |
-| EXP-02 | — | Pending |
-| EXP-03 | — | Pending |
-| EXP-04 | — | Pending |
-| EXP-05 | — | Pending |
-| UX-01 | — | Pending |
-| UX-02 | — | Pending |
-| UX-03 | — | Pending |
+| VER-01 | Phase 14 | Pending |
+| VER-02 | Phase 14 | Pending |
+| VER-03 | Phase 14 | Pending |
+| VER-04 | Phase 14 | Pending |
+| VER-05 | Phase 14 | Pending |
+| EXP-04 | Phase 15 | Pending |
+| EXP-05 | Phase 15 | Pending |
+| EXP-01 | Phase 16 | Pending |
+| EXP-02 | Phase 17 | Pending |
+| EXP-03 | Phase 18 | Pending |
+| UX-01 | Phase 19 | Pending |
+| UX-02 | Phase 19 | Pending |
+| UX-03 | Phase 19 | Pending |
 
 **Coverage:**
 - v1.2 requirements: 13 total
-- Mapped to phases: 0
-- Unmapped: 13 ⚠️
+- Mapped to phases: 13
+- Unmapped: 0
 
 ---
 *Requirements defined: 2026-02-18*
-*Last updated: 2026-02-18 after initial definition*
+*Last updated: 2026-02-18 after roadmap creation*

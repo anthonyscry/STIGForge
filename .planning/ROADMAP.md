@@ -9,7 +9,7 @@
   - Archive: `.planning/milestones/v1.1-ROADMAP.md`
   - Requirements archive: `.planning/milestones/v1.1-REQUIREMENTS.md`
   - Milestone audit: `.planning/milestones/v1.1-MILESTONE-AUDIT.md`
-- 📋 **v1.2 Capability Expansion** — Phases 14+ (planned)
+- 🚧 **v1.2 Verify Accuracy, Export Expansion, and Workflow Polish** — Phases 14-19 (in progress)
 
 ## Phases
 
@@ -127,14 +127,99 @@
 
 </details>
 
-### 🚧 v1.2 Capability Expansion (Planned)
+### 🚧 v1.2 Verify Accuracy, Export Expansion, and Workflow Polish (In Progress)
 
-**Milestone Goal:** Build advanced batch remediation workflows and enterprise integration adapters.
+**Milestone Goal:** Fix SCC verify returning 0 results, add XCCDF/SCAP and CSV/Excel export formats, and reduce operator friction across the verify and export workflow.
 
-### Progress
+## Phase Details
+
+### Phase 14: SCC Verify Correctness and Model Unification
+**Goal**: Operators can run a verify scan that produces real SCC findings, not zero results
+**Depends on**: Phase 13
+**Requirements**: VER-01, VER-02, VER-03, VER-04, VER-05
+**Success Criteria** (what must be TRUE):
+  1. Operator runs verify against a live system; `consolidated-results.json` contains a non-zero result count when SCC detects findings
+  2. Operator can configure the SCC scan timeout; scans longer than 30 seconds complete without premature termination
+  3. Verify workflow discovers SCC output from `Sessions/` subdirectories and processes XCCDF XML files alongside CKL files
+  4. Verify workflow routes XCCDF results through `VerifyOrchestrator` adapter chain; `ControlResult` and `NormalizedVerifyResult` are resolved to a single canonical model
+  5. `CklParser` rejects malformed or XXE-bearing XML using the same `LoadSecureXml()` hardening applied to `CklAdapter`
+**Plans**: TBD
+
+Plans:
+- [ ] 14-01: Fix ScapRunner timeout and output directory argument injection
+- [ ] 14-02: Wire VerifyOrchestrator into VerificationWorkflowService; unify ControlResult/NormalizedVerifyResult models; harden CklParser
+
+### Phase 15: Pluggable Export Adapter Interface
+**Goal**: A defined, tested `IExportAdapter` contract is in place and all existing exporters implement it
+**Depends on**: Phase 14
+**Requirements**: EXP-04, EXP-05
+**Success Criteria** (what must be TRUE):
+  1. `IExportAdapter` interface exists with `ExportAdapterRequest` and `ExportAdapterResult` models; adapters return result (not void)
+  2. `ExportAdapterRegistry` resolves adapters by format name; `ExportOrchestrator` dispatches to the correct adapter
+  3. Existing `EmassExporter` and `CklExporter` implement `IExportAdapter` and existing call sites continue to work
+**Plans**: TBD
+
+Plans:
+- [ ] 15-01: Define IExportAdapter, ExportAdapterRegistry, ExportOrchestrator; refactor EmassExporter and CklExporter
+
+### Phase 16: XCCDF Result Export
+**Goal**: Operators can export verify results as XCCDF 1.2 XML consumable by Tenable, ACAS, and STIG Viewer
+**Depends on**: Phase 15
+**Requirements**: EXP-01
+**Success Criteria** (what must be TRUE):
+  1. Operator exports verify results via CLI `export-xccdf` command; output is a valid XCCDF 1.2 XML file with correct `http://checklists.nist.gov/xccdf/1.2` namespace on every element
+  2. Exported XCCDF file passes a round-trip test: `ScapResultAdapter.CanHandle()` returns true and parsed result count matches the original
+  3. Export fails closed: partial output file is deleted if the adapter throws
+**Plans**: TBD
+
+Plans:
+- [ ] 16-01: Implement XccdfExportAdapter with round-trip validation
+
+### Phase 17: CSV Compliance Report
+**Goal**: Operators can export a management-facing compliance report as CSV
+**Depends on**: Phase 15
+**Requirements**: EXP-02
+**Success Criteria** (what must be TRUE):
+  1. Operator exports via CLI `export-csv` command; output CSV includes system name, STIG title, CAT level, status, finding detail, and remediation priority columns
+  2. CSV values containing commas, quotes, or newlines are correctly escaped; no malformed rows in the output file
+  3. Export completes and produces a non-empty file when verify results are present
+**Plans**: TBD
+
+Plans:
+- [ ] 17-01: Implement CsvExportAdapter with management-facing columns and property-based escape tests
+
+### Phase 18: Excel Compliance Report
+**Goal**: Operators can export a multi-tab Excel workbook for management and auditor review
+**Depends on**: Phase 17
+**Requirements**: EXP-03
+**Success Criteria** (what must be TRUE):
+  1. Operator exports via CLI `export-excel` command; output is an `.xlsx` file with four tabs: Summary, All Controls, Open Findings, Coverage
+  2. Exported workbook opens correctly in Excel and contains the same control data as the CSV export
+  3. `STIGForge.Reporting.ReportGenerator` is fully implemented (not a stub); ClosedXML 0.105.0 (MIT) is the only new dependency added
+**Plans**: TBD
+
+Plans:
+- [ ] 18-01: Implement ExcelExportAdapter and ReportGenerator using ClosedXML
+
+### Phase 19: WPF Workflow UX Polish and Export Format Picker
+**Goal**: The WPF app surfaces meaningful verify progress, actionable error recovery, and a single adapter-driven export control
+**Depends on**: Phase 15
+**Requirements**: UX-01, UX-02, UX-03
+**Success Criteria** (what must be TRUE):
+  1. Operator running a verify scan sees live progress feedback showing tool name, state (Pending/Running/Complete/Failed), elapsed time, and finding count — not a blank UI
+  2. When verify or export fails, the UI displays an actionable error message with specific recovery steps (not just an error code)
+  3. Operator selects an export format from a ComboBox populated by registered `IExportAdapter` entries and triggers export with a single button; no per-format dialogs accumulate
+  4. Export button is disabled while an export is running; `_isBusy` pattern prevents double-submission
+**Plans**: TBD
+
+Plans:
+- [ ] 19-01: Add VerifyStatus progress model and bind to WPF verify view
+- [ ] 19-02: Implement export format picker ComboBox driven by ExportAdapterRegistry; wire single Export command through ExportOrchestrator
+
+## Progress
 
 | Phase | Milestone | Plans Complete | Status | Completed |
-|-------|-----------|----------------|--------|----------|
+|-------|-----------|----------------|--------|-----------|
 | 03 Verification Integration | v1.0 | 3/3 | Complete | 2026-02-09 |
 | 04 Compliance Export Integrity | v1.0 | 3/3 | Complete | 2026-02-09 |
 | 05 Operator Workflow Completion | v1.0 | 3/3 | Complete | 2026-02-09 |
@@ -146,4 +231,9 @@
 | 11 Verification Backfill for Upgrade/Rebase | v1.1 | 1/1 | Complete | 2026-02-16 |
 | 12 WPF Parity Evidence Promotion and Verification | v1.1 | 3/3 | Complete | 2026-02-16 |
 | 13 Mandatory Release-Gate Enforcement and Verification | v1.1 | 2/2 | Complete | 2026-02-17 |
-| 14+ Capacity and Integrations | v1.2 | 0/0 | Planned | - |
+| 14 SCC Verify Correctness and Model Unification | v1.2 | 0/2 | Not started | - |
+| 15 Pluggable Export Adapter Interface | v1.2 | 0/1 | Not started | - |
+| 16 XCCDF Result Export | v1.2 | 0/1 | Not started | - |
+| 17 CSV Compliance Report | v1.2 | 0/1 | Not started | - |
+| 18 Excel Compliance Report | v1.2 | 0/1 | Not started | - |
+| 19 WPF Workflow UX Polish and Export Format Picker | v1.2 | 0/2 | Not started | - |
