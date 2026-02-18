@@ -2,13 +2,10 @@
 
 ## Current Position
 
-**Phase:** 13-mandatory-release-gate-enforcement-and-verification
-**Last Completed:** 13-mandatory-release-gate-enforcement-and-verification-02 (Canonical QA closure evidence reconciliation across verification, summaries, and requirements traceability)
-**Status:** v1.1 milestone complete
-
-**Started:** February 9, 2026
-
-Progress: ████████████████████████████████████████████████████████ (100%)
+**Phase:** Not started (defining requirements)
+**Plan:** —
+**Status:** Defining requirements
+**Last activity:** 2026-02-18 — Milestone v1.2 started
 
 ---
 
@@ -69,114 +66,23 @@ Progress: ███████████████████████�
 - **Rationale:** Ensure unsafe XML constructs fail predictably with actionable diagnostics across import/verify workflows.
 - **Status:** Implemented (OvalParser, CklAdapter, EvaluateStigAdapter, ScapResultAdapter)
 
-### Deterministic Security Intelligence Handling
-- **Decision:** Security gate now classifies unavailable external intelligence as unresolved findings (review-required) instead of silent pass behavior.
-- **Rationale:** Preserve deterministic, auditable outcomes in air-gapped/offline environments without masking uncertainty.
-- **Status:** Implemented (Invoke-SecurityGate summary/report + unresolved intelligence model)
-
-### Strict Security Gate Execution Mode
-- **Decision:** Strict mode is exposed in release and CI workflows so unresolved findings can be treated as blocking by policy.
-- **Rationale:** Allow high-assurance environments to enforce fail-closed behavior while keeping default offline deterministic mode usable.
-- **Status:** Implemented (Invoke-ReleaseGate + GitHub workflows strict mode wiring)
-
 ### Fail-Closed Mission Completion Gates
 - **Decision:** Apply/export completion is blocked when integrity-critical evidence fails (audit chain invalid, required export validation invalid).
 - **Rationale:** Mission completion and submission readiness must never report success when integrity evidence is invalid or unavailable.
 - **Status:** Implemented (ApplyRunner, EmassExporter, VerifyCommands, MainViewModel.ApplyVerify)
-
-### Resume Context Operator Decision Gate
-- **Decision:** Invalid or exhausted reboot resume context stops automated continuation and requires explicit operator decision.
-- **Rationale:** Prevent unsafe automatic continuation when reboot recovery evidence is stale or inconsistent.
-- **Status:** Implemented (RebootCoordinator + ApplyRunner validation)
-
-### Support Bundle Least-Disclosure Default
-- **Decision:** Support bundles redact sensitive metadata and exclude sensitive artifact paths by default, with explicit opt-in for sensitive collection.
-- **Rationale:** Troubleshooting bundles must remain portable without leaking secrets/credentials unless operator explicitly accepts risk.
-- **Status:** Implemented (SupportBundleBuilder + BundleCommands)
-
-### Fail-Closed Requirement Closure Cross-Check
-- **Decision:** Mark UR requirements completed only when REQUIREMENTS traceability, summary `requirements-completed` metadata, and phase verification evidence all align.
-- **Rationale:** Prevent orphaned requirement closure claims and keep requirement audits machine-verifiable.
-- **Status:** Implemented (Phase 11 verification backfill for UR-01..UR-04)
-
-### WP Closure Reconciliation Order
-- **Decision:** Keep WP cross-check verdicts at `ready-for-closure` until REQUIREMENTS traceability status is reconciled to `Completed`.
-- **Rationale:** Preserve fail-closed semantics by requiring all three closure sources to align before marking WP requirements closed.
-- **Status:** Implemented (Phase 12 Plan 01 verification backfill)
-
-### Explicit WPF Promotion Contract Signals
-- **Decision:** Promotion workflows now require explicit WPF workflow/severity/recovery contract step presence and success in upgrade/rebase summary evidence.
-- **Rationale:** Prevent WP evidence regression behind aggregate pass status and keep promotion checks machine-verifiable and fail-closed.
-- **Status:** Implemented (Phase 12 Plan 02 workflow enforcement)
-
-### Package Evidence WPF Contract Linking
-- **Decision:** Release package evidence catalog now includes explicit WPF contract keys validated against upgrade/rebase summary step outcomes.
-- **Rationale:** Ensure reproducibility evidence cannot report complete when WPF contract signals are missing or failed.
-- **Status:** Implemented (Phase 12 Plan 02 package evidence wiring)
-
-### WP Three-Source Closure Promotion
-- **Decision:** Mark WP requirements as completed only after REQUIREMENTS traceability, source verification evidence, and promotion wiring contract evidence align.
-- **Rationale:** Prevent closure claims that bypass machine-verifiable promotion evidence.
-- **Status:** Implemented (Phase 12 Plan 03 closure reconciliation)
-
-### WP Closure Fail-Closed Reversion
-- **Decision:** Keep WP closure verdicts fail-closed by reverting to unresolved if any closure source becomes missing, mismatched, or non-passing.
-- **Rationale:** Preserve deterministic auditability after initial closure and block silent evidence drift.
-- **Status:** Implemented (Phase 12 Plan 03 verification language in Phase 09/12 artifacts)
-
-### Mandatory Release-Gate Disable Blocker
-- **Decision:** `run_release_gate=false` is a hard `[disabled-check]` blocker for promotion packaging.
-- **Rationale:** Prevent fail-open packaging when required release gate execution is disabled.
-- **Status:** Implemented (Phase 13 Plan 01 release-package workflow preflight)
 
 ### Shared Release Evidence Contract Validator
 - **Decision:** Use one deterministic validator (`Test-ReleaseEvidenceContract.ps1`) across CI, release-package, VM smoke, and package-build preflight.
 - **Rationale:** Eliminate cross-flow drift and enforce identical blocker semantics (`missing-proof`, `failed-check`, `disabled-check`).
 - **Status:** Implemented (Phase 13 Plan 01 workflow + package-build wiring)
 
-### Pre-Archive Package Fail-Closed Enforcement
-- **Decision:** Package build now validates mandatory release evidence before `Compress-Archive`, persists blocked reproducibility metadata, and terminates on blockers.
-- **Rationale:** Ensure promotion artifacts are never produced when required evidence is missing, failed, or disabled.
-- **Status:** Implemented (Phase 13 Plan 01 package-build hardening)
-
-### QA Three-Source Closure Reconciliation
-- **Decision:** Mark QA-01..QA-03 as Completed only when REQUIREMENTS traceability, Phase 10 summary `requirements-completed` metadata, and Phase 10 verification mapping all align.
-- **Rationale:** Prevent QA requirement closure orphaning and keep closure machine-verifiable across planning artifacts.
-- **Status:** Implemented (Phase 13 Plan 02 closure reconciliation)
-
-### QA Closure Fail-Closed Reversion
-- **Decision:** Keep QA closure fail-closed by reverting verdicts to unresolved when any required closure source drifts or disappears.
-- **Rationale:** Preserve deterministic auditability after closure and block silent regression in planning evidence.
-- **Status:** Implemented (Phase 13 Plan 02 three-source cross-check semantics)
-
 ---
 
 ## Pending Todos
 
 ### High Priority
-- [x] Execute `08-upgrade-rebase-operator-workflow-01-PLAN.md`
-- [x] Execute `08-upgrade-rebase-operator-workflow-02-PLAN.md`
-- [x] Prepare Phase 09 context for WPF parity and recovery UX
-- [x] Execute `09-wpf-parity-and-recovery-ux-01-PLAN.md`
-- [x] Execute `09-wpf-parity-and-recovery-ux-02-PLAN.md`
-- [x] Prepare Phase 10 context for quality and release signal hardening
-- [x] Execute `10-quality-and-release-signal-hardening-01-PLAN.md`
-- [x] Execute `10-quality-and-release-signal-hardening-02-PLAN.md`
-- [x] Run release-gate and package-build evidence generation for v1.1 RC (`phase10-rc`)
-- [x] Execute `docs/release/ShipReadinessChecklist.md` for v1.1 release candidate
-- [ ] Close manual checklist blockers for functional UAT and upgrade/rollback validation
-- [x] Pin RC commit and regenerate release/package evidence from clean working tree
-- [x] Run `release-package.yml` for pinned RC commit (`0b0f5ed`)
-- [x] Run `vm-smoke-matrix.yml` for pinned RC commit (`0b0f5ed`) and archive outputs
-- [x] Execute `11-verification-backfill-for-upgrade-rebase-01-PLAN.md`
-
-### Medium Priority
-- [x] Validate requirement traceability remains 100% after Phase 08 updates
-- [x] Validate WP-02/WP-03 acceptance criteria for severity and recovery guidance parity
-- [x] Validate QA-01/QA-02 gating evidence after Phase 10 Plan 01
-- [x] Define v1.1 quality/release signal acceptance thresholds for Phase 10
-- [x] Capture initial go/no-go decision record with artifact roots and commit hash
-- [ ] Capture final go/no-go decision record after manual and workflow signoff
+- [ ] Define v1.2 requirements
+- [ ] Create v1.2 roadmap
 
 ### Low Priority
 - [ ] SCCM packaging integration (v2/v3)
@@ -187,8 +93,7 @@ Progress: ███████████████████████�
 
 ## Blockers & Concerns
 
-- Current go/no-go is `NO-GO (temporary)` in `docs/release/GoNoGo-v1.1-rc1.md` until manual checklist validations complete.
-- Manual checklist sections 3 and 4 remain open for target-environment signoff evidence.
+- SCC/verify workflow returning 0 results needs root-cause investigation before export work makes sense.
 
 ---
 
@@ -198,20 +103,20 @@ Progress: ███████████████████████�
 **.NET Version:** .NET 8
 **PowerShell Target:** 5.1
 **Database:** SQLite
-**Git Branch:** gsd/phase-13-mandatory-release-gate-enforcement-and-verification
+**Git Branch:** main (v1.2 branches TBD)
 
 ---
 
 ## Session Continuity
 
-**Last session:** 2026-02-17T01:06:15.639Z
-**Stopped at:** Phase 13 verification approved; phase marked complete and milestone execution finished
+**Last session:** 2026-02-18
+**Stopped at:** Starting v1.2 milestone — gathering requirements
 **Resume file:** None
 
 ---
 
 ## Last Updated
 
-**Date:** February 17, 2026
-**Updated By:** OpenCode Executor
-**Reason:** Approved Phase 13 human verification and transitioned to milestone-complete state
+**Date:** February 18, 2026
+**Updated By:** GSD new-milestone
+**Reason:** Started milestone v1.2

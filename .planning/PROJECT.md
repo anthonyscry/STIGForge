@@ -8,39 +8,44 @@ Build -> Apply -> Verify -> Prove.
 
 ## Current State (Post v1.1)
 
-- v1.0 mission baseline is shipped and archived in `.planning/milestones/v1.0-ROADMAP.md`.
-- v1.1 milestone is complete with shipped archive in `.planning/milestones/v1.1-ROADMAP.md` and `.planning/milestones/v1.1-REQUIREMENTS.md`.
-- Upgrade/rebase diff/rebase flows, WPF parity, and release evidence contracts are now machine-verified and fail-closed.
-- Core operator workflow, export integrity, and security hardening remain implemented for offline/air-gapped environments.
-- Phase 11 verification backfill closed UR orphaning with machine-verifiable cross-source requirement closure evidence.
-- Phase 12 evidence promotion closed WP orphaning with explicit WPF workflow/severity/recovery contract signals.
-- Phase 13 enforced release-package fail-closed behavior with shared evidence contract validation across CI, VM, release, and package build.
+- v1.0 mission baseline shipped (`.planning/milestones/v1.0-ROADMAP.md`).
+- v1.1 release hardening shipped (`.planning/milestones/v1.1-ROADMAP.md`, `.planning/milestones/v1.1-REQUIREMENTS.md`).
+- Core Build → Apply → Verify → Prove workflow is operational with fail-closed evidence contracts.
+- Upgrade/rebase, WPF parity, and release evidence are machine-verified.
 
-## Current Milestone: v1.1 (Complete)
+## Current Milestone: v1.2 Verify Accuracy, Export Expansion, and Workflow Polish
 
-**Goal:** Complete v1.1 gap-closure execution and preserve fail-closed release readiness evidence.
+**Goal:** Fix verify/SCC producing 0 results, add XCCDF/SCAP and CSV/Excel export adapters, and reduce operator friction across the Build/Apply/Verify/Prove workflow.
 
-**Post-completion follow-ups:**
-- Close remaining manual go/no-go checklist blockers with explicit signoff evidence.
-- Run milestone archival and closeout flow for `v1.1`.
-  - This includes this document update and deletion of `.planning/REQUIREMENTS.md` for next-milestone refresh.
+**Target features:**
+- Fix STIGForge verify workflow returning 0 findings (SCC integration correctness)
+- XCCDF/SCAP result export for tool interop (Tenable, ACAS, eMASS)
+- CSV/Excel compliance reporting for management, auditors, and teams
+- Pluggable export adapter architecture for future format additions
+- Workflow UX polish: reduce clicks/steps, clarify status, improve error recovery
 
-## Validated Deliverables (v1.1)
+## Validated Deliverables (v1.0 + v1.1)
 
-- ✓ Deterministic baseline-to-target diff reporting with deterministic conflict/action classification (`UR-01`, `UR-02`, `UR-03`, `UR-04`).
-- ✓ WPF parity for upgrade/rebase mission flows without standard CLI fallback (`WP-01`, `WP-02`, `WP-03`).
-- ✓ CI/VM/release evidence trending and release-package evidence contract enforcement (`QA-01`, `QA-02`, `QA-03`).
+- ✓ Core operator workflow: Build → Apply → Verify → Prove (v1.0).
+- ✓ Security hardening: break-glass, secure XML, archive boundaries, fail-closed gates (v1.0).
+- ✓ Deterministic upgrade/rebase with conflict/action classification (v1.1).
+- ✓ WPF parity for upgrade/rebase mission flows (v1.1).
+- ✓ Fail-closed release evidence contracts across CI/VM/release/package (v1.1).
 
-## Active Requirements (v1.2+)
+## Active Requirements (v1.2)
 
-- [ ] Advanced bulk remediation simulation and preview workflows (`FUT-01`).
-- [ ] Pluggable enterprise packaging/export adapters beyond eMASS baseline (`FUT-02`).
+- [ ] Verify workflow returns accurate SCC/SCAP findings (correctness fix).
+- [ ] XCCDF/SCAP result export for compliance tool interop.
+- [ ] CSV/Excel compliance reporting for human audiences.
+- [ ] Pluggable export adapter interface for future formats.
+- [ ] Workflow UX improvements: fewer steps, clearer status, better error recovery.
 
 ## Non-Goals (Still Out of Scope)
 
 - Direct eMASS API write-back.
 - SCCM enterprise rollout platform.
 - Multi-tenant cloud control plane.
+- Bulk remediation simulation (PowerSTIG handles remediation; no gap identified).
 
 ## Locked Technical Decisions
 
@@ -60,8 +65,10 @@ Build -> Apply -> Verify -> Prove.
 
 ## Context
 
-- Evidence-driven workflow has moved from orphaned requirement flags to explicit gate contracts and closeout automation.
-- Current evidence quality for v1.1 is confirmed by `.planning/milestones/v1.1-MILESTONE-AUDIT.md` (passed).
+- Evidence-driven workflow uses explicit gate contracts and closeout automation (established v1.1).
+- STIGForge verify workflow currently returns 0 findings — SCC integration needs correctness investigation.
+- Export currently supports eMASS CKL format only; operators need XCCDF/SCAP and CSV/Excel for broader tool/audience reach.
+- Workflow has accumulated friction: too many clicks, unclear status indicators, painful error recovery.
 
 ## Constraints
 
@@ -77,4 +84,4 @@ Build -> Apply -> Verify -> Prove.
 - New milestone requirements are explicitly tracked and mapped to planned phases.
 
 ---
-*Last updated: 2026-02-17 after v1.1 milestone completion*
+*Last updated: 2026-02-18 after v1.2 milestone start*
