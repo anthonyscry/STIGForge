@@ -146,8 +146,8 @@
 **Plans**: 2 plans
 
 Plans:
-- [ ] 14-01-PLAN.md — Add RunAsync with configurable timeout to ScapRunner and EvaluateStigRunner; add TimeoutSeconds to workflow options and CLI
-- [ ] 14-02-PLAN.md — Wire VerifyOrchestrator into VerificationWorkflowService; bridge NormalizedVerifyResult to ControlResult; harden CklParser; fix MainViewModel defaults; restructure VerifyView tabs
+- [x] 14-01-PLAN.md — Add RunAsync with configurable timeout to ScapRunner and EvaluateStigRunner; add TimeoutSeconds to workflow options and CLI
+- [x] 14-02-PLAN.md — Wire VerifyOrchestrator into VerificationWorkflowService; bridge NormalizedVerifyResult to ControlResult; harden CklParser; fix MainViewModel defaults; restructure VerifyView tabs
 
 ### Phase 15: Pluggable Export Adapter Interface
 **Goal**: A defined, tested `IExportAdapter` contract is in place and all existing exporters implement it
@@ -231,7 +231,7 @@ Plans:
 | 11 Verification Backfill for Upgrade/Rebase | v1.1 | 1/1 | Complete | 2026-02-16 |
 | 12 WPF Parity Evidence Promotion and Verification | v1.1 | 3/3 | Complete | 2026-02-16 |
 | 13 Mandatory Release-Gate Enforcement and Verification | v1.1 | 2/2 | Complete | 2026-02-17 |
-| 14 SCC Verify Correctness and Model Unification | v1.2 | 0/2 | Not started | - |
+| 14 SCC Verify Correctness and Model Unification | v1.2 | 2/2 | Complete | 2026-02-18 |
 | 15 Pluggable Export Adapter Interface | v1.2 | 0/1 | Not started | - |
 | 16 XCCDF Result Export | v1.2 | 0/1 | Not started | - |
 | 17 CSV Compliance Report | v1.2 | 0/1 | Not started | - |

@@ -104,13 +104,14 @@ public partial class MainViewModel : ObservableObject, IDisposable
   [ObservableProperty] private string evaluateStigRoot = "";
   [ObservableProperty] private string evaluateStigArgs = "";
   [ObservableProperty] private string scapCommandPath = "";
-  [ObservableProperty] private string scapArgs = "-u -s -r -f";
+  [ObservableProperty] private string scapArgs = "-u";
   [ObservableProperty] private bool scapIncludeU = true;
   [ObservableProperty] private bool scapIncludeS = true;
   [ObservableProperty] private bool scapIncludeR = true;
-  [ObservableProperty] private bool scapIncludeF = true;
+  [ObservableProperty] private bool scapIncludeF;
   [ObservableProperty] private string scapAdditionalArgs = "";
   [ObservableProperty] private string scapLabel = "DISA SCAP";
+  [ObservableProperty] private VerifyScannerMode verifyScannerMode;
   [ObservableProperty] private string lastOutputPath = "";
   [ObservableProperty] private string reportSummary = "";
   [ObservableProperty] private string verifySummary = "";
@@ -262,7 +263,9 @@ public partial class MainViewModel : ObservableObject, IDisposable
   [ObservableProperty] private string manualFilterText = "";
   [ObservableProperty] private string manualStatusFilter = "All";
   [ObservableProperty] private string manualCatFilter = "All";
+  [ObservableProperty] private string manualStigGroupFilter = "All";
   [ObservableProperty] private string manualSummary = "";
+  public ObservableCollection<string> ManualStigGroupFilters { get; } = new();
 
   public IReadOnlyList<string> EvidenceTypes { get; } = new[]
   {
@@ -615,3 +618,5 @@ public partial class MainViewModel : ObservableObject, IDisposable
     _cts.Dispose();
   }
 }
+
+public enum VerifyScannerMode { Scap, EvaluateStig, Both }

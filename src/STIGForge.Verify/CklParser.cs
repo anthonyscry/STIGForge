@@ -1,3 +1,5 @@
+using System.IO;
+using System.Xml;
 using System.Xml.Linq;
 
 namespace STIGForge.Verify;
@@ -6,7 +8,7 @@ public static class CklParser
 {
   public static IReadOnlyList<ControlResult> ParseFile(string path, string toolName)
   {
-    var doc = XDocument.Load(path);
+    var doc = LoadSecureXml(path);
     var vulnNodes = doc.Descendants("VULN").ToList();
     var results = new List<ControlResult>(vulnNodes.Count);
 
@@ -43,6 +45,29 @@ public static class CklParser
     }
 
     return results;
+  }
+
+  private static XDocument LoadSecureXml(string filePath)
+  {
+    var settings = new XmlReaderSettings
+    {
+      DtdProcessing = DtdProcessing.Prohibit,
+      XmlResolver = null,
+      IgnoreWhitespace = true,
+      MaxCharactersFromEntities = 1024,
+      MaxCharactersInDocument = 20_000_000,
+      Async = false
+    };
+    try
+    {
+      using var reader = XmlReader.Create(filePath, settings);
+      return XDocument.Load(reader, LoadOptions.None);
+    }
+    catch (XmlException ex)
+    {
+      throw new InvalidDataException(
+          $"[VERIFY-CKL-XML-001] Failed to parse CKL XML '{filePath}': {ex.Message}", ex);
+    }
   }
 
   private static string? Get(IReadOnlyDictionary<string, string> dict, string key)

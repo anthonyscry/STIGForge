@@ -133,6 +133,8 @@ public sealed class EvaluateStigWorkflowOptions
   public string Arguments { get; set; } = string.Empty;
 
   public string? WorkingDirectory { get; set; }
+
+  public int TimeoutSeconds { get; set; } = 600;
 }
 
 public sealed class ScapWorkflowOptions
@@ -146,6 +148,8 @@ public sealed class ScapWorkflowOptions
   public string? WorkingDirectory { get; set; }
 
   public string ToolLabel { get; set; } = "SCAP";
+
+  public int TimeoutSeconds { get; set; } = 600;
 }
 
 public sealed class VerificationWorkflowResult

@@ -9,6 +9,8 @@ namespace STIGForge.Cli.Commands;
 
 internal static class VerifyCommands
 {
+  private const int NoResultFailureExitCode = 1;
+
   public static void Register(RootCommand rootCmd, Func<IHost> buildHost)
   {
     RegisterVerifyEvaluateStig(rootCmd, buildHost);
@@ -25,11 +27,12 @@ internal static class VerifyCommands
     var workDirOpt = new Option<string>("--workdir", () => string.Empty, "Working directory for the script");
     var logOpt = new Option<string>("--log", () => string.Empty, "Optional log file path");
     var outputRootOpt = new Option<string>("--output-root", () => string.Empty, "Folder to scan for generated CKL files");
+    var timeoutOpt = new Option<int>("--timeout", () => 600, "Scan timeout in seconds (default: 600)");
 
     cmd.AddOption(toolRootOpt); cmd.AddOption(argsOpt); cmd.AddOption(workDirOpt);
-    cmd.AddOption(logOpt); cmd.AddOption(outputRootOpt);
+    cmd.AddOption(logOpt); cmd.AddOption(outputRootOpt); cmd.AddOption(timeoutOpt);
 
-    cmd.SetHandler(async (toolRoot, args, workDir, logPath, outputRoot) =>
+    cmd.SetHandler(async (toolRoot, args, workDir, logPath, outputRoot, timeout) =>
     {
       var workflowResult = await RunWorkflowAsync(
         buildHost,
@@ -42,9 +45,12 @@ internal static class VerifyCommands
             Enabled = true,
             ToolRoot = toolRoot,
             Arguments = args ?? string.Empty,
-            WorkingDirectory = string.IsNullOrWhiteSpace(workDir) ? null : workDir
+            WorkingDirectory = string.IsNullOrWhiteSpace(workDir) ? null : workDir,
+            TimeoutSeconds = timeout
           };
         });
+
+      var actualOutputRoot = ResolveOutputRoot(outputRoot, workflowResult);
 
       var evalRun = workflowResult.ToolRuns.FirstOrDefault(r => r.Tool.IndexOf("Evaluate", StringComparison.OrdinalIgnoreCase) >= 0);
       if (evalRun != null)
@@ -54,12 +60,12 @@ internal static class VerifyCommands
 
         if (!string.IsNullOrWhiteSpace(logPath))
           File.WriteAllText(logPath, evalRun.Output + Environment.NewLine + evalRun.Error);
-
-        Environment.ExitCode = evalRun.ExitCode;
       }
 
+      Environment.ExitCode = ResolveExitCode(evalRun, workflowResult, "Evaluate-STIG", actualOutputRoot);
+
       PrintConsolidatedOutput(outputRoot, workflowResult);
-    }, toolRootOpt, argsOpt, workDirOpt, logOpt, outputRootOpt);
+    }, toolRootOpt, argsOpt, workDirOpt, logOpt, outputRootOpt, timeoutOpt);
 
     rootCmd.AddCommand(cmd);
   }
@@ -73,11 +79,13 @@ internal static class VerifyCommands
     var outOpt = new Option<string>("--output-root", () => string.Empty, "Folder to scan for generated CKL files");
     var toolOpt = new Option<string>("--tool", () => "SCAP", "Tool label used in reports");
     var logOpt = new Option<string>("--log", () => string.Empty, "Optional log file path");
+    var timeoutOpt = new Option<int>("--timeout", () => 600, "Scan timeout in seconds (default: 600)");
 
     cmd.AddOption(exeOpt); cmd.AddOption(argsOpt); cmd.AddOption(workOpt);
     cmd.AddOption(outOpt); cmd.AddOption(toolOpt); cmd.AddOption(logOpt);
+    cmd.AddOption(timeoutOpt);
 
-    cmd.SetHandler(async (exe, args, workDir, outputRoot, toolName, logPath) =>
+    cmd.SetHandler(async (exe, args, workDir, outputRoot, toolName, logPath, timeout) =>
     {
       var workflowResult = await RunWorkflowAsync(
         buildHost,
@@ -91,9 +99,12 @@ internal static class VerifyCommands
             CommandPath = exe,
             Arguments = args ?? string.Empty,
             WorkingDirectory = string.IsNullOrWhiteSpace(workDir) ? null : workDir,
-            ToolLabel = string.IsNullOrWhiteSpace(toolName) ? "SCAP" : toolName
+            ToolLabel = string.IsNullOrWhiteSpace(toolName) ? "SCAP" : toolName,
+            TimeoutSeconds = timeout
           };
         });
+
+      var actualOutputRoot = ResolveOutputRoot(outputRoot, workflowResult);
 
       var scapRun = workflowResult.ToolRuns.FirstOrDefault(r => r.Tool.IndexOf("SCAP", StringComparison.OrdinalIgnoreCase) >= 0 || string.Equals(r.Tool, toolName, StringComparison.OrdinalIgnoreCase));
       if (scapRun != null)
@@ -103,12 +114,13 @@ internal static class VerifyCommands
 
         if (!string.IsNullOrWhiteSpace(logPath))
           File.WriteAllText(logPath, scapRun.Output + Environment.NewLine + scapRun.Error);
-
-        Environment.ExitCode = scapRun.ExitCode;
       }
 
+      var requestedScapTool = string.IsNullOrWhiteSpace(toolName) ? "SCAP" : toolName;
+      Environment.ExitCode = ResolveExitCode(scapRun, workflowResult, requestedScapTool, actualOutputRoot);
+
       PrintConsolidatedOutput(outputRoot, workflowResult);
-    }, exeOpt, argsOpt, workOpt, outOpt, toolOpt, logOpt);
+    }, exeOpt, argsOpt, workOpt, outOpt, toolOpt, logOpt, timeoutOpt);
 
     rootCmd.AddCommand(cmd);
   }
@@ -270,5 +282,40 @@ internal static class VerifyCommands
     Console.WriteLine("Wrote consolidated results:");
     Console.WriteLine("  " + workflowResult.ConsolidatedJsonPath);
     Console.WriteLine("  " + workflowResult.ConsolidatedCsvPath);
+  }
+
+  private static int ResolveExitCode(VerificationToolRunResult? runResult, VerificationWorkflowResult workflowResult, string requestedToolName, string? outputRoot)
+  {
+    var exitCode = runResult?.ExitCode ?? 0;
+
+    if (workflowResult.ConsolidatedResultCount > 0)
+      return exitCode;
+
+    Console.Error.WriteLine(BuildNoResultExitMessage(requestedToolName, workflowResult, outputRoot));
+    return Math.Max(exitCode, NoResultFailureExitCode);
+  }
+
+  private static string ResolveOutputRoot(string? requestedOutputRoot, VerificationWorkflowResult workflowResult)
+  {
+    if (!string.IsNullOrWhiteSpace(requestedOutputRoot))
+      return requestedOutputRoot;
+
+    var directory = Path.GetDirectoryName(workflowResult.ConsolidatedJsonPath);
+    return string.IsNullOrWhiteSpace(directory) ? string.Empty : directory;
+  }
+
+  private static string BuildNoResultExitMessage(string requestedToolName, VerificationWorkflowResult workflowResult, string? outputRoot)
+  {
+    var hasOutputRoot = string.IsNullOrWhiteSpace(outputRoot) ? "<unknown>" : outputRoot;
+    var executedTools = workflowResult.ToolRuns
+      .Where(r => r.Executed)
+      .Select(r => r.Tool)
+      .Where(r => !string.IsNullOrWhiteSpace(r))
+      .Distinct(StringComparer.OrdinalIgnoreCase)
+      .OrderBy(r => r, StringComparer.OrdinalIgnoreCase)
+      .ToList();
+
+    var executedToolText = executedTools.Count == 0 ? "none" : string.Join(", ", executedTools);
+    return $"No CKL results were generated for requested tool '{requestedToolName}'. Output root: '{hasOutputRoot}'. Executed tools: {executedToolText}.";
   }
 }

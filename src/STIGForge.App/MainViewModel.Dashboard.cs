@@ -768,6 +768,9 @@ public partial class MainViewModel
 
   private void UpdateScapArgsFromOptions()
   {
+    var hasValueInExtraArgs = !string.IsNullOrWhiteSpace(ScapAdditionalArgs);
+    var includeF = ScapIncludeF && hasValueInExtraArgs;
+
     var parts = new List<string>();
     if (ScapIncludeU)
       parts.Add("-u");
@@ -775,12 +778,11 @@ public partial class MainViewModel
       parts.Add("-s");
     if (ScapIncludeR)
       parts.Add("-r");
-    if (ScapIncludeF)
+    if (includeF)
       parts.Add("-f");
 
-    var custom = (ScapAdditionalArgs ?? string.Empty).Trim();
-    if (!string.IsNullOrWhiteSpace(custom))
-      parts.Add(custom);
+    if (hasValueInExtraArgs)
+      parts.Add(ScapAdditionalArgs!.Trim());
 
     var combined = string.Join(" ", parts);
     if (string.Equals(ScapArgs, combined, StringComparison.Ordinal))
@@ -788,6 +790,8 @@ public partial class MainViewModel
       OnPropertyChanged(nameof(ScapArgsPreview));
       return;
     }
+
+    ScapIncludeF = includeF;
 
     _suppressScapArgsSync = true;
     ScapArgs = combined;

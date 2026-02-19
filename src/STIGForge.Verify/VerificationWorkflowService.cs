@@ -13,7 +13,7 @@ public sealed class VerificationWorkflowService : IVerificationWorkflowService
     _scapRunner = scapRunner;
   }
 
-  public Task<VerificationWorkflowResult> RunAsync(VerificationWorkflowRequest request, CancellationToken ct)
+  public async Task<VerificationWorkflowResult> RunAsync(VerificationWorkflowRequest request, CancellationToken ct)
   {
     if (request == null)
       throw new ArgumentNullException(nameof(request));
@@ -29,15 +29,38 @@ public sealed class VerificationWorkflowService : IVerificationWorkflowService
     var diagnostics = new List<string>();
     var toolRuns = new List<VerificationToolRunResult>(2);
 
-    toolRuns.Add(RunEvaluateStigIfConfigured(request, diagnostics));
-    toolRuns.Add(RunScapIfConfigured(request, diagnostics));
+    toolRuns.Add(await RunEvaluateStigIfConfigured(request, diagnostics, ct));
+    toolRuns.Add(await RunScapIfConfigured(request, diagnostics, ct));
 
     var artifacts = BuildArtifactPaths(request.OutputRoot);
     var toolLabel = ResolveConsolidatedToolLabel(request, toolRuns);
 
-    var report = VerifyReportWriter.BuildFromCkls(request.OutputRoot, toolLabel);
-    report.StartedAt = ResolveReportStart(workflowStartedAt, toolRuns);
-    report.FinishedAt = ResolveReportFinish(report.StartedAt, toolRuns);
+    // Discover all result files (CKL + XCCDF XML)
+    var cklFiles = Directory.GetFiles(request.OutputRoot, "*.ckl", SearchOption.AllDirectories);
+    var xmlFiles = Directory.GetFiles(request.OutputRoot, "*.xml", SearchOption.AllDirectories);
+    var allFiles = cklFiles.Concat(xmlFiles)
+        .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
+        .ToList();
+
+    // Parse through orchestrator adapter chain
+    var orchestrator = new VerifyOrchestrator();
+    var consolidated = orchestrator.ParseAndMergeResults(allFiles);
+
+    // Bridge NormalizedVerifyResult -> ControlResult for downstream VerifyReport pipeline
+    var results = consolidated.Results.Select(ToControlResult).ToList();
+
+    // Append orchestrator diagnostics
+    diagnostics.AddRange(consolidated.DiagnosticMessages);
+
+    var report = new VerifyReport
+    {
+      Tool = toolLabel,
+      ToolVersion = "unknown",
+      StartedAt = ResolveReportStart(workflowStartedAt, toolRuns),
+      FinishedAt = ResolveReportFinish(workflowStartedAt, toolRuns),
+      OutputRoot = request.OutputRoot,
+      Results = results
+    };
 
     VerifyReportWriter.WriteJson(artifacts.ConsolidatedJsonPath, report);
     VerifyReportWriter.WriteCsv(artifacts.ConsolidatedCsvPath, report.Results);
@@ -46,11 +69,11 @@ public sealed class VerificationWorkflowService : IVerificationWorkflowService
     VerifyReportWriter.WriteCoverageSummary(artifacts.CoverageSummaryCsvPath, artifacts.CoverageSummaryJsonPath, coverage);
 
     if (report.Results.Count == 0)
-      diagnostics.Add("No CKL results were found under output root.");
+      diagnostics.Add(BuildNoResultDiagnostic(request.OutputRoot, toolRuns));
 
     var workflowFinishedAt = DateTimeOffset.Now;
 
-    return Task.FromResult(new VerificationWorkflowResult
+    return new VerificationWorkflowResult
     {
       StartedAt = report.StartedAt,
       FinishedAt = workflowFinishedAt > report.FinishedAt ? workflowFinishedAt : report.FinishedAt,
@@ -61,10 +84,10 @@ public sealed class VerificationWorkflowService : IVerificationWorkflowService
       ConsolidatedResultCount = report.Results.Count,
       ToolRuns = toolRuns,
       Diagnostics = diagnostics
-    });
+    };
   }
 
-  private VerificationToolRunResult RunEvaluateStigIfConfigured(VerificationWorkflowRequest request, List<string> diagnostics)
+  private async Task<VerificationToolRunResult> RunEvaluateStigIfConfigured(VerificationWorkflowRequest request, List<string> diagnostics, CancellationToken ct)
   {
     var now = DateTimeOffset.Now;
 
@@ -81,10 +104,12 @@ public sealed class VerificationWorkflowService : IVerificationWorkflowService
 
     try
     {
-      var runResult = _evaluateStigRunner.Run(
+      var runResult = await _evaluateStigRunner.RunAsync(
         request.EvaluateStig.ToolRoot,
         request.EvaluateStig.Arguments,
-        string.IsNullOrWhiteSpace(request.EvaluateStig.WorkingDirectory) ? null : request.EvaluateStig.WorkingDirectory);
+        string.IsNullOrWhiteSpace(request.EvaluateStig.WorkingDirectory) ? null : request.EvaluateStig.WorkingDirectory,
+        ct,
+        TimeSpan.FromSeconds(request.EvaluateStig.TimeoutSeconds));
 
       if (runResult.ExitCode != 0)
         diagnostics.Add($"Evaluate-STIG exited with code {runResult.ExitCode}.");
@@ -116,7 +141,7 @@ public sealed class VerificationWorkflowService : IVerificationWorkflowService
     }
   }
 
-  private VerificationToolRunResult RunScapIfConfigured(VerificationWorkflowRequest request, List<string> diagnostics)
+  private async Task<VerificationToolRunResult> RunScapIfConfigured(VerificationWorkflowRequest request, List<string> diagnostics, CancellationToken ct)
   {
     var toolName = string.IsNullOrWhiteSpace(request.Scap.ToolLabel) ? "SCAP" : request.Scap.ToolLabel.Trim();
     var now = DateTimeOffset.Now;
@@ -134,10 +159,14 @@ public sealed class VerificationWorkflowService : IVerificationWorkflowService
 
     try
     {
-      var runResult = _scapRunner.Run(
+      var sanitizedArgs = SanitizeScapArgs(request.Scap.Arguments, diagnostics);
+
+      var runResult = await _scapRunner.RunAsync(
         request.Scap.CommandPath,
-        request.Scap.Arguments,
-        string.IsNullOrWhiteSpace(request.Scap.WorkingDirectory) ? null : request.Scap.WorkingDirectory);
+        sanitizedArgs,
+        string.IsNullOrWhiteSpace(request.Scap.WorkingDirectory) ? null : request.Scap.WorkingDirectory,
+        ct,
+        TimeSpan.FromSeconds(request.Scap.TimeoutSeconds));
 
       if (runResult.ExitCode != 0)
         diagnostics.Add($"{toolName} exited with code {runResult.ExitCode}.");
@@ -168,6 +197,54 @@ public sealed class VerificationWorkflowService : IVerificationWorkflowService
       };
     }
   }
+
+  private static string SanitizeScapArgs(string args, List<string> diagnostics)
+  {
+    if (string.IsNullOrWhiteSpace(args)) return args;
+    var tokens = args.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries).ToList();
+    for (int i = 0; i < tokens.Count; i++)
+    {
+      if (string.Equals(tokens[i], "-f", StringComparison.OrdinalIgnoreCase))
+      {
+        // -f requires a following filename argument
+        if (i + 1 >= tokens.Count || tokens[i + 1].StartsWith("-"))
+        {
+          tokens.RemoveAt(i);
+          diagnostics.Add("SCAP argument '-f' was missing a filename; removed invalid switch.");
+          i--;
+        }
+      }
+    }
+    return string.Join(" ", tokens);
+  }
+
+  private static ControlResult ToControlResult(NormalizedVerifyResult r)
+  {
+    return new ControlResult
+    {
+      VulnId = r.VulnId,
+      RuleId = r.RuleId,
+      Title = r.Title,
+      Severity = r.Severity,
+      Status = MapStatusToString(r.Status),
+      FindingDetails = r.FindingDetails,
+      Comments = r.Comments,
+      Tool = r.Tool,
+      SourceFile = r.SourceFile,
+      VerifiedAt = r.VerifiedAt
+    };
+  }
+
+  private static string MapStatusToString(VerifyStatus status) => status switch
+  {
+    VerifyStatus.Pass => "NotAFinding",
+    VerifyStatus.Fail => "Open",
+    VerifyStatus.NotApplicable => "Not_Applicable",
+    VerifyStatus.NotReviewed => "Not_Reviewed",
+    VerifyStatus.Informational => "Informational",
+    VerifyStatus.Error => "Error",
+    _ => "Not_Reviewed"
+  };
 
   private static VerificationToolRunResult BuildSkippedRun(string tool, DateTimeOffset at, string message)
   {
@@ -207,6 +284,20 @@ public sealed class VerificationWorkflowService : IVerificationWorkflowService
       return "Verification";
 
     return "Verification";
+  }
+
+  private static string BuildNoResultDiagnostic(string outputRoot, IReadOnlyList<VerificationToolRunResult> runs)
+  {
+    var toolNames = runs
+      .Where(r => r.Executed)
+      .Select(r => r.Tool)
+      .Where(tool => !string.IsNullOrWhiteSpace(tool))
+      .Distinct(StringComparer.OrdinalIgnoreCase)
+      .OrderBy(tool => tool, StringComparer.OrdinalIgnoreCase)
+      .ToList();
+
+    var executedTools = toolNames.Count == 0 ? "none" : string.Join(", ", toolNames);
+    return $"No CKL results were found under output root '{outputRoot}' from executed tools: {executedTools}.";
   }
 
   private static DateTimeOffset ResolveReportStart(DateTimeOffset fallback, IReadOnlyList<VerificationToolRunResult> runs)
