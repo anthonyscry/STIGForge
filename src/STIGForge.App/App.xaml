@@ -8,11 +8,6 @@
 
       <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
 
-      <Style TargetType="Window">
-        <Setter Property="FontFamily" Value="Segoe UI" />
-        <Setter Property="FontSize" Value="13" />
-      </Style>
-
       <!-- ═══════════ TEXT ═══════════ -->
       <Style TargetType="TextBlock">
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
@@ -516,6 +511,8 @@
 
       <!-- ═══════════ WINDOW ═══════════ -->
       <Style TargetType="Window">
+        <Setter Property="FontFamily" Value="Segoe UI" />
+        <Setter Property="FontSize" Value="13" />
         <Setter Property="Background" Value="{DynamicResource WindowBackgroundBrush}" />
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
       </Style>
