@@ -94,4 +94,4 @@ Build -> Apply -> Verify -> Prove.
 - New milestone requirements are explicitly tracked and mapped to planned phases.
 
 ---
-*Last updated: 2026-02-19 after Phase 17*
+*Last updated: 2026-02-19 after Phase 18*
