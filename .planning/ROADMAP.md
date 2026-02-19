@@ -235,5 +235,5 @@ Plans:
 | 15 Pluggable Export Adapter Interface | 1/1 | Complete    | 2026-02-19 | - |
 | 16 XCCDF Result Export | 1/1 | Complete    | 2026-02-19 | - |
 | 17 CSV Compliance Report | 1/1 | Complete    | 2026-02-19 | - |
-| 18 Excel Compliance Report | v1.2 | 0/1 | Not started | - |
+| 18 Excel Compliance Report | 1/1 | Complete   | 2026-02-19 | - |
 | 19 WPF Workflow UX Polish and Export Format Picker | v1.2 | 0/2 | Not started | - |

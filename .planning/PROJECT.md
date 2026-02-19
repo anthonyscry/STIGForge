@@ -37,7 +37,7 @@ Build -> Apply -> Verify -> Prove.
 - [ ] Verify workflow returns accurate SCC/SCAP findings (correctness fix).
 - ✓ XCCDF/SCAP result export for compliance tool interop (Phase 16).
 - ✓ CSV compliance reporting for management/auditor audiences (Phase 17).
-- [ ] Excel compliance reporting for human audiences.
+- [x] Excel compliance reporting for human audiences (Phase 18).
 - ✓ Pluggable export adapter interface for future formats (Phase 15).
 - [ ] Workflow UX improvements: fewer steps, clearer status, better error recovery.
 
@@ -70,6 +70,8 @@ Build -> Apply -> Verify -> Prove.
 - Weight attribute omitted for unknown/null severity (not written as "0.0") to preserve round-trip correctness (Phase 16).
 - CLI export commands load results from Verify/consolidated-results.json using VerifyReportReader.LoadFromJson (Phase 16).
 - CSV export uses human-readable column headers and RFC 4180 escaping; system name derived from Options or BundleRoot (Phase 17).
+- Excel export uses ClosedXML 0.105.0; ReportGenerator in STIGForge.Reporting builds 4-tab workbook; ExcelExportAdapter in STIGForge.Export handles fail-closed write (Phase 18).
+- ClosedXML requires .xlsx extension on temp files; temp file pattern uses _tmp_{guid}.xlsx instead of .tmp suffix (Phase 18).
 
 ## Context
 

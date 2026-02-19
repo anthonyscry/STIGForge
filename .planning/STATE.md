@@ -4,24 +4,24 @@
 
 See: .planning/PROJECT.md (updated 2026-02-19)
 
-**Core value:** Offline-first Windows hardening workflow: Build → Apply → Verify → Prove
-**Current focus:** Phase 18 — Excel Compliance Report
+**Core value:** Offline-first Windows hardening workflow: Build -> Apply -> Verify -> Prove
+**Current focus:** Phase 19 — WPF Workflow UX Polish and Export Format Picker
 
 ## Current Position
 
-Phase: 18 of 19 (Excel Compliance Report)
-Plan: 0 of 1 in current phase
+Phase: 19 of 19 (WPF Workflow UX Polish and Export Format Picker)
+Plan: 0 of 2 in current phase
 Status: Ready to plan
-Last activity: 2026-02-19 — Phase 17 complete (CsvExportAdapter + export-csv CLI)
+Last activity: 2026-02-19 — Phase 18 complete (ExcelExportAdapter + ReportGenerator + export-excel CLI)
 
-Progress: [██████░░░░] 63% (v1.2 — 5/8 plans complete)
+Progress: [████████░░] 75% (v1.2 — 6/8 plans complete)
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 3 (v1.2)
-- Average duration: 3.3 min
-- Total execution time: 10 min
+- Total plans completed: 4 (v1.2)
+- Average duration: 4.0 min
+- Total execution time: 16 min
 
 **By Phase:**
 
@@ -30,9 +30,10 @@ Progress: [██████░░░░] 63% (v1.2 — 5/8 plans complete)
 | 15-pluggable-export-adapter-interface | 1 | 3 min | 3 min |
 | 16-xccdf-result-export | 1 | 4 min | 4 min |
 | 17-csv-compliance-report | 1 | 3 min | 3 min |
+| 18-excel-compliance-report | 1 | 6 min | 6 min |
 
 **Recent Trend:**
-- Last 5 plans: 3 min, 4 min, 3 min
+- Last 5 plans: 3 min, 4 min, 3 min, 6 min
 - Trend: stable
 
 *Updated after each plan completion*
@@ -48,16 +49,15 @@ Recent decisions affecting current work:
 - Phase 14: Model unification (ControlResult/NormalizedVerifyResult) must happen in this phase, not deferred to export phases
 - Phase 15: IExportAdapter interface must be defined before any format-specific adapter; returns ExportAdapterResult (not void) for testability and fail-closed behavior
 - Phase 15-18: ClosedXML 0.105.0 (MIT) is the only new NuGet dependency for the entire milestone
-- Phase 16: XCCDF namespace must be applied to every XElement call; missing namespace silently breaks STIG Viewer, ACAS, OpenRMF import
 - Phase 15: CklExportAdapter wrapper (not modifying static CklExporter) — static classes cannot implement interfaces; wrapper preserves all CklExporter.ExportCkl call sites
 - Phase 15: EmassExporter uses explicit interface implementation for IExportAdapter.ExportAsync to avoid overload ambiguity with existing ExportAsync(ExportRequest, ct)
 - Phase 16: Benchmark root element (not standalone TestResult) for maximum tool compatibility with STIG Viewer, Tenable, ACAS
 - Phase 16: Status/severity mapping is the exact inverse of ScapResultAdapter parsing — ensures round-trip fidelity
-- Phase 16: Weight attribute omitted for unknown/null severity (not written as "0.0") to preserve round-trip correctness
 - Phase 17: CSV uses human-readable column headers ("Vulnerability ID" not "VulnId") for management audience
-- Phase 17: Remediation Priority = CAT Level (no separate remediation data in ControlResult)
-- Phase 17: UTF-8 without BOM, CRLF line endings per RFC 4180 for maximum tool compatibility
 - Phase 17: System name derived from Options["system-name"] or Path.GetFileName(BundleRoot)
+- Phase 18: ClosedXML requires .xlsx extension on temp files; used _tmp_{guid8}.xlsx pattern for fail-closed write
+- Phase 18: ReportGenerator returns XLWorkbook (disposable); ExcelExportAdapter owns dispose lifecycle
+- Phase 18: Same 13 columns on All Controls tab as CSV export for data consistency (SC-2)
 
 ### Pending Todos
 
@@ -71,5 +71,5 @@ Recent decisions affecting current work:
 ## Session Continuity
 
 Last session: 2026-02-19
-Stopped at: Phase 17 complete, ready to plan Phase 18
+Stopped at: Phase 18 complete, ready to plan Phase 19
 Resume file: None
