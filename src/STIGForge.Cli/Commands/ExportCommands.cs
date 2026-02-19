@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using STIGForge.Export;
+using STIGForge.Verify;
 
 namespace STIGForge.Cli.Commands;
 
@@ -13,6 +14,7 @@ internal static class ExportCommands
   {
     RegisterExportPoam(rootCmd, buildHost);
     RegisterExportCkl(rootCmd, buildHost);
+    RegisterExportXccdf(rootCmd, buildHost);
   }
 
   private static void RegisterExportPoam(RootCommand rootCmd, Func<IHost> buildHost)
@@ -113,6 +115,55 @@ internal static class ExportCommands
       logger.LogInformation("export-ckl completed: {ControlCount} controls exported to {Output}", result.ControlCount, result.OutputPath);
       await host.StopAsync();
     });
+
+    rootCmd.AddCommand(cmd);
+  }
+
+  private static void RegisterExportXccdf(RootCommand rootCmd, Func<IHost> buildHost)
+  {
+    var cmd = new Command("export-xccdf", "Export verify results as XCCDF 1.2 XML for Tenable, ACAS, STIG Viewer interop");
+    var bundleOpt = new Option<string>("--bundle", "Bundle root path") { IsRequired = true };
+    var outOpt = new Option<string>("--output", () => string.Empty, "Output directory override");
+    var fileNameOpt = new Option<string>("--file-name", () => string.Empty, "Output file name stem (default: stigforge_xccdf_results)");
+    cmd.AddOption(bundleOpt); cmd.AddOption(outOpt); cmd.AddOption(fileNameOpt);
+
+    cmd.SetHandler(async (bundle, output, fileName) =>
+    {
+      using var host = buildHost();
+      await host.StartAsync();
+      var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("ExportCommands");
+      logger.LogInformation("export-xccdf started: bundle={Bundle}", bundle);
+
+      var verifyRoot = Path.Combine(bundle, "Verify");
+      var results = new List<ControlResult>();
+      if (Directory.Exists(verifyRoot))
+      {
+        var reports = Directory.GetFiles(verifyRoot, "consolidated-results.json", SearchOption.AllDirectories)
+          .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
+          .ToList();
+        foreach (var reportPath in reports)
+        {
+          var report = VerifyReportReader.LoadFromJson(reportPath);
+          results.AddRange(report.Results);
+        }
+      }
+
+      var adapter = new XccdfExportAdapter();
+      var exportResult = await adapter.ExportAsync(new ExportAdapterRequest
+      {
+        BundleRoot = bundle,
+        Results = results,
+        OutputDirectory = string.IsNullOrWhiteSpace(output) ? Path.Combine(bundle, "Export") : output,
+        FileNameStem = string.IsNullOrWhiteSpace(fileName) ? null : fileName
+      }, CancellationToken.None);
+
+      Console.WriteLine("XCCDF export:");
+      Console.WriteLine("  File: " + string.Join(" | ", exportResult.OutputPaths));
+      Console.WriteLine("  Results: " + results.Count);
+
+      logger.LogInformation("export-xccdf completed: {ResultCount} results exported to {Output}", results.Count, string.Join(", ", exportResult.OutputPaths));
+      await host.StopAsync();
+    }, bundleOpt, outOpt, fileNameOpt);
 
     rootCmd.AddCommand(cmd);
   }
