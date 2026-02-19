@@ -17,8 +17,8 @@ Requirements for v1.2 Verify Accuracy, Export Expansion, and Workflow Polish.
 
 ### Export Adapters
 
-- [ ] **EXP-01**: Operator can export verify results as XCCDF 1.2 XML for tool interop (Tenable, ACAS, STIG Viewer)
-- [ ] **EXP-02**: Operator can export compliance report as CSV for management/auditor review
+- [x] **EXP-01**: Operator can export verify results as XCCDF 1.2 XML for tool interop (Tenable, ACAS, STIG Viewer)
+- [x] **EXP-02**: Operator can export compliance report as CSV for management/auditor review
 - [ ] **EXP-03**: Operator can export compliance report as Excel (.xlsx) multi-tab workbook
 - [x] **EXP-04**: Export adapters implement a pluggable `IExportAdapter` interface for extensibility
 - [x] **EXP-05**: Existing eMASS/CKL exporters are refactored to use the `IExportAdapter` contract
@@ -65,8 +65,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VER-05 | Phase 14 | Pending |
 | EXP-04 | Phase 15 | Complete |
 | EXP-05 | Phase 15 | Complete |
-| EXP-01 | Phase 16 | Pending |
-| EXP-02 | Phase 17 | Pending |
+| EXP-01 | Phase 16 | Complete |
+| EXP-02 | Phase 17 | Complete |
 | EXP-03 | Phase 18 | Pending |
 | UX-01 | Phase 19 | Pending |
 | UX-02 | Phase 19 | Pending |

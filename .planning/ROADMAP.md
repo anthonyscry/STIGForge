@@ -234,6 +234,6 @@ Plans:
 | 14 SCC Verify Correctness and Model Unification | v1.2 | 2/2 | Complete | 2026-02-18 |
 | 15 Pluggable Export Adapter Interface | 1/1 | Complete    | 2026-02-19 | - |
 | 16 XCCDF Result Export | 1/1 | Complete    | 2026-02-19 | - |
-| 17 CSV Compliance Report | v1.2 | 0/1 | Not started | - |
+| 17 CSV Compliance Report | 1/1 | Complete    | 2026-02-19 | - |
 | 18 Excel Compliance Report | v1.2 | 0/1 | Not started | - |
 | 19 WPF Workflow UX Polish and Export Format Picker | v1.2 | 0/2 | Not started | - |

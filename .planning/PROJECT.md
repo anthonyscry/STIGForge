@@ -35,7 +35,7 @@ Build -> Apply -> Verify -> Prove.
 ## Active Requirements (v1.2)
 
 - [ ] Verify workflow returns accurate SCC/SCAP findings (correctness fix).
-- [ ] XCCDF/SCAP result export for compliance tool interop.
+- ✓ XCCDF/SCAP result export for compliance tool interop (Phase 16).
 - [ ] CSV/Excel compliance reporting for human audiences.
 - ✓ Pluggable export adapter interface for future formats (Phase 15).
 - [ ] Workflow UX improvements: fewer steps, clearer status, better error recovery.
@@ -64,6 +64,10 @@ Build -> Apply -> Verify -> Prove.
 - Fail closed on `run_release_gate=false` for release packages.
 - IExportAdapter + ExportAdapterRegistry + ExportOrchestrator is the pluggable export architecture; all format adapters implement IExportAdapter (Phase 15).
 - EmassExporter uses explicit interface implementation to avoid overload ambiguity; CklExportAdapter wraps static CklExporter (Phase 15).
+- XCCDF export uses Benchmark root element (not standalone TestResult) for maximum tool compatibility with STIG Viewer, Tenable, ACAS (Phase 16).
+- Status/severity mapping in XccdfExportAdapter is the exact inverse of ScapResultAdapter parsing — ensures round-trip fidelity (Phase 16).
+- Weight attribute omitted for unknown/null severity (not written as "0.0") to preserve round-trip correctness (Phase 16).
+- CLI export commands load results from Verify/consolidated-results.json using VerifyReportReader.LoadFromJson (Phase 16).
 
 ## Context
 
@@ -86,4 +90,4 @@ Build -> Apply -> Verify -> Prove.
 - New milestone requirements are explicitly tracked and mapped to planned phases.
 
 ---
-*Last updated: 2026-02-19 after Phase 15*
+*Last updated: 2026-02-19 after Phase 16*
