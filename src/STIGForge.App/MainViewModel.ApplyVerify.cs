@@ -1,6 +1,10 @@
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using System.Collections.ObjectModel;
 using System.IO;
 using System.Text;
+using System.Windows.Threading;
+using STIGForge.App.Models;
 using STIGForge.Core.Abstractions;
 using STIGForge.Verify;
 
@@ -8,6 +12,11 @@ namespace STIGForge.App;
 
 public partial class MainViewModel
 {
+  [ObservableProperty] private ObservableCollection<VerifyToolStatus> verifyToolStatuses = new();
+  [ObservableProperty] private ErrorPanelInfo? verifyError;
+  [ObservableProperty] private bool hasVerifyError;
+
+  private DispatcherTimer? _verifyTimer;
   [RelayCommand]
   private async Task ApplyRunAsync()
   {
@@ -73,6 +82,10 @@ public partial class MainViewModel
     try
     {
       IsBusy = true;
+      HasVerifyError = false;
+      VerifyError = null;
+      VerifyToolStatuses.Clear();
+
       if (string.IsNullOrWhiteSpace(BundleRoot))
       {
         VerifyStatus = "Select a bundle first.";
@@ -88,12 +101,35 @@ public partial class MainViewModel
         return;
       }
 
+      // Populate tool status entries
+      VerifyToolStatus? evalStatus = null;
+      VerifyToolStatus? scapStatus = null;
+
+      if (!string.IsNullOrWhiteSpace(EvaluateStigRoot))
+      {
+        evalStatus = new VerifyToolStatus { ToolName = "Evaluate-STIG" };
+        VerifyToolStatuses.Add(evalStatus);
+      }
+
+      if (!string.IsNullOrWhiteSpace(ScapCommandPath))
+      {
+        var toolName = string.IsNullOrWhiteSpace(ScapLabel) ? "SCAP" : ScapLabel;
+        scapStatus = new VerifyToolStatus { ToolName = toolName };
+        VerifyToolStatuses.Add(scapStatus);
+      }
+
+      StartVerifyTimer();
+
       var verifyRoot = Path.Combine(BundleRoot, "Verify");
       Directory.CreateDirectory(verifyRoot);
       var coverageInputs = new List<VerificationCoverageInput>();
 
-      if (!string.IsNullOrWhiteSpace(EvaluateStigRoot))
+      if (evalStatus != null)
       {
+        evalStatus.State = VerifyToolState.Running;
+        evalStatus.StartedAt = DateTime.Now;
+        VerifyStatus = "Running Evaluate-STIG...";
+
         var evalOutput = Path.Combine(verifyRoot, "Evaluate-STIG");
         var evalWorkflow = await _verificationWorkflow.RunAsync(new VerificationWorkflowRequest
         {
@@ -108,6 +144,9 @@ public partial class MainViewModel
           }
         }, CancellationToken.None);
 
+        evalStatus.FindingCount = evalWorkflow.ConsolidatedResultCount;
+        evalStatus.State = VerifyToolState.Complete;
+
         coverageInputs.Add(new VerificationCoverageInput
         {
           ToolLabel = "Evaluate-STIG",
@@ -115,10 +154,14 @@ public partial class MainViewModel
         });
       }
 
-      if (!string.IsNullOrWhiteSpace(ScapCommandPath))
+      if (scapStatus != null)
       {
+        scapStatus.State = VerifyToolState.Running;
+        scapStatus.StartedAt = DateTime.Now;
+        var toolName = scapStatus.ToolName;
+        VerifyStatus = "Running " + toolName + "...";
+
         var scapOutput = Path.Combine(verifyRoot, "SCAP");
-        var toolName = string.IsNullOrWhiteSpace(ScapLabel) ? "SCAP" : ScapLabel;
         var scapWorkflow = await _verificationWorkflow.RunAsync(new VerificationWorkflowRequest
         {
           OutputRoot = scapOutput,
@@ -132,12 +175,17 @@ public partial class MainViewModel
           }
         }, CancellationToken.None);
 
+        scapStatus.FindingCount = scapWorkflow.ConsolidatedResultCount;
+        scapStatus.State = VerifyToolState.Complete;
+
         coverageInputs.Add(new VerificationCoverageInput
         {
           ToolLabel = toolName,
           ReportPath = scapWorkflow.ConsolidatedJsonPath
         });
       }
+
+      StopVerifyTimer();
 
       if (coverageInputs.Count > 0)
         _artifactAggregation.WriteCoverageArtifacts(Path.Combine(BundleRoot, "Reports"), coverageInputs);
@@ -151,12 +199,45 @@ public partial class MainViewModel
     }
     catch (Exception ex)
     {
+      StopVerifyTimer();
       VerifyStatus = "Verify failed: " + ex.Message;
+
+      // Mark any running tools as failed
+      foreach (var tool in VerifyToolStatuses)
+      {
+        if (tool.State == VerifyToolState.Running)
+          tool.State = VerifyToolState.Failed;
+      }
+
+      // Show structured error recovery panel
+      VerifyError = ErrorPanelInfo.FromException(ex);
+      HasVerifyError = true;
     }
     finally
     {
       IsBusy = false;
     }
+  }
+
+  private void StartVerifyTimer()
+  {
+    StopVerifyTimer();
+    _verifyTimer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(1) };
+    _verifyTimer.Tick += (_, _) =>
+    {
+      foreach (var tool in VerifyToolStatuses)
+      {
+        if (tool.State == VerifyToolState.Running && tool.StartedAt.HasValue)
+          tool.ElapsedTime = DateTime.Now - tool.StartedAt.Value;
+      }
+    };
+    _verifyTimer.Start();
+  }
+
+  private void StopVerifyTimer()
+  {
+    _verifyTimer?.Stop();
+    _verifyTimer = null;
   }
 
   [RelayCommand]
