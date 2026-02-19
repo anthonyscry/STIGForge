@@ -37,9 +37,9 @@ Build -> Apply -> Verify -> Prove.
 - [ ] Verify workflow returns accurate SCC/SCAP findings (correctness fix).
 - ✓ XCCDF/SCAP result export for compliance tool interop (Phase 16).
 - ✓ CSV compliance reporting for management/auditor audiences (Phase 17).
-- [x] Excel compliance reporting for human audiences (Phase 18).
+- ✓ Excel compliance reporting for human audiences (Phase 18).
 - ✓ Pluggable export adapter interface for future formats (Phase 15).
-- [ ] Workflow UX improvements: fewer steps, clearer status, better error recovery.
+- ✓ Workflow UX improvements: verify progress, error recovery, export picker (Phase 19).
 
 ## Non-Goals (Still Out of Scope)
 
@@ -72,6 +72,9 @@ Build -> Apply -> Verify -> Prove.
 - CSV export uses human-readable column headers and RFC 4180 escaping; system name derived from Options or BundleRoot (Phase 17).
 - Excel export uses ClosedXML 0.105.0; ReportGenerator in STIGForge.Reporting builds 4-tab workbook; ExcelExportAdapter in STIGForge.Export handles fail-closed write (Phase 18).
 - ClosedXML requires .xlsx extension on temp files; temp file pattern uses _tmp_{guid}.xlsx instead of .tmp suffix (Phase 18).
+- VerifyToolStatus observable model tracks per-tool scan progress (Pending/Running/Complete/Failed) with DispatcherTimer for elapsed time (Phase 19).
+- ErrorPanelInfo.FromException provides exception-type-specific recovery guidance; FileNotFoundException must precede IOException in switch (Phase 19).
+- Quick Export tab registers 4 adapters (CKL, XCCDF, CSV, Excel); eMASS excluded (requires DI; has dedicated tab) (Phase 19).
 
 ## Context
 
@@ -94,4 +97,4 @@ Build -> Apply -> Verify -> Prove.
 - New milestone requirements are explicitly tracked and mapped to planned phases.
 
 ---
-*Last updated: 2026-02-19 after Phase 18*
+*Last updated: 2026-02-19 after Phase 19 (v1.2 milestone complete)*
