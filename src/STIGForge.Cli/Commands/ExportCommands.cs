@@ -16,6 +16,7 @@ internal static class ExportCommands
     RegisterExportCkl(rootCmd, buildHost);
     RegisterExportXccdf(rootCmd, buildHost);
     RegisterExportCsv(rootCmd, buildHost);
+    RegisterExportExcel(rootCmd, buildHost);
   }
 
   private static void RegisterExportPoam(RootCommand rootCmd, Func<IHost> buildHost)
@@ -218,6 +219,61 @@ internal static class ExportCommands
       Console.WriteLine("  Results: " + results.Count);
 
       logger.LogInformation("export-csv completed: {ResultCount} results exported to {Output}", results.Count, string.Join(", ", exportResult.OutputPaths));
+      await host.StopAsync();
+    }, bundleOpt, outOpt, fileNameOpt, systemNameOpt);
+
+    rootCmd.AddCommand(cmd);
+  }
+
+  private static void RegisterExportExcel(RootCommand rootCmd, Func<IHost> buildHost)
+  {
+    var cmd = new Command("export-excel", "Export compliance report as multi-tab Excel workbook (.xlsx)");
+    var bundleOpt = new Option<string>("--bundle", "Bundle root path") { IsRequired = true };
+    var outOpt = new Option<string>("--output", () => string.Empty, "Output directory override");
+    var fileNameOpt = new Option<string>("--file-name", () => string.Empty, "Output file name stem (default: stigforge_compliance_report)");
+    var systemNameOpt = new Option<string>("--system-name", () => string.Empty, "System name for report header (defaults to bundle directory name)");
+    cmd.AddOption(bundleOpt); cmd.AddOption(outOpt); cmd.AddOption(fileNameOpt); cmd.AddOption(systemNameOpt);
+
+    cmd.SetHandler(async (bundle, output, fileName, systemName) =>
+    {
+      using var host = buildHost();
+      await host.StartAsync();
+      var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("ExportCommands");
+      logger.LogInformation("export-excel started: bundle={Bundle}", bundle);
+
+      var verifyRoot = Path.Combine(bundle, "Verify");
+      var results = new List<ControlResult>();
+      if (Directory.Exists(verifyRoot))
+      {
+        var reports = Directory.GetFiles(verifyRoot, "consolidated-results.json", SearchOption.AllDirectories)
+          .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
+          .ToList();
+        foreach (var reportPath in reports)
+        {
+          var report = VerifyReportReader.LoadFromJson(reportPath);
+          results.AddRange(report.Results);
+        }
+      }
+
+      var options = new Dictionary<string, string>();
+      if (!string.IsNullOrWhiteSpace(systemName))
+        options["system-name"] = systemName;
+
+      var adapter = new ExcelExportAdapter();
+      var exportResult = await adapter.ExportAsync(new ExportAdapterRequest
+      {
+        BundleRoot = bundle,
+        Results = results,
+        OutputDirectory = string.IsNullOrWhiteSpace(output) ? Path.Combine(bundle, "Export") : output,
+        FileNameStem = string.IsNullOrWhiteSpace(fileName) ? null : fileName,
+        Options = options
+      }, CancellationToken.None);
+
+      Console.WriteLine("Excel export:");
+      Console.WriteLine("  File: " + string.Join(" | ", exportResult.OutputPaths));
+      Console.WriteLine("  Results: " + results.Count);
+
+      logger.LogInformation("export-excel completed: {ResultCount} results exported to {Output}", results.Count, string.Join(", ", exportResult.OutputPaths));
       await host.StopAsync();
     }, bundleOpt, outOpt, fileNameOpt, systemNameOpt);
 
