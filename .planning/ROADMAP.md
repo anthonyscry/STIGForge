@@ -196,10 +196,10 @@ Plans:
   1. Operator exports via CLI `export-excel` command; output is an `.xlsx` file with four tabs: Summary, All Controls, Open Findings, Coverage
   2. Exported workbook opens correctly in Excel and contains the same control data as the CSV export
   3. `STIGForge.Reporting.ReportGenerator` is fully implemented (not a stub); ClosedXML 0.105.0 (MIT) is the only new dependency added
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 18-01: Implement ExcelExportAdapter and ReportGenerator using ClosedXML
+- [ ] 18-01-PLAN.md — Implement ExcelExportAdapter and ReportGenerator using ClosedXML; wire export-excel CLI command
 
 ### Phase 19: WPF Workflow UX Polish and Export Format Picker
 **Goal**: The WPF app surfaces meaningful verify progress, actionable error recovery, and a single adapter-driven export control
