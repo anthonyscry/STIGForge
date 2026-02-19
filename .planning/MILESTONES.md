@@ -6,6 +6,7 @@
 |---------|------|------|------------|-------|--------|
 | v1.0 | Mission-Ready Baseline | 2026-02-09 | 03-07 | 17 | Shipped |
 | v1.1 | Release Hardening and Evidence Continuity | 2026-02-17 | 08-13 | 12 | Shipped |
+| v1.2 | Verify Accuracy, Export Expansion, and Workflow Polish | 2026-02-19 | 14-19 | 8 | Shipped |
 
 ## v1.0 - Mission-Ready Baseline (Shipped 2026-02-09)
 
@@ -35,4 +36,27 @@ Key accomplishments:
 - Added quality gates for trendable compatibility/stability signals and enforced evidence-backed gate semantics in CI, VM, and release package paths.
 - Backfilled verification artifacts for UR/WP/QA requirements to repair orphaned requirement closures with three-source cross-check validation.
 - Enforced fail-closed release packaging via shared contract validator, including explicit `disabled-check` and `failed-check` blockers.
+
+
+## v1.2 Verify Accuracy, Export Expansion, and Workflow Polish (Shipped 2026-02-19)
+
+**Delivered:** Fixed SCC verify returning 0 results, added 4 export format adapters (XCCDF, CSV, Excel, plus pluggable interface), and polished verify/export WPF workflow UX.
+
+**Phases completed:** 14-19 (8 plans)
+
+**Key accomplishments:**
+
+- Fixed SCC verify correctness: configurable timeout, session subdirectory discovery, XCCDF routing through VerifyOrchestrator, and ControlResult/NormalizedVerifyResult model unification (Phase 14).
+- Established pluggable IExportAdapter interface with ExportAdapterRegistry and ExportOrchestrator; retrofitted EmassExporter and CklExporter as adapters (Phase 15).
+- Added XCCDF 1.2 XML export with round-trip validation (ScapResultAdapter can re-parse output) and Benchmark root element for maximum tool compatibility (Phase 16).
+- Added CSV compliance report with human-readable columns, RFC 4180 escaping, and management-facing format (Phase 17).
+- Added Excel multi-tab workbook export (.xlsx) with Summary, All Controls, Open Findings, and Coverage tabs using ClosedXML (Phase 18).
+- Added WPF verify progress feedback (per-tool status tracking), exception-type-specific error recovery guidance, and Quick Export format picker driven by adapter registry (Phase 19).
+
+Archive:
+
+- `.planning/milestones/v1.2-ROADMAP.md`
+- `.planning/milestones/v1.2-REQUIREMENTS.md`
+
+---
 

@@ -6,40 +6,29 @@ STIGForge delivers an offline-first Windows hardening workflow that turns quarte
 
 Build -> Apply -> Verify -> Prove.
 
-## Current State (Post v1.1)
+## Current State (Post v1.2)
 
 - v1.0 mission baseline shipped (`.planning/milestones/v1.0-ROADMAP.md`).
-- v1.1 release hardening shipped (`.planning/milestones/v1.1-ROADMAP.md`, `.planning/milestones/v1.1-REQUIREMENTS.md`).
-- Core Build → Apply → Verify → Prove workflow is operational with fail-closed evidence contracts.
-- Upgrade/rebase, WPF parity, and release evidence are machine-verified.
+- v1.1 release hardening shipped (`.planning/milestones/v1.1-ROADMAP.md`).
+- v1.2 verify accuracy and export expansion shipped (`.planning/milestones/v1.2-ROADMAP.md`).
+- Core Build -> Apply -> Verify -> Prove workflow is operational with fail-closed evidence contracts.
+- Verify workflow produces real SCC findings with configurable timeout and XCCDF routing.
+- Export supports 5 formats: eMASS CKL, CKL, XCCDF 1.2, CSV, Excel (.xlsx) via pluggable adapter architecture.
+- WPF app provides per-tool verify progress, error recovery guidance, and adapter-driven Quick Export.
 
-## Current Milestone: v1.2 Verify Accuracy, Export Expansion, and Workflow Polish
+## Validated Deliverables (v1.0 + v1.1 + v1.2)
 
-**Goal:** Fix verify/SCC producing 0 results, add XCCDF/SCAP and CSV/Excel export adapters, and reduce operator friction across the Build/Apply/Verify/Prove workflow.
-
-**Target features:**
-- Fix STIGForge verify workflow returning 0 findings (SCC integration correctness)
-- XCCDF/SCAP result export for tool interop (Tenable, ACAS, eMASS)
-- CSV/Excel compliance reporting for management, auditors, and teams
-- Pluggable export adapter architecture for future format additions
-- Workflow UX polish: reduce clicks/steps, clarify status, improve error recovery
-
-## Validated Deliverables (v1.0 + v1.1)
-
-- ✓ Core operator workflow: Build → Apply → Verify → Prove (v1.0).
+- ✓ Core operator workflow: Build -> Apply -> Verify -> Prove (v1.0).
 - ✓ Security hardening: break-glass, secure XML, archive boundaries, fail-closed gates (v1.0).
 - ✓ Deterministic upgrade/rebase with conflict/action classification (v1.1).
 - ✓ WPF parity for upgrade/rebase mission flows (v1.1).
 - ✓ Fail-closed release evidence contracts across CI/VM/release/package (v1.1).
-
-## Active Requirements (v1.2)
-
-- [ ] Verify workflow returns accurate SCC/SCAP findings (correctness fix).
-- ✓ XCCDF/SCAP result export for compliance tool interop (Phase 16).
-- ✓ CSV compliance reporting for management/auditor audiences (Phase 17).
-- ✓ Excel compliance reporting for human audiences (Phase 18).
-- ✓ Pluggable export adapter interface for future formats (Phase 15).
-- ✓ Workflow UX improvements: verify progress, error recovery, export picker (Phase 19).
+- ✓ SCC verify correctness: configurable timeout, session discovery, XCCDF routing, model unification (v1.2).
+- ✓ Pluggable IExportAdapter architecture with registry and orchestrator (v1.2).
+- ✓ XCCDF 1.2 XML export with round-trip validation for tool interop (v1.2).
+- ✓ CSV compliance report with human-readable columns for management (v1.2).
+- ✓ Excel multi-tab workbook export with ClosedXML (v1.2).
+- ✓ WPF verify progress feedback, error recovery guidance, Quick Export format picker (v1.2).
 
 ## Non-Goals (Still Out of Scope)
 
@@ -47,6 +36,7 @@ Build -> Apply -> Verify -> Prove.
 - SCCM enterprise rollout platform.
 - Multi-tenant cloud control plane.
 - Bulk remediation simulation (PowerSTIG handles remediation; no gap identified).
+- ARF (Assessment Results Format) export (requires OVAL output data that SCC controls).
 
 ## Locked Technical Decisions
 
@@ -56,6 +46,7 @@ Build -> Apply -> Verify -> Prove.
 - Offline-first operation is non-negotiable (no runtime internet dependency).
 - Classification scope behavior remains: `classified_only | unclassified_only | both | unknown`.
 - New/changed-rule safety gate remains: review-required default with grace-period auto-apply controls.
+- IExportAdapter + ExportAdapterRegistry + ExportOrchestrator is the pluggable export architecture.
 
 ## Key Decisions
 
@@ -63,25 +54,21 @@ Build -> Apply -> Verify -> Prove.
 - Validate requirement completion only when requirement mapping, execution verification, and summary metadata all align.
 - Enforce release evidence contract checks across CI, VM, release workflow, and package build using one shared validator.
 - Fail closed on `run_release_gate=false` for release packages.
-- IExportAdapter + ExportAdapterRegistry + ExportOrchestrator is the pluggable export architecture; all format adapters implement IExportAdapter (Phase 15).
-- EmassExporter uses explicit interface implementation to avoid overload ambiguity; CklExportAdapter wraps static CklExporter (Phase 15).
-- XCCDF export uses Benchmark root element (not standalone TestResult) for maximum tool compatibility with STIG Viewer, Tenable, ACAS (Phase 16).
-- Status/severity mapping in XccdfExportAdapter is the exact inverse of ScapResultAdapter parsing — ensures round-trip fidelity (Phase 16).
-- Weight attribute omitted for unknown/null severity (not written as "0.0") to preserve round-trip correctness (Phase 16).
-- CLI export commands load results from Verify/consolidated-results.json using VerifyReportReader.LoadFromJson (Phase 16).
-- CSV export uses human-readable column headers and RFC 4180 escaping; system name derived from Options or BundleRoot (Phase 17).
-- Excel export uses ClosedXML 0.105.0; ReportGenerator in STIGForge.Reporting builds 4-tab workbook; ExcelExportAdapter in STIGForge.Export handles fail-closed write (Phase 18).
-- ClosedXML requires .xlsx extension on temp files; temp file pattern uses _tmp_{guid}.xlsx instead of .tmp suffix (Phase 18).
-- VerifyToolStatus observable model tracks per-tool scan progress (Pending/Running/Complete/Failed) with DispatcherTimer for elapsed time (Phase 19).
-- ErrorPanelInfo.FromException provides exception-type-specific recovery guidance; FileNotFoundException must precede IOException in switch (Phase 19).
-- Quick Export tab registers 4 adapters (CKL, XCCDF, CSV, Excel); eMASS excluded (requires DI; has dedicated tab) (Phase 19).
+- IExportAdapter + ExportAdapterRegistry + ExportOrchestrator is the pluggable export architecture; all format adapters implement IExportAdapter (v1.2).
+- EmassExporter uses explicit interface implementation to avoid overload ambiguity; CklExportAdapter wraps static CklExporter (v1.2).
+- XCCDF export uses Benchmark root element (not standalone TestResult) for maximum tool compatibility (v1.2).
+- Status/severity mapping in XccdfExportAdapter is the exact inverse of ScapResultAdapter parsing for round-trip fidelity (v1.2).
+- CLI export commands load results from Verify/consolidated-results.json using VerifyReportReader.LoadFromJson (v1.2).
+- CSV export uses human-readable column headers and RFC 4180 escaping (v1.2).
+- Excel export uses ClosedXML 0.105.0 (MIT); only new NuGet dependency for entire v1.2 milestone (v1.2).
+- Quick Export tab registers 4 adapters (CKL, XCCDF, CSV, Excel); eMASS excluded from picker (requires DI; has dedicated tab) (v1.2).
 
 ## Context
 
 - Evidence-driven workflow uses explicit gate contracts and closeout automation (established v1.1).
-- STIGForge verify workflow currently returns 0 findings — SCC integration needs correctness investigation.
-- Export currently supports eMASS CKL format only; operators need XCCDF/SCAP and CSV/Excel for broader tool/audience reach.
-- Workflow has accumulated friction: too many clicks, unclear status indicators, painful error recovery.
+- Export supports 5 format adapters through the IExportAdapter pluggable architecture.
+- WPF app provides per-tool verify progress, actionable error recovery, and single-button Quick Export.
+- SCC CLI output-directory argument form needs validation against live SCC 5.x (MEDIUM confidence).
 
 ## Constraints
 
@@ -97,4 +84,4 @@ Build -> Apply -> Verify -> Prove.
 - New milestone requirements are explicitly tracked and mapped to planned phases.
 
 ---
-*Last updated: 2026-02-19 after Phase 19 (v1.2 milestone complete)*
+*Last updated: 2026-02-19 after v1.2 milestone completion*
