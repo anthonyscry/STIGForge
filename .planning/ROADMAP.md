@@ -143,11 +143,11 @@
   3. Verify workflow discovers SCC output from `Sessions/` subdirectories and processes XCCDF XML files alongside CKL files
   4. Verify workflow routes XCCDF results through `VerifyOrchestrator` adapter chain; `ControlResult` and `NormalizedVerifyResult` are resolved to a single canonical model
   5. `CklParser` rejects malformed or XXE-bearing XML using the same `LoadSecureXml()` hardening applied to `CklAdapter`
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 14-01: Fix ScapRunner timeout and output directory argument injection
-- [ ] 14-02: Wire VerifyOrchestrator into VerificationWorkflowService; unify ControlResult/NormalizedVerifyResult models; harden CklParser
+- [ ] 14-01-PLAN.md — Add RunAsync with configurable timeout to ScapRunner and EvaluateStigRunner; add TimeoutSeconds to workflow options and CLI
+- [ ] 14-02-PLAN.md — Wire VerifyOrchestrator into VerificationWorkflowService; bridge NormalizedVerifyResult to ControlResult; harden CklParser; fix MainViewModel defaults; restructure VerifyView tabs
 
 ### Phase 15: Pluggable Export Adapter Interface
 **Goal**: A defined, tested `IExportAdapter` contract is in place and all existing exporters implement it
