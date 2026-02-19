@@ -1,8 +1,13 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <PackageReference Include="ClosedXML" Version="0.105.0" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\STIGForge.Core\STIGForge.Core.csproj" />
     <ProjectReference Include="..\STIGForge.Infrastructure\STIGForge.Infrastructure.csproj" />
+    <ProjectReference Include="..\STIGForge.Verify\STIGForge.Verify.csproj" />
   </ItemGroup>
 
   <PropertyGroup>
