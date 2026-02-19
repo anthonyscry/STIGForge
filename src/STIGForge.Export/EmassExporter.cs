@@ -6,8 +6,42 @@ using STIGForge.Verify;
 
 namespace STIGForge.Export;
 
-public sealed class EmassExporter
+public sealed class EmassExporter : IExportAdapter
 {
+  // IExportAdapter members
+  public string FormatName => "eMASS";
+  public string[] SupportedExtensions => Array.Empty<string>(); // produces directory, not single file
+
+  // Explicit interface implementation avoids overload confusion with existing ExportAsync(ExportRequest, ct)
+  async Task<ExportAdapterResult> IExportAdapter.ExportAsync(
+      ExportAdapterRequest request, CancellationToken ct)
+  {
+    try
+    {
+      var result = await ExportAsync(new ExportRequest
+      {
+        BundleRoot = request.BundleRoot,
+        OutputRoot = string.IsNullOrWhiteSpace(request.OutputDirectory)
+          ? null : request.OutputDirectory
+      }, ct).ConfigureAwait(false);
+
+      return new ExportAdapterResult
+      {
+        Success = result.IsReadyForSubmission,
+        OutputPaths = new[] { result.OutputRoot },
+        Warnings = result.Warnings,
+        ErrorMessage = result.BlockingFailures.Count > 0
+          ? string.Join("; ", result.BlockingFailures) : null
+      };
+    }
+    catch (Exception ex)
+        when (ex is ArgumentException or DirectoryNotFoundException or FileNotFoundException or IOException)
+    {
+      return new ExportAdapterResult { Success = false, ErrorMessage = ex.Message };
+    }
+  }
+
+
   private readonly IPathBuilder _paths;
   private readonly IHashingService _hash;
   private readonly IAuditTrailService? _audit;
