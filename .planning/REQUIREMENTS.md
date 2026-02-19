@@ -25,9 +25,9 @@ Requirements for v1.2 Verify Accuracy, Export Expansion, and Workflow Polish.
 
 ### Workflow UX
 
-- [ ] **UX-01**: Verify workflow displays meaningful progress feedback during SCC scans
-- [ ] **UX-02**: Error states include recovery guidance (actionable next steps, not just error messages)
-- [ ] **UX-03**: WPF export view provides format picker driven by registered export adapters
+- [x] **UX-01**: Verify workflow displays meaningful progress feedback during SCC scans
+- [x] **UX-02**: Error states include recovery guidance (actionable next steps, not just error messages)
+- [x] **UX-03**: WPF export view provides format picker driven by registered export adapters
 
 ## Future Requirements
 
@@ -68,9 +68,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | EXP-01 | Phase 16 | Complete |
 | EXP-02 | Phase 17 | Complete |
 | EXP-03 | Phase 18 | Complete |
-| UX-01 | Phase 19 | Pending |
-| UX-02 | Phase 19 | Pending |
-| UX-03 | Phase 19 | Pending |
+| UX-01 | Phase 19 | Complete |
+| UX-02 | Phase 19 | Complete |
+| UX-03 | Phase 19 | Complete |
 
 **Coverage:**
 - v1.2 requirements: 13 total
@@ -79,4 +79,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-18*
-*Last updated: 2026-02-18 after roadmap creation*
+*Last updated: 2026-02-19 after Phase 19 completion*
