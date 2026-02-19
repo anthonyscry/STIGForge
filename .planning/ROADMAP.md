@@ -157,10 +157,10 @@ Plans:
   1. `IExportAdapter` interface exists with `ExportAdapterRequest` and `ExportAdapterResult` models; adapters return result (not void)
   2. `ExportAdapterRegistry` resolves adapters by format name; `ExportOrchestrator` dispatches to the correct adapter
   3. Existing `EmassExporter` and `CklExporter` implement `IExportAdapter` and existing call sites continue to work
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 15-01: Define IExportAdapter, ExportAdapterRegistry, ExportOrchestrator; refactor EmassExporter and CklExporter
+- [ ] 15-01-PLAN.md — Define IExportAdapter, ExportAdapterRegistry, ExportOrchestrator; retrofit EmassExporter and create CklExportAdapter
 
 ### Phase 16: XCCDF Result Export
 **Goal**: Operators can export verify results as XCCDF 1.2 XML consumable by Tenable, ACAS, and STIG Viewer
