@@ -1,3 +1,5 @@
+using STIGForge.Verify;
+
 namespace STIGForge.Export;
 
 public sealed class ExportRequest
@@ -56,4 +58,29 @@ public sealed class ValidationMetrics
   public int AttestationCount { get; set; }
 
   public int CrossArtifactMismatchCount { get; set; }
+}
+
+public interface IExportAdapter
+{
+    string FormatName { get; }
+    string[] SupportedExtensions { get; }
+    Task<ExportAdapterResult> ExportAsync(ExportAdapterRequest request, CancellationToken ct);
+}
+
+public sealed class ExportAdapterRequest
+{
+    public string BundleRoot { get; set; } = string.Empty;
+    public IReadOnlyList<ControlResult> Results { get; set; } = Array.Empty<ControlResult>();
+    public string OutputDirectory { get; set; } = string.Empty;
+    public string? FileNameStem { get; set; }
+    public IReadOnlyDictionary<string, string> Options { get; set; }
+        = new Dictionary<string, string>();
+}
+
+public sealed class ExportAdapterResult
+{
+    public bool Success { get; set; }
+    public IReadOnlyList<string> OutputPaths { get; set; } = Array.Empty<string>();
+    public IReadOnlyList<string> Warnings { get; set; } = Array.Empty<string>();
+    public string? ErrorMessage { get; set; }
 }
