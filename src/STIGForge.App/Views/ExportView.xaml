@@ -131,6 +131,50 @@
           </ScrollViewer>
         </TabItem>
 
+        <!-- Quick Export Tab -->
+        <TabItem Header="Quick Export">
+          <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Margin="12">
+              <TextBlock Text="Quick Export" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,4"/>
+              <TextBlock Text="Export verify results in any registered format. For format-specific options (eMASS validation, CKL host name), use the dedicated tabs."
+                         Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,0,0,12"/>
+
+              <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="12" Margin="0,0,0,10" Background="{DynamicResource SurfaceMutedBrush}">
+                <StackPanel>
+                  <WrapPanel Margin="0,0,0,8">
+                    <TextBlock Text="Format:" Width="100" VerticalAlignment="Center"/>
+                    <ComboBox Width="200" ItemsSource="{Binding ExportFormatNames}" SelectedItem="{Binding SelectedExportFormat}"
+                              AutomationProperties.Name="Export format selection"
+                              ToolTipService.ToolTip="Select the export format. All registered adapters are available."/>
+                  </WrapPanel>
+                  <WrapPanel Margin="0,0,0,8">
+                    <TextBlock Text="System Name:" Width="100" VerticalAlignment="Center"/>
+                    <TextBox Width="260" Text="{Binding QuickExportSystemName}"
+                             AutomationProperties.Name="Quick export system name"
+                             ToolTipService.ToolTip="System name included in the export. Leave blank for auto-detection from bundle."/>
+                  </WrapPanel>
+                  <WrapPanel Margin="0,0,0,8">
+                    <TextBlock Text="File Name:" Width="100" VerticalAlignment="Center"/>
+                    <TextBox Width="260" Text="{Binding QuickExportFileName}"
+                             AutomationProperties.Name="Quick export file name"
+                             ToolTipService.ToolTip="Optional file name stem. Leave blank for default naming."/>
+                  </WrapPanel>
+                  <WrapPanel Margin="0,0,0,8">
+                    <Button Content="Export" MinWidth="140" Height="32" Padding="14,0" FontWeight="SemiBold"
+                            Command="{Binding QuickExportCommand}" IsEnabled="{Binding ActionsEnabled}"
+                            AutomationProperties.Name="Run quick export"
+                            ToolTipService.ToolTip="Export verify results using the selected format adapter."/>
+                    <Button Content="Open Last Output" MinWidth="140" Height="32" Padding="14,0" Margin="10,0,0,0"
+                            Command="{Binding OpenLastOutputCommand}" AutomationProperties.Name="Open last output"/>
+                  </WrapPanel>
+                </StackPanel>
+              </Border>
+
+              <TextBlock Text="{Binding QuickExportStatus}" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,0,0,4"/>
+            </StackPanel>
+          </ScrollViewer>
+        </TabItem>
+
         <!-- eMASS Tab -->
         <TabItem Header="eMASS">
           <ScrollViewer VerticalScrollBarVisibility="Auto">

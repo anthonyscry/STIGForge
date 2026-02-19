@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.Input;
 using System.IO;
 using System.Text.Json;
 using STIGForge.Export;
+using STIGForge.Verify;
 
 namespace STIGForge.App;
 
@@ -14,6 +15,16 @@ public partial class MainViewModel
   [ObservableProperty] private string cklOutputFormat = "CKL";
   [ObservableProperty] private string cklStatus = "";
 
+  // Quick Export
+  [ObservableProperty] private string selectedExportFormat = "";
+  [ObservableProperty] private string quickExportSystemName = "";
+  [ObservableProperty] private string quickExportFileName = "";
+  [ObservableProperty] private string quickExportStatus = "";
+
+  private readonly ExportAdapterRegistry _exportRegistry = new();
+
+  public IReadOnlyList<string> ExportFormatNames { get; private set; } = Array.Empty<string>();
+
   public IReadOnlyList<string> CklOutputFormats { get; } = new[]
   {
     "CKL",
@@ -21,6 +32,96 @@ public partial class MainViewModel
     "CKL + CSV",
     "CKLB + CSV"
   };
+
+  private void InitializeExportRegistry()
+  {
+    _exportRegistry.Register(new CklExportAdapter());
+    _exportRegistry.Register(new XccdfExportAdapter());
+    _exportRegistry.Register(new CsvExportAdapter());
+    _exportRegistry.Register(new ExcelExportAdapter());
+    ExportFormatNames = _exportRegistry.GetAll().Select(a => a.FormatName).ToList();
+    OnPropertyChanged(nameof(ExportFormatNames));
+  }
+
+  [RelayCommand]
+  private async Task QuickExportAsync()
+  {
+    if (IsBusy) return;
+    try
+    {
+      IsBusy = true;
+      if (string.IsNullOrWhiteSpace(BundleRoot))
+      {
+        QuickExportStatus = "Select a bundle first.";
+        return;
+      }
+
+      if (string.IsNullOrWhiteSpace(SelectedExportFormat))
+      {
+        QuickExportStatus = "Select an export format.";
+        return;
+      }
+
+      var adapter = _exportRegistry.TryResolve(SelectedExportFormat);
+      if (adapter == null)
+      {
+        QuickExportStatus = "Unknown format: " + SelectedExportFormat;
+        return;
+      }
+
+      QuickExportStatus = "Exporting " + SelectedExportFormat + "...";
+
+      // Load verify results from consolidated-results.json
+      var resultsPath = Path.Combine(BundleRoot, "Verify", "consolidated-results.json");
+      IReadOnlyList<ControlResult> results;
+      if (File.Exists(resultsPath))
+      {
+        var report = VerifyReportReader.LoadFromJson(resultsPath);
+        results = report.Results;
+      }
+      else
+      {
+        QuickExportStatus = "No verify results found. Run Verify first.";
+        return;
+      }
+
+      var outputDir = Path.Combine(BundleRoot, "Export");
+      var options = new Dictionary<string, string>();
+      if (!string.IsNullOrWhiteSpace(QuickExportSystemName))
+        options["system-name"] = QuickExportSystemName;
+
+      var request = new ExportAdapterRequest
+      {
+        BundleRoot = BundleRoot,
+        Results = results,
+        OutputDirectory = outputDir,
+        FileNameStem = string.IsNullOrWhiteSpace(QuickExportFileName) ? null : QuickExportFileName,
+        Options = options
+      };
+
+      var result = await adapter.ExportAsync(request, _cts.Token);
+
+      if (result.Success)
+      {
+        var paths = string.Join(", ", result.OutputPaths);
+        QuickExportStatus = "Export complete: " + paths;
+        if (result.OutputPaths.Count > 0)
+          LastOutputPath = result.OutputPaths[0];
+      }
+      else
+      {
+        QuickExportStatus = "Export failed: " + (result.ErrorMessage ?? "Unknown error");
+      }
+    }
+    catch (Exception ex)
+    {
+      QuickExportStatus = "Export failed: " + ex.Message;
+    }
+    finally
+    {
+      IsBusy = false;
+    }
+  }
 
   [RelayCommand]
   private async Task ExportPoam()

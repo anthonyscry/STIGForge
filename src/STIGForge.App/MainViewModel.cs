@@ -333,6 +333,7 @@ public partial class MainViewModel : ObservableObject, IDisposable
 
     ApplicablePackPairs.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasApplicablePackPairs));
     SelectionReasons.CollectionChanged += (_, _) => OnPropertyChanged(nameof(HasSelectionReasons));
+    InitializeExportRegistry();
   }
 
   public void StartInitialLoad()
