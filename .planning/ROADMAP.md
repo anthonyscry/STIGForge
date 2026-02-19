@@ -170,10 +170,10 @@ Plans:
   1. Operator exports verify results via CLI `export-xccdf` command; output is a valid XCCDF 1.2 XML file with correct `http://checklists.nist.gov/xccdf/1.2` namespace on every element
   2. Exported XCCDF file passes a round-trip test: `ScapResultAdapter.CanHandle()` returns true and parsed result count matches the original
   3. Export fails closed: partial output file is deleted if the adapter throws
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 16-01: Implement XccdfExportAdapter with round-trip validation
+- [ ] 16-01-PLAN.md — Implement XccdfExportAdapter with round-trip validation and wire export-xccdf CLI command
 
 ### Phase 17: CSV Compliance Report
 **Goal**: Operators can export a management-facing compliance report as CSV
@@ -183,10 +183,10 @@ Plans:
   1. Operator exports via CLI `export-csv` command; output CSV includes system name, STIG title, CAT level, status, finding detail, and remediation priority columns
   2. CSV values containing commas, quotes, or newlines are correctly escaped; no malformed rows in the output file
   3. Export completes and produces a non-empty file when verify results are present
-**Plans**: TBD
+**Plans**: 1 plan
 
 Plans:
-- [ ] 17-01: Implement CsvExportAdapter with management-facing columns and property-based escape tests
+- [ ] 17-01-PLAN.md — Implement CsvExportAdapter with RFC 4180 escaping, management-facing columns, and export-csv CLI command
 
 ### Phase 18: Excel Compliance Report
 **Goal**: Operators can export a multi-tab Excel workbook for management and auditor review
@@ -233,7 +233,7 @@ Plans:
 | 13 Mandatory Release-Gate Enforcement and Verification | v1.1 | 2/2 | Complete | 2026-02-17 |
 | 14 SCC Verify Correctness and Model Unification | v1.2 | 2/2 | Complete | 2026-02-18 |
 | 15 Pluggable Export Adapter Interface | 1/1 | Complete    | 2026-02-19 | - |
-| 16 XCCDF Result Export | v1.2 | 0/1 | Not started | - |
+| 16 XCCDF Result Export | 1/1 | Complete    | 2026-02-19 | - |
 | 17 CSV Compliance Report | v1.2 | 0/1 | Not started | - |
 | 18 Excel Compliance Report | v1.2 | 0/1 | Not started | - |
 | 19 WPF Workflow UX Polish and Export Format Picker | v1.2 | 0/2 | Not started | - |
