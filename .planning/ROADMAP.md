@@ -210,11 +210,11 @@ Plans:
   2. When verify or export fails, the UI displays an actionable error message with specific recovery steps (not just an error code)
   3. Operator selects an export format from a ComboBox populated by registered `IExportAdapter` entries and triggers export with a single button; no per-format dialogs accumulate
   4. Export button is disabled while an export is running; `_isBusy` pattern prevents double-submission
-**Plans**: TBD
+**Plans**: 2 plans
 
 Plans:
-- [ ] 19-01: Add VerifyStatus progress model and bind to WPF verify view
-- [ ] 19-02: Implement export format picker ComboBox driven by ExportAdapterRegistry; wire single Export command through ExportOrchestrator
+- [ ] 19-01-PLAN.md — Add VerifyToolStatus progress model, error recovery panel, and bind to VerifyView.xaml
+- [ ] 19-02-PLAN.md — Add Quick Export tab with format picker ComboBox driven by ExportAdapterRegistry
 
 ## Progress
 
