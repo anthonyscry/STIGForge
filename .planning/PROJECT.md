@@ -36,7 +36,8 @@ Build -> Apply -> Verify -> Prove.
 
 - [ ] Verify workflow returns accurate SCC/SCAP findings (correctness fix).
 - ✓ XCCDF/SCAP result export for compliance tool interop (Phase 16).
-- [ ] CSV/Excel compliance reporting for human audiences.
+- ✓ CSV compliance reporting for management/auditor audiences (Phase 17).
+- [ ] Excel compliance reporting for human audiences.
 - ✓ Pluggable export adapter interface for future formats (Phase 15).
 - [ ] Workflow UX improvements: fewer steps, clearer status, better error recovery.
 
@@ -68,6 +69,7 @@ Build -> Apply -> Verify -> Prove.
 - Status/severity mapping in XccdfExportAdapter is the exact inverse of ScapResultAdapter parsing — ensures round-trip fidelity (Phase 16).
 - Weight attribute omitted for unknown/null severity (not written as "0.0") to preserve round-trip correctness (Phase 16).
 - CLI export commands load results from Verify/consolidated-results.json using VerifyReportReader.LoadFromJson (Phase 16).
+- CSV export uses human-readable column headers and RFC 4180 escaping; system name derived from Options or BundleRoot (Phase 17).
 
 ## Context
 
@@ -90,4 +92,4 @@ Build -> Apply -> Verify -> Prove.
 - New milestone requirements are explicitly tracked and mapped to planned phases.
 
 ---
-*Last updated: 2026-02-19 after Phase 16*
+*Last updated: 2026-02-19 after Phase 17*
