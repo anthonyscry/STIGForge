@@ -318,6 +318,26 @@ public static class PackApplicabilityRules
     return false;
   }
 
+  public static bool IsScapFallbackTagCompatible(IEnumerable<string>? stigTags, IEnumerable<string>? scapTags)
+  {
+    var normalizedStigTags = NormalizeTagSet(stigTags);
+    var normalizedScapTags = NormalizeTagSet(scapTags);
+    if (normalizedStigTags.Count == 0 || normalizedScapTags.Count == 0)
+      return false;
+
+    var stigFeatureTags = normalizedStigTags.Where(IsFeatureTag).ToHashSet(StringComparer.OrdinalIgnoreCase);
+    var scapFeatureTags = normalizedScapTags.Where(IsFeatureTag).ToHashSet(StringComparer.OrdinalIgnoreCase);
+    if (scapFeatureTags.Count > 0)
+      return stigFeatureTags.Count > 0 && scapFeatureTags.Overlaps(stigFeatureTags);
+
+    var stigOsTags = normalizedStigTags.Where(IsOsTag).ToHashSet(StringComparer.OrdinalIgnoreCase);
+    var scapOsTags = normalizedScapTags.Where(IsOsTag).ToHashSet(StringComparer.OrdinalIgnoreCase);
+    if (stigOsTags.Count == 0 || scapOsTags.Count == 0)
+      return false;
+
+    return scapOsTags.Overlaps(stigOsTags);
+  }
+
   public static HashSet<string> GetMachineFeatureTags(IEnumerable<string>? installedFeatures)
   {
     var tags = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
@@ -456,6 +476,23 @@ public static class PackApplicabilityRules
     }
 
     return null;
+  }
+
+  private static HashSet<string> NormalizeTagSet(IEnumerable<string>? tags)
+  {
+    var normalized = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    if (tags == null)
+      return normalized;
+
+    foreach (var tag in tags)
+    {
+      if (string.IsNullOrWhiteSpace(tag))
+        continue;
+
+      normalized.Add(tag.Trim().ToLowerInvariant());
+    }
+
+    return normalized;
   }
 
   private static HashSet<string> NormalizeSignals(IEnumerable<string>? signals)

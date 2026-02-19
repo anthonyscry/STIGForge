@@ -1371,12 +1371,14 @@ public partial class MainViewModel
 
     foreach (var stigPack in selectedStigPacks)
     {
+      var stigTags = ExtractMatchingTags(stigPack.Name + " " + stigPack.SourceLabel)
+        .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
       var candidateScapPacks = await GetScapCandidatesForStigAsync(
         stigPack,
         allScapPacks,
-        selectedStigTags,
-        machineInfo,
-        machineFeatureTags);
+        stigTags,
+        machineInfo);
 
       var selection = await SelectCanonicalScapAsync(stigPack, candidateScapPacks);
       if (selection.Winner != null)
@@ -1441,9 +1443,8 @@ public partial class MainViewModel
   private async Task<List<ContentPack>> GetScapCandidatesForStigAsync(
     ContentPack stigPack,
     IReadOnlyList<ContentPack> allScapPacks,
-    HashSet<string> selectedStigTags,
-    MachineInfo? machineInfo,
-    HashSet<string> machineFeatureTags)
+    HashSet<string> stigTags,
+    MachineInfo? machineInfo)
   {
     var candidates = new List<ContentPack>();
     var stigBenchmarkIds = await GetPackBenchmarkIdsAsync(stigPack);
@@ -1478,14 +1479,7 @@ public partial class MainViewModel
         continue;
       }
 
-      var packFeatureTags = packTags.Where(IsFeatureTag).ToHashSet(StringComparer.OrdinalIgnoreCase);
-      var featureMatch = packFeatureTags.Count > 0
-        && (packFeatureTags.Overlaps(selectedStigTags) || packFeatureTags.Overlaps(machineFeatureTags));
-      var osTagMatch = machineInfo != null
-        && packTags.Any(IsOsTag)
-        && IsPackOsCompatible(packTags, machineInfo.OsTarget, requireOsTag: true);
-
-      if (featureMatch || osTagMatch)
+      if (PackApplicabilityRules.IsScapFallbackTagCompatible(stigTags, packTags))
       {
         candidates.Add(pack);
         System.Diagnostics.Trace.TraceInformation("SCAP candidate: " + pack.Name + " (fallback tag match)");
