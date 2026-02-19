@@ -37,7 +37,7 @@ Build -> Apply -> Verify -> Prove.
 - [ ] Verify workflow returns accurate SCC/SCAP findings (correctness fix).
 - [ ] XCCDF/SCAP result export for compliance tool interop.
 - [ ] CSV/Excel compliance reporting for human audiences.
-- [ ] Pluggable export adapter interface for future formats.
+- ✓ Pluggable export adapter interface for future formats (Phase 15).
 - [ ] Workflow UX improvements: fewer steps, clearer status, better error recovery.
 
 ## Non-Goals (Still Out of Scope)
@@ -62,6 +62,8 @@ Build -> Apply -> Verify -> Prove.
 - Validate requirement completion only when requirement mapping, execution verification, and summary metadata all align.
 - Enforce release evidence contract checks across CI, VM, release workflow, and package build using one shared validator.
 - Fail closed on `run_release_gate=false` for release packages.
+- IExportAdapter + ExportAdapterRegistry + ExportOrchestrator is the pluggable export architecture; all format adapters implement IExportAdapter (Phase 15).
+- EmassExporter uses explicit interface implementation to avoid overload ambiguity; CklExportAdapter wraps static CklExporter (Phase 15).
 
 ## Context
 
@@ -84,4 +86,4 @@ Build -> Apply -> Verify -> Prove.
 - New milestone requirements are explicitly tracked and mapped to planned phases.
 
 ---
-*Last updated: 2026-02-18 after v1.2 milestone start*
+*Last updated: 2026-02-19 after Phase 15*
