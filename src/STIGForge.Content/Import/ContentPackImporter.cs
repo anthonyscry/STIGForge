@@ -173,7 +173,7 @@ public sealed class ContentPackImporter
                                 foreach (var sourceFile in filesToCopy)
                                 {
                                     ct.ThrowIfCancellationRequested();
-                                    var relativePath = GetRelativePath(extractionRoot, sourceFile);
+                                    var relativePath = Path.GetRelativePath(extractionRoot, sourceFile);
                                     var destination = Path.Combine(tempRoot, relativePath);
                                     var destinationDir = Path.GetDirectoryName(destination);
                                     if (!string.IsNullOrWhiteSpace(destinationDir))
@@ -245,7 +245,7 @@ public sealed class ContentPackImporter
                 .Select(path => new
                 {
                     FullPath = path,
-                    Segments = GetRelativePath(extractionRoot, path)
+                    Segments = Path.GetRelativePath(extractionRoot, path)
                         .Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries)
                 })
                 .Select(entry => new
@@ -1051,21 +1051,6 @@ public sealed class ContentPackImporter
         return combined;
     }
 
-    private static string GetRelativePath(string root, string path)
-    {
-        var rootUri = new Uri(AppendDirSeparator(root));
-        var pathUri = new Uri(path);
-        var rel = rootUri.MakeRelativeUri(pathUri).ToString();
-        return Uri.UnescapeDataString(rel).Replace('/', Path.DirectorySeparatorChar);
-    }
-
-    private static string AppendDirSeparator(string path)
-    {
-        if (!path.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal))
-            return path + Path.DirectorySeparatorChar;
-        return path;
-    }
-
     private static void ExpandNestedZipArchives(string extractionRoot, int maxPasses, CancellationToken ct)
     {
         for (var pass = 0; pass < maxPasses; pass++)
@@ -1119,7 +1104,7 @@ public sealed class ContentPackImporter
             if (string.IsNullOrWhiteSpace(fileDirectory))
                 continue;
 
-            var relativeDirectoryPath = GetRelativePath(extractionRoot, fileDirectory);
+            var relativeDirectoryPath = Path.GetRelativePath(extractionRoot, fileDirectory);
             var segments = relativeDirectoryPath.Split(new[] { Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar }, StringSplitOptions.RemoveEmptyEntries);
 
             for (var i = 0; i < segments.Length; i++)
@@ -1207,7 +1192,7 @@ public sealed class ContentPackImporter
         var candidate = value.Trim();
         if (candidate.Length >= 2
             && candidate[0] == '{'
-            && candidate[candidate.Length - 1] == '}')
+            && candidate[^1] == '}')
         {
             candidate = candidate.Substring(1, candidate.Length - 2);
         }

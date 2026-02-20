@@ -5,13 +5,9 @@
   </ItemGroup>
 
   <PropertyGroup>
-    <TargetFrameworks>net48;net8.0</TargetFrameworks>
+    <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
   </PropertyGroup>
-
-  <ItemGroup Condition="'$(TargetFramework)' == 'net48'">
-    <PackageReference Include="System.Text.Json" Version="8.0.5" />
-  </ItemGroup>
 
 </Project>
