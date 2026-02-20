@@ -137,8 +137,8 @@ Fleet operations use WinRM/PSRemoting for multi-machine hardening:
 
 ## Design Decisions
 
-### Dual-Framework Targeting
-Core and Infrastructure target both `net8.0` and `net48` to support legacy Windows environments. This imposes API constraints (no `String.Contains(StringComparison)`, no `Dictionary.TryAdd`, etc.).
+### .NET 8-Only Runtime Baseline
+Core, Infrastructure, and supporting runtime libraries are standardized on `net8.0`. The previous dual-target API constraints used for legacy .NET Framework compatibility are removed, allowing modern framework APIs across the codebase.
 
 ### Offline-First
 All operations work without network connectivity. The platform stores everything locally (SQLite + file system) and never phones home.
