@@ -14,6 +14,8 @@ Plan: 0 of TBD in current phase
 Status: Ready to plan
 Last activity: 2026-02-20 - Roadmap rebooted for mission-console rewrite with strict SCAP mapping and offline-first constraints.
 
+Next action: `/gsd-plan-phase 1`
+
 Progress: [----------] 0%
 
 ## Performance Metrics
