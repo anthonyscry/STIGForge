@@ -1,56 +1,56 @@
-# STIGForge Project Context
+# STIGForge Next
 
-## Product Goal
+## What This Is
 
-STIGForge delivers an offline-first Windows hardening workflow that turns quarterly STIG content updates into a repeatable operator flow:
+STIGForge Next is a full reboot of STIGForge as an offline-first Windows compliance platform for operators, ISSO/ISSM teams, and maintainers. It replaces fragmented workflows with one deterministic mission loop: Build -> Apply -> Verify -> Prove. The reboot is driven by `PROJECT_SPEC.md` as the canonical source and rebuilds both UX and backend module contracts.
 
-Build -> Apply -> Verify -> Prove.
+## Core Value
 
-## Current State (Post v1.0)
+Produce deterministic, defensible compliance outcomes with strict control mapping and complete evidence packaging, without requiring internet access.
 
-- v1.0 mission baseline is shipped and archived in `.planning/milestones/v1.0-ROADMAP.md`.
-- Deterministic release gate, compatibility regression, upgrade/rebase validation, and reproducibility evidence are in place.
-- Core operator workflow, export integrity, and security hardening are implemented for offline/air-gapped environments.
+## Requirements
 
-## Current Milestone: v1.1 (Planning)
+### Validated
 
-**Goal:** Define the next scoped milestone with explicit requirement IDs and phase mapping.
+(None yet - ship to validate)
 
-**Initial focus candidates:**
-- Complete remaining diff/rebase operator workflow hardening and guidance.
-- Close any remaining WPF operator parity gaps.
-- Expand quality automation and maintainability guardrails for sustained releases.
+### Active
 
-## Locked Technical Decisions
+- [ ] Rebuild the product from scratch against `PROJECT_SPEC.md` with side-by-side `STIGForge.Next.*` delivery and phased cutover.
+- [ ] Enforce strict per-STIG SCAP mapping invariants at design, implementation, and test layers.
+- [ ] Guarantee deterministic bundle/export outputs (ordering, indices, checksums) for identical inputs.
+- [ ] Deliver full mission loop parity (Build, Apply, Verify, Manual, Evidence, Export) in WPF and CLI.
+- [ ] Deliver mission-console UX overhaul from scratch, backed by new contracts and workflows.
 
-- .NET 8 solution on Windows 10/11 and Server 2019+.
-- PowerShell 5.1 compatibility is mandatory.
-- SQLite remains the local system of record.
-- Offline-first operation is non-negotiable (no runtime internet dependency).
-- Classification scope behavior remains: `classified_only | unclassified_only | both | unknown`.
-- New/changed-rule safety gate remains: review-required default with grace-period auto-apply controls.
+### Out of Scope
 
-## Validated Deliverables (v1.0)
+- Direct eMASS API sync/upload - export package only in v1.
+- Enterprise-wide GPO management replacement - consume/apply workflows only.
+- Broad best-effort SCAP auto-matching - explicitly disallowed by strict mapping invariant.
 
-- Deterministic verification integration and conflict handling.
-- Submission-safe export integrity (eMASS + CKL + POA&M coherence).
-- Operator workflow completion in WPF/CLI mission surfaces.
-- Security and operational hardening for air-gapped enterprise use.
-- Repeatable release-readiness evidence (tests, fixtures, packaging, gate reports).
+## Context
 
-## Non-Goals (Still Out of Scope)
+The repository contains mature v1.1 release-candidate artifacts and planning history in `.planning/` and `docs/release/`, but those are legacy context for this reboot. The team decision for this initiative is a full rewrite including backend, with existing runtime paths treated as reference-only rather than authoritative behavior. Delivery is phased as vertical slices, and architecture/contracts are derived from the reboot planning pack under `docs/plans/2026-02-19-stigforge-next/` and `PROJECT_SPEC.md`.
 
-- Direct eMASS API write-back.
-- SCCM enterprise rollout platform.
-- Multi-tenant cloud control plane.
+## Constraints
 
-## Definition of Done (Roadmap-Level)
+- **Platform**: Windows 11 and Windows Server 2019 targets - required mission environments.
+- **Runtime**: .NET 8 + PowerShell 5.1 interoperability - compatibility and support baseline.
+- **Offline-first**: No internet dependency for critical workflows - required for air-gapped operations.
+- **Determinism**: Identical inputs must produce reproducible outputs - required for audit trust.
+- **Safety**: Ambiguity must route to review-required states - no silent risky automation.
+- **Delivery**: Phased vertical slices (M1-M6), not big-bang cutover - controlled risk and measurable gates.
 
-- Build/test/release gates are executable and documented.
-- Verification/export artifacts are deterministic across reruns.
-- Critical workflows are executable by operators from the app UI.
-- Security and integrity checks pass with actionable diagnostics.
-- New milestone requirements are explicitly tracked and mapped to planned phases.
+## Key Decisions
+
+| Decision | Rationale | Outcome |
+|----------|-----------|---------|
+| Full rewrite including backend | Existing implementation does not satisfy reboot charter as canonical baseline | ✓ Good |
+| Existing code is reference-only | Avoid accidental carry-forward of legacy assumptions | ✓ Good |
+| Side-by-side replacement strategy | Enables controlled migration and milestone gating | ✓ Good |
+| Phased vertical slice delivery | Keeps execution testable and shippable per milestone | ✓ Good |
+| Mission-console visual direction for WPF | Aligns UX with operator workflow and status-heavy operations | — Pending |
+| `PROJECT_SPEC.md` is canonical | Single source of truth for scope and acceptance invariants | ✓ Good |
 
 ---
-*Last updated: 2026-02-09 after v1.0 milestone closeout and v1.1 planning initialization*
+*Last updated: 2026-02-20 after `/gsd-new-project --auto` reboot initialization*
