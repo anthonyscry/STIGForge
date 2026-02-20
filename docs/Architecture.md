@@ -2,7 +2,7 @@
 
 ## Overview
 
-STIGForge is an offline-first Windows STIG hardening platform built on .NET 8 (with .NET Framework 4.8 compatibility for Core/Infrastructure). It provides a complete compliance lifecycle: **Import -> Build -> Apply -> Verify -> Export**.
+STIGForge is an offline-first Windows STIG hardening platform built on .NET 8. It provides a complete compliance lifecycle: **Import -> Build -> Apply -> Verify -> Export**.
 
 ## Module Diagram
 
