@@ -4,7 +4,32 @@
 
 | Version | Name | Date | Phase Span | Plans | Status |
 |---------|------|------|------------|-------|--------|
+| vNext | STIGForge Next Rebuild | 2026-02-20 | 01-06 | TBD | Active |
 | v1.0 | Mission-Ready Baseline | 2026-02-09 | 03-07 | 17 | Shipped |
+
+## vNext - STIGForge Next Rebuild (Active)
+
+Source of truth:
+
+- `PROJECT_SPEC.md`
+- `.planning/PROJECT.md`
+- `.planning/REQUIREMENTS.md`
+- `.planning/ROADMAP.md`
+
+Milestone intent:
+
+- Replace legacy fragmented workflows with a schema-first deterministic pipeline.
+- Enforce strict per-STIG SCAP mapping and review-required ambiguity policy.
+- Ship offline-first submission-ready artifacts (CKL/POA&M/eMASS) with integrity proof.
+
+Planned phase span:
+
+- Phase 01: Foundations and canonical contracts.
+- Phase 02: Policy/scope/release-age safety gates.
+- Phase 03: Build and apply mission core.
+- Phase 04: Verify normalization and strict STIG-SCAP mapping.
+- Phase 05: Manual wizard, evidence autopilot, diff/rebase.
+- Phase 06: Export/fleet-lite/audit integrity and MVP closeout.
 
 ## v1.0 - Mission-Ready Baseline (Shipped 2026-02-09)
 
