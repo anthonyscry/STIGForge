@@ -24,7 +24,12 @@ This roadmap delivers an offline-first, deterministic hardening mission console 
   2. Imported pack metadata shows pack identity, benchmark/version/date details, source label, applicability tags, and SHA-256 manifest entries.
   3. Operator can inspect canonical `ControlRecord` entries that include provenance and external ID mappings for each normalized control.
   4. Contract tests pass for all required schemas (`ContentPack`, `ControlRecord`, `Profile`, `Overlay`, `BundleManifest`, `VerificationResult`, `EvidenceRecord`, `ExportIndexEntry`).
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [ ] 01-01-PLAN.md - Close initial deterministic hash and overlay merge verification blockers.
+- [ ] 01-02-PLAN.md - Restore deterministic directory import hashing and persisted dedupe.
+- [ ] 01-03-PLAN.md - Fix overlay editor rule selection UX and `Overlay.Overrides` persistence parity.
+- [ ] 01-04-PLAN.md - Wire overlay merge artifacts and apply-time NotApplicable filtering.
 
 ### Phase 2: Policy Scope and Safety Gates
 **Goal**: Operators can make deterministic policy and scope decisions that are explainable, reviewable, and safe for new content.
@@ -85,7 +90,7 @@ This roadmap delivers an offline-first, deterministic hardening mission console 
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Canonical Ingestion Contracts | 0/TBD | Not started | - |
+| 1. Canonical Ingestion Contracts | 0/1 | Planned | - |
 | 2. Policy Scope and Safety Gates | 0/TBD | Not started | - |
 | 3. Deterministic Build and Apply Core | 0/TBD | Not started | - |
 | 4. Verification and Strict SCAP Association | 0/TBD | Not started | - |

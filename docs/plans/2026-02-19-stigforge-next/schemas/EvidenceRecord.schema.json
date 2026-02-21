@@ -1,0 +1,55 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://stigforge.local/schemas/evidence-record.schema.json",
+  "title": "EvidenceRecord",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "evidence_id",
+    "control_id",
+    "evidence_type",
+    "collected_at_utc",
+    "collected_by",
+    "artifact_path",
+    "sha256",
+    "metadata",
+    "provenance"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "evidence_id": { "type": "string" },
+    "control_id": { "type": "string" },
+    "evidence_type": {
+      "type": "string",
+      "enum": ["Command", "Registry", "File", "Export", "Screenshot", "Log"]
+    },
+    "collected_at_utc": { "type": "string", "format": "date-time" },
+    "collected_by": { "type": "string" },
+    "artifact_path": { "type": "string" },
+    "sha256": { "type": "string", "pattern": "^[A-Fa-f0-9]{64}$" },
+    "metadata": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["context", "recipe_id"],
+      "properties": {
+        "context": { "type": "string" },
+        "recipe_id": { "type": "string" },
+        "command": { "type": ["string", "null"] },
+        "exit_code": { "type": ["integer", "null"] }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["collector_version", "run_id"],
+      "properties": {
+        "collector_version": { "type": "string" },
+        "run_id": { "type": "string" }
+      }
+    }
+  }
+}

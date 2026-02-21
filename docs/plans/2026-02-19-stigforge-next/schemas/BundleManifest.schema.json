@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://stigforge.local/schemas/bundle-manifest.schema.json",
+  "title": "BundleManifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "bundle_id",
+    "generated_at_utc",
+    "inputs",
+    "outputs",
+    "hashes",
+    "determinism",
+    "provenance"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "bundle_id": { "type": "string" },
+    "generated_at_utc": { "type": "string", "format": "date-time" },
+    "inputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["profile_id", "pack_ids", "overlay_ids", "tool_versions"],
+      "properties": {
+        "profile_id": { "type": "string" },
+        "pack_ids": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "overlay_ids": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "tool_versions": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        }
+      }
+    },
+    "outputs": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["directories"],
+      "properties": {
+        "directories": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["Apply", "Verify", "Manual", "Evidence", "Reports", "Manifest"]
+          },
+          "uniqueItems": true
+        }
+      }
+    },
+    "hashes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "sha256"],
+        "properties": {
+          "path": { "type": "string" },
+          "sha256": { "type": "string", "pattern": "^[A-Fa-f0-9]{64}$" }
+        }
+      }
+    },
+    "determinism": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["sort_policy_version", "timestamp_policy"],
+      "properties": {
+        "sort_policy_version": { "type": "string" },
+        "timestamp_policy": {
+          "type": "string",
+          "enum": ["runtime_utc", "fixed_seed"]
+        }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["builder_version", "build_run_id"],
+      "properties": {
+        "builder_version": { "type": "string" },
+        "build_run_id": { "type": "string" }
+      }
+    }
+  }
+}

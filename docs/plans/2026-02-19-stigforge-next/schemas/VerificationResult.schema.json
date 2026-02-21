@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://stigforge.local/schemas/verification-result.schema.json",
+  "title": "VerificationResult",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "run_id",
+    "tool",
+    "started_at_utc",
+    "completed_at_utc",
+    "host",
+    "controls",
+    "raw_artifacts",
+    "summary",
+    "provenance"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "run_id": { "type": "string" },
+    "tool": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version"],
+      "properties": {
+        "name": {
+          "type": "string",
+          "enum": ["SCAP", "Evaluate-STIG", "Manual"]
+        },
+        "version": { "type": "string" }
+      }
+    },
+    "started_at_utc": { "type": "string", "format": "date-time" },
+    "completed_at_utc": { "type": "string", "format": "date-time" },
+    "host": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["hostname", "os_build"],
+      "properties": {
+        "hostname": { "type": "string" },
+        "os_build": { "type": "string" }
+      }
+    },
+    "controls": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["control_id", "status", "source_ref"],
+        "properties": {
+          "control_id": { "type": "string" },
+          "status": {
+            "type": "string",
+            "enum": ["Pass", "Fail", "NotApplicable", "Open", "Error"]
+          },
+          "source_ref": { "type": "string" },
+          "mapping_confidence": {
+            "type": "string",
+            "enum": ["high", "medium", "low"]
+          },
+          "evidence_refs": {
+            "type": "array",
+            "items": { "type": "string" }
+          }
+        }
+      }
+    },
+    "raw_artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["path", "sha256"],
+        "properties": {
+          "path": { "type": "string" },
+          "sha256": { "type": "string", "pattern": "^[A-Fa-f0-9]{64}$" }
+        }
+      }
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pass", "fail", "not_applicable", "open", "error"],
+      "properties": {
+        "pass": { "type": "integer", "minimum": 0 },
+        "fail": { "type": "integer", "minimum": 0 },
+        "not_applicable": { "type": "integer", "minimum": 0 },
+        "open": { "type": "integer", "minimum": 0 },
+        "error": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["verifier_version", "verify_run_id"],
+      "properties": {
+        "verifier_version": { "type": "string" },
+        "verify_run_id": { "type": "string" }
+      }
+    }
+  }
+}
