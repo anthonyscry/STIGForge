@@ -1,92 +1,168 @@
-# Domain Pitfalls
+# Pitfalls Research
 
-**Domain:** Offline-first Windows compliance hardening and evidence packaging (STIGForge Next)
-**Researched:** 2026-02-19
+**Domain:** Windows compliance workflow tooling (merging Evaluate-STIG + SCC into one checklist with strict mapping)
+**Researched:** 2026-02-20
+**Confidence:** MEDIUM
 
 ## Critical Pitfalls
 
-Mistakes that cause rewrites or major issues.
+### Pitfall 1: Cross-STIG Broad Fallback Masquerading as "Better Coverage"
 
-### Pitfall 1: Silent Mapping Ambiguity in STIG-to-SCAP Association
-**What goes wrong:** The system auto-selects a SCAP benchmark when multiple candidates are plausible, or falls back broadly across unrelated STIG rows.
-**Why it happens:** Teams optimize for "high match rate" instead of strict per-STIG mapping invariants and deterministic tie-breakers.
-**Consequences:** False verification confidence, wrong control status propagation, and non-defensible audit outcomes.
-**Prevention:** Enforce hard contracts: per-selected-STIG mapping only, benchmark overlap as primary signal, strict feature/OS tag overlap fallback, and mandatory review queue when confidence is insufficient.
-**Detection:** Rising count of controls marked verified without benchmark overlap, repeated operator overrides on the same mapping classes, and test failures on strict association invariants.
+**What goes wrong:**
+Results from SCC/Evaluate-STIG are matched to controls outside the selected STIG boundary, so pass/fail status looks complete but is attached to the wrong control set.
 
-### Pitfall 2: Non-Deterministic Build/Export Artifacts
-**What goes wrong:** Identical inputs produce different bundle trees, ordering, status derivations, or checksums across runs.
-**Why it happens:** Hidden nondeterminism (unordered collections, locale/timezone effects, filesystem traversal order, timestamp leakage, tool-version drift).
-**Consequences:** Broken reproducibility, failed audit comparisons, noisy diffs during quarterly updates, and impossible root-cause analysis.
-**Prevention:** Define deterministic output contracts at module boundaries; canonical sort/order rules everywhere; normalize timestamps by policy; pin and record tool versions in manifests; run repeatability tests as release gates.
-**Detection:** Same fixture run twice yields checksum/index deltas; package diffs with no input changes; flaky contract tests for bundle structure.
+**Why it happens:**
+Teams optimize for fewer "unmapped" rows and implement loose fallback matching across benchmark families.
 
-### Pitfall 3: Audit Chain Breaks and Evidence Integrity Gaps
-**What goes wrong:** Critical actions are not fully recorded, hash-chain continuity is broken, or artifact manifests do not reconcile with packaged files.
-**Why it happens:** Audit logging is bolted on late; event schemas change without migration discipline; evidence collection paths bypass canonical indexers.
-**Consequences:** Tamper-evidence claims are not defensible, submission package trust drops, and remediation requires expensive forensic reconstruction.
-**Prevention:** Treat audit/integrity as first-class contracts: append-only event model, chain-validation command, mandatory SHA-256 manifests for all export artifacts, and contract tests that fail on missing provenance fields.
-**Detection:** Hash-chain validation failures, orphaned evidence artifacts not present in index, and export validation mismatches between index and filesystem.
+**How to avoid:**
+Implement mapping contract as code and tests: per-selected-STIG scope only, benchmark overlap first, deterministic tie-breakers second, strict feature/OS fallback third, otherwise `review_required`.
 
-### Pitfall 4: PowerShell/DSC State Drift During Apply
-**What goes wrong:** Desired state converges initially but drifts due to host policy, execution context variance, DSC resource/version differences, or reboot sequencing.
-**Why it happens:** Preflight is shallow; LCM and host readiness assumptions are implicit; fallback script paths diverge from DSC/GPO semantics.
-**Consequences:** Inconsistent enforcement results by host, repeated apply loops, and verification disagreement between scanners and local state.
-**Prevention:** Strong preflight gates (elevation, policy, constrained language, reboot, host readiness), explicit max-pass convergence loops, snapshot/rollback of critical policy state, and backend parity tests for DSC/GPO/script fallback behavior.
-**Detection:** High rate of second-pass changes, oscillating settings between runs, per-host variance spikes in fleet summaries, and frequent pending-reboot blockers.
+**Warning signs:**
+"Unmapped" drops suddenly after parser changes, controls verify without benchmark overlap, repeated operator remapping of the same rule classes.
 
-### Pitfall 5: Packaging Reproducibility and Submission Contract Drift
-**What goes wrong:** CKL/POA&M/eMASS exports pass local checks but fail downstream validation due to layout/index/checksum inconsistencies.
-**Why it happens:** Export is treated as formatting instead of contract fulfillment; schema/version mismatches and optional-field ambiguity accumulate over milestones.
-**Consequences:** Submission delays, manual package surgery, and brittle release cycles near compliance deadlines.
-**Prevention:** Versioned export schemas, golden-package fixtures, strict index contracts, and compatibility tests for every release against known validator expectations.
-**Detection:** Validator failures concentrated in index/reference paths, last-minute manual ZIP edits, and recurring "works locally" export defects.
+**Phase to address:**
+Phase 4: Verification and Strict SCAP Association.
 
-### Pitfall 6: Verification Parser Brittleness Across Scanner Variants
-**What goes wrong:** Parser/normalizer logic breaks when SCAP/SCC/Evaluate-STIG output format or edge-case content changes.
-**Why it happens:** Parsers rely on fragile heuristics and under-specified assumptions; raw artifacts are not retained for replay/debug.
-**Consequences:** False fail/pass rates, broken traceability to canonical controls, and blocked quarterly adoption until parser hotfixes ship.
-**Prevention:** Build parser contract suites with real fixture corpora, preserve raw scanner artifacts plus parser diagnostics, and separate extraction from normalization to isolate breakage.
-**Detection:** Sudden spike in "unmapped" or "unknown" result states, parser exception clusters after tool updates, and normalization confidence regressions.
+---
 
-## Moderate Pitfalls
+### Pitfall 2: Non-Deterministic Checklist Assembly
 
-### Pitfall 1: Overlay Precedence Ambiguity
-**What goes wrong:** Overlay merges apply in unexpected order, producing policy conflicts and operator confusion.
-**Prevention:** Publish a deterministic precedence matrix, enforce conflict-resolution rules in code, and surface "why this value won" diagnostics.
+**What goes wrong:**
+The merged checklist changes between identical runs (iSTIG order, UUID values, rule ordering, or manifest hashes), breaking audit reproducibility.
 
-### Pitfall 2: Manual Answer Reuse Without Provenance Guardrails
-**What goes wrong:** Reused manual answers are applied to changed controls or mismatched environments.
-**Prevention:** Require provenance anchors (control revision, environment tags, confidence), auto-carry only for high-confidence rebases, and queue uncertain carries for review.
+**Why it happens:**
+Input order is not canonicalized, random UUIDs leak into artifacts, and serialization is not normalized.
 
-### Pitfall 3: Offline Assumption Leaks
-**What goes wrong:** Critical workflows silently depend on network resources (package feeds, certificate checks, metadata fetch).
-**Prevention:** Offline-mode test suite in CI, explicit dependency inventory, and startup self-check that blocks network-required code paths in production mode.
+**How to avoid:**
+Sort all scanner/control inputs before merge, replace random IDs in exported artifacts with deterministic IDs derived from canonical fields, and gate releases with same-input/same-output regression fixtures.
 
-## Minor Pitfalls
+**Warning signs:**
+Checksum drift on rerun, noisy diffs with no content changes, CI intermittently failing deterministic package tests.
 
-### Pitfall 1: Diagnostic Noise Overload
-**What goes wrong:** Reports flood operators with low-priority warnings, hiding high-severity blockers.
-**Prevention:** Severity-tiered reporting, actionable next-step text, and default views that prioritize gating failures.
+**Phase to address:**
+Phase 3: Deterministic Build and Apply Core (implementation), reinforced in Phase 6 export gates.
 
-### Pitfall 2: WPF/CLI Behavior Drift
-**What goes wrong:** Same workflow produces slightly different defaults or validation behavior between interfaces.
-**Prevention:** Shared command contracts in core modules, parity tests for key workflow paths, and one source of truth for policy defaults.
+---
 
-## Phase-Specific Warnings
+### Pitfall 3: Rule Identity Collisions Across Tool Outputs
 
-| Phase Topic | Likely Pitfall | Mitigation |
-|-------------|---------------|------------|
-| M1 Foundation (schemas/import/canonical model/profile) | Canonical model underspecification causes later parser/export rewrites | Freeze versioned schemas early; add contract tests for required fields, enums, provenance, and migration policy |
-| M1 Foundation | Mapping ambiguity accepted to speed ingestion | Implement strict per-STIG association invariants and deterministic candidate selection before broad content support |
-| M2 Execution Core (build/apply/verify) | Non-deterministic build artifacts from unordered processing | Introduce deterministic ordering + timestamp normalization and repeat-run checksum tests as quality gates |
-| M2 Execution Core | PowerShell/DSC drift hidden by shallow preflight | Enforce full readiness gates, convergence loop metrics, and rollback snapshots from day one |
-| M3 Human Loop (manual wizard/evidence) | Evidence collection bypasses canonical metadata/index path | Make evidence indexing mandatory API; reject unindexed artifacts during export |
-| M4 Export (CKL/POA&M/eMASS) | Package passes internal checks but fails downstream validators | Maintain golden export fixtures, strict index contract tests, and release-time validator replay |
-| M5 Lifecycle (diff/rebase quarterly updates) | Over-aggressive auto-carry of overlays/manual answers across revisions | Confidence-scored rebase with mandatory review queue for uncertain matches and clear workload summaries |
-| M6 Fleet + hardening | Host-to-host enforcement variance obscures true compliance state | Capture per-host backend/tool versions and convergence telemetry; add variance dashboards and drift alerts |
+**What goes wrong:**
+Two tools emit similarly named identifiers (`V-`, `Rule_ID`, benchmark-local IDs), and merge logic treats them as globally unique, causing overwritten or conflated findings.
+
+**Why it happens:**
+Identity keys are modeled as single fields instead of composite keys that include benchmark/STIG lineage.
+
+**How to avoid:**
+Adopt canonical verification key: `{selected_stig, benchmark_id, vuln_or_rule_id, scanner_source}`; reject writes that omit one of these fields; persist raw source identifiers alongside normalized IDs.
+
+**Warning signs:**
+Unexpected duplicate-key upserts, one scanner "disappearing" after merge, inconsistent findings count between raw files and canonical model.
+
+**Phase to address:**
+Phase 1: Canonical Ingestion Contracts (schema), validated again in Phase 4 parser contracts.
+
+---
+
+### Pitfall 4: Parser Coupling to One SCC/Evaluate-STIG Flavor
+
+**What goes wrong:**
+A quarterly tool/content update changes output shape, and normalization silently degrades or hard-fails.
+
+**Why it happens:**
+Parsers are written for one happy-path format and do not preserve raw artifacts for replay.
+
+**How to avoid:**
+Split extraction from normalization, maintain fixture corpus by tool version/release, archive raw scanner outputs with parser diagnostics, and require contract tests before accepting new scanner versions.
+
+**Warning signs:**
+Spike in `unknown`/`unmapped`, parser exceptions clustered after scanner updates, emergency parser hotfixes late in release.
+
+**Phase to address:**
+Phase 4: Verification and Strict SCAP Association.
+
+---
+
+### Pitfall 5: False "One Checklist" UX That Hides Provenance
+
+**What goes wrong:**
+Merged checklist shows a single status per control without exposing which scanner produced it, making disputes non-resolvable and reducing trust.
+
+**Why it happens:**
+UI/exports compress multi-source evidence too early, prioritizing simplicity over audit traceability.
+
+**How to avoid:**
+Keep canonical finding provenance (`source tool`, `raw artifact path`, `parser version`, `timestamp policy`) visible in record detail and export index; summarize in UI but never discard source links.
+
+**Warning signs:**
+Reviewers ask "where did this result come from?" and system cannot answer in one click; POA&M entries cannot be traced back to raw scan evidence.
+
+**Phase to address:**
+Phase 5: Human Resolution and Update Rebase (UX/policy), Phase 6 for export evidence completeness.
+
+---
+
+### Pitfall 6: Ambiguity Treated as Success Instead of Work Queue
+
+**What goes wrong:**
+When SCC and Evaluate-STIG disagree or mapping confidence is low, system auto-picks a winner and marks control resolved.
+
+**Why it happens:**
+Pressure to reduce manual queue size and ship "green" dashboards.
+
+**How to avoid:**
+Make ambiguity first-class: unresolved state, explicit reason codes, reviewer assignment, and policy gate that blocks auto-apply/auto-close for ambiguous mappings.
+
+**Warning signs:**
+Near-zero review queue despite high scanner disagreement rates, sudden drops in manual workload after mapping changes.
+
+**Phase to address:**
+Phase 2: Policy Scope and Safety Gates (decision policy), enforced in Phase 4 verification orchestration.
+
+## Technical Debt Patterns
+
+| Shortcut | Immediate Benefit | Long-term Cost | When Acceptable |
+|----------|-------------------|----------------|-----------------|
+| "Match by Vuln ID only" | Fast integration | Cross-benchmark false joins | Never |
+| Keep random checklist UUIDs | Easy CKL generation | Non-reproducible exports | Never |
+| Auto-close ambiguous mappings | Smaller review queue | Audit credibility loss | Never |
+| Normalize without saving raw scanner files | Lower storage | Impossible forensic replay | Never |
+
+## Integration Gotchas
+
+| Integration | Common Mistake | Correct Approach |
+|-------------|----------------|------------------|
+| SCC output ingest | Assume one stable result schema forever | Version parser contracts and fixture sets by SCC release |
+| Evaluate-STIG ingest | Treat script output as canonical without source metadata | Persist raw output + parser diagnostics + tool version |
+| CKL export | Merge results but drop scanner provenance | Keep one merged control view plus per-source trace links |
+
+## "Looks Done But Isn't" Checklist
+
+- [ ] **Merged checklist:** Identical inputs produce byte-stable output and checksums.
+- [ ] **Strict mapping:** No cross-STIG fallback path exists in code or data migration scripts.
+- [ ] **Parser resilience:** Latest SCC/Evaluate-STIG outputs are in fixture corpus and pass.
+- [ ] **Auditability:** Every merged finding links to raw artifact and parser metadata.
+- [ ] **Ambiguity handling:** Conflicts route to review-required, not silent resolution.
+
+## Pitfall-to-Phase Mapping
+
+| Pitfall | Prevention Phase | Verification |
+|---------|------------------|--------------|
+| Cross-STIG broad fallback | Phase 4 | Invariant tests proving no mapping outside selected STIG and benchmark-overlap precedence |
+| Non-deterministic checklist assembly | Phase 3 (core), Phase 6 (export) | Rerun fixtures produce identical checklist + manifest hashes |
+| Rule identity collisions | Phase 1 | Schema validation requires composite identity fields; duplicate join tests |
+| Parser coupling to one format | Phase 4 | Multi-version SCC/Evaluate fixture suite in CI |
+| Provenance hidden in merged view | Phase 5 and Phase 6 | Export index contains source tool, raw path, parser version for each finding |
+| Ambiguity auto-resolved | Phase 2 and Phase 4 | Policy tests enforce `review_required` on low confidence or scanner disagreement |
 
 ## Sources
 
-- `PROJECT_SPEC.md` (product principles, strict mapping contract, deterministic output contract, audit/integrity requirements, apply/verify/export pipelines, milestone plan)
-- `.planning/PROJECT.md` (scope, architecture baseline, roadmap-level definition of done)
+- `PROJECT_SPEC.md` (strict mapping contract, deterministic outputs, verify pipeline requirements).
+- `.planning/ROADMAP.md` (phase boundaries and where mapping/determinism gates belong).
+- `https://raw.githubusercontent.com/microsoft/PowerStig/dev/source/Module/STIG/Functions.Checklist.ps1` (multi-STIG checklist generation behavior and deterministic-risk patterns like unsorted inputs/random UUID usage).
+- `https://raw.githubusercontent.com/microsoft/PowerStig/dev/source/StigData/Schema/Checklist.xsd` (CKL structure constraints).
+- `https://csrc.nist.gov/projects/security-content-automation-protocol/specifications/xccdf` (XCCDF benchmark/rule/result model context; updated 2025-12-22).
+- `https://csrc.nist.gov/projects/security-content-automation-protocol/specifications/arf` (ARF transport/report model context; updated 2025-12-22).
+
+---
+*Pitfalls research for: STIGForge Next verify/mapping dimension*
+*Researched: 2026-02-20*

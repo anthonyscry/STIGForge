@@ -1,80 +1,134 @@
-# Feature Landscape
+# Feature Research
 
-**Domain:** Offline-first Windows compliance hardening product
-**Researched:** 2026-02-19
+**Domain:** Windows compliance orchestration (apply + multi-scanner verification + checklist export)
+**Researched:** 2026-02-20
+**Confidence:** MEDIUM
 
-## Table Stakes
+## Feature Landscape
 
-Features users expect. Missing = product feels incomplete.
+### Table Stakes (Users Expect These)
+
+Features users assume exist. Missing these = product feels incomplete.
 
 | Feature | Why Expected | Complexity | Notes |
 |---------|--------------|------------|-------|
-| Content ingestion and normalization (STIG/SCAP/GPO/LGPO/ADMX) | Teams already pull from multiple DISA and policy sources; a hardening platform must unify inputs | High | Foundation feature; requires artifact classification, dedupe, metadata/hash manifests, and import diagnostics |
-| Canonical control model | Operators need one authoritative control view across build/apply/verify/export | High | `ControlRecord`-style normalization is required before deterministic pipelines work |
-| Profile and overlay policy model | Compliance teams need reusable baselines with environment-specific overrides | High | Must support deterministic precedence, policy thresholds, waivers, manual answers, and conflict resolution |
-| Deterministic build pipeline | "Build -> Apply -> Verify -> Prove" starts with reproducible bundles | High | Requires stable ordering, deterministic naming/layout, and explicit non-deterministic field isolation |
-| Apply orchestration with preflight checks | Production Windows hardening requires guardrails before enforcement | High | Must gate on elevation, compatibility, reboot state, PowerShell readiness, and constrained language mode |
-| Verify pipeline with scanner normalization | Compliance evidence depends on scanner outputs being mapped back to controls | High | Must wrap SCAP/SCC and Evaluate-STIG, preserve raw artifacts, and emit parser diagnostics |
-| Manual check wizard | Not all controls can be automated; operators expect guided manual flow | Medium | Focus on unresolved controls only, with status/reason capture and repeatable answer files |
-| Export pipeline (CKL, POA&M, eMASS package) | Submission-ready outputs are mandatory in this domain | High | Must include manifests, scans, answers, evidence tree, attestations, checksums, and deterministic indices |
-| Audit trail and integrity proofing | Auditors expect provenance and tamper evidence | Medium | Needs critical-action logging, hash-chain validation, and package-wide SHA-256 manifests |
-| WPF and CLI parity for core workflows | Mixed operator and automation usage is standard | Medium | CLI enables scripted operations; WPF supports guided workflows for human operators |
+| Baseline/profile management for STIG/SCAP content | Compliance teams must select, version, and scope controls before any enforcement | HIGH | Must support Windows role context (server/workstation/domain) and profile version pinning |
+| Apply orchestration with safe execution controls | Products in this category are expected to enforce desired state, not only report drift | HIGH | Include preflight checks, remote/local target selection, job status, and failure capture |
+| Multi-scanner ingestion and normalization | Real programs run more than one scanner and need a unified answer set | HIGH | Normalize scanner outputs into a canonical control result model |
+| Crosswalked control correlation | Without control-ID correlation, multi-scanner verification becomes manual spreadsheet work | HIGH | Must map scanner findings to control IDs deterministically and preserve raw source references |
+| Manual attestation/waiver workflow | Some controls remain manual/not reviewed and must still land in evidence packages | MEDIUM | Include reviewer identity, rationale, expiration, and audit history |
+| Checklist/evidence export (CKL/XCCDF/CSV/POA&M-ready) | Exportable artifacts are required for audit handoff and package submission | HIGH | SAF and Heimdall ecosystems already expose these formats; users expect parity |
+| End-to-end audit traceability | Auditors require proof of what was applied, verified, and changed over time | MEDIUM | Immutable run metadata, input hashes, and per-control provenance |
 
-## Differentiators
+### Differentiators (Competitive Advantage)
 
-Features that set product apart. Not expected, but valued.
+Features that set the product apart. Not required, but valuable.
 
 | Feature | Value Proposition | Complexity | Notes |
 |---------|-------------------|------------|-------|
-| Strict per-STIG SCAP association contract | Prevents broad false matches that corrupt findings and undermine trust | High | Strong differentiator: per-selected-STIG mapping, benchmark overlap first, strict fallback tags, review-required on uncertainty |
-| Release-age automation gate | Reduces risk from fresh DISA changes by forcing early human review | Medium | Uses grace window and trusted mapping requirements; blocks auto-apply on missing/ambiguous release dates |
-| Classification scope filtering with confidence and NA report | Makes classified/unclassified/mixed behavior explicit and auditable | Medium | Auto-NA only above policy threshold; ambiguous scope enters review queue; emits traceable `na_scope_filter_report.csv` |
-| Evidence autopilot with control-level recipes | Cuts manual packaging effort while improving consistency | High | Captures command/registry/policy/event/file evidence and auto-indexes with metadata + checksums |
-| Diff and rebase engine for quarterly updates | Turns recurring DISA update churn into managed workload | High | Must detect control/text/mapping deltas and carry overlays/answers with confidence scoring and review workload reports |
-| Reboot-aware convergence plus rollback snapshots | Improves safety and reliability in real hardening runs | High | Multiple enforcement passes with limits; snapshot/rollback of critical policy state to reduce blast radius |
-| v1-lite fleet operations (WinRM) | Enables multi-host execution without full enterprise platform scope | Medium | Status/apply/verify on host lists with concurrency controls and host-separated artifacts |
+| Deterministic mission loop (Build -> Apply -> Verify -> Prove) | Produces reproducible outputs for identical inputs, reducing audit disputes | HIGH | Strong fit with STIGForge core value and offline mission workflows |
+| Multi-scanner consensus engine with conflict reasons | Moves beyond ingestion to explain why scanners disagree and what to trust | HIGH | Prioritize control-level disagreement views and operator resolution queue |
+| Strict per-STIG mapping invariant with review-required ambiguity | Prevents false confidence caused by broad heuristic matching | HIGH | If mapping confidence is low, force review instead of auto-pass/fail |
+| Offline-first evidence packaging and replay | Air-gapped teams can run complete workflows without cloud dependencies | MEDIUM | Support deterministic bundle regeneration from stored inputs |
+| Guided remediation safety (dry-run + staged apply + rollback points) | Reduces blast radius when applying hardening at scale | HIGH | Especially valuable for production Windows server fleets |
 
-## Anti-Features
+### Anti-Features (Commonly Requested, Often Problematic)
 
-Features to explicitly NOT build.
+Features that seem good but create problems.
 
-| Anti-Feature | Why Avoid | What to Do Instead |
-|--------------|-----------|-------------------|
-| Direct eMASS API sync/upload in v1 | Out of stated scope; adds external dependency and credential/security complexity that conflicts with offline-first operations | Export deterministic eMASS-ready package artifacts for manual transfer/submission |
-| Enterprise GPO platform replacement | Expands into a different product category with major operational burden | Keep GPO/LGPO as enforcement backend within the hardening pipeline only |
-| Universal perfect scanner mapping across all vendors | Unrealistic for v1; creates brittle heuristics and high false-confidence risk | Enforce strict per-STIG SCAP mapping rules and explicit review-required paths for uncertainty |
-| Internet-dependent critical workflows | Violates mandatory offline-first principle and air-gap usability | Ensure core ingest/build/apply/verify/prove loop runs fully offline |
-| Silent auto-apply/auto-match on ambiguous decisions | Conflicts with safety-first and explainability principles | Route ambiguity to review queue with rationale, confidence, and operator action |
+| Feature | Why Requested | Why Problematic | Alternative |
+|---------|---------------|-----------------|-------------|
+| One-click auto-remediation on first scan without review | Feels fast and "hands-off" | High risk of breaking systems from scanner noise or context gaps | Require preflight + dry-run + approval gate for risky controls |
+| Heuristic "best effort" crosswalk across unrelated benchmarks | Promises broader coverage quickly | Produces silent mis-mappings and untrustworthy verification | Use strict mapping contracts and explicit review-required states |
+| Cloud-required core workflow | Easier central updates/telemetry | Breaks air-gapped and disconnected operations | Keep core mission loop fully offline; sync optional |
+| Direct eMASS API writeback in v1 | Reduces manual submission steps | Adds credential/compliance boundary complexity and conflicts with current project scope | Export deterministic package for manual upload |
 
 ## Feature Dependencies
 
 ```text
-Content ingestion/normalization -> Canonical control model
-Canonical control model -> Profile/overlay policy engine
-Profile/overlay policy engine -> Classification scope filtering
-Profile/overlay policy engine -> Release-age automation gate
-Canonical control model + policy engine -> Deterministic build pipeline
-Deterministic build pipeline -> Apply orchestration
-Deterministic build pipeline -> Verify pipeline
-Apply orchestration + Verify pipeline -> Manual check wizard
-Manual check wizard -> Evidence autopilot
-Build/Apply/Verify/Manual/Evidence outputs -> Export pipeline
-All pipelines -> Audit trail + integrity proofing
-Canonical model + historical packs/overlays -> Diff/rebase engine
-Apply/Verify orchestration -> Fleet operations
-WPF/CLI parity depends on stable core contracts across all above features
+[Baseline/profile management]
+    └──requires──> [Control correlation model]
+                        └──requires──> [Multi-scanner ingestion/normalization]
+
+[Apply orchestration]
+    └──requires──> [Baseline/profile management]
+
+[Checklist/evidence export]
+    └──requires──> [Apply orchestration]
+                        └──requires──> [Crosswalked verification results]
+                                             └──requires──> [Manual attestation/waiver workflow]
+
+[Deterministic mission loop] ──enhances──> [Checklist/evidence export]
+
+[One-click auto-remediation] ──conflicts──> [Guided remediation safety]
 ```
 
-## MVP Recommendation
+### Dependency Notes
 
-Prioritize:
-1. Content ingestion + canonical control model
-2. Profile/overlay policy engine + deterministic build/apply/verify core
-3. Manual wizard + evidence autopilot + deterministic export package
+- **Apply orchestration requires baseline/profile management:** you cannot safely enforce settings without a selected and versioned control set.
+- **Checklist/evidence export requires crosswalked verification results:** exported packages must include normalized control outcomes, not raw scanner blobs.
+- **Deterministic mission loop enhances checklist/evidence export:** reproducible ordering and hashing make packages defensible under audit.
+- **One-click auto-remediation conflicts with guided remediation safety:** speed-first automation removes critical review gates for risky controls.
 
-Defer: v1-lite fleet operations and deeper quarterly diff/rebase automation polish until single-host deterministic pipeline is stable and contract-tested.
+## MVP Definition
+
+### Launch With (v1)
+
+Minimum viable product - what is needed to validate this domain.
+
+- [ ] Baseline/profile management - foundation for all downstream apply/verify/export flows
+- [ ] Apply orchestration + multi-scanner verification normalization - core mission capability
+- [ ] Checklist/evidence export with manual attestation support - required audit handoff capability
+
+### Add After Validation (v1.x)
+
+Features to add once core is working.
+
+- [ ] Multi-scanner consensus conflict reasoning - add after stable normalization and correlation
+- [ ] Guided remediation safety extras (rollback snapshots, staged policies) - add once core apply path is reliable
+
+### Future Consideration (v2+)
+
+Features to defer until product-market fit is established.
+
+- [ ] Optional cloud sync and enterprise federation - defer to preserve offline-first guarantees in v1
+- [ ] Direct system-of-record integrations (e.g., API writeback paths) - defer until governance boundaries are approved
+
+## Feature Prioritization Matrix
+
+| Feature | User Value | Implementation Cost | Priority |
+|---------|------------|---------------------|----------|
+| Baseline/profile management | HIGH | HIGH | P1 |
+| Apply orchestration | HIGH | HIGH | P1 |
+| Multi-scanner normalization + control correlation | HIGH | HIGH | P1 |
+| Checklist/evidence export + manual attestation | HIGH | HIGH | P1 |
+| Multi-scanner consensus conflict reasoning | HIGH | MEDIUM | P2 |
+| Guided remediation safety extras | MEDIUM | HIGH | P2 |
+| Optional cloud sync | MEDIUM | HIGH | P3 |
+
+**Priority key:**
+- P1: Must have for launch
+- P2: Should have, add when possible
+- P3: Nice to have, future consideration
+
+## Competitor Feature Analysis
+
+| Feature | Competitor A (MITRE SAF + Heimdall) | Competitor B (Microsoft SCT + DSC/LGPO) | Our Approach |
+|---------|--------------------------------------|------------------------------------------|--------------|
+| Multi-format ingest | Strong conversion ecosystem to/from many result formats | Focused on Windows baseline/policy artifacts | Ingest scanner-native outputs, normalize once, keep provenance |
+| Apply/enforce capability | Primarily transformation/visualization, not a full Windows apply orchestrator | Strong Windows apply primitives (LGPO/DSC) | Combine enforcement orchestration with verification in one run model |
+| Checklist/report export | Strong support for CKL/XCCDF/CSV-style outputs | Policy Analyzer exports comparison data; less checklist-centric | First-class deterministic checklist/evidence package output |
+| Offline/disconnected operation | Heimdall Lite supports disconnected use | Works in enterprise/local Windows environments | Treat offline-first as non-negotiable for core mission loop |
 
 ## Sources
 
-- `PROJECT_SPEC.md` (sections: Product Identity, Scope, Functional Requirements, Acceptance Criteria, Constraints)
-- `.planning/PROJECT.md` (sections: Scope, Product Principles, Architecture Baseline, Definition of Done)
+- HIGH: NIST SCAP project overview and SCAP 1.4 status (updated 2025-12-22): https://csrc.nist.gov/projects/security-content-automation-protocol
+- HIGH: Microsoft Security Compliance Toolkit guide (updated 2025-08-18): https://learn.microsoft.com/en-us/windows/security/operating-system-security/device-management/windows-security-configuration-framework/security-compliance-toolkit-10
+- HIGH: Microsoft DSC overview (updated 2025-06-09): https://learn.microsoft.com/en-us/powershell/dsc/overview?view=dsc-3.0
+- MEDIUM: Start-DscConfiguration command reference for apply semantics (last updated 2022-03-22): https://learn.microsoft.com/en-us/powershell/module/psdesiredstateconfiguration/start-dscconfiguration?view=dsc-1.1
+- MEDIUM: MITRE SAF CLI README (format conversion, attestations, CKL/XCCDF export): https://raw.githubusercontent.com/mitre/saf/main/README.md
+- MEDIUM: MITRE Heimdall README (multi-format visualization, DISA checklist/XCCDF outputs, disconnected use): https://raw.githubusercontent.com/mitre/heimdall2/master/README.md
+
+---
+*Feature research for: Windows compliance orchestration apply/verify/export workflows*
+*Researched: 2026-02-20*

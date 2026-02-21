@@ -1,193 +1,241 @@
-# Architecture Patterns
+# Architecture Research
 
-**Domain:** Offline-first Windows compliance hardening platform (WPF + CLI, .NET 8)
-**Researched:** 2026-02-19
+**Domain:** Windows compliance workflow tooling (apply -> multi-scan verify -> normalize -> checklist/package export)
+**Researched:** 2026-02-20
+**Confidence:** MEDIUM-HIGH
 
-## Recommended Architecture
+## Standard Architecture
 
-Use a modular monolith in .NET 8 with strict module contracts and a shared canonical domain model. Keep orchestration in `STIGForge.App` (WPF) and `STIGForge.Cli`, while all business workflows run through application services exposed by domain modules. This preserves offline determinism, avoids distributed-system complexity in v1, and still allows extraction to services later if fleet scale requires it.
+### System Overview
 
-High-level structure:
-
-```text
-Presentation (WPF, CLI)
-    -> Application Facades per capability (Import, Build, Apply, Verify, Export)
-        -> Domain Modules (Content/Core/Build/Apply/Verify/Evidence/Export/Reporting)
-            -> Infrastructure Adapters (FS, DB, Process, WinRM, Scheduler)
-                -> Local OS resources, scanner binaries, artifact storage
-```
-
-### Component Boundaries
-
-| Component | Responsibility | Communicates With |
-|-----------|---------------|-------------------|
-| STIGForge.App | Operator UX, workflow orchestration, review queues, diagnostics display | Application facades in Core/Build/Apply/Verify/Export/Reporting |
-| STIGForge.Cli | Non-interactive commands, automation/CI entrypoint, scriptable execution | Same facades as WPF; no direct infrastructure calls |
-| STIGForge.Content | Import pipelines, parser registry, content classification, dedupe, pack metadata | Core (canonical models), Infrastructure (file/process) |
-| STIGForge.Core | Canonical contracts (`ControlRecord`, `Profile`, `Overlay`, policies), rule engine, mapping invariants | All domain modules; Shared for constants |
-| STIGForge.Build | Deterministic bundle compiler (`Apply/Verify/Manual/Evidence/Reports/Manifest`) | Core, Content, Infrastructure (filesystem/hashing), Reporting |
-| STIGForge.Apply | Preflight checks, backend selection (DSC/GPO/script), convergence loop, rollback metadata | Core policies, Build manifests, Infrastructure (PowerShell/process/reboot state) |
-| STIGForge.Verify | SCAP/SCC + Evaluate-STIG wrappers, parser normalization to canonical result model | Core mapping rules, Infrastructure process/files, Reporting |
-| STIGForge.Evidence | Evidence recipe execution, artifact capture, metadata/checksum indexing | Core control metadata, Infrastructure file/process adapters |
-| STIGForge.Export | CKL/POA&M/eMASS package assembly, deterministic indices/manifests/checksums | Build outputs, Verify results, Evidence index, Reporting |
-| STIGForge.Reporting | Human and machine readable diagnostics, diffs/rebase reports, confidence summaries | All modules (read-only aggregation) |
-| STIGForge.Infrastructure | Ports/adapters for filesystem, local DB, process runner, task scheduling, WinRM, clock abstraction | Consumed by all modules through interfaces |
-| STIGForge.Shared | Cross-cutting constants, primitive contracts, error codes, version markers | Referenced by all modules (no business logic) |
-
-### Data Flow
-
-Primary mission flow (`Build -> Apply -> Verify -> Prove`):
+Use a pipeline-centric modular monolith with strict contracts between stages. The dominant pattern in current tooling is: policy/content ingestion, deterministic execution planning, pluggable enforcement/scanners, result normalization into one canonical graph, then export.
 
 ```text
-1) Content Import
-   Raw DISA/SCAP/GPO/LGPO/ADMX -> Content parsers/classifier
-   -> Core canonical records + provenance -> persisted pack index
-
-2) Profile + Overlay Resolution
-   Operator/automation selects profile + overlays
-   -> Core policy engine resolves precedence/conflicts
-   -> frozen execution context (versioned inputs)
-
-3) Deterministic Build
-   Build module compiles execution context
-   -> bundle tree (Apply, Verify, Manual, Evidence, Reports, Manifest)
-   -> deterministic ordering + hash manifest
-
-4) Apply
-   Apply module runs preflight gates
-   -> executes backend plan with reboot-aware convergence
-   -> emits action log + state deltas + rollback artifacts
-
-5) Verify
-   Verify wrappers run scanners and parse outputs
-   -> normalized `VerificationResult` linked to canonical control IDs
-   -> raw artifacts preserved
-
-6) Manual + Evidence
-   Unresolved manual controls -> wizard answers
-   -> Evidence module executes recipes and indexes artifacts/checksums
-
-7) Export/Prove
-   Export module assembles CKL/POA&M/eMASS package
-   -> deterministic package index + integrity manifests + attestations
+┌──────────────────────────────────────────────────────────────────────┐
+│                  UX + Orchestration Layer                           │
+├──────────────────────────────────────────────────────────────────────┤
+│  WPF/GUI       CLI/Automation       Run Coordinator                 │
+│  (operator)    (batch/CI)           (state machine + retries)       │
+└───────────────┬──────────────────────────────────────────────────────┘
+                │ typed workflow contracts
+┌───────────────▼──────────────────────────────────────────────────────┐
+│                   Domain Workflow Layer                             │
+├──────────────────────────────────────────────────────────────────────┤
+│ Content+Policy  Build Planner  Apply Engine  Verify Hub            │
+│ Mapping Engine  Evidence Index  Export Assembler  Reporting         │
+└───────────────┬──────────────────────────────────────────────────────┘
+                │ adapter interfaces
+┌───────────────▼──────────────────────────────────────────────────────┐
+│                    Integration Adapter Layer                        │
+├──────────────────────────────────────────────────────────────────────┤
+│ DSC/PowerSTIG  GPO/LGPO  SCAP/SCC wrappers  Script runner           │
+│ CKL/POAM emitters  Hashing/signing  WinRM/Fleet executor            │
+└───────────────┬──────────────────────────────────────────────────────┘
+                │ persisted artifacts + metadata
+┌───────────────▼──────────────────────────────────────────────────────┐
+│                      Data/Artifact Layer                            │
+├──────────────────────────────────────────────────────────────────────┤
+│ Canonical control store  Raw scan blob store  Evidence store        │
+│ Audit/event log  Deterministic manifest/index store                 │
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
-Data ownership rules:
-- Core owns canonical schemas and policy decisions.
-- Other modules may transform but not redefine canonical semantics.
-- Reporting reads from contracts/events, never mutates workflow state.
+### Component Responsibilities
 
-## Patterns to Follow
+| Component | Responsibility | Typical Implementation |
+|-----------|----------------|------------------------|
+| Content + Policy Ingestion | Import STIG/SCAP/checklist content, classify applicability, track revision/provenance | Parsers + validation + canonical model mapper |
+| Build Planner | Freeze profile/overlay/policy inputs and compile deterministic `Apply/Verify/Manual/Evidence/Manifest` bundle | Pure planning service with stable sorting/hashing |
+| Apply Engine | Execute hardening actions with preflight checks and reboot-aware convergence | DSC/PowerSTIG first, GPO/LGPO and script adapters as fallback |
+| Verify Hub | Run multiple verification tools and collect raw outputs | Scanner adapter registry with uniform run envelope |
+| Normalization Engine | Convert heterogeneous scanner/checklist outputs into one canonical result schema | ID mapping + status crosswalk + provenance retention |
+| Evidence + Export Assembler | Attach evidence to findings and generate CKL/POA&M/package outputs | Deterministic file tree + index/checksum manifest builder |
+| Run Coordinator | Orchestrate phase ordering, retries, cancellation, resumability | State machine with durable checkpoints |
+| Audit/Integrity Service | Record who/what/when and prove package integrity | Append-only audit log + SHA-256 manifest generation |
 
-### Pattern 1: Contract-First Module APIs
-**What:** Define DTO/schema contracts in Core/Shared first, then implement module behavior behind interfaces.
-**When:** For every cross-module interaction, especially Build, Verify normalization, and Export packaging.
+## Recommended Project Structure
+
+```text
+src/
+├── app/                     # WPF + CLI entry points only
+│   ├── wpf/
+│   └── cli/
+├── workflows/               # Build/Apply/Verify/Export orchestration
+│   ├── contracts/
+│   └── coordinators/
+├── domain/                  # Canonical models and rule engines
+│   ├── controls/
+│   ├── mapping/
+│   └── normalization/
+├── adapters/                # External tool integrations
+│   ├── apply/
+│   ├── verify/
+│   └── export/
+├── infrastructure/          # Filesystem, db, process, winrm, crypto
+├── storage/                 # Artifact and metadata persistence
+└── tests/                   # Contract/integration/e2e determinism tests
+```
+
+### Structure Rationale
+
+- **`workflows/`:** keeps run sequencing and retries separate from domain logic, so UI and CLI stay behavior-identical.
+- **`domain/`:** owns canonical semantics; adapters can transform into domain contracts but cannot redefine them.
+- **`adapters/`:** isolates tool churn (SCC/SCAP/PowerSTIG updates) from the mission pipeline.
+- **`storage/`:** separates raw artifacts from normalized records to preserve forensic traceability.
+
+## Architectural Patterns
+
+### Pattern 1: Canonical Result Graph
+
+**What:** Every scan/manual/apply outcome is translated into one canonical per-control record linked to source artifacts.
+**When to use:** Always, especially when combining 2+ scanners and manual reviews.
+**Trade-offs:** Upfront mapping cost; massive downstream simplification for export/reporting.
+
 **Example:**
-```csharp
-public interface IBuildCompiler
-{
-    Task<BundleManifest> CompileAsync(BuildRequest request, CancellationToken ct);
-}
-
-public sealed record BuildRequest(
-    string ProfileId,
-    string[] PackIds,
-    string[] OverlayIds,
-    PolicySnapshot Policy);
+```typescript
+type CanonicalResult = {
+  controlId: string;
+  status: "pass" | "fail" | "not_applicable" | "not_reviewed" | "error";
+  source: { tool: string; runId: string; artifactPath: string };
+  observedAt: string;
+};
 ```
 
-### Pattern 2: Hexagonal Adapters for OS/Tooling Dependencies
-**What:** Keep process execution, filesystem IO, WinRM, and clock access behind Infrastructure ports.
-**When:** Any operation that touches OS state, scanner binaries, timestamps, or host connectivity.
+### Pattern 2: Adapter-Registry Execution
+
+**What:** Apply and verify backends implement shared interfaces and are selected by policy + host context.
+**When to use:** Mixed enforcement and scanner ecosystems (DSC, GPO, SCC, scripts).
+**Trade-offs:** Slight interface boilerplate; prevents vendor/tool lock-in.
+
 **Example:**
-```csharp
-public interface IProcessRunner
-{
-    Task<ProcessResult> RunAsync(ProcessSpec spec, CancellationToken ct);
-}
-
-public sealed class ScapVerifier : IVerifier
-{
-    private readonly IProcessRunner _runner;
-    public ScapVerifier(IProcessRunner runner) => _runner = runner;
+```typescript
+interface VerifierAdapter {
+  id: string;
+  canRun(ctx: HostContext): boolean;
+  run(plan: VerifyPlan): Promise<RawScanArtifact[]>;
 }
 ```
 
-### Pattern 3: Deterministic Pipeline Snapshots
-**What:** Freeze all effective inputs before execution and stamp every output with input/version fingerprints.
-**When:** Build, Apply plan generation, Verify normalization, and Export packaging.
-**Example:**
-```csharp
-public sealed record ExecutionSnapshot(
-    string SnapshotId,
-    PolicySnapshot Policy,
-    ToolVersionSet Tools,
-    string InputHash);
+### Pattern 3: Deterministic Export Assembly
+
+**What:** Export is compiled from normalized records + evidence with stable ordering and fixed naming rules.
+**When to use:** Any audit-bound package output (CKL/POA&M/eMASS bundle).
+**Trade-offs:** Requires strict timestamp/randomness controls; critical for repeatability.
+
+## Data Flow
+
+### Request Flow
+
+```text
+[Operator/CI run request]
+    ↓
+[Run Coordinator]
+    ↓
+[Build Planner]
+    ↓
+[Apply Engine] -> [Apply artifacts + state deltas]
+    ↓
+[Verify Hub (N scanners)] -> [Raw scan artifacts]
+    ↓
+[Normalization Engine]
+    ↓
+[Evidence Index]
+    ↓
+[Export Assembler]
+    ↓
+[CKL/POA&M/eMASS package + manifests]
 ```
 
-### Pattern 4: Dual Frontend, Single Workflow Engine
-**What:** WPF and CLI call the same application facades and use identical command/result contracts.
-**When:** All v1 workflows requiring parity.
-**Example:**
-```csharp
-public interface IApplyWorkflow
-{
-    Task<ApplyRunResult> ExecuteAsync(ApplyRunRequest request, CancellationToken ct);
-}
+### State Management
+
+```text
+[Run State Store]
+    ↓ checkpoint/read
+[Coordinator] <-> [Phase Workers] -> [Event/Audit Log]
+                               ↓
+                        [Artifact Store]
 ```
 
-## Anti-Patterns to Avoid
+### Key Data Flows
 
-### Anti-Pattern 1: UI-Embedded Business Rules
-**What:** Putting applicability, mapping, or export logic directly inside WPF view models or CLI command handlers.
-**Why bad:** Breaks App/CLI parity and creates inconsistent policy behavior.
-**Instead:** Route all decisions through Core/Application facades and return explainable decision artifacts.
+1. **Policy to execution flow:** Profile/overlay/policy inputs are resolved into a frozen build manifest before any apply/verify action is allowed.
+2. **Raw to canonical flow:** Each scanner output is preserved raw, then normalized into canonical statuses with source-pointer links.
+3. **Canonical to export flow:** Export consumes only canonical records + evidence index, never direct scanner-native formats.
 
-### Anti-Pattern 2: Shared "Utility" God Library
-**What:** Moving domain logic into `Shared` to bypass module boundaries.
-**Why bad:** Hidden coupling, unclear ownership, impossible contract evolution.
-**Instead:** Keep `Shared` primitive-only; put business rules in explicit owning module.
+## Suggested Build Order (Roadmap Implications)
 
-### Anti-Pattern 3: Non-Deterministic Build/Export Metadata
-**What:** Injecting wall-clock timestamps, unsorted directory iteration, or random IDs into package outputs.
-**Why bad:** Violates deterministic output contract and undermines auditability.
-**Instead:** Normalize timestamps by policy, stable sort all indices, and derive IDs from deterministic inputs.
+1. **Canonical contracts first** - define control, run, artifact, and normalized-result schemas before adapters.
+2. **Run coordinator + manifest planner** - enforce phase order and deterministic planning early.
+3. **Apply path (single backend first)** - deliver DSC/PowerSTIG path plus preflight/reboot contracts.
+4. **Verify hub with two adapters** - prove multi-scan collection and adapter registry pattern.
+5. **Normalization engine** - implement status crosswalk and provenance linkage; this is the architecture keystone.
+6. **Evidence index + export assembler** - generate deterministic checklist/package outputs from canonical state.
+7. **Secondary adapters and fleet fan-out** - add GPO/LGPO, extra scanners, and WinRM concurrency after canonical pipeline is stable.
 
-### Anti-Pattern 4: Broad SCAP Fallback Across STIGs
-**What:** Reusing a single SCAP artifact for unrelated STIG rows when matching is ambiguous.
-**Why bad:** Directly violates strict per-STIG SCAP association contract.
-**Instead:** Enforce benchmark/tag overlap and send ambiguous cases to review-required state.
+## Scaling Considerations
 
-## Suggested Build Order
+| Scale | Architecture Adjustments |
+|-------|--------------------------|
+| 0-1k hosts/assets | Single-node modular monolith; local/embedded metadata DB acceptable |
+| 1k-100k hosts/assets | Split run workers from API/UI; move artifact storage to content-addressed/object store |
+| 100k+ hosts/assets | Queue-based distributed orchestration, partitioned normalization workers, separate read models for reporting |
 
-1. **Shared + Core contracts**
-   - Define versioned schemas and policy/value objects first (`ControlRecord`, `Profile`, `Overlay`, `BundleManifest`, `VerificationResult`, `EvidenceRecord`, export index contracts).
-2. **Infrastructure ports/adapters baseline**
-   - File store, local DB, process runner, hashing, clock abstraction, logging/audit sink.
-3. **Content module**
-   - Parser registry, classifier, provenance capture, dedupe; output canonical records only.
-4. **Build module**
-   - Deterministic bundle compiler and manifest contracts; contract tests for repeatable output.
-5. **Apply + Verify modules**
-   - Preflight/enforcement orchestration and scanner normalization with strict mapping invariants.
-6. **Evidence module**
-   - Recipe execution and artifact indexing linked to canonical control IDs.
-7. **Export + Reporting modules**
-   - Deterministic CKL/POA&M/eMASS packaging plus diagnostics/diff/confidence outputs.
-8. **WPF + CLI shells (parity layer)**
-   - Implement UX/command surfaces over finished workflows; enforce identical behavior via shared acceptance tests.
+### Scaling Priorities
 
-## Scalability Considerations
+1. **First bottleneck:** Verify throughput (scanner runtime), solved by parallel worker pools with host-level locks.
+2. **Second bottleneck:** Artifact I/O and export packaging, solved by content-addressed storage and streaming exporters.
 
-| Concern | At 100 users | At 10K users | At 1M users |
-|---------|--------------|--------------|-------------|
-| Execution model | Single-machine local runs, serialized by workspace | Parallel job queue per host/profile, bounded worker pool | Distributed execution coordinators, partitioned job scheduling |
-| Artifact storage | Local filesystem + manifest index | Content-addressed store, dedupe by hash | Tiered object storage + retention policies + immutable archives |
-| Verification throughput | Single scanner process per run | Concurrent scanner workers with resource caps | Dedicated verification farm with queue isolation |
-| Data/query layer | Embedded/local DB acceptable | Centralized relational store for metadata + search indices | Sharded metadata and read replicas for reporting |
-| Fleet operations | Basic WinRM fan-out | Host batching with retries/backoff | Multi-region fleet orchestration and fault domains |
+## Anti-Patterns
+
+### Anti-Pattern 1: Scanner-Centric Data Model
+
+**What people do:** Keep SCC/SCAP/other result formats as primary records and join them ad hoc at report time.
+**Why it's wrong:** Normalization moves to every consumer and consistency collapses.
+**Do this instead:** Normalize once into canonical result graph; keep scanner outputs as immutable evidence.
+
+### Anti-Pattern 2: Apply/Verify Tight Coupling
+
+**What people do:** Assume verify parser is tied to a specific apply backend.
+**Why it's wrong:** Prevents independent adapter evolution and multi-tool verification.
+**Do this instead:** Bind both to canonical control IDs and run manifests, not to each other.
+
+### Anti-Pattern 3: Non-Deterministic Packaging
+
+**What people do:** Use filesystem iteration order, wall-clock timestamps, or random IDs in export generation.
+**Why it's wrong:** Identical inputs produce non-identical evidence packages, undermining audit trust.
+**Do this instead:** Stable sort, deterministic IDs, and policy-controlled timestamp normalization.
+
+## Integration Points
+
+### External Services/Tools
+
+| Service | Integration Pattern | Notes |
+|---------|---------------------|-------|
+| DSC / PowerSTIG | Apply adapter | PowerSTIG currently ships frequent STIG content updates (latest release visible Dec 2025) |
+| SCAP/SCC style scanners | Verify adapters | Favor wrapper pattern that captures command, version, stdout/stderr, and raw output files |
+| STIG checklist ecosystem (CKL/XCCDF) | Import/export adapters | STIG Manager and OpenSCAP workflows show multi-source import/export is a common pattern |
+| WinRM/fleet execution | Remote executor adapter | Keep host concurrency and retry policy outside domain logic |
+
+### Internal Boundaries
+
+| Boundary | Communication | Notes |
+|----------|---------------|-------|
+| Workflow coordinator <-> domain services | Typed request/response contracts | No direct adapter calls from UI |
+| Domain services <-> adapters | Port interfaces | Enables tool substitution without schema changes |
+| Normalization <-> export | Canonical result schema only | Export must be scanner-agnostic |
 
 ## Sources
 
-- `PROJECT_SPEC.md` (internal source of truth, read 2026-02-19)
-- `.planning/PROJECT.md` (project constraints and baseline architecture, read 2026-02-19)
+- NIST SCAP overview and releases (updated Dec 22, 2025): https://csrc.nist.gov/projects/security-content-automation-protocol
+- NIST SCAP 1.4 release page (IPD + tooling details): https://csrc.nist.gov/projects/security-content-automation-protocol/scap-releases/scap-1-4
+- NIST ARF specification page: https://csrc.nist.gov/projects/security-content-automation-protocol/specifications/arf
+- OpenSCAP User Manual (scan, ARF output, remediation, STIG Viewer compatibility sections): https://static.open-scap.org/openscap-1.3/oscap_user_manual.html
+- Microsoft DSC overview (dsc-3.0, updated Jun 9, 2025): https://learn.microsoft.com/en-us/powershell/dsc/overview?view=dsc-3.0
+- Microsoft PSDesiredStateConfiguration v1.1 overview (Windows PowerShell 5.1 baseline): https://learn.microsoft.com/en-us/powershell/dsc/overview?view=dsc-1.1
+- PowerSTIG repository and releases (latest shown 4.28.0, Dec 2025): https://github.com/microsoft/PowerStig
+- STIG Manager documentation and README (API-first, multi-source review integration): https://stig-manager.readthedocs.io/en/latest/ and https://github.com/NUWCDIVNPT/stig-manager
+- Project context: `/mnt/c/projects/STIGForge/.planning/PROJECT.md` and `/mnt/c/projects/STIGForge/PROJECT_SPEC.md`
+
+---
+*Architecture research for: Windows compliance workflow tooling*
+*Researched: 2026-02-20*

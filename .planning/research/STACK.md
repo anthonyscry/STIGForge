@@ -1,105 +1,117 @@
-# Technology Stack
+# Stack Research
 
-**Project:** STIGForge Next
-**Researched:** 2026-02-19
+**Domain:** Offline-first Windows STIG compliance workflow tooling
+**Researched:** 2026-02-20
+**Confidence:** MEDIUM
 
 ## Recommended Stack
 
-### Core Framework
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| .NET SDK + Runtime | 8.0.x (LTS, latest patch) | Core runtime for App + CLI + shared modules | **Prescriptive choice:** keep .NET 8 for reboot scope because the product requires stability/offline operation now, and .NET 8 is still supported through 2026-11-10. Pin exact SDK via `global.json` and patch monthly. **Confidence: HIGH** |
-| WPF (`net8.0-windows`) | .NET 8 WindowsDesktop | Desktop operator UX | Native Windows, mature data binding, no web runtime dependency, aligns with explicit product requirement for WPF parity with CLI. **Confidence: HIGH** |
-| System.CommandLine | latest stable 2.x | CLI command tree, help, parsing, completion | Microsoft-supported CLI stack used by .NET CLI/tooling; stronger long-term fit than ad-hoc parsers. **Confidence: MEDIUM** (exact stable 2.x package version should be pinned at implementation start) |
+### Core Technologies
 
-### Database
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| SQLite engine | 3.x (pinned file version in distribution) | Offline local relational store for canonical model, overlays, audit/evidence indexes | SQLite is designed for local app storage and no-admin operation. Single-file DB supports air-gapped workflows and transportability. **Confidence: HIGH** |
-| Microsoft.Data.Sqlite | latest stable compatible with .NET 8 | ADO.NET provider for SQLite | First-party provider from Microsoft docs; lightweight and predictable. **Confidence: HIGH** |
-| Dapper | 2.x | Explicit SQL mapping for control over query shape and deterministic behavior | Prefer explicit SQL and schema control for compliance/auditability over heavy ORM abstraction. **Confidence: MEDIUM** |
-
-### Infrastructure
-| Technology | Version | Purpose | Why |
-|------------|---------|---------|-----|
-| Windows PowerShell host integration | Windows PowerShell 5.1 (`powershell.exe`) invoked out-of-process | Execute enforcement/verification scripts with 5.1 module compatibility | 5.1 runs on .NET Framework (Desktop edition). For strict compatibility, use a process boundary (`powershell.exe`) instead of in-proc hosting in .NET 8. **Confidence: HIGH** |
-| Microsoft.Extensions.DependencyInjection | 10.x package line (compatible with .NET 8 app) | Composition root and service lifetimes across App/CLI modules | Standardized DI model in .NET ecosystem, reduces hidden coupling in module boundaries. **Confidence: HIGH** |
-| Microsoft.Extensions.Logging (+ EventLog provider) | 10.x package line | Structured logs for CLI + desktop + audit diagnostics | Native structured logging API with provider model; no custom logging substrate needed. **Confidence: HIGH** |
-| WiX Toolset | v6.x | Deterministic MSI packaging for offline enterprise deployment | MSI remains the most controllable offline enterprise installer path; WiX gives fine-grained install authoring and signing control. **Confidence: MEDIUM** |
-| SignTool (Windows SDK) | latest Windows SDK in build image | Authenticode signing of binaries/installers | Required trust chain for Windows enterprise distribution and tamper detection workflows. **Confidence: MEDIUM** |
+| Technology | Version | Purpose | Why Recommended |
+|------------|---------|---------|-----------------|
+| .NET SDK + Runtime | 8.0 LTS (latest 8.0.x patch) | Primary app/runtime for WPF + CLI + orchestration | .NET 8 is still supported through Nov 2026 and is the stability-first choice for a greenfield compliance tool that must run offline and deterministically. **Confidence: HIGH** |
+| WPF (`net8.0-windows`) | .NET 8 WindowsDesktop | Native Windows operator console | WPF is Windows-native, no browser runtime needed, and aligns with your hard Windows mission environment. **Confidence: HIGH** |
+| Windows PowerShell execution host | 5.1 (`powershell.exe`, out-of-process) | PowerSTIG apply/evaluate compatibility boundary | PowerSTIG declares minimum PowerShell 5.1, so process-boundary invocation preserves compatibility with existing PSDSC workflows and avoids runtime-mixing fragility. **Confidence: HIGH** |
+| PowerShell (sidecar runtime) | 7.4 LTS | Non-legacy scripting, modern automation shell | Keep 7.4 for modern scripting/CLI utilities, but route PowerSTIG/legacy DSC calls through 5.1. This split is standard in mixed Windows compliance stacks. **Confidence: MEDIUM** |
+| PowerSTIG | 4.28.0 | STIG data parsing + DSC composite resources + checklist generation | This is the de-facto Microsoft-maintained automation base for DISA STIG application and includes `New-StigCheckList` for STIG Viewer workflows. **Confidence: HIGH** |
+| SQLite | 3.51.2 engine + `Microsoft.Data.Sqlite` 10.0.3 | Offline evidence/index store | Single-file, no-service local DB is the right fit for air-gapped operation and portable evidence bundles. **Confidence: HIGH** |
 
 ### Supporting Libraries
+
 | Library | Version | Purpose | When to Use |
 |---------|---------|---------|-------------|
-| CommunityToolkit.Mvvm | 8.x | MVVM source generators, observable properties/commands | Default for WPF presentation layer; avoid custom MVVM plumbing |
-| FluentValidation | 11.x | Declarative validation for profile/overlay/manual-answer inputs | Use for all operator-entered config and import diagnostics |
-| Polly | 8.x | Retry/timeout/circuit policies for process and file IO boundaries | Use at external boundaries (PowerShell process, scanner wrappers, WinRM), not inside pure domain logic |
-| System.Text.Json | built-in | Deterministic JSON contracts/schemas/manifest serialization | Default JSON stack for all schema-bound contracts |
+| System.CommandLine | 2.0.3 | CLI verbs for build/apply/evaluate/export mission loop | Use for first-class CLI UX and predictable argument parsing instead of hand-rolled parsers |
+| CommunityToolkit.Mvvm | 8.4.0 | WPF MVVM plumbing | Use for observable models and command wiring; avoid custom MVVM boilerplate |
+| Dapper | 2.1.66 | Explicit SQL over SQLite | Use for deterministic query control and transparent audit/debug behavior |
+| FluentValidation | 12.1.1 | Input/config validation | Use for operator-provided config, overlays, and import validation before execution |
+| Serilog + file sink | 4.3.1 + Serilog.Sinks.File 7.0.0 | Structured local logging | Use for machine-readable audit logs and reproducible troubleshooting in offline environments |
+| `System.Xml.Linq` + `System.Xml.Schema` (built-in) | .NET 8 BCL | XCCDF/ARF/SCC result parsing and schema validation | Use for strict schema-first parsing of SCAP artifacts instead of ad-hoc XML string processing |
 
-## Prescriptive Build and Packaging Profile (Determinism)
+### Development Tools
 
-Use this baseline in all projects and CI:
-
-- `Deterministic=true` (default in modern .NET, keep explicit in shared props)
-- `ContinuousIntegrationBuild=true` on CI
-- NuGet lock files: `RestorePackagesWithLockFile=true`, CI restore in locked mode
-- Pinned SDK in `global.json`
-- Fixed artifact ordering + normalized timestamps in package manifest generation
-- Reproducibility gate: rebuild same git commit twice in clean env and compare hashes for key outputs (`*.dll`, `*.exe`, bundle manifest, export package index)
-
-## What Not to Use
-
-| Category | Recommended | Alternative | Why Not |
-|----------|-------------|-------------|---------|
-| Desktop UI | WPF | Electron/Tauri/webview shell | Adds unnecessary browser/runtime surface, larger footprint, weaker offline hardening story for this Windows-only platform |
-| Data access | Microsoft.Data.Sqlite + Dapper | Heavy EF-first model for all modules | Reduces SQL visibility/control needed for deterministic outputs and auditability |
-| PowerShell integration | Out-of-process `powershell.exe` 5.1 | In-proc runspace coupling to one PowerShell runtime | Increases compatibility risk across 5.1/Desktop vs Core runtime boundaries |
-| Packaging | WiX MSI as primary | ClickOnce/Squirrel as primary enterprise channel | Weaker enterprise policy control and installer customization for this compliance-focused deployment model |
-| Dependency resolution | Locked package graph | Floating package versions in production builds | Breaks reproducibility and can invalidate deterministic-output guarantees |
-
-## Alternatives Considered
-
-| Category | Recommended | Alternative | Why Not |
-|----------|-------------|-------------|---------|
-| .NET runtime track | .NET 8 LTS now | Immediate migration to .NET 10 | Adds migration and revalidation risk during reboot; defer until baseline MVP stabilizes |
-| Installer format | MSI (WiX) primary, optional MSIX later | MSIX-only distribution | MSIX benefits are real, but enterprise/offline operational constraints and app container behavior can complicate first release rollout |
-| Data store | SQLite | SQL Server LocalDB/PostgreSQL | Requires service/process admin overhead and weakens air-gapped portability |
+| Tool | Purpose | Notes |
+|------|---------|-------|
+| `dotnet` SDK 8.0.x | Build/test/publish | Pin with `global.json` to lock deterministic builds |
+| PowerShellGet / PSResourceGet | Module acquisition in connected build environment | Mirror PowerSTIG and dependent modules into an internal offline feed for air-gapped installs |
+| Windows SDK `signtool` | Authenticode signing | Sign binaries and installers for enterprise trust chains |
 
 ## Installation
 
 ```bash
-# Core app dependencies
-dotnet add package CommunityToolkit.Mvvm
-dotnet add package System.CommandLine
-dotnet add package Microsoft.Data.Sqlite
-dotnet add package Dapper
-dotnet add package Microsoft.Extensions.DependencyInjection
-dotnet add package Microsoft.Extensions.Logging
-dotnet add package Microsoft.Extensions.Logging.EventLog
-dotnet add package FluentValidation
-dotnet add package Polly
+# .NET packages
+dotnet add package CommunityToolkit.Mvvm --version 8.4.0
+dotnet add package System.CommandLine --version 2.0.3
+dotnet add package Microsoft.Data.Sqlite --version 10.0.3
+dotnet add package Dapper --version 2.1.66
+dotnet add package FluentValidation --version 12.1.1
+dotnet add package Serilog --version 4.3.1
+dotnet add package Serilog.Sinks.File --version 7.0.0
 
-# Deterministic dependency locking (project property)
-# <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
-
-# WiX tooling (packaging pipeline)
-dotnet tool install --global wix
+# PowerShell modules (connected environment, then mirror offline)
+Install-PSResource -Name PowerSTIG -Version 4.28.0
 ```
+
+## Alternatives Considered
+
+| Recommended | Alternative | When to Use Alternative |
+|-------------|-------------|-------------------------|
+| .NET 8 LTS | .NET 9/10 | Use only after core compliance workflows stabilize and full revalidation budget exists |
+| WPF desktop | Web/Electron shell | Use only if cross-platform UI becomes a hard requirement (it is not for this mission) |
+| SQLite + Dapper | EF Core-heavy model | Use only if domain model complexity clearly outweighs deterministic SQL transparency |
+| PowerShell 5.1 process boundary for PowerSTIG | In-proc runspaces only | Use only if you remove dependency on legacy PSDSC-based resources |
+
+## What NOT to Use
+
+| Avoid | Why | Use Instead |
+|-------|-----|-------------|
+| Single-runtime assumption ("everything in PS7") | Breaks compatibility with PowerSTIG/legacy DSC workflows that still depend on Windows PowerShell semantics | Dual-runtime model: PS7 for modern automation, 5.1 host for PowerSTIG/DSC execution |
+| Custom checklist XML format | Breaks STIG Viewer interoperability and downstream audit workflows | Emit STIG Viewer-compatible CKL via PowerSTIG `New-StigCheckList` pipeline |
+| Loose XML parsing without schema validation | Silent parser drift on ARF/XCCDF changes can corrupt findings | Validate against XCCDF/ARF schemas before ingesting SCC artifacts |
+| Browser-wrapper desktop stack (Electron/Tauri) | Adds update/runtime surface area and weakens offline-hardening posture for Windows-only mission | Native WPF + .NET desktop runtime |
+
+## Stack Patterns by Variant
+
+**If strict DISA compatibility is the priority (recommended baseline):**
+- Use PowerSTIG 4.28.0 + Windows PowerShell 5.1 execution boundary
+- Because current PowerSTIG documentation and module requirements are still anchored in this model
+
+**If modernization is a later-phase priority:**
+- Keep orchestration in .NET 8 + PowerShell 7.4 and isolate 5.1 calls behind adapter interfaces
+- Because this enables future migration to newer DSC patterns without destabilizing the compliance core
+
+## Version Compatibility
+
+| Package A | Compatible With | Notes |
+|-----------|-----------------|-------|
+| PowerSTIG 4.28.0 | Windows PowerShell 5.1+ | PowerShell Gallery lists minimum PowerShell version 5.1 |
+| `Microsoft.Data.Sqlite` 10.0.3 | SQLite engine 3.x | Provider bundles SQLitePCL dependencies; pin package to lock behavior |
+| `System.CommandLine` 2.0.3 | .NET 8+ | Stable 2.x release line, suitable for new CLI surfaces |
+| PowerShell 7.4 LTS | .NET 8 ecosystem | Use for modern scripts, not as a drop-in replacement for all 5.1 module workflows |
+
+## Validation Gap (Important)
+
+- I could not find a single, current official distribution channel or versioned spec for "Evaluate-STIG" equivalent to PowerSTIG on PowerShell Gallery. Treat Evaluate-STIG integration as an external adapter boundary (process + contract tests), and validate your chosen upstream artifact during the implementation phase. **Confidence: LOW**
 
 ## Sources
 
-- .NET support lifecycle (updated 2026-02-10, .NET 8 EOS 2026-11-10): https://dotnet.microsoft.com/en-us/platform/support/policy/dotnet-core (**HIGH**)
-- WPF on .NET (Windows-only): https://learn.microsoft.com/en-us/dotnet/desktop/wpf/overview/ (**HIGH**)
-- System.CommandLine overview: https://learn.microsoft.com/en-us/dotnet/standard/commandline/ (**HIGH**)
-- C# deterministic compilation option: https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/compiler-options/code-generation#deterministic (**HIGH**)
-- .NET SDK MSBuild properties (`ContinuousIntegrationBuild`): https://learn.microsoft.com/en-us/dotnet/core/project-sdk/msbuild-props#continuousintegrationbuild (**HIGH**)
-- NuGet lock files / locked restore: https://learn.microsoft.com/en-us/nuget/consume-packages/package-references-in-project-files#locking-dependencies (**HIGH**)
-- Microsoft.Data.Sqlite overview: https://learn.microsoft.com/en-us/dotnet/standard/data/sqlite/ (**HIGH**)
-- SQLite use guidance: https://www.sqlite.org/whentouse.html (**HIGH**)
-- SQLite WAL behavior/concurrency constraints: https://www.sqlite.org/wal.html (**HIGH**)
-- PowerShell 5.1 vs 7.x runtime differences: https://learn.microsoft.com/en-us/powershell/scripting/whats-new/differences-from-windows-powershell?view=powershell-7.5 (**HIGH**)
-- PowerShell editions (Desktop vs Core): https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_powershell_editions?view=powershell-7.5 (**HIGH**)
-- .NET Community Toolkit MVVM: https://learn.microsoft.com/en-us/dotnet/communitytoolkit/mvvm/ (**MEDIUM**)
-- .NET logging and DI overviews: https://learn.microsoft.com/en-us/dotnet/core/extensions/logging/overview and https://learn.microsoft.com/en-us/dotnet/core/extensions/dependency-injection/overview (**HIGH**)
-- WiX Toolset project and release status (v6.0.2 latest observed): https://github.com/wixtoolset/wix (**MEDIUM**)
-- MSIX overview (for optional later phase): https://learn.microsoft.com/en-us/windows/msix/overview (**MEDIUM**)
+- https://learn.microsoft.com/en-us/dotnet/core/releases-and-support (.NET support policy, updated 2025-11-18) - **HIGH**
+- https://learn.microsoft.com/en-us/dotnet/desktop/wpf/overview/ (WPF Windows-only framework) - **HIGH**
+- https://learn.microsoft.com/en-us/powershell/scripting/install/powershell-support-lifecycle (PowerShell lifecycle incl. 7.4 LTS, Windows PowerShell note) - **HIGH**
+- https://www.powershellgallery.com/packages/PowerSTIG (PowerSTIG 4.28.0, min PowerShell 5.1, release date) - **HIGH**
+- https://github.com/microsoft/PowerStig/wiki/Documentation-via-STIG-Checklists (`New-StigCheckList`, STIG Viewer checklist workflow) - **HIGH**
+- https://github.com/microsoft/PowerStig/wiki (home page indicates DSC composite resource model and current module guidance) - **MEDIUM**
+- https://learn.microsoft.com/en-us/powershell/dsc/overview?view=dsc-3.0 (modern DSC and adapter model differences) - **HIGH**
+- https://csrc.nist.gov/projects/security-content-automation-protocol/specifications/xccdf (XCCDF XML spec/schema reference) - **HIGH**
+- https://csrc.nist.gov/projects/security-content-automation-protocol/specifications/arf (ARF model/schema reference) - **HIGH**
+- https://www.nuget.org/packages/System.CommandLine (2.0.3) - **MEDIUM**
+- https://www.nuget.org/packages/Microsoft.Data.Sqlite (10.0.3) - **MEDIUM**
+- https://www.nuget.org/packages/CommunityToolkit.Mvvm (8.4.0) - **MEDIUM**
+- https://www.nuget.org/packages/Dapper (2.1.66) - **MEDIUM**
+- https://www.nuget.org/packages/FluentValidation (12.1.1) - **MEDIUM**
+- https://www.nuget.org/packages/Serilog and https://www.nuget.org/packages/Serilog.Sinks.File (4.3.1 / 7.0.0) - **MEDIUM**
+- https://www.sqlite.org/index.html (SQLite latest release stream and offline suitability context) - **HIGH**
+
+---
+*Stack research for: Windows compliance workflow tooling (PowerSTIG + Evaluate-STIG + SCC + STIG Viewer outputs)*
+*Researched: 2026-02-20*
