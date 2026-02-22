@@ -631,6 +631,7 @@ public partial class MainViewModel
     LoadCoverageOverlap();
     LoadManualControlsAsync();
     RefreshDashboard();
+    _ = RefreshTimelineAsync();
   }
 
   partial void OnSelectedRecentBundleChanged(string value)

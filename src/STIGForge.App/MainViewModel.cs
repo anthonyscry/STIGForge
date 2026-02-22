@@ -169,6 +169,16 @@ public partial class MainViewModel : ObservableObject, IDisposable
   [ObservableProperty] private string orchStatus = "";
   [ObservableProperty] private string orchLog = "";
 
+  // Mission Timeline
+  [ObservableProperty] private string timelineRunId = "";
+  [ObservableProperty] private string timelineRunStatus = "";
+  [ObservableProperty] private string timelineNextAction = "No mission runs recorded yet.";
+  [ObservableProperty] private bool timelineIsBlocked;
+  [ObservableProperty] private string timelineLastPhase = "";
+  [ObservableProperty] private string timelineLastStep = "";
+  [ObservableProperty] private string timelineEmptyMessage = "No mission timeline data available. Run orchestration to start a mission.";
+  public ObservableCollection<MissionTimelineEventItem> TimelineEvents { get; } = new();
+
   public bool ActionsEnabled => !IsBusy;
   public string ScapArgsPreview => string.IsNullOrWhiteSpace(ScapArgs) ? "(none)" : ScapArgs;
 
@@ -486,6 +496,18 @@ public partial class MainViewModel : ObservableObject, IDisposable
         _ => "Unknown"
       };
     }
+  }
+
+  public sealed class MissionTimelineEventItem
+  {
+    public int Seq { get; set; }
+    public string Phase { get; set; } = string.Empty;
+    public string StepName { get; set; } = string.Empty;
+    public string Status { get; set; } = string.Empty;
+    public string OccurredAt { get; set; } = string.Empty;
+    public string? Message { get; set; }
+    public bool IsFailed => string.Equals(Status, "Failed", StringComparison.OrdinalIgnoreCase);
+    public bool IsSkipped => string.Equals(Status, "Skipped", StringComparison.OrdinalIgnoreCase);
   }
 
   public sealed class OverlapItem
