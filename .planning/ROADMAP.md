@@ -7,7 +7,7 @@ This roadmap delivers deterministic offline compliance operations end-to-end: op
 ## Phases
 
 - [x] **Phase 1: Canonical Ingestion Contracts** - Import and normalize compliance sources into stable versioned canonical records. (completed 2026-02-22)
-- [ ] **Phase 2: Policy Scope and Safety Gates** - Make deterministic scope and automation decisions with explicit review-required handling.
+- [x] **Phase 2: Policy Scope and Safety Gates** - Make deterministic scope and automation decisions with explicit review-required handling. (completed 2026-02-22)
 - [ ] **Phase 3: Deterministic Mission Execution Core** - Build deterministic bundles and run apply/verify with strict per-STIG mapping invariants.
 - [ ] **Phase 4: Human Resolution and Evidence Continuity** - Close unresolved controls and carry answers/overlays forward through pack updates.
 - [ ] **Phase 5: Proof Packaging, Fleet-lite, and Integrity** - Produce deterministic submission packages with fleet-lite summaries and cryptographic audit proof.
@@ -42,11 +42,11 @@ Plans:
   5. New or changed controls are blocked from auto-apply until release-age grace and trusted mapping criteria are satisfied.
 **Plans**: 5 plans
 Plans:
-- [ ] 02-01-PLAN.md — Profile CLI CRUD commands and profile validation service.
-- [ ] 02-02-PLAN.md — Extend ClassificationScopeService for Unclassified and Mixed mode evaluation.
-- [ ] 02-03-PLAN.md — Overlay conflict detection service and overlay_conflict_report.csv in BundleBuilder.
-- [ ] 02-04-PLAN.md — CLI commands for overlay diff and bundle review-queue inspection.
-- [ ] 02-05-PLAN.md — WPF profile editor, guided run review queue step, and break-glass dialog.
+- [x] 02-01-PLAN.md — Profile CLI CRUD commands and profile validation service.
+- [x] 02-02-PLAN.md — Extend ClassificationScopeService for Unclassified and Mixed mode evaluation.
+- [x] 02-03-PLAN.md — Overlay conflict detection service and overlay_conflict_report.csv in BundleBuilder.
+- [x] 02-04-PLAN.md — CLI commands for overlay diff and bundle review-queue inspection.
+- [x] 02-05-PLAN.md — WPF profile editor, guided run review queue step, and break-glass dialog.
 
 ### Phase 3: Deterministic Mission Execution Core
 **Goal**: Operators can run the core mission loop (build, apply, verify) deterministically with strict SCAP association rules.
@@ -86,7 +86,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Canonical Ingestion Contracts | 4/4 | Complete   | 2026-02-22 |
-| 2. Policy Scope and Safety Gates | 0/5 | Not started | - |
+| 2. Policy Scope and Safety Gates | 5/5 | Complete   | 2026-02-22 |
 | 3. Deterministic Mission Execution Core | 0/TBD | Not started | - |
 | 4. Human Resolution and Evidence Continuity | 0/TBD | Not started | - |
 | 5. Proof Packaging, Fleet-lite, and Integrity | 0/TBD | Not started | - |
