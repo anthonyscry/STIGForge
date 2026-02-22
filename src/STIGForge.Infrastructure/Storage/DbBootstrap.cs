@@ -45,6 +45,35 @@ public static class DbBootstrap
 
     using var cmd = conn.CreateCommand();
     cmd.CommandText = @"
+PRAGMA journal_mode=WAL;
+
+CREATE TABLE IF NOT EXISTS mission_runs (
+  run_id TEXT PRIMARY KEY,
+  label TEXT NOT NULL,
+  bundle_root TEXT NOT NULL,
+  status TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  finished_at TEXT NULL,
+  input_fingerprint TEXT NULL,
+  detail TEXT NULL
+);
+CREATE INDEX IF NOT EXISTS ix_mission_runs_created_at ON mission_runs(created_at DESC);
+
+CREATE TABLE IF NOT EXISTS mission_timeline (
+  event_id TEXT PRIMARY KEY,
+  run_id TEXT NOT NULL REFERENCES mission_runs(run_id),
+  seq INTEGER NOT NULL,
+  phase TEXT NOT NULL,
+  step_name TEXT NOT NULL,
+  status TEXT NOT NULL,
+  occurred_at TEXT NOT NULL,
+  message TEXT NULL,
+  evidence_path TEXT NULL,
+  evidence_sha256 TEXT NULL,
+  UNIQUE(run_id, seq)
+);
+CREATE INDEX IF NOT EXISTS ix_mission_timeline_run_id ON mission_timeline(run_id, seq);
+
 CREATE TABLE IF NOT EXISTS content_packs (
   pack_id TEXT PRIMARY KEY,
   name TEXT NOT NULL,
