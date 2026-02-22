@@ -5,7 +5,9 @@
     <Grid.RowDefinitions>
       <RowDefinition Height="*"/>
       <RowDefinition Height="Auto"/>
-      <RowDefinition Height="200"/>
+      <RowDefinition Height="160"/>
+      <RowDefinition Height="Auto"/>
+      <RowDefinition Height="160"/>
     </Grid.RowDefinitions>
 
     <!-- Settings Panel -->
@@ -204,6 +206,53 @@
       <ScrollViewer VerticalScrollBarVisibility="Auto">
         <TextBlock Text="{Binding OrchLog}" FontFamily="Consolas" FontSize="11" Padding="8" TextWrapping="Wrap"
                    AutomationProperties.Name="Orchestration log output"/>
+      </ScrollViewer>
+    </Border>
+
+    <!-- Timeline Section Header -->
+    <StackPanel Grid.Row="3" Margin="0,8,0,4">
+      <TextBlock Text="Mission Timeline" FontSize="13" FontWeight="SemiBold"/>
+      <StackPanel Orientation="Horizontal" Margin="0,2,0,0">
+        <TextBlock Text="Status: " Foreground="{DynamicResource TextMutedBrush}" FontSize="11"/>
+        <TextBlock Text="{Binding TimelineRunStatus}" Foreground="{DynamicResource TextMutedBrush}" FontSize="11"/>
+        <TextBlock Text="  |  " Foreground="{DynamicResource TextMutedBrush}" FontSize="11"/>
+        <TextBlock Text="{Binding TimelineNextAction}" Foreground="{DynamicResource TextMutedBrush}" FontSize="11" TextWrapping="Wrap"
+                   AutomationProperties.Name="Timeline next action"/>
+      </StackPanel>
+    </StackPanel>
+
+    <!-- Timeline Events List -->
+    <Border Grid.Row="4" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Background="{DynamicResource SurfaceBrush}"
+            AutomationProperties.Name="Mission timeline panel">
+      <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="4">
+          <TextBlock Text="{Binding TimelineEmptyMessage}"
+                     Visibility="{Binding TimelineEmptyMessage, Converter={StaticResource NullOrEmptyToCollapsed}}"
+                     Foreground="{DynamicResource TextMutedBrush}" FontStyle="Italic" Padding="4"/>
+          <ItemsControl ItemsSource="{Binding TimelineEvents}"
+                        AutomationProperties.Name="Timeline events list">
+            <ItemsControl.ItemTemplate>
+              <DataTemplate>
+                <Border Margin="0,1,0,0" Padding="4,2" BorderBrush="{DynamicResource BorderBrush}" BorderThickness="0,0,0,1">
+                  <Grid>
+                    <Grid.ColumnDefinitions>
+                      <ColumnDefinition Width="28"/>
+                      <ColumnDefinition Width="65"/>
+                      <ColumnDefinition Width="*"/>
+                      <ColumnDefinition Width="75"/>
+                      <ColumnDefinition Width="65"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock Grid.Column="0" Text="{Binding Seq}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" FontFamily="Consolas"/>
+                    <TextBlock Grid.Column="1" Text="{Binding Phase}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                    <TextBlock Grid.Column="2" Text="{Binding StepName}" FontSize="11" FontFamily="Consolas" TextTrimming="CharacterEllipsis"/>
+                    <TextBlock Grid.Column="3" Text="{Binding Status}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                    <TextBlock Grid.Column="4" Text="{Binding OccurredAt}" FontSize="11" Foreground="{DynamicResource TextMutedBrush}" FontFamily="Consolas"/>
+                  </Grid>
+                </Border>
+              </DataTemplate>
+            </ItemsControl.ItemTemplate>
+          </ItemsControl>
+        </StackPanel>
       </ScrollViewer>
     </Border>
   </Grid>
