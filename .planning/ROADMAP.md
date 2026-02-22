@@ -58,7 +58,13 @@ Plans:
   3. Operator can run apply through supported backends (PowerSTIG/DSC primary, optional GPO/LGPO, script fallback) with reboot-aware convergence tracking.
   4. Verification adapters normalize scanner outputs into canonical results with provenance retained back to raw tool artifacts.
   5. Per-STIG SCAP mapping invariants hold with benchmark-overlap priority and no broad cross-STIG fallback behavior.
-**Plans**: TBD
+**Plans**: 5 plans
+Plans:
+- [ ] 03-01-PLAN.md — Enforce deterministic bundle output with schema versioning and content validation.
+- [ ] 03-02-PLAN.md — Harden apply preflight with PowerSTIG, DSC resource, and mutual-exclusion checks.
+- [ ] 03-03-PLAN.md — Enforce per-STIG SCAP mapping invariants with frozen ScapMappingManifest.
+- [ ] 03-04-PLAN.md — Add LGPO backend, reboot convergence tracking, and max reboot enforcement.
+- [ ] 03-05-PLAN.md — Normalize verification outputs with provenance and SCAP mapping association.
 
 ### Phase 4: Human Resolution and Evidence Continuity
 **Goal**: Operators can resolve manual controls, collect evidence, and safely rebase updates between content releases.
@@ -87,6 +93,6 @@ Plans:
 |-------|----------------|--------|-----------|
 | 1. Canonical Ingestion Contracts | 4/4 | Complete   | 2026-02-22 |
 | 2. Policy Scope and Safety Gates | 5/5 | Complete   | 2026-02-22 |
-| 3. Deterministic Mission Execution Core | 0/TBD | Not started | - |
+| 3. Deterministic Mission Execution Core | 0/5 | Not started | - |
 | 4. Human Resolution and Evidence Continuity | 0/TBD | Not started | - |
 | 5. Proof Packaging, Fleet-lite, and Integrity | 0/TBD | Not started | - |
