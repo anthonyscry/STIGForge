@@ -69,6 +69,7 @@ public sealed class CklAdapter : IVerifyResultAdapter
       StartedAt = fileTimestamp, // CKL doesn't have explicit timestamps
       FinishedAt = fileTimestamp,
       OutputRoot = Path.GetDirectoryName(outputPath) ?? string.Empty,
+      RawArtifactPath = Path.GetFullPath(outputPath),
       Results = results,
       Summary = summary,
       DiagnosticMessages = diagnostics
@@ -119,6 +120,7 @@ public sealed class CklAdapter : IVerifyResultAdapter
       Comments = comments,
       Tool = ToolName,
       SourceFile = sourcePath,
+      RawArtifactPath = Path.GetFullPath(sourcePath),
       VerifiedAt = new DateTimeOffset(File.GetLastWriteTimeUtc(sourcePath), TimeSpan.Zero),
       EvidencePaths = Array.Empty<string>(),
       Metadata = metadata

@@ -100,6 +100,7 @@ public sealed class EvaluateStigAdapter : IVerifyResultAdapter
       StartedAt = startTime,
       FinishedAt = endTime,
       OutputRoot = Path.GetDirectoryName(outputPath) ?? string.Empty,
+      RawArtifactPath = Path.GetFullPath(outputPath),
       Results = results,
       Summary = summary,
       DiagnosticMessages = diagnostics
@@ -144,6 +145,7 @@ public sealed class EvaluateStigAdapter : IVerifyResultAdapter
       Comments = comments,
       Tool = ToolName,
       SourceFile = sourcePath,
+      RawArtifactPath = Path.GetFullPath(sourcePath),
       VerifiedAt = ParseTimestamp(verifiedAtStr, verifiedAt),
       EvidencePaths = Array.Empty<string>(),
       Metadata = metadata
@@ -251,6 +253,7 @@ public sealed class EvaluateStigAdapter : IVerifyResultAdapter
       StartedAt = startTime ?? timestamp,
       FinishedAt = endTime ?? timestamp,
       OutputRoot = Path.GetDirectoryName(outputPath) ?? string.Empty,
+      RawArtifactPath = Path.GetFullPath(outputPath),
       Results = Array.Empty<NormalizedVerifyResult>(),
       Summary = new VerifySummary(),
       DiagnosticMessages = diagnostics

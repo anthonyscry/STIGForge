@@ -50,6 +50,18 @@ public sealed class NormalizedVerifyResult
 
   /// <summary>Tool-specific metadata (e.g., SCAP check-content-ref, Evaluate-STIG test ID)</summary>
   public IReadOnlyDictionary<string, string> Metadata { get; set; } = new Dictionary<string, string>();
+
+  /// <summary>
+  /// Absolute path to the raw tool output artifact this result was parsed from.
+  /// Retained for provenance: links this normalized result back to the original tool output.
+  /// </summary>
+  public string? RawArtifactPath { get; set; }
+
+  /// <summary>
+  /// SCAP benchmark ID this result maps to, populated from ScapMappingManifest.
+  /// Null if no mapping manifest was applied or the control is unmapped.
+  /// </summary>
+  public string? BenchmarkId { get; set; }
 }
 
 /// <summary>
@@ -109,6 +121,12 @@ public sealed class NormalizedVerifyReport
 
   /// <summary>Errors/warnings encountered during verification</summary>
   public IReadOnlyList<string> DiagnosticMessages { get; set; } = Array.Empty<string>();
+
+  /// <summary>
+  /// Absolute path to the raw tool output file this report was parsed from.
+  /// Report-level provenance for audit traceability.
+  /// </summary>
+  public string? RawArtifactPath { get; set; }
 }
 
 /// <summary>
