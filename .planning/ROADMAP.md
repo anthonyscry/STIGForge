@@ -79,7 +79,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Canonical Ingestion Contracts | 2/4 | In Progress|  |
+| 1. Canonical Ingestion Contracts | 3/4 | In Progress|  |
 | 2. Policy Scope and Safety Gates | 0/TBD | Not started | - |
 | 3. Deterministic Mission Execution Core | 0/TBD | Not started | - |
 | 4. Human Resolution and Evidence Continuity | 0/TBD | Not started | - |
