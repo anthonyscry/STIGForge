@@ -24,6 +24,12 @@ public sealed class RebootContext
     /// Timestamp when the reboot was scheduled.
     /// </summary>
     public DateTimeOffset RebootScheduledAt { get; set; }
+
+    /// <summary>
+    /// Number of reboots that have occurred in this apply cycle.
+    /// Used to enforce MaxReboots limit.
+    /// </summary>
+    public int RebootCount { get; set; }
 }
 
 /// <summary>

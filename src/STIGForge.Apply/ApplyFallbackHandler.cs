@@ -4,7 +4,8 @@ namespace STIGForge.Apply;
 
 /// <summary>
 /// Handles fallback strategies when primary apply methods fail.
-/// Implements graceful degradation: DSC -> PowerShell script -> Manual-only mode.
+/// Implements graceful degradation: DSC (primary) -> LGPO (secondary) -> Script (fallback) -> Manual-only mode.
+/// The step-level ordering in ApplyRunner is the backend chain; this handler operates per-control.
 /// </summary>
 public sealed class ApplyFallbackHandler
 {

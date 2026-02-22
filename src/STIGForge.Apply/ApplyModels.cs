@@ -1,6 +1,15 @@
+using STIGForge.Apply.Lgpo;
 using STIGForge.Core.Models;
 
 namespace STIGForge.Apply;
+
+public enum ConvergenceStatus
+{
+  Converged,
+  Diverged,
+  Exceeded,
+  NotApplicable
+}
 
 public sealed class ApplyRequest
 {
@@ -17,6 +26,15 @@ public sealed class ApplyRequest
    public bool PowerStigVerbose { get; set; }
    public string? PowerStigDataGeneratedPath { get; set; }
    public bool ResetLcmAfterApply { get; set; } = false;
+
+   /// <summary>LGPO .pol file path for Group Policy remediation (secondary backend).</summary>
+   public string? LgpoPolFilePath { get; set; }
+
+   /// <summary>LGPO scope (Machine or User). Defaults to Machine.</summary>
+   public LgpoScope? LgpoScope { get; set; }
+
+   /// <summary>Optional override path to LGPO.exe.</summary>
+   public string? LgpoExePath { get; set; }
 
    /// <summary>
    /// Optional mission run ID for timeline and evidence provenance linkage.
@@ -73,6 +91,12 @@ public sealed class ApplyResult
 
    /// <summary>Prior run ID used for continuity markers, if a rerun was detected.</summary>
    public string? PriorRunId { get; set; }
+
+   /// <summary>Number of reboots that occurred during this apply cycle.</summary>
+   public int RebootCount { get; set; }
+
+   /// <summary>Convergence status of the apply cycle.</summary>
+   public ConvergenceStatus ConvergenceStatus { get; set; } = ConvergenceStatus.NotApplicable;
 }
 
 public sealed class PreflightRequest
