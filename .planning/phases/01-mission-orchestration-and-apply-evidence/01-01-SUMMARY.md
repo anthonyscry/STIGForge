@@ -136,3 +136,17 @@ None - no external service configuration required.
 ---
 *Phase: 01-mission-orchestration-and-apply-evidence*
 *Completed: 2026-02-22*
+
+## Self-Check: PASSED
+
+All files verified present:
+- FOUND: src/STIGForge.Core/Models/MissionRun.cs
+- FOUND: src/STIGForge.Infrastructure/Storage/MissionRunRepository.cs
+- FOUND: tests/STIGForge.UnitTests/Infrastructure/MissionRunRepositoryTests.cs
+- FOUND: .planning/phases/01-mission-orchestration-and-apply-evidence/01-01-SUMMARY.md
+
+All commits verified:
+- FOUND: bf654bc (feat: MissionRun contracts)
+- FOUND: b9086c2 (feat: SQLite ledger)
+- FOUND: 9b2b5b5 (feat: DI registration + tests)
+- FOUND: 9b111cb (docs: plan metadata)
