@@ -53,7 +53,7 @@ public sealed class EmassExporterConsistencyTests : IDisposable
       .Should().Be(manifestB.RootElement.GetProperty("exportTrace").GetRawText());
 
     var trace = manifestA.RootElement.GetProperty("exportTrace");
-    var sourceReports = trace.GetProperty("SourceReports")
+    var sourceReports = trace.GetProperty("sourceReports")
       .EnumerateArray()
       .Select(e => (e.GetString() ?? string.Empty).Replace('\\', '/'))
       .ToList();
@@ -62,12 +62,12 @@ public sealed class EmassExporterConsistencyTests : IDisposable
       "Verify/a-run/consolidated-results.json",
       "Verify/z-run/consolidated-results.json");
 
-    trace.GetProperty("ToolCounts").GetProperty("Evaluate-STIG").GetInt32().Should().Be(2);
-    trace.GetProperty("ToolCounts").GetProperty("SCAP").GetInt32().Should().Be(2);
-    trace.GetProperty("StatusTotals").GetProperty("Fail").GetInt32().Should().Be(1);
-    trace.GetProperty("StatusTotals").GetProperty("Pass").GetInt32().Should().Be(2);
-    trace.GetProperty("StatusTotals").GetProperty("NotApplicable").GetInt32().Should().Be(1);
-    trace.GetProperty("TotalConsolidatedResults").GetInt32().Should().Be(4);
+    trace.GetProperty("toolCounts").GetProperty("Evaluate-STIG").GetInt32().Should().Be(2);
+    trace.GetProperty("toolCounts").GetProperty("SCAP").GetInt32().Should().Be(2);
+    trace.GetProperty("statusTotals").GetProperty("Fail").GetInt32().Should().Be(1);
+    trace.GetProperty("statusTotals").GetProperty("Pass").GetInt32().Should().Be(2);
+    trace.GetProperty("statusTotals").GetProperty("NotApplicable").GetInt32().Should().Be(1);
+    trace.GetProperty("totalConsolidatedResults").GetInt32().Should().Be(4);
   }
 
   [Fact]

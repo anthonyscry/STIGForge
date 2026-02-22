@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using STIGForge.Core.Abstractions;
+using STIGForge.Export;
 using STIGForge.Infrastructure.System;
 
 namespace STIGForge.Cli.Commands;
@@ -16,6 +17,8 @@ internal static class FleetCommands
     RegisterFleetApply(rootCmd, buildHost);
     RegisterFleetVerify(rootCmd, buildHost);
     RegisterFleetStatus(rootCmd, buildHost);
+    RegisterFleetCollect(rootCmd, buildHost);
+    RegisterFleetSummary(rootCmd, buildHost);
     RegisterFleetCredentialSave(rootCmd, buildHost);
     RegisterFleetCredentialList(rootCmd, buildHost);
     RegisterFleetCredentialRemove(rootCmd, buildHost);
@@ -130,6 +133,132 @@ internal static class FleetCommands
       logger.LogInformation("fleet-status completed: {Reachable}/{Total} reachable", result.ReachableCount, result.TotalMachines);
       await host.StopAsync();
     }, targetsOpt, jsonOpt);
+
+    rootCmd.AddCommand(cmd);
+  }
+
+  private static void RegisterFleetCollect(RootCommand rootCmd, Func<IHost> buildHost)
+  {
+    var cmd = new Command("fleet-collect", "Collect artifacts from remote fleet hosts via WinRM and generate per-host CKL");
+    var targetsOpt = new Option<string>("--targets", "Comma-separated list of hostnames or host:ip pairs") { IsRequired = true };
+    var remoteBundleOpt = new Option<string>("--remote-bundle-path", () => @"C:\STIGForge\bundle", "Bundle path on remote machines");
+    var outputOpt = new Option<string>("--output", "Local results root directory") { IsRequired = true };
+    var concurrencyOpt = new Option<int>("--concurrency", () => 5, "Max concurrent machines");
+    var timeoutOpt = new Option<int>("--timeout", () => 600, "Timeout per machine in seconds");
+    var jsonOpt = new Option<bool>("--json", "Output as JSON");
+    cmd.AddOption(targetsOpt); cmd.AddOption(remoteBundleOpt); cmd.AddOption(outputOpt);
+    cmd.AddOption(concurrencyOpt); cmd.AddOption(timeoutOpt); cmd.AddOption(jsonOpt);
+
+    cmd.SetHandler(async (InvocationContext ctx) =>
+    {
+      using var host = buildHost();
+      await host.StartAsync();
+      var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("FleetCommands");
+
+      var targets = ParseTargets(ctx.ParseResult.GetValueForOption(targetsOpt) ?? string.Empty);
+      var outputDir = ctx.ParseResult.GetValueForOption(outputOpt) ?? string.Empty;
+      var remotePath = ctx.ParseResult.GetValueForOption(remoteBundleOpt) ?? @"C:\STIGForge\bundle";
+      var json = ctx.ParseResult.GetValueForOption(jsonOpt);
+
+      var request = new FleetCollectionRequest
+      {
+        Targets = targets,
+        RemoteBundleRoot = remotePath,
+        LocalResultsRoot = outputDir,
+        MaxConcurrency = ctx.ParseResult.GetValueForOption(concurrencyOpt),
+        TimeoutSeconds = ctx.ParseResult.GetValueForOption(timeoutOpt)
+      };
+
+      logger.LogInformation("fleet-collect started: {Count} targets, output={Output}", targets.Count, outputDir);
+      var svc = new FleetService();
+      var result = await svc.CollectArtifactsAsync(request, CancellationToken.None);
+
+      // Generate per-host CKL from collected artifacts
+      var fleetResultsDir = Path.Combine(outputDir, "fleet_results");
+      FleetSummaryService.GeneratePerHostCkl(fleetResultsDir);
+
+      if (json)
+      {
+        Console.WriteLine(JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true }));
+      }
+      else
+      {
+        Console.WriteLine($"Fleet collect: {result.SuccessCount}/{result.TotalHosts} succeeded");
+        Console.WriteLine();
+        Console.WriteLine($"{"Host",-30} {"Status",-10} {"Files",-10} {"Error"}");
+        Console.WriteLine(new string('-', 80));
+        foreach (var hr in result.HostResults)
+          Console.WriteLine($"{hr.MachineName,-30} {(hr.Success ? "OK" : "FAIL"),-10} {hr.FilesCollected,-10} {Helpers.Truncate(hr.Error, 30)}");
+      }
+
+      logger.LogInformation("fleet-collect completed: {Success}/{Total} succeeded",
+        result.SuccessCount, result.TotalHosts);
+      if (result.FailureCount > 0) Environment.ExitCode = 1;
+      await host.StopAsync();
+    });
+
+    rootCmd.AddCommand(cmd);
+  }
+
+  private static void RegisterFleetSummary(RootCommand rootCmd, Func<IHost> buildHost)
+  {
+    var cmd = new Command("fleet-summary", "Generate unified fleet summary from collected per-host results");
+    var resultsDirOpt = new Option<string>("--results-dir", "Path to fleet_results directory") { IsRequired = true };
+    var outputOpt = new Option<string>("--output", () => string.Empty, "Output directory (defaults to results-dir/../fleet_summary)");
+    var systemNameOpt = new Option<string>("--system-name", () => "Fleet", "System name for fleet POA&M");
+    var jsonOpt = new Option<bool>("--json", "JSON-only output");
+    cmd.AddOption(resultsDirOpt); cmd.AddOption(outputOpt); cmd.AddOption(systemNameOpt); cmd.AddOption(jsonOpt);
+
+    cmd.SetHandler(async (InvocationContext ctx) =>
+    {
+      using var host = buildHost();
+      await host.StartAsync();
+      var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("FleetCommands");
+
+      var resultsDir = ctx.ParseResult.GetValueForOption(resultsDirOpt) ?? string.Empty;
+      var output = ctx.ParseResult.GetValueForOption(outputOpt) ?? string.Empty;
+      var systemName = ctx.ParseResult.GetValueForOption(systemNameOpt) ?? "Fleet";
+      var json = ctx.ParseResult.GetValueForOption(jsonOpt);
+
+      var outputDir = string.IsNullOrWhiteSpace(output)
+        ? Path.Combine(Path.GetDirectoryName(resultsDir) ?? resultsDir, "fleet_summary")
+        : output;
+
+      logger.LogInformation("fleet-summary started: results={ResultsDir}", resultsDir);
+
+      var svc = new FleetSummaryService();
+      var summary = svc.GenerateSummary(resultsDir);
+      svc.WriteSummaryFiles(summary, outputDir);
+
+      // Generate fleet POA&M
+      var poam = svc.GenerateFleetPoam(resultsDir, systemName);
+      var poamPath = Path.Combine(outputDir, "fleet_poam.json");
+      File.WriteAllText(poamPath, JsonSerializer.Serialize(poam, new JsonSerializerOptions { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
+
+      if (json)
+      {
+        Console.WriteLine(JsonSerializer.Serialize(summary, new JsonSerializerOptions { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
+      }
+      else
+      {
+        Console.WriteLine("Fleet Summary:");
+        Console.WriteLine($"  Fleet-wide compliance: {summary.FleetWideCompliance:F1}%");
+        Console.WriteLine($"  Hosts: {summary.PerHostStats.Count}");
+        Console.WriteLine($"  Failing controls: {summary.FailingControls.Count}");
+        Console.WriteLine();
+        Console.WriteLine($"{"Host",-30} {"Total",-8} {"Pass",-8} {"Fail",-8} {"Compliance"}");
+        Console.WriteLine(new string('-', 70));
+        foreach (var h in summary.PerHostStats)
+          Console.WriteLine($"{h.HostName,-30} {h.TotalControls,-8} {h.PassCount,-8} {h.FailCount,-8} {h.CompliancePercentage:F1}%");
+        Console.WriteLine();
+        Console.WriteLine("Output:");
+        Console.WriteLine("  " + outputDir);
+      }
+
+      logger.LogInformation("fleet-summary completed: {Hosts} hosts, fleet compliance={Compliance:F1}%",
+        summary.PerHostStats.Count, summary.FleetWideCompliance);
+      await host.StopAsync();
+    });
 
     rootCmd.AddCommand(cmd);
   }

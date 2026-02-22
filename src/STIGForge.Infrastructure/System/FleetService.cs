@@ -375,6 +375,121 @@ public sealed class FleetService
     }
   }
 
+  /// <summary>
+  /// Collect artifacts from remote hosts after fleet execution.
+  /// Best-effort: failure on one host does not block others.
+  /// </summary>
+  public async Task<FleetCollectionResult> CollectArtifactsAsync(FleetCollectionRequest request, CancellationToken ct)
+  {
+    if (request.Targets == null || request.Targets.Count == 0)
+      throw new ArgumentException("At least one target is required.");
+
+    var results = new ConcurrentBag<FleetHostCollectionResult>();
+    var semaphore = new SemaphoreSlim(request.MaxConcurrency > 0 ? request.MaxConcurrency : 5);
+    var tasks = new List<Task>();
+
+    foreach (var target in request.Targets)
+    {
+      var t = Task.Run(async () =>
+      {
+        await semaphore.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+          var localHostDir = Path.Combine(request.LocalResultsRoot, "fleet_results", target.HostName);
+          var hostResult = await CopyFromRemoteAsync(target, request.RemoteBundleRoot ?? "C:\\STIGForge\\bundle", localHostDir, request.TimeoutSeconds, ct).ConfigureAwait(false);
+          results.Add(hostResult);
+        }
+        catch (Exception ex)
+        {
+          results.Add(new FleetHostCollectionResult
+          {
+            MachineName = target.HostName,
+            Success = false,
+            FilesCollected = 0,
+            Error = ex.Message
+          });
+        }
+        finally
+        {
+          semaphore.Release();
+        }
+      }, ct);
+      tasks.Add(t);
+    }
+
+    await Task.WhenAll(tasks).ConfigureAwait(false);
+
+    var allResults = results.ToList();
+    return new FleetCollectionResult
+    {
+      HostResults = allResults,
+      TotalHosts = allResults.Count,
+      SuccessCount = allResults.Count(r => r.Success),
+      FailureCount = allResults.Count(r => !r.Success)
+    };
+  }
+
+  private async Task<FleetHostCollectionResult> CopyFromRemoteAsync(FleetTarget target, string remoteBundleRoot, string localDir, int timeoutSeconds, CancellationToken ct)
+  {
+    target = ResolveCredentials(target);
+    Directory.CreateDirectory(localDir);
+
+    try
+    {
+      var connectionTarget = !string.IsNullOrWhiteSpace(target.IpAddress) ? target.IpAddress : target.HostName;
+      var script = new StringBuilder();
+      script.Append("$remotePath = ").Append(ToPowerShellSingleQuoted(remoteBundleRoot)).Append("; ");
+      script.Append("$localPath = ").Append(ToPowerShellSingleQuoted(localDir)).Append("; ");
+      script.Append("$computerName = ").Append(ToPowerShellSingleQuoted(connectionTarget)).Append("; ");
+
+      if (!string.IsNullOrWhiteSpace(target.CredentialUser))
+      {
+        script.Append("$fleetUser = $env:STIGFORGE_FLEET_USER; ");
+        script.Append("$fleetPass = $env:STIGFORGE_FLEET_PASS; ");
+        script.Append("$fleetSecure = ConvertTo-SecureString $fleetPass -AsPlainText -Force; ");
+        script.Append("$fleetCredential = New-Object System.Management.Automation.PSCredential($fleetUser, $fleetSecure); ");
+        script.Append("$session = New-PSSession -ComputerName $computerName -Credential $fleetCredential; ");
+      }
+      else
+      {
+        script.Append("$session = New-PSSession -ComputerName $computerName; ");
+      }
+
+      script.Append("Copy-Item -FromSession $session -Path $remotePath -Destination $localPath -Recurse -Force; ");
+      script.Append("Remove-PSSession $session; ");
+      script.Append("$copied = (Get-ChildItem -Path $localPath -Recurse -File).Count; ");
+      script.Append("Write-Output \"COPIED:$copied\"");
+
+      var result = await RunPowerShellRemoteAsync(target, script.ToString(), timeoutSeconds, ct).ConfigureAwait(false);
+
+      var filesCollected = 0;
+      if (result.ExitCode == 0 && result.Output.Contains("COPIED:"))
+      {
+        var parts = result.Output.Split("COPIED:");
+        if (parts.Length > 1)
+          int.TryParse(parts[1].Trim(), out filesCollected);
+      }
+
+      return new FleetHostCollectionResult
+      {
+        MachineName = target.HostName,
+        Success = result.ExitCode == 0,
+        FilesCollected = filesCollected,
+        Error = result.Error
+      };
+    }
+    catch (Exception ex)
+    {
+      return new FleetHostCollectionResult
+      {
+        MachineName = target.HostName,
+        Success = false,
+        FilesCollected = 0,
+        Error = ex.Message
+      };
+    }
+  }
+
   private FleetTarget ResolveCredentials(FleetTarget target)
   {
     if (!string.IsNullOrWhiteSpace(target.CredentialUser))
@@ -455,4 +570,29 @@ public sealed class FleetMachineStatus
   public string? IpAddress { get; set; }
   public bool IsReachable { get; set; }
   public string Message { get; set; } = string.Empty;
+}
+
+public sealed class FleetCollectionRequest
+{
+  public IReadOnlyList<FleetTarget> Targets { get; set; } = Array.Empty<FleetTarget>();
+  public string? RemoteBundleRoot { get; set; }
+  public string LocalResultsRoot { get; set; } = string.Empty;
+  public int MaxConcurrency { get; set; } = 5;
+  public int TimeoutSeconds { get; set; } = 600;
+}
+
+public sealed class FleetCollectionResult
+{
+  public IReadOnlyList<FleetHostCollectionResult> HostResults { get; set; } = Array.Empty<FleetHostCollectionResult>();
+  public int TotalHosts { get; set; }
+  public int SuccessCount { get; set; }
+  public int FailureCount { get; set; }
+}
+
+public sealed class FleetHostCollectionResult
+{
+  public string MachineName { get; set; } = string.Empty;
+  public bool Success { get; set; }
+  public int FilesCollected { get; set; }
+  public string Error { get; set; } = string.Empty;
 }

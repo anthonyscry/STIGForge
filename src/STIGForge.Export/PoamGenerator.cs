@@ -272,6 +272,7 @@ public sealed class PoamItem
   public string RawFindingDetails { get; set; } = string.Empty;
   public string SystemName { get; set; } = string.Empty;
   public string BundleId { get; set; } = string.Empty;
+  public string? HostsAffected { get; set; }
 }
 
 /// <summary>
