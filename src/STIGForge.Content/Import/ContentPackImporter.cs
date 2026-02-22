@@ -85,6 +85,36 @@ public sealed class ContentPackImporter
         return incomplete;
     }
 
+    /// <summary>
+    /// Executes a planned import operation, updating <paramref name="planned"/>'s
+    /// <see cref="PlannedContentImport.State"/> through the staged lifecycle:
+    /// <c>Planned</c> -> <c>Staged</c> (execution started) ->
+    /// <c>Committed</c> (success) or <c>Failed</c> (error captured in <see cref="PlannedContentImport.FailureReason"/>).
+    /// The existing route-based import APIs are used internally; this method adds observable staging transitions on top.
+    /// </summary>
+    public async Task<IReadOnlyList<ContentPack>> ExecutePlannedImportAsync(PlannedContentImport planned, CancellationToken ct)
+    {
+        if (planned == null)
+            throw new ArgumentNullException(nameof(planned));
+
+        planned.State = ImportOperationState.Staged;
+        try
+        {
+            IReadOnlyList<ContentPack> result = planned.Route == ContentImportRoute.AdmxTemplatesFromZip
+                ? await ImportAdmxTemplatesFromZipAsync(planned.ZipPath, planned.SourceLabel, ct).ConfigureAwait(false)
+                : await ImportConsolidatedZipAsync(planned.ZipPath, planned.SourceLabel, ct).ConfigureAwait(false);
+
+            planned.State = ImportOperationState.Committed;
+            return result;
+        }
+        catch (Exception ex)
+        {
+            planned.State = ImportOperationState.Failed;
+            planned.FailureReason = ex.Message;
+            throw;
+        }
+    }
+
     public async Task<IReadOnlyList<ContentPack>> ImportConsolidatedZipAsync(string consolidatedZipPath, string sourceLabel, CancellationToken ct)
     {
         if (string.IsNullOrWhiteSpace(consolidatedZipPath))

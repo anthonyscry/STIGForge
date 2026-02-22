@@ -31,10 +31,42 @@ internal static class ImportCommands
       await host.StartAsync();
       var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("ImportCommands");
       logger.LogInformation("import-pack started: zip={Zip}, name={Name}", zip, name);
+
       var importer = host.Services.GetRequiredService<ContentPackImporter>();
-      var pack = await importer.ImportZipAsync(zip, name, "cli_import", CancellationToken.None);
-      logger.LogInformation("import-pack completed: packId={PackId}, name={PackName}", pack.PackId, pack.Name);
-      Console.WriteLine("Imported: " + pack.Name + " (" + pack.PackId + ")");
+
+      // Build a single-operation planned import so staging transitions are explicit and observable.
+      var planned = new PlannedContentImport
+      {
+        ZipPath = zip,
+        FileName = System.IO.Path.GetFileName(zip),
+        ArtifactKind = STIGForge.Content.Import.ImportArtifactKind.Stig,
+        Route = ContentImportRoute.ConsolidatedZip,
+        SourceLabel = "cli_import",
+        State = ImportOperationState.Planned
+      };
+
+      Console.WriteLine($"[{planned.State}] {planned.FileName}");
+
+      try
+      {
+        var packs = await importer.ExecutePlannedImportAsync(planned, CancellationToken.None);
+        // planned.State is now Committed
+        foreach (var pack in packs)
+        {
+          logger.LogInformation("import-pack completed: state={State}, packId={PackId}, name={PackName}",
+            planned.State, pack.PackId, pack.Name);
+          Console.WriteLine($"[{planned.State}] {pack.Name} ({pack.PackId})");
+        }
+      }
+      catch (Exception ex)
+      {
+        // planned.State is now Failed; FailureReason is populated
+        logger.LogError("import-pack failed: state={State}, zip={Zip}, reason={Reason}",
+          planned.State, zip, planned.FailureReason ?? ex.Message);
+        Console.Error.WriteLine($"[{planned.State}] {planned.FileName}: {planned.FailureReason ?? ex.Message}");
+        throw;
+      }
+
       await host.StopAsync();
     }, zipArg, nameOpt);
 

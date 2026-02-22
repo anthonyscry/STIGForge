@@ -551,6 +551,67 @@ public sealed class ContentPackImporterTests : IDisposable
     packsMock.Verify(p => p.SaveAsync(It.IsAny<ContentPack>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
   }
 
+  [Fact]
+  public async Task ExecutePlannedImportAsync_SuccessfulImport_TransitionsThroughStagedToCommitted()
+  {
+    var zipPath = Path.Combine(_tempRoot, "planned-stig.zip");
+    using (var archive = ZipFile.Open(zipPath, ZipArchiveMode.Create))
+    {
+      var xccdf = archive.CreateEntry("bundle-xccdf.xml");
+      await using var writer = new StreamWriter(xccdf.Open());
+      await writer.WriteAsync(CreateMinimalXccdf());
+    }
+
+    var planned = new PlannedContentImport
+    {
+      ZipPath = zipPath,
+      FileName = Path.GetFileName(zipPath),
+      ArtifactKind = ImportArtifactKind.Stig,
+      Route = ContentImportRoute.ConsolidatedZip,
+      SourceLabel = "unit-test",
+      State = ImportOperationState.Planned
+    };
+
+    var importer = CreateImporter(out _, out _);
+    var result = await importer.ExecutePlannedImportAsync(planned, CancellationToken.None);
+
+    Assert.NotEmpty(result);
+    Assert.Equal(ImportOperationState.Committed, planned.State);
+    Assert.Null(planned.FailureReason);
+  }
+
+  [Fact]
+  public async Task ExecutePlannedImportAsync_FailedImport_TransitionsToFailedWithReason()
+  {
+    // Provide a non-existent ZIP to force failure
+    var planned = new PlannedContentImport
+    {
+      ZipPath = Path.Combine(_tempRoot, "nonexistent.zip"),
+      FileName = "nonexistent.zip",
+      ArtifactKind = ImportArtifactKind.Stig,
+      Route = ContentImportRoute.ConsolidatedZip,
+      SourceLabel = "unit-test",
+      State = ImportOperationState.Planned
+    };
+
+    var importer = CreateImporter(out _, out _);
+    var act = () => importer.ExecutePlannedImportAsync(planned, CancellationToken.None);
+
+    await Assert.ThrowsAnyAsync<Exception>(act);
+    Assert.Equal(ImportOperationState.Failed, planned.State);
+    Assert.NotNull(planned.FailureReason);
+    Assert.False(string.IsNullOrWhiteSpace(planned.FailureReason));
+  }
+
+  [Fact]
+  public async Task ExecutePlannedImportAsync_NullPlanned_ThrowsArgumentNullException()
+  {
+    var importer = CreateImporter(out _, out _);
+    var act = () => importer.ExecutePlannedImportAsync(null!, CancellationToken.None);
+
+    await Assert.ThrowsAsync<ArgumentNullException>(act);
+  }
+
   private ContentPackImporter CreateImporter(out Mock<IContentPackRepository> packsMock, out Mock<IControlRepository> controlsMock)
   {
     var pathsMock = new Mock<IPathBuilder>();
