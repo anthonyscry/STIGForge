@@ -14,6 +14,7 @@ ScheduleCommands.Register(rootCmd, STIGForge.Cli.CliHostFactory.BuildHost);
 FleetCommands.Register(rootCmd, STIGForge.Cli.CliHostFactory.BuildHost);
 ProfileCommands.Register(rootCmd, STIGForge.Cli.CliHostFactory.BuildHost);
 OverlayCommands.Register(rootCmd, STIGForge.Cli.CliHostFactory.BuildHost);
+ManualCommands.Register(rootCmd, STIGForge.Cli.CliHostFactory.BuildHost);
 
 return await InvokeWithErrorHandlingAsync(rootCmd, args);
 
