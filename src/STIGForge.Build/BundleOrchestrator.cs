@@ -1,3 +1,5 @@
+using System.Text;
+using System.Text.Json;
 using STIGForge.Apply;
 using STIGForge.Apply.PowerStig;
 using STIGForge.Core.Abstractions;
@@ -53,8 +55,19 @@ public sealed class BundleOrchestrator
       await RecordBreakGlassAsync(root, "skip-snapshot", request.BreakGlassReason, ct).ConfigureAwait(false);
     }
 
+    // Load overlay decisions to filter NotApplicable controls
+    var overlayDecisions = LoadOverlayDecisions(root);
+    var notApplicableKeys = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+    foreach (var decision in overlayDecisions)
+    {
+      if (decision.outcome?.statusOverride == "NotApplicable")
+      {
+        notApplicableKeys.Add(decision.key);
+      }
+    }
+
     // Start a mission run and emit timeline events if a repository is wired
-    var runId = Guid.NewGuid().ToString();
+    var runId = Guid.NewGuid().ToString("19D");
     var run = new MissionRun
     {
       RunId = runId,
@@ -76,11 +89,20 @@ public sealed class BundleOrchestrator
       {
         var generated = Path.Combine(root, "Apply", "PowerStigData", "stigdata.psd1");
         Directory.CreateDirectory(Path.GetDirectoryName(generated)!);
-        var data = PowerStigDataGenerator.CreateDefault(request.PowerStigModulePath!, request.BundleRoot);
-        var controls = LoadBundleControls(root);
+        
+        // Load bundle controls and filter out NotApplicable from overlay decisions
+        var allControls = LoadBundleControls(root);
+        var filteredControls = allControls
+          .Where(c => !IsControlNotApplicable(c, notApplicableKeys))
+          .ToList();
+        
         var overrides = LoadBundlePowerStigOverrides(root);
-        if (controls.Count > 0 || overrides.Count > 0)
-          data = PowerStigDataGenerator.CreateFromControls(controls, overrides);
+        
+        // Generate PowerStig data from filtered controls
+        var data = filteredControls.Count > 0 || overrides.Count > 0
+          ? PowerStigDataGenerator.CreateFromControls(filteredControls, overrides)
+          : PowerStigDataGenerator.CreateDefault(request.PowerStigModulePath!, request.BundleRoot);
+        
         PowerStigDataWriter.Write(generated, data);
         psd1Path = generated;
       }
@@ -239,7 +261,7 @@ public sealed class BundleOrchestrator
             Action = "orchestrate",
             Target = root,
             Result = "success",
-            Detail = $"CoverageInputs={coverageInputs.Count}",
+            Detail = $"CoverageInputs={coverageInputs.Count}; NotApplicableFiltered={notApplicableKeys.Count}",
             User = Environment.UserName,
             Machine = Environment.MachineName,
             Timestamp = DateTimeOffset.Now
@@ -260,6 +282,57 @@ public sealed class BundleOrchestrator
     }
   }
 
+  /// <summary>
+  /// Load overlay decisions from Reports/overlay_decisions.json.
+  /// Returns empty list if file doesn't exist.
+  /// </summary>
+  private static List<OverlayDecisionDto> LoadOverlayDecisions(string bundleRoot)
+  {
+    var decisionsPath = Path.Combine(bundleRoot, "Reports", "overlay_decisions.json");
+    if (!File.Exists(decisionsPath))
+      return new List<OverlayDecisionDto>();
+
+    try
+    {
+      var json = File.ReadAllText(decisionsPath, Encoding.UTF8);
+      var decisions = JsonSerializer.Deserialize<List<OverlayDecisionDto>>(json,
+        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+      return decisions ?? new List<OverlayDecisionDto>();
+    }
+    catch
+    {
+      // If deserialization fails, return empty list
+      return new List<OverlayDecisionDto>();
+    }
+  }
+
+  /// <summary>
+  /// Check if a control is marked as NotApplicable in overlay decisions.
+  /// </summary>
+  private static bool IsControlNotApplicable(ControlRecord control, HashSet<string> notApplicableKeys)
+  {
+    if (notApplicableKeys.Count == 0)
+      return false;
+
+    // Check RuleId key
+    if (!string.IsNullOrWhiteSpace(control.ExternalIds.RuleId))
+    {
+      var ruleKey = "RULE:" + control.ExternalIds.RuleId.Trim();
+      if (notApplicableKeys.Contains(ruleKey))
+        return true;
+    }
+
+    // Check VulnId key
+    if (!string.IsNullOrWhiteSpace(control.ExternalIds.VulnId))
+    {
+      var vulnKey = "VULN:" + control.ExternalIds.VulnId.Trim();
+      if (notApplicableKeys.Contains(vulnKey))
+        return true;
+    }
+
+    return false;
+  }
+
   private async Task AppendEventAsync(string runId, int seq, MissionPhase phase, string stepName, MissionEventStatus status, string? message, CancellationToken ct)
   {
     if (_missionRunRepository == null) return;
@@ -268,7 +341,7 @@ public sealed class BundleOrchestrator
     {
       await _missionRunRepository.AppendEventAsync(new MissionTimelineEvent
       {
-        EventId = Guid.NewGuid().ToString(),
+        EventId = Guid.NewGuid().ToString("19D"),
         RunId = runId,
         Seq = seq,
         Phase = phase,
@@ -300,13 +373,10 @@ public sealed class BundleOrchestrator
 
   private static IReadOnlyList<STIGForge.Core.Models.ControlRecord> LoadBundleControls(string bundleRoot)
   {
-    var manifestPath = Path.Combine(bundleRoot, "Manifest", "manifest.json");
-    if (!File.Exists(manifestPath)) return Array.Empty<STIGForge.Core.Models.ControlRecord>();
+    var packControlsPath = Path.Combine(bundleRoot, "Manifest", "pack_controls.json");
+    if (!File.Exists(packControlsPath)) return Array.Empty<STIGForge.Core.Models.ControlRecord>();
 
-    var packDir = Path.Combine(bundleRoot, "Manifest", "pack_controls.json");
-    if (!File.Exists(packDir)) return Array.Empty<STIGForge.Core.Models.ControlRecord>();
-
-    var json = File.ReadAllText(packDir);
+    var json = File.ReadAllText(packControlsPath);
     var controls = System.Text.Json.JsonSerializer.Deserialize<List<STIGForge.Core.Models.ControlRecord>>(json,
       new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
     if (controls == null) return Array.Empty<STIGForge.Core.Models.ControlRecord>();
@@ -409,5 +479,28 @@ public sealed class BundleOrchestrator
   private static void WritePhaseMarker(string path, string logPath)
   {
     File.WriteAllText(path, "Completed: " + BuildTime.Now.ToString("o") + Environment.NewLine + logPath);
+  }
+
+  /// <summary>
+  /// DTO for overlay decision JSON deserialization.
+  /// </summary>
+  private sealed class OverlayDecisionDto
+  {
+    public string key { get; init; } = string.Empty;
+    public string overlayId { get; init; } = string.Empty;
+    public string overlayName { get; init; } = string.Empty;
+    public int overlayOrder { get; init; }
+    public int overrideOrder { get; init; }
+    public OverlayDecisionOutcomeDto? outcome { get; init; }
+  }
+
+  /// <summary>
+  /// DTO for overlay decision outcome JSON deserialization.
+  /// </summary>
+  private sealed class OverlayDecisionOutcomeDto
+  {
+    public string? statusOverride { get; init; }
+    public string? naReason { get; init; }
+    public string? notes { get; init; }
   }
 }

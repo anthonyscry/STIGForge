@@ -160,6 +160,6 @@ public sealed class BundleBuilderDeterminismTests : IDisposable
         var releaseGate = new ReleaseAgeGate(clock.Object);
         var conflictDetector = new OverlayConflictDetector();
 
-        return new BundleBuilder(paths.Object, hash.Object, scope.Object, releaseGate, conflictDetector);
+        return new BundleBuilder(paths.Object, hash.Object, scope.Object, releaseGate, conflictDetector, new OverlayMergeService());
     }
 }
