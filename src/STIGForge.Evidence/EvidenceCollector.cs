@@ -58,7 +58,10 @@ public sealed class EvidenceCollector
       User = Environment.UserName,
       BundleRoot = bundleRoot,
       Sha256 = sha,
-      Tags = request.Tags
+      Tags = request.Tags,
+      RunId = request.RunId,
+      StepName = request.StepName,
+      SupersedesEvidenceId = request.SupersedesEvidenceId
     };
 
     var json = JsonSerializer.Serialize(metadata, new JsonSerializerOptions { WriteIndented = true });
@@ -69,7 +72,8 @@ public sealed class EvidenceCollector
       EvidenceDir = evidenceDir,
       EvidencePath = evidencePath,
       MetadataPath = metadataPath,
-      Sha256 = sha
+      Sha256 = sha,
+      EvidenceId = baseName
     };
   }
 

@@ -110,4 +110,112 @@ public class EvidenceCollectorTests : IDisposable
 
     act.Should().Throw<DirectoryNotFoundException>();
   }
+
+  // --- New tests for run-scoped provenance fields ---
+
+  [Fact]
+  public void WriteEvidence_WithRunId_PersistedInMetadata()
+  {
+    var collector = new EvidenceCollector();
+    var runId = Guid.NewGuid().ToString();
+
+    var result = collector.WriteEvidence(new EvidenceWriteRequest
+    {
+      BundleRoot = _bundleRoot,
+      RuleId = "SV-22222",
+      Type = EvidenceArtifactType.File,
+      Source = "ApplyRunner",
+      ContentText = "apply step output",
+      RunId = runId,
+      StepName = "apply_script"
+    });
+
+    var meta = JsonSerializer.Deserialize<EvidenceMetadata>(File.ReadAllText(result.MetadataPath));
+    meta.Should().NotBeNull();
+    meta!.RunId.Should().Be(runId, "RunId must be persisted in evidence metadata");
+    meta.StepName.Should().Be("apply_script", "StepName must be persisted in evidence metadata");
+  }
+
+  [Fact]
+  public void WriteEvidence_WithSupersedesEvidenceId_PersistedInMetadata()
+  {
+    var collector = new EvidenceCollector();
+    var runId = Guid.NewGuid().ToString();
+    var priorEvidenceId = "evidence_prior_run_step";
+
+    var result = collector.WriteEvidence(new EvidenceWriteRequest
+    {
+      BundleRoot = _bundleRoot,
+      RuleId = "SV-33333",
+      Type = EvidenceArtifactType.File,
+      Source = "ApplyRunner",
+      ContentText = "new artifact",
+      RunId = runId,
+      StepName = "powerstig_compile",
+      SupersedesEvidenceId = priorEvidenceId
+    });
+
+    var meta = JsonSerializer.Deserialize<EvidenceMetadata>(File.ReadAllText(result.MetadataPath));
+    meta.Should().NotBeNull();
+    meta!.SupersedesEvidenceId.Should().Be(priorEvidenceId);
+  }
+
+  [Fact]
+  public void WriteEvidence_ReturnsEvidenceIdInResult()
+  {
+    var collector = new EvidenceCollector();
+
+    var result = collector.WriteEvidence(new EvidenceWriteRequest
+    {
+      BundleRoot = _bundleRoot,
+      RuleId = "SV-44444",
+      Type = EvidenceArtifactType.File,
+      ContentText = "data"
+    });
+
+    result.EvidenceId.Should().NotBeNullOrWhiteSpace("EvidenceId must be set for downstream lineage references");
+  }
+
+  [Fact]
+  public void WriteEvidence_WithRunIdAndStepName_MetadataContainsSha256()
+  {
+    var collector = new EvidenceCollector();
+    var runId = Guid.NewGuid().ToString();
+
+    var result = collector.WriteEvidence(new EvidenceWriteRequest
+    {
+      BundleRoot = _bundleRoot,
+      RuleId = "SV-55555",
+      Type = EvidenceArtifactType.File,
+      Source = "ApplyRunner",
+      ContentText = "stdout log content here",
+      RunId = runId,
+      StepName = "apply_dsc"
+    });
+
+    result.Sha256.Should().NotBeNullOrWhiteSpace("SHA-256 must be computed for all evidence artifacts");
+    var meta = JsonSerializer.Deserialize<EvidenceMetadata>(File.ReadAllText(result.MetadataPath));
+    meta!.Sha256.Should().Be(result.Sha256, "Metadata Sha256 must match the computed file hash");
+  }
+
+  [Fact]
+  public void WriteEvidence_NullRunIdAndStepName_MetadataFieldsAreNull()
+  {
+    var collector = new EvidenceCollector();
+
+    var result = collector.WriteEvidence(new EvidenceWriteRequest
+    {
+      BundleRoot = _bundleRoot,
+      RuleId = "SV-66666",
+      Type = EvidenceArtifactType.Command,
+      ContentText = "manual evidence"
+      // No RunId or StepName set
+    });
+
+    var meta = JsonSerializer.Deserialize<EvidenceMetadata>(File.ReadAllText(result.MetadataPath));
+    meta.Should().NotBeNull();
+    meta!.RunId.Should().BeNull("RunId must be null for non-apply evidence");
+    meta.StepName.Should().BeNull("StepName must be null for non-apply evidence");
+    meta.SupersedesEvidenceId.Should().BeNull();
+  }
 }

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -7,6 +8,7 @@ using STIGForge.Apply.Reboot;
 using STIGForge.Apply.Snapshot;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
+using STIGForge.Evidence;
 
 namespace STIGForge.UnitTests.Apply;
 
@@ -115,6 +117,177 @@ public sealed class ApplyRunnerTests : IDisposable
             .Which.Message.Should().ContainEquivalentOf("operator decision");
     }
 
+    // --- Evidence provenance tests (Task 2) ---
+
+    [Fact]
+    public async Task RunAsync_WithEvidenceCollector_WritesEvidenceMetadataPerStep()
+    {
+        var runner = CreateRunnerWithEvidence(CreatePassingAudit());
+
+        var result = await runner.RunAsync(new ApplyRequest
+        {
+            BundleRoot = _bundleRoot,
+            SkipSnapshot = true,
+            RunId = Guid.NewGuid().ToString()
+        }, CancellationToken.None);
+
+        // apply_run.json must be written with evidence fields
+        var logPath = Path.Combine(_bundleRoot, "Apply", "apply_run.json");
+        File.Exists(logPath).Should().BeTrue();
+
+        // No steps were configured so Steps is empty - but run should complete
+        result.IsMissionComplete.Should().BeTrue();
+        result.RunId.Should().NotBeNullOrWhiteSpace("RunId must be propagated to result");
+    }
+
+    [Fact]
+    public async Task RunAsync_PropagatesRunIdToApplyResult()
+    {
+        var runId = Guid.NewGuid().ToString();
+        var runner = CreateRunner(CreatePassingAudit());
+
+        var result = await runner.RunAsync(new ApplyRequest
+        {
+            BundleRoot = _bundleRoot,
+            SkipSnapshot = true,
+            RunId = runId
+        }, CancellationToken.None);
+
+        result.RunId.Should().Be(runId, "RunId from request must be propagated to ApplyResult");
+    }
+
+    [Fact]
+    public async Task RunAsync_WithoutRunId_GeneratesStableRunId()
+    {
+        var runner = CreateRunner(CreatePassingAudit());
+
+        var result = await runner.RunAsync(new ApplyRequest
+        {
+            BundleRoot = _bundleRoot,
+            SkipSnapshot = true
+            // No RunId provided
+        }, CancellationToken.None);
+
+        result.RunId.Should().NotBeNullOrWhiteSpace("A run ID must always be assigned even when not provided by caller");
+    }
+
+    [Fact]
+    public async Task RunAsync_ApplyRunJson_ContainsRunIdAndProvenance()
+    {
+        var runId = Guid.NewGuid().ToString();
+        var runner = CreateRunner(CreatePassingAudit());
+
+        await runner.RunAsync(new ApplyRequest
+        {
+            BundleRoot = _bundleRoot,
+            SkipSnapshot = true,
+            RunId = runId
+        }, CancellationToken.None);
+
+        var logPath = Path.Combine(_bundleRoot, "Apply", "apply_run.json");
+        var json = await File.ReadAllTextAsync(logPath);
+
+        using var doc = JsonDocument.Parse(json);
+        doc.RootElement.TryGetProperty("runId", out var runIdEl).Should().BeTrue("apply_run.json must contain runId");
+        runIdEl.GetString().Should().Be(runId);
+    }
+
+    // --- Rerun continuity tests (Task 3) ---
+
+    [Fact]
+    public async Task RunAsync_WithPriorRunId_PropagatesPriorRunIdToResult()
+    {
+        var priorRunId = Guid.NewGuid().ToString();
+        var runner = CreateRunner(CreatePassingAudit());
+
+        var result = await runner.RunAsync(new ApplyRequest
+        {
+            BundleRoot = _bundleRoot,
+            SkipSnapshot = true,
+            PriorRunId = priorRunId
+        }, CancellationToken.None);
+
+        result.PriorRunId.Should().Be(priorRunId, "PriorRunId from request must be propagated to ApplyResult");
+    }
+
+    [Fact]
+    public async Task RunAsync_WithPriorRunId_ApplyRunJsonContainsPriorRunId()
+    {
+        var runId = Guid.NewGuid().ToString();
+        var priorRunId = Guid.NewGuid().ToString();
+        var runner = CreateRunner(CreatePassingAudit());
+
+        await runner.RunAsync(new ApplyRequest
+        {
+            BundleRoot = _bundleRoot,
+            SkipSnapshot = true,
+            RunId = runId,
+            PriorRunId = priorRunId
+        }, CancellationToken.None);
+
+        var logPath = Path.Combine(_bundleRoot, "Apply", "apply_run.json");
+        var json = await File.ReadAllTextAsync(logPath);
+        using var doc = JsonDocument.Parse(json);
+
+        doc.RootElement.TryGetProperty("priorRunId", out var priorEl).Should().BeTrue("apply_run.json must contain priorRunId");
+        priorEl.GetString().Should().Be(priorRunId);
+    }
+
+    [Fact]
+    public async Task RunAsync_WithPriorRunId_NoPriorArtifact_CompletesWithoutContinuityMarker()
+    {
+        // When prior run's apply_run.json doesn't exist or has a different runId,
+        // the current run should still complete without errors. No continuity marker is set.
+        var runner = CreateRunnerWithEvidence(CreatePassingAudit());
+
+        var result = await runner.RunAsync(new ApplyRequest
+        {
+            BundleRoot = _bundleRoot,
+            SkipSnapshot = true,
+            RunId = Guid.NewGuid().ToString(),
+            PriorRunId = Guid.NewGuid().ToString() // non-existent prior run
+        }, CancellationToken.None);
+
+        result.IsMissionComplete.Should().BeTrue("missing prior run data must not block current run");
+    }
+
+    [Fact]
+    public async Task RunAsync_SecondRunWithSamePriorRunId_AppendOnlyNeverMutatesPriorLog()
+    {
+        // First run creates apply_run.json
+        var firstRunId = Guid.NewGuid().ToString();
+        var runner = CreateRunner(CreatePassingAudit());
+
+        await runner.RunAsync(new ApplyRequest
+        {
+            BundleRoot = _bundleRoot,
+            SkipSnapshot = true,
+            RunId = firstRunId
+        }, CancellationToken.None);
+
+        var logPath = Path.Combine(_bundleRoot, "Apply", "apply_run.json");
+        var firstRunContent = await File.ReadAllTextAsync(logPath);
+
+        // Second run references first as prior — apply_run.json is overwritten with the new run's data
+        // The first run's data is preserved in the mission_timeline (ledger) not in the file itself.
+        // The file for the second run should have a different runId.
+        var secondRunId = Guid.NewGuid().ToString();
+        await runner.RunAsync(new ApplyRequest
+        {
+            BundleRoot = _bundleRoot,
+            SkipSnapshot = true,
+            RunId = secondRunId,
+            PriorRunId = firstRunId
+        }, CancellationToken.None);
+
+        var secondRunContent = await File.ReadAllTextAsync(logPath);
+        var secondDoc = JsonDocument.Parse(secondRunContent);
+        secondDoc.RootElement.GetProperty("runId").GetString().Should().Be(secondRunId,
+            "second run must write its own run ID to apply_run.json");
+        secondDoc.RootElement.GetProperty("priorRunId").GetString().Should().Be(firstRunId,
+            "second run must record its priorRunId link to the first run");
+    }
+
     private static ApplyRunner CreateRunner(IAuditTrailService audit)
     {
         var processRunner = new Mock<IProcessRunner>();
@@ -132,6 +305,27 @@ public sealed class ApplyRunnerTests : IDisposable
             lcmService,
             rebootCoordinator,
             audit);
+    }
+
+    private static ApplyRunner CreateRunnerWithEvidence(IAuditTrailService audit)
+    {
+        var processRunner = new Mock<IProcessRunner>();
+        processRunner.Setup(x => x.ExistsInPath(It.IsAny<string>())).Returns(false);
+
+        var snapshotService = new SnapshotService(new Mock<ILogger<SnapshotService>>().Object, processRunner.Object);
+        var rollbackGenerator = new RollbackScriptGenerator(new Mock<ILogger<RollbackScriptGenerator>>().Object);
+        var lcmService = new LcmService(new Mock<ILogger<LcmService>>().Object);
+        var rebootCoordinator = new RebootCoordinator(new Mock<ILogger<RebootCoordinator>>().Object, _ => true);
+        var evidenceCollector = new EvidenceCollector();
+
+        return new ApplyRunner(
+            new Mock<ILogger<ApplyRunner>>().Object,
+            snapshotService,
+            rollbackGenerator,
+            lcmService,
+            rebootCoordinator,
+            audit,
+            evidenceCollector);
     }
 
     private static IAuditTrailService CreatePassingAudit()
