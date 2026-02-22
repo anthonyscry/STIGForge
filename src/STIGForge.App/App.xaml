@@ -8,6 +8,9 @@
 
       <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
       <local:NullOrEmptyToCollapsedConverter x:Key="NullOrEmptyToCollapsed" />
+      <local:BoolToPassFailConverter x:Key="BoolToPassFail" />
+      <local:BoolToReadyVerdictConverter x:Key="BoolToReadyVerdict" />
+      <local:BoolToReadyColorConverter x:Key="BoolToReadyColor" />
 
       <!-- ═══════════ TEXT ═══════════ -->
       <Style TargetType="TextBlock">

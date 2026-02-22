@@ -72,8 +72,42 @@
                     Command="{Binding FleetCheckStatusCommand}" IsEnabled="{Binding ActionsEnabled}"
                     AutomationProperties.Name="Check fleet status"
                     ToolTipService.ToolTip="Test WinRM connectivity to all target machines."/>
+            <Button Content="Collect Artifacts" MinWidth="140" Height="34" Padding="14,0" Margin="0,0,10,0"
+                    Command="{Binding FleetCollectCommand}" IsEnabled="{Binding ActionsEnabled}"
+                    AutomationProperties.Name="Collect fleet artifacts"
+                    ToolTipService.ToolTip="Pull artifacts from remote hosts, generate per-host CKL, and create fleet summary."/>
+            <Button Content="Fleet Summary" MinWidth="130" Height="34" Padding="14,0" Margin="0,0,10,0"
+                    Command="{Binding FleetSummaryGenerateCommand}" IsEnabled="{Binding ActionsEnabled}"
+                    AutomationProperties.Name="Generate fleet summary"
+                    ToolTipService.ToolTip="Generate unified fleet summary from previously collected results."/>
             <TextBlock Text="{Binding FleetStatus}" Margin="0,10,0,0" Foreground="{DynamicResource TextMutedBrush}"/>
           </WrapPanel>
+
+          <!-- Fleet Compliance Table -->
+          <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="12" Margin="0,12,0,0"
+                  Background="{DynamicResource SurfaceMutedBrush}"
+                  Visibility="{Binding FleetSummaryVisible, Converter={StaticResource BoolToVisibility}}">
+            <StackPanel>
+              <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                <TextBlock Text="Fleet Compliance:" FontSize="14" FontWeight="SemiBold" Margin="0,0,8,0"/>
+                <TextBlock Text="{Binding FleetWideCompliance, StringFormat='{}{0:F1}%'}" FontSize="14" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}"/>
+              </StackPanel>
+              <DataGrid ItemsSource="{Binding FleetComplianceStats}" AutoGenerateColumns="False"
+                        IsReadOnly="True" MaxHeight="260" CanUserSortColumns="True"
+                        HeadersVisibility="Column" GridLinesVisibility="Horizontal"
+                        Background="{DynamicResource SurfaceBrush}">
+                <DataGrid.Columns>
+                  <DataGridTextColumn Header="Host" Binding="{Binding HostName}" Width="200"/>
+                  <DataGridTextColumn Header="Total" Binding="{Binding TotalControls}" Width="70"/>
+                  <DataGridTextColumn Header="Pass" Binding="{Binding PassCount}" Width="70"/>
+                  <DataGridTextColumn Header="Fail" Binding="{Binding FailCount}" Width="70"/>
+                  <DataGridTextColumn Header="NA" Binding="{Binding NaCount}" Width="70"/>
+                  <DataGridTextColumn Header="NR" Binding="{Binding NrCount}" Width="70"/>
+                  <DataGridTextColumn Header="Compliance" Binding="{Binding CompliancePercentage, StringFormat='{}{0:F1}%'}" Width="100"/>
+                </DataGrid.Columns>
+              </DataGrid>
+            </StackPanel>
+          </Border>
         </StackPanel>
       </TabItem>
 

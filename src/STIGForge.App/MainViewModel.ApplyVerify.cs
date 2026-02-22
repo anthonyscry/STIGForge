@@ -255,6 +255,7 @@ public partial class MainViewModel
       LastOutputPath = result.OutputRoot;
       ReportSummary = BuildReportSummary(BundleRoot);
       LoadCoverageOverlap();
+      UpdateSubmissionReadiness(result);
     }
     catch (Exception ex)
     {
