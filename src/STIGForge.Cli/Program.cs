@@ -12,6 +12,7 @@ AuditCommands.Register(rootCmd, STIGForge.Cli.CliHostFactory.BuildHost);
 ExportCommands.Register(rootCmd, STIGForge.Cli.CliHostFactory.BuildHost);
 ScheduleCommands.Register(rootCmd, STIGForge.Cli.CliHostFactory.BuildHost);
 FleetCommands.Register(rootCmd, STIGForge.Cli.CliHostFactory.BuildHost);
+ProfileCommands.Register(rootCmd, STIGForge.Cli.CliHostFactory.BuildHost);
 
 return await InvokeWithErrorHandlingAsync(rootCmd, args);
 
