@@ -836,7 +836,12 @@ public partial class MainViewModel
   [RelayCommand]
   private void OpenOverlayEditor()
   {
-    var win = new OverlayEditorWindow();
+    // Get selected pack IDs for rule selection
+    var packIds = SelectedMissionPacks.Count > 0
+      ? SelectedMissionPacks.Select(p => p.PackId).ToList()
+      : SelectedPack != null ? new List<string> { SelectedPack.PackId } : new List<string>();
+
+    var win = new OverlayEditorWindow(packIds);
     win.ShowDialog();
   }
 

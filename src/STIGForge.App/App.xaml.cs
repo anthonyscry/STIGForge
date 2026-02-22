@@ -103,7 +103,10 @@ public partial class App : Application
           services.AddSingleton<ScheduledTaskService>();
           services.AddSingleton<FleetService>(sp =>
             new FleetService(sp.GetRequiredService<ICredentialStore>()));
-          services.AddSingleton<OverlayEditorViewModel>();
+          services.AddSingleton<OverlayEditorViewModel>(sp =>
+            new OverlayEditorViewModel(
+              sp.GetRequiredService<IOverlayRepository>(),
+              sp.GetRequiredService<IControlRepository>()));
 
           services.AddSingleton<MainViewModel>(sp =>
           {
