@@ -21,6 +21,7 @@ internal static class BundleCommands
     RegisterMissionTimeline(rootCmd, buildHost);
     RegisterSupportBundle(rootCmd, buildHost);
     RegisterOverlayEdit(rootCmd, buildHost);
+    RegisterBundleReviewQueue(rootCmd);
   }
 
   private static void RegisterListManualControls(RootCommand rootCmd)
@@ -478,5 +479,109 @@ internal static class BundleCommands
     }
 
     return null;
+  }
+
+  private static void RegisterBundleReviewQueue(RootCommand rootCmd)
+  {
+    var cmd = new Command("review-queue", "Inspect the review queue for a built bundle");
+    var bundleOpt = new Option<string>("--bundle", "Bundle root path") { IsRequired = true };
+    cmd.AddOption(bundleOpt);
+
+    cmd.SetHandler((InvocationContext ctx) =>
+    {
+      var bundle = ctx.ParseResult.GetValueForOption(bundleOpt) ?? string.Empty;
+
+      if (!Directory.Exists(bundle))
+      {
+        Console.Error.WriteLine("Bundle not found: " + bundle);
+        Environment.ExitCode = 2;
+        return;
+      }
+
+      var reviewPath = Path.Combine(bundle, "Reports", "review_required.csv");
+      if (!File.Exists(reviewPath))
+      {
+        Console.WriteLine("No review queue found. Build the bundle first.");
+        return;
+      }
+
+      var lines = File.ReadAllLines(reviewPath);
+      var dataLines = lines.Skip(1).Where(l => !string.IsNullOrWhiteSpace(l)).ToList();
+
+      if (dataLines.Count == 0)
+      {
+        Console.WriteLine("Review queue is empty -- all controls passed scope filtering.");
+      }
+      else
+      {
+        Console.WriteLine($"{"VulnId",-15} {"RuleId",-20} {"Title",-40} {"Reason",-30}");
+        Console.WriteLine(new string('-', 105));
+
+        foreach (var line in dataLines)
+        {
+          var fields = ParseCsvLine(line);
+          var vulnId = fields.ElementAtOrDefault(0) ?? "";
+          var ruleId = fields.ElementAtOrDefault(1) ?? "";
+          var title = fields.ElementAtOrDefault(2) ?? "";
+          var reason = fields.ElementAtOrDefault(3) ?? "";
+
+          // Truncate title for display
+          if (title.Length > 38) title = title[..35] + "...";
+
+          Console.WriteLine($"{vulnId,-15} {ruleId,-20} {title,-40} {reason,-30}");
+        }
+
+        Console.WriteLine($"\n{dataLines.Count} control(s) flagged for review.");
+      }
+
+      // Check for overlay conflicts
+      var conflictPath = Path.Combine(bundle, "Reports", "overlay_conflict_report.csv");
+      if (File.Exists(conflictPath))
+      {
+        var conflictLines = File.ReadAllLines(conflictPath).Skip(1).Where(l => !string.IsNullOrWhiteSpace(l)).ToList();
+        if (conflictLines.Count > 0)
+        {
+          Console.WriteLine($"\nOverlay conflicts: {conflictLines.Count} conflict(s) detected. Run `overlay diff` for details.");
+        }
+      }
+    });
+
+    rootCmd.AddCommand(cmd);
+  }
+
+  private static List<string> ParseCsvLine(string line)
+  {
+    var fields = new List<string>();
+    var current = new System.Text.StringBuilder();
+    bool inQuotes = false;
+
+    for (int i = 0; i < line.Length; i++)
+    {
+      char c = line[i];
+      if (c == '"')
+      {
+        if (inQuotes && i + 1 < line.Length && line[i + 1] == '"')
+        {
+          current.Append('"');
+          i++;
+        }
+        else
+        {
+          inQuotes = !inQuotes;
+        }
+      }
+      else if (c == ',' && !inQuotes)
+      {
+        fields.Add(current.ToString());
+        current.Clear();
+      }
+      else
+      {
+        current.Append(c);
+      }
+    }
+
+    fields.Add(current.ToString());
+    return fields;
   }
 }
