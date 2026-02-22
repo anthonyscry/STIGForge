@@ -9,7 +9,7 @@ This roadmap delivers deterministic offline compliance operations end-to-end: op
 - [x] **Phase 1: Canonical Ingestion Contracts** - Import and normalize compliance sources into stable versioned canonical records. (completed 2026-02-22)
 - [x] **Phase 2: Policy Scope and Safety Gates** - Make deterministic scope and automation decisions with explicit review-required handling. (completed 2026-02-22)
 - [ ] **Phase 3: Deterministic Mission Execution Core** - Build deterministic bundles and run apply/verify with strict per-STIG mapping invariants.
-- [ ] **Phase 4: Human Resolution and Evidence Continuity** - Close unresolved controls and carry answers/overlays forward through pack updates.
+- [x] **Phase 4: Human Resolution and Evidence Continuity** - Close unresolved controls and carry answers/overlays forward through pack updates. (completed 2026-02-22)
 - [ ] **Phase 5: Proof Packaging, Fleet-lite, and Integrity** - Produce deterministic submission packages with fleet-lite summaries and cryptographic audit proof.
 
 ## Phase Details
@@ -77,10 +77,10 @@ Plans:
   4. Rebase carries only high-confidence matches automatically and routes uncertain carries for explicit operator review.
 **Plans**: 4 plans
 Plans:
-- [ ] 04-01-PLAN.md — Answer file export/import with CLI commands for cross-bundle portability.
-- [ ] 04-02-PLAN.md — Evidence index service with build/query/manifest and CLI command.
-- [ ] 04-03-PLAN.md — Pack diff answer impact assessment and answer rebase service with CLI.
-- [ ] 04-04-PLAN.md — WPF answer export/import buttons, AnswerRebaseWizard, and DiffViewer answer impact.
+- [x] 04-01-PLAN.md — Answer file export/import with CLI commands for cross-bundle portability.
+- [x] 04-02-PLAN.md — Evidence index service with build/query/manifest and CLI command.
+- [x] 04-03-PLAN.md — Pack diff answer impact assessment and answer rebase service with CLI.
+- [x] 04-04-PLAN.md — WPF answer export/import buttons, AnswerRebaseWizard, and DiffViewer answer impact.
 
 ### Phase 5: Proof Packaging, Fleet-lite, and Integrity
 **Goal**: Operators can produce defensible export packages and integrity proofs for single-host and fleet-lite operations.
@@ -99,5 +99,5 @@ Plans:
 | 1. Canonical Ingestion Contracts | 4/4 | Complete   | 2026-02-22 |
 | 2. Policy Scope and Safety Gates | 5/5 | Complete   | 2026-02-22 |
 | 3. Deterministic Mission Execution Core | 5/5 | Complete   | 2026-02-22 |
-| 4. Human Resolution and Evidence Continuity | 0/4 | Not started | - |
+| 4. Human Resolution and Evidence Continuity | 4/4 | Complete   | 2026-02-22 |
 | 5. Proof Packaging, Fleet-lite, and Integrity | 0/TBD | Not started | - |

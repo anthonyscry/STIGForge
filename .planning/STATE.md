@@ -5,23 +5,23 @@
 See: `.planning/PROJECT.md` (updated 2026-02-20)
 
 **Core value:** Deterministic offline hardening missions with reusable manual evidence and defensible submission artifacts.
-**Current focus:** Phase 2 - Policy Scope and Safety Gates (COMPLETE)
+**Current focus:** Phase 4 - Human Resolution and Evidence Continuity (COMPLETE)
 
 ## Current Position
 
-Phase: 2 of 5 (Policy Scope and Safety Gates)
-Plan: 5 of 5 in current phase
+Phase: 4 of 5 (Human Resolution and Evidence Continuity)
+Plan: 4 of 4 in current phase
 Status: Complete
-Last activity: 2026-02-22 - Phase 2 complete: all 5 plans executed across 2 waves.
+Last activity: 2026-02-22 - Phase 4 complete: all 4 plans executed across 2 waves.
 
-Progress: [=========>] 40%
+Progress: [==================>] 80%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 9
-- Average duration: 5 min
-- Total execution time: ~50 min
+- Total plans completed: 18
+- Average duration: 6 min
+- Total execution time: ~100 min
 
 **By Phase:**
 
@@ -29,13 +29,13 @@ Progress: [=========>] 40%
 |-------|-------|-------|----------|
 | 1 | 4 | 27 min | 7 min |
 | 2 | 5 | 23 min | 5 min |
-| 3 | 0 | 0 | n/a |
-| 4 | 0 | 0 | n/a |
+| 3 | 5 | 25 min | 5 min |
+| 4 | 4 | 28 min | 7 min |
 | 5 | 0 | 0 | n/a |
 
 **Recent Trend:**
-- Last 5 plans: 02-01 (5 min), 02-02 (3 min), 02-03 (5 min), 02-04 (4 min), 02-05 (6 min)
-- Trend: Stable, faster than Phase 1
+- Last 5 plans: 03-05 (5 min), 04-01 (5 min), 04-02 (5 min), 04-03 (8 min), 04-04 (10 min)
+- Trend: Stable, slightly longer for WPF-heavy plans
 
 ## Accumulated Context
 
@@ -68,6 +68,16 @@ Progress: [=========>] 40%
 - [02-04] review-queue reads static CSV files from disk, no DI services needed.
 - [02-05] Profile edits persist on Save, not during live mission runs.
 - [02-05] Break-glass dialog minimum 8-character justification matches CLI pattern.
+- [04-01] Import only overwrites Open-status answers; resolved (Pass/Fail/NotApplicable) are never clobbered.
+- [04-01] Answer matching uses RuleId (case-insensitive) then VulnId fallback.
+- [04-02] Metadata files starting with _ (like _collection_summary.txt) skipped during evidence index build.
+- [04-02] EvidenceIndexService.ReadIndexAsync returns null if no index file exists.
+- [04-02] Lineage chain uses visited HashSet to prevent infinite loops on circular references.
+- [04-03] Confidence thresholds: >= 0.8 auto-carry, 0.5-0.8 carry-with-warning, < 0.5 review-required.
+- [04-03] Removed controls with existing answers are blocking conflicts (IsBlockingConflict=true).
+- [04-03] Rebase metadata carried in ManualAnswer.Comment as "[REBASED: confidence]" prefix.
+- [04-04] Answer impact columns added to existing Changed Controls grid in DiffViewer (not a separate tab).
+- [04-04] AnswerRebaseWizard mirrors RebaseWizard structure exactly for operator consistency.
 
 ### Pending Todos
 
@@ -80,5 +90,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-22
-Stopped at: Completed Phase 2 (all 5 plans)
+Stopped at: Completed Phase 4 (all 4 plans)
 Resume file: None
