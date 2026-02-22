@@ -27,7 +27,17 @@ Produce deterministic, defensible compliance outcomes with strict control mappin
 
 ### Active
 
-(Ready for next milestone planning)
+(Ready for v1.1 planning)
+
+## Current Milestone: v1.1 Operational Maturity
+
+**Goal:** Harden STIGForge Next with production-grade test coverage, observability, performance optimization, and error ergonomics.
+
+**Target features:**
+- Test Coverage: 80% line coverage on critical assemblies
+- Performance: Mission speed, startup time, scale testing (10K+ rules), memory profile
+- Observability: Structured logging, metrics/counters, mission tracing, debug export
+- Error Ergonomics: Better messages, recovery flows, error catalog, unified UX
 
 ### Out of Scope
 
@@ -68,4 +78,4 @@ Produce deterministic, defensible compliance outcomes with strict control mappin
 | Directory manifest SHA-256 hashing | Stable import identity | ✓ Good |
 
 ---
-*Last updated: 2026-02-22 after v1.0 milestone*
+*Last updated: 2026-02-22 after v1.1 milestone started*
