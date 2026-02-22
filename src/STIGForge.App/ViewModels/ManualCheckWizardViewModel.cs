@@ -1,6 +1,7 @@
 using System.IO;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using Microsoft.Win32;
 using System.Windows.Media;
 using STIGForge.Core.Models;
 using STIGForge.Core.Services;
@@ -167,6 +168,63 @@ public partial class ManualCheckWizardViewModel : ObservableObject
     catch (Exception ex)
     {
       EvidenceStatus = "Evidence collection failed: " + ex.Message;
+    }
+  }
+
+  [RelayCommand]
+  private void ExportAnswers()
+  {
+    try
+    {
+      var dialog = new SaveFileDialog
+      {
+        Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*",
+        DefaultExt = "json",
+        FileName = $"answers_export_{DateTimeOffset.UtcNow:yyyyMMdd_HHmmss}.json"
+      };
+
+      if (dialog.ShowDialog() != true)
+        return;
+
+      var export = _answerService.ExportAnswers(_bundleRoot);
+      _answerService.WriteExportFile(dialog.FileName, export);
+
+      var count = export.Answers?.Answers?.Count ?? 0;
+      EvidenceStatus = $"Exported {count} answers to {dialog.FileName}";
+    }
+    catch (Exception ex)
+    {
+      EvidenceStatus = "Export failed: " + ex.Message;
+    }
+  }
+
+  [RelayCommand]
+  private void ImportAnswers()
+  {
+    try
+    {
+      var dialog = new OpenFileDialog
+      {
+        Filter = "JSON files (*.json)|*.json|All files (*.*)|*.*",
+        DefaultExt = "json"
+      };
+
+      if (dialog.ShowDialog() != true)
+        return;
+
+      var import = _answerService.ReadExportFile(dialog.FileName);
+      var result = _answerService.ImportAnswers(_bundleRoot, import);
+      LoadStats();
+
+      var status = $"Imported {result.Imported} answers, skipped {result.Skipped} already resolved.";
+      if (result.SkippedControls.Count > 0)
+        status += " Skipped controls: " + string.Join(", ", result.SkippedControls);
+
+      EvidenceStatus = status;
+    }
+    catch (Exception ex)
+    {
+      EvidenceStatus = "Import failed: " + ex.Message;
     }
   }
 

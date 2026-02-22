@@ -30,6 +30,7 @@ public partial class DiffViewerViewModel : ObservableObject
   [ObservableProperty] private int _unchangedCount;
   [ObservableProperty] private bool _hasDiff;
   [ObservableProperty] private string _statusMessage = "Loading comparison...";
+  [ObservableProperty] private string? _bundleRoot;
 
   // Added controls
   [ObservableProperty] private List<ControlRecord> _addedControls = new();
@@ -96,6 +97,48 @@ public partial class DiffViewerViewModel : ObservableObject
 
     HasDiff = true;
     StatusMessage = string.Empty;
+  }
+
+  /// <summary>
+  /// Load answer impact for the diff when a bundle context is available.
+  /// Populates AnswerImpact on each modified/removed control and updates display models.
+  /// </summary>
+  public void LoadAnswerImpact(string bundleRoot)
+  {
+    BundleRoot = bundleRoot;
+    var answerService = new ManualAnswerService();
+    var answerFile = answerService.LoadAnswerFile(bundleRoot);
+    _diff.AssessAnswerImpact(answerFile);
+
+    // Refresh modified controls display with answer impact
+    ModifiedControls = _diff.ModifiedControls.Select(m => new ModifiedControlDisplay
+    {
+      ControlId = m.NewControl?.ControlId ?? m.BaselineControl?.ControlId ?? "(Unknown)",
+      Title = m.NewControl?.Title ?? "(No title)",
+      Classification = m.RequiresReview ? "review-required" : "changed",
+      Impact = GetHighestImpact(m.Changes).ToString(),
+      ImpactColor = GetImpactBrush(GetHighestImpact(m.Changes)),
+      ChangesSummary = string.Join(", ", m.Changes.Select(c => c.FieldName)),
+      Changes = m.Changes,
+      AnswerStatus = m.AnswerImpact != null && m.AnswerImpact.Validity != AnswerValidity.NoAnswer
+        ? m.AnswerImpact.Validity.ToString()
+        : string.Empty,
+      AnswerStatusColor = GetAnswerValidityBrush(m.AnswerImpact?.Validity),
+      AnswerImpactReason = m.AnswerImpact != null && m.AnswerImpact.Validity != AnswerValidity.NoAnswer
+        ? m.AnswerImpact.Reason
+        : string.Empty
+    }).ToList();
+  }
+
+  private static Brush GetAnswerValidityBrush(AnswerValidity? validity)
+  {
+    return validity switch
+    {
+      AnswerValidity.Valid => new SolidColorBrush(Color.FromRgb(100, 180, 100)),       // Green
+      AnswerValidity.Uncertain => new SolidColorBrush(Color.FromRgb(255, 165, 0)),     // Orange
+      AnswerValidity.Invalid => new SolidColorBrush(Color.FromRgb(220, 50, 50)),       // Red
+      _ => Brushes.Gray
+    };
   }
 
   private static FieldChangeImpact GetHighestImpact(List<ControlFieldChange> changes)
@@ -319,6 +362,9 @@ public class ModifiedControlDisplay
   public Brush ImpactColor { get; set; } = Brushes.Gray;
   public string ChangesSummary { get; set; } = string.Empty;
   public List<ControlFieldChange> Changes { get; set; } = new();
+  public string AnswerStatus { get; set; } = string.Empty;
+  public Brush AnswerStatusColor { get; set; } = Brushes.Gray;
+  public string AnswerImpactReason { get; set; } = string.Empty;
 }
 
 public class FieldChangeDisplay

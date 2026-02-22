@@ -63,8 +63,12 @@
           <TextBlock Grid.Row="4" Grid.Column="1" Text="{Binding NotApplicableCount}" Foreground="{DynamicResource TextMutedBrush}" Margin="8,2"/>
         </Grid>
 
-        <Button Content="Start Review" Width="140" Height="32" Command="{Binding StartWizardCommand}" 
-                Visibility="{Binding HasUnansweredControls, Converter={StaticResource BoolToVis}}" Margin="0,16,0,0"/>
+        <StackPanel Orientation="Horizontal" Margin="0,16,0,0">
+          <Button Content="Start Review" Width="140" Height="32" Command="{Binding StartWizardCommand}"
+                  Visibility="{Binding HasUnansweredControls, Converter={StaticResource BoolToVis}}" Margin="0,0,8,0"/>
+          <Button Content="Export Answers" Width="130" Height="32" Command="{Binding ExportAnswersCommand}" Margin="0,0,8,0"/>
+          <Button Content="Import Answers" Width="130" Height="32" Command="{Binding ImportAnswersCommand}"/>
+        </StackPanel>
         <TextBlock Text="All controls have been answered!" FontWeight="SemiBold" Foreground="{DynamicResource SuccessBrush}"
                    Visibility="{Binding AllControlsAnswered, Converter={StaticResource BoolToVis}}" Margin="0,16,0,0"/>
       </StackPanel>
