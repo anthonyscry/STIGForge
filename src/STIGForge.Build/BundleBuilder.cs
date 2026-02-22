@@ -12,14 +12,16 @@ public sealed class BundleBuilder
   private readonly IClassificationScopeService _scope;
   private readonly STIGForge.Core.Services.ReleaseAgeGate _releaseGate;
   private readonly STIGForge.Core.Services.OverlayConflictDetector _conflictDetector;
+  private readonly STIGForge.Core.Services.CanonicalScapSelector? _scapSelector;
 
-  public BundleBuilder(IPathBuilder paths, IHashingService hash, IClassificationScopeService scope, STIGForge.Core.Services.ReleaseAgeGate releaseGate, STIGForge.Core.Services.OverlayConflictDetector conflictDetector)
+  public BundleBuilder(IPathBuilder paths, IHashingService hash, IClassificationScopeService scope, STIGForge.Core.Services.ReleaseAgeGate releaseGate, STIGForge.Core.Services.OverlayConflictDetector conflictDetector, STIGForge.Core.Services.CanonicalScapSelector? scapSelector = null)
   {
     _paths = paths;
     _hash = hash;
     _scope = scope;
     _releaseGate = releaseGate;
     _conflictDetector = conflictDetector;
+    _scapSelector = scapSelector;
   }
 
   public async Task<BundleBuildResult> BuildAsync(BundleBuildRequest request, CancellationToken ct)
@@ -124,13 +126,36 @@ public sealed class BundleBuilder
     var runLogPath = Path.Combine(manifestDir, "run_log.txt");
     File.WriteAllText(runLogPath, "Bundle created: " + BuildTime.Now.ToString("o"), Encoding.UTF8);
 
+    string? scapMappingManifestPath = null;
+    if (_scapSelector != null && request.ScapCandidates != null)
+    {
+      var scapInput = new STIGForge.Core.Services.CanonicalScapSelectionInput
+      {
+        StigPackId = request.Pack.PackId,
+        StigName = request.Pack.Name,
+        StigImportedAt = request.Pack.ImportedAt,
+        StigBenchmarkIds = request.Controls
+          .Select(c => c.ExternalIds.BenchmarkId)
+          .Where(id => !string.IsNullOrWhiteSpace(id))
+          .Distinct(StringComparer.OrdinalIgnoreCase)
+          .ToArray()!,
+        Candidates = request.ScapCandidates
+      };
+
+      var scapManifest = _scapSelector.BuildMappingManifest(scapInput, request.Controls);
+      scapMappingManifestPath = Path.Combine(manifestDir, "scap_mapping_manifest.json");
+      var scapManifestJson = JsonSerializer.Serialize(scapManifest, new JsonSerializerOptions { WriteIndented = true });
+      File.WriteAllText(scapMappingManifestPath, scapManifestJson, Encoding.UTF8);
+    }
+
     await WriteHashManifestAsync(root, Path.Combine(manifestDir, "file_hashes.sha256"), ct).ConfigureAwait(false);
 
     return new BundleBuildResult
     {
       BundleId = bundleId,
       BundleRoot = root,
-      ManifestPath = manifestPath
+      ManifestPath = manifestPath,
+      ScapMappingManifestPath = scapMappingManifestPath
     };
   }
 
