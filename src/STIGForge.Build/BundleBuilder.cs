@@ -48,7 +48,8 @@ public sealed class BundleBuilder
     Directory.CreateDirectory(reportsDir);
     Directory.CreateDirectory(manifestDir);
 
-    CopyApplyTemplates(applyDir);
+    var templatesCopied = CopyApplyTemplates(applyDir);
+    ValidateApplyTemplates(applyDir, templatesCopied);
 
     var compiled = _scope.Compile(request.Profile, request.Controls);
     var reviewQueue = compiled.ReviewQueue.ToList();
@@ -133,15 +134,29 @@ public sealed class BundleBuilder
     };
   }
 
-  private static void CopyApplyTemplates(string applyDir)
+  private static bool CopyApplyTemplates(string applyDir)
   {
     var repoRoot = FindRepoRoot(Environment.CurrentDirectory);
-    if (repoRoot == null) return;
+    if (repoRoot == null) return false;
 
     var templateRoot = Path.Combine(repoRoot, "tools", "apply");
-    if (!Directory.Exists(templateRoot)) return;
+    if (!Directory.Exists(templateRoot)) return false;
 
     CopyDirectory(templateRoot, applyDir);
+    return true;
+  }
+
+  private static void ValidateApplyTemplates(string applyDir, bool templatesCopied)
+  {
+    if (!templatesCopied)
+      return; // Template copy is best-effort for non-repo contexts
+
+    if (!Directory.Exists(applyDir))
+      throw new InvalidOperationException($"Apply templates are incomplete: Apply directory does not exist at {applyDir}");
+
+    var hasApplyScripts = Directory.GetFiles(applyDir, "*.ps1", SearchOption.AllDirectories).Length > 0;
+    if (!hasApplyScripts)
+      throw new InvalidOperationException($"Apply templates are incomplete: no apply scripts found in {applyDir}");
   }
 
   private static string? FindRepoRoot(string start)

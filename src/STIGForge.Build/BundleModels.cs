@@ -47,6 +47,7 @@ public sealed class BundleBuildResult
 
 public sealed class BundleManifest
 {
+  public int SchemaVersion { get; set; } = 1;
   public string BundleId { get; set; } = string.Empty;
   public string BundleRoot { get; set; } = string.Empty;
   public RunManifest Run { get; set; } = new();
