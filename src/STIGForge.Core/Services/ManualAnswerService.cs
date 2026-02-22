@@ -377,6 +377,118 @@ public sealed class ManualAnswerService
     };
   }
 
+  /// <summary>
+  /// Export all answers from a bundle as a portable AnswerFileExport with metadata.
+  /// </summary>
+  public AnswerFileExport ExportAnswers(string bundleRoot, string? stigId = null)
+  {
+    var answerFile = LoadAnswerFile(bundleRoot);
+    return new AnswerFileExport
+    {
+      StigId = stigId,
+      ExportedAt = DateTimeOffset.UtcNow.ToString("o"),
+      ExportedBy = Environment.UserName,
+      Answers = answerFile
+    };
+  }
+
+  /// <summary>
+  /// Serialize an AnswerFileExport to a JSON file.
+  /// </summary>
+  public void WriteExportFile(string outputPath, AnswerFileExport export)
+  {
+    var dir = Path.GetDirectoryName(outputPath);
+    if (!string.IsNullOrEmpty(dir))
+      Directory.CreateDirectory(dir);
+
+    var json = JsonSerializer.Serialize(export, new JsonSerializerOptions
+    {
+      WriteIndented = true,
+      PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+    });
+
+    File.WriteAllText(outputPath, json, Encoding.UTF8);
+  }
+
+  /// <summary>
+  /// Read an AnswerFileExport from a JSON file.
+  /// </summary>
+  public AnswerFileExport ReadExportFile(string filePath)
+  {
+    var json = File.ReadAllText(filePath);
+    var export = JsonSerializer.Deserialize<AnswerFileExport>(json, new JsonSerializerOptions
+    {
+      PropertyNameCaseInsensitive = true
+    });
+
+    return export ?? new AnswerFileExport();
+  }
+
+  /// <summary>
+  /// Import answers from an AnswerFileExport into a bundle.
+  /// Only overwrites answers that are still Open/NotReviewed. Resolved answers are never clobbered.
+  /// </summary>
+  public AnswerImportResult ImportAnswers(string bundleRoot, AnswerFileExport import)
+  {
+    var result = new AnswerImportResult();
+    var existing = LoadAnswerFile(bundleRoot);
+    var importedAnswers = import.Answers?.Answers ?? new List<ManualAnswer>();
+    result.Total = importedAnswers.Count;
+
+    foreach (var imported in importedAnswers)
+    {
+      var importedRuleId = string.IsNullOrWhiteSpace(imported.RuleId) ? null : imported.RuleId.Trim();
+      var importedVulnId = string.IsNullOrWhiteSpace(imported.VulnId) ? null : imported.VulnId.Trim();
+      var controlLabel = importedRuleId ?? importedVulnId ?? "unknown";
+
+      // Find existing answer by RuleId then VulnId
+      var match = existing.Answers.FirstOrDefault(a =>
+        (!string.IsNullOrWhiteSpace(a.RuleId) && !string.IsNullOrWhiteSpace(importedRuleId) &&
+         string.Equals(a.RuleId, importedRuleId, StringComparison.OrdinalIgnoreCase)) ||
+        (!string.IsNullOrWhiteSpace(a.VulnId) && !string.IsNullOrWhiteSpace(importedVulnId) &&
+         string.Equals(a.VulnId, importedVulnId, StringComparison.OrdinalIgnoreCase)));
+
+      if (match == null)
+      {
+        // No existing answer — add the imported one
+        existing.Answers.Add(new ManualAnswer
+        {
+          RuleId = importedRuleId,
+          VulnId = importedVulnId,
+          Status = NormalizeStatus(imported.Status),
+          Reason = string.IsNullOrWhiteSpace(imported.Reason) ? null : imported.Reason.Trim(),
+          Comment = string.IsNullOrWhiteSpace(imported.Comment) ? null : imported.Comment.Trim(),
+          UpdatedAt = DateTimeOffset.Now
+        });
+        result.Imported++;
+      }
+      else
+      {
+        var existingStatus = NormalizeStatus(match.Status);
+        if (string.Equals(existingStatus, "Open", StringComparison.Ordinal))
+        {
+          // Existing is Open — overwrite with imported
+          match.RuleId = importedRuleId ?? match.RuleId;
+          match.VulnId = importedVulnId ?? match.VulnId;
+          match.Status = NormalizeStatus(imported.Status);
+          match.Reason = string.IsNullOrWhiteSpace(imported.Reason) ? null : imported.Reason.Trim();
+          match.Comment = string.IsNullOrWhiteSpace(imported.Comment) ? null : imported.Comment.Trim();
+          match.UpdatedAt = DateTimeOffset.Now;
+          result.Imported++;
+        }
+        else
+        {
+          // Existing is resolved (Pass/Fail/NotApplicable) — do NOT clobber
+          result.Skipped++;
+          result.SkippedControls.Add(controlLabel);
+        }
+      }
+    }
+
+    SaveAnswerFile(bundleRoot, existing);
+    return result;
+  }
+
   private static string GetAnswerFilePath(string bundleRoot)
   {
     return Path.Combine(bundleRoot, "Manual", "answers.json");
@@ -395,4 +507,16 @@ public sealed class ManualProgressStats
   public int FailCount { get; set; }
   public int NotApplicableCount { get; set; }
   public double PercentComplete { get; set; }
+}
+
+/// <summary>
+/// Result of importing answers into a bundle.
+/// Tracks how many were imported, skipped, and which controls were skipped.
+/// </summary>
+public sealed class AnswerImportResult
+{
+  public int Imported { get; set; }
+  public int Skipped { get; set; }
+  public int Total { get; set; }
+  public List<string> SkippedControls { get; set; } = new();
 }
