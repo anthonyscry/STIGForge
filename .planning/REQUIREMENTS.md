@@ -3,7 +3,7 @@
 **Defined:** 2026-02-20
 **Milestone:** vNext
 **Status:** Active (new-project bootstrap)
-**Coverage:** 12/21 satisfied (57%) — 4 orphaned, 5 unverified → Phase 8 & 9
+**Coverage:** 21/21 satisfied (100%) — All gaps closed by Phase 8 & 9
 
 ## Core Value
 
@@ -13,10 +13,10 @@ Operators can run a deterministic offline hardening mission with reusable manual
 
 ### Ingestion and Canonical Contracts
 
-- [ ] **ING-01**: Import compressed or raw STIG/SCAP/GPO/LGPO/ADMX sources with confidence-based classification and dedupe.
-- [ ] **ING-02**: Persist pack metadata (`pack id/name`, benchmark IDs, release/version/date, source label, hash manifest, applicability tags).
-- [ ] **CORE-01**: Normalize all controls into canonical `ControlRecord` with provenance and external ID mapping.
-- [ ] **CORE-02**: Version and publish schemas for `ContentPack`, `ControlRecord`, `Profile`, `Overlay`, `BundleManifest`, `VerificationResult`, `EvidenceRecord`, `ExportIndexEntry`.
+- [x] **ING-01**: Import compressed or raw STIG/SCAP/GPO/LGPO/ADMX sources with confidence-based classification and dedupe.
+- [x] **ING-02**: Persist pack metadata (`pack id/name`, benchmark IDs, release/version/date, source label, hash manifest, applicability tags).
+- [x] **CORE-01**: Normalize all controls into canonical `ControlRecord` with provenance and external ID mapping.
+- [x] **CORE-02**: Version and publish schemas for `ContentPack`, `ControlRecord`, `Profile`, `Overlay`, `BundleManifest`, `VerificationResult`, `EvidenceRecord`, `ExportIndexEntry`.
 
 ### Policy, Scope, and Safety Gates
 
@@ -28,11 +28,11 @@ Operators can run a deterministic offline hardening mission with reusable manual
 
 ### Build, Apply, Verify, Manual, Evidence
 
-- [ ] **BLD-01**: Deterministic bundle compiler outputs `Apply/`, `Verify/`, `Manual/`, `Evidence/`, `Reports/`, `Manifest/` tree.
-- [ ] **APL-01**: Apply preflight enforces elevation/compatibility/reboot/PowerShell safety checks.
-- [ ] **APL-02**: Apply supports PowerSTIG/DSC primary backend, optional GPO/LGPO path, and script fallback with reboot-aware convergence.
-- [ ] **VER-01**: Verify wrappers normalize SCAP/SCC and Evaluate-STIG outputs into canonical result model.
-- [ ] **MAP-01**: Strict per-STIG SCAP mapping contract is enforced (per-STIG computation, benchmark-overlap primary, strict fallback tags, no broad fallback).
+- [x] **BLD-01**: Deterministic bundle compiler outputs `Apply/`, `Verify/`, `Manual/`, `Evidence/`, `Reports/`, `Manifest/` tree.
+- [x] **APL-01**: Apply preflight enforces elevation/compatibility/reboot/PowerShell safety checks.
+- [x] **APL-02**: Apply supports PowerSTIG/DSC primary backend, optional GPO/LGPO path, and script fallback with reboot-aware convergence.
+- [x] **VER-01**: Verify wrappers normalize SCAP/SCC and Evaluate-STIG outputs into canonical result model.
+- [x] **MAP-01**: Strict per-STIG SCAP mapping contract is enforced (per-STIG computation, benchmark-overlap primary, strict fallback tags, no broad fallback).
 - [x] **MAN-01**: Manual wizard shows unresolved controls only, with status capture and reusable answer files.
 - [x] **EVD-01**: Evidence autopilot captures control-level artifacts with metadata and checksums.
 
@@ -69,20 +69,20 @@ All of the following must pass before milestone close:
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ING-01 | Phase 8 | Pending |
-| ING-02 | Phase 8 | Pending |
-| CORE-01 | Phase 8 | Pending |
-| CORE-02 | Phase 8 | Pending |
+| ING-01 | Phase 8 | Satisfied |
+| ING-02 | Phase 8 | Satisfied |
+| CORE-01 | Phase 8 | Satisfied |
+| CORE-02 | Phase 8 | Satisfied |
 | POL-01 | Phase 2 | Satisfied |
 | POL-02 | Phase 2 | Satisfied |
 | SCOPE-01 | Phase 2 | Satisfied |
 | SCOPE-02 | Phase 2 | Satisfied |
 | SAFE-01 | Phase 2 | Satisfied |
-| BLD-01 | Phase 9 | Pending |
-| APL-01 | Phase 9 | Pending |
-| APL-02 | Phase 9 | Pending |
-| VER-01 | Phase 9 | Pending |
-| MAP-01 | Phase 9 | Pending |
+| BLD-01 | Phase 9 | Satisfied |
+| APL-01 | Phase 9 | Satisfied |
+| APL-02 | Phase 9 | Satisfied |
+| VER-01 | Phase 9 | Satisfied |
+| MAP-01 | Phase 9 | Satisfied |
 | MAN-01 | Phase 4 | Satisfied |
 | EVD-01 | Phase 4 | Satisfied |
 | REB-01 | Phase 4 | Satisfied |
