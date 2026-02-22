@@ -6,6 +6,25 @@ public enum ContentImportRoute
   AdmxTemplatesFromZip
 }
 
+/// <summary>
+/// Explicit staged transition states for a planned content import operation.
+/// These represent the lifecycle of an import operation from initial detection
+/// through final commit or failure, enabling observable and auditable workflows.
+/// </summary>
+public enum ImportOperationState
+{
+  /// <summary>Candidate detected in the inbox scan but not yet planned.</summary>
+  Detected,
+  /// <summary>Operation included in the deterministic import plan, ready to execute.</summary>
+  Planned,
+  /// <summary>Execution has begun; the import is in progress (staged before commit).</summary>
+  Staged,
+  /// <summary>Import completed successfully and content was persisted.</summary>
+  Committed,
+  /// <summary>Import failed during staging or commit; no content was persisted.</summary>
+  Failed
+}
+
 public sealed class PlannedContentImport
 {
   public string ZipPath { get; set; } = string.Empty;
@@ -13,6 +32,19 @@ public sealed class PlannedContentImport
   public ImportArtifactKind ArtifactKind { get; set; }
   public ContentImportRoute Route { get; set; }
   public string SourceLabel { get; set; } = string.Empty;
+
+  /// <summary>
+  /// Current staged transition state of this planned import operation.
+  /// Starts as <see cref="ImportOperationState.Planned"/> when emitted by the planner.
+  /// Callers update this field as execution progresses to reflect observable staging transitions.
+  /// </summary>
+  public ImportOperationState State { get; set; } = ImportOperationState.Planned;
+
+  /// <summary>
+  /// Optional diagnostic detail captured when <see cref="State"/> transitions to
+  /// <see cref="ImportOperationState.Failed"/>. Null for non-failed states.
+  /// </summary>
+  public string? FailureReason { get; set; }
 }
 
 public static class ImportQueuePlanner
@@ -84,7 +116,8 @@ public static class ImportQueuePlanner
       FileName = candidate.FileName,
       ArtifactKind = candidate.ArtifactKind,
       Route = route,
-      SourceLabel = sourceLabel
+      SourceLabel = sourceLabel,
+      State = ImportOperationState.Planned
     };
   }
 

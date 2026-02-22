@@ -72,4 +72,127 @@ public sealed class ImportQueuePlannerTests
     Assert.Equal(ContentImportRoute.ConsolidatedZip, op.Route);
     Assert.Equal("stig_import", op.SourceLabel);
   }
+
+  [Fact]
+  public void BuildContentImportPlan_AllPlannedOperations_EmitPlannedState()
+  {
+    // Verify that every operation emitted by the planner carries the Planned state
+    // as the initial staged transition, regardless of artifact kind or route.
+    var candidates = new[]
+    {
+      new ImportInboxCandidate
+      {
+        ZipPath = @"C:\import\stig.zip",
+        FileName = "stig.zip",
+        ArtifactKind = ImportArtifactKind.Stig,
+        Confidence = DetectionConfidence.High,
+        ContentKey = "stig:win11"
+      },
+      new ImportInboxCandidate
+      {
+        ZipPath = @"C:\import\scap.zip",
+        FileName = "scap.zip",
+        ArtifactKind = ImportArtifactKind.Scap,
+        Confidence = DetectionConfidence.High,
+        ContentKey = "scap:win11"
+      },
+      new ImportInboxCandidate
+      {
+        ZipPath = @"C:\import\gpo.zip",
+        FileName = "gpo.zip",
+        ArtifactKind = ImportArtifactKind.Gpo,
+        Confidence = DetectionConfidence.High,
+        ContentKey = "gpo:win11"
+      }
+    };
+
+    var plan = ImportQueuePlanner.BuildContentImportPlan(candidates);
+
+    Assert.All(plan, op => Assert.Equal(ImportOperationState.Planned, op.State));
+  }
+
+  [Fact]
+  public void BuildContentImportPlan_PlannedOperations_HaveNullFailureReason()
+  {
+    // Verify that freshly planned operations carry no failure reason.
+    var candidates = new[]
+    {
+      new ImportInboxCandidate
+      {
+        ZipPath = @"C:\import\stig.zip",
+        FileName = "stig.zip",
+        ArtifactKind = ImportArtifactKind.Stig,
+        Confidence = DetectionConfidence.High,
+        ContentKey = "stig:win11"
+      }
+    };
+
+    var plan = ImportQueuePlanner.BuildContentImportPlan(candidates);
+
+    var op = Assert.Single(plan);
+    Assert.Null(op.FailureReason);
+  }
+
+  [Fact]
+  public void BuildContentImportPlan_GpoAndAdmxDualRoute_BothOperationsEmitPlannedState()
+  {
+    // The dual-route GPO+ADMX path must also emit Planned state on both operations.
+    var zipPath = @"C:\import\dual-route.zip";
+    var candidates = new[]
+    {
+      new ImportInboxCandidate
+      {
+        ZipPath = zipPath,
+        FileName = "dual-route.zip",
+        ArtifactKind = ImportArtifactKind.Gpo,
+        Confidence = DetectionConfidence.High,
+        ContentKey = "gpo:dual"
+      },
+      new ImportInboxCandidate
+      {
+        ZipPath = zipPath,
+        FileName = "dual-route.zip",
+        ArtifactKind = ImportArtifactKind.Admx,
+        Confidence = DetectionConfidence.High,
+        ContentKey = "admx:dual"
+      }
+    };
+
+    var plan = ImportQueuePlanner.BuildContentImportPlan(candidates);
+
+    Assert.Equal(2, plan.Count);
+    Assert.All(plan, op => Assert.Equal(ImportOperationState.Planned, op.State));
+  }
+
+  [Fact]
+  public void BuildContentImportPlan_MultipleZips_IsStablyOrderedByZipPath()
+  {
+    // Verify deterministic ordering is preserved with staged transition fields present.
+    var candidates = new[]
+    {
+      new ImportInboxCandidate
+      {
+        ZipPath = @"C:\import\z-last.zip",
+        FileName = "z-last.zip",
+        ArtifactKind = ImportArtifactKind.Stig,
+        Confidence = DetectionConfidence.High,
+        ContentKey = "stig:z"
+      },
+      new ImportInboxCandidate
+      {
+        ZipPath = @"C:\import\a-first.zip",
+        FileName = "a-first.zip",
+        ArtifactKind = ImportArtifactKind.Stig,
+        Confidence = DetectionConfidence.High,
+        ContentKey = "stig:a"
+      }
+    };
+
+    var plan = ImportQueuePlanner.BuildContentImportPlan(candidates);
+
+    Assert.Equal(2, plan.Count);
+    Assert.Contains("a-first.zip", plan[0].ZipPath, StringComparison.OrdinalIgnoreCase);
+    Assert.Contains("z-last.zip", plan[1].ZipPath, StringComparison.OrdinalIgnoreCase);
+    Assert.All(plan, op => Assert.Equal(ImportOperationState.Planned, op.State));
+  }
 }
