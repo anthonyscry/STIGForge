@@ -699,15 +699,15 @@ public partial class MainViewModel
       profile.NaPolicy = new NaPolicy
       {
         AutoNaOutOfScope = ProfileAutoNa,
-        ConfidenceThreshold = Confidence.High,
+        ConfidenceThreshold = ParseConfidence(ProfileConfidenceThreshold),
         DefaultNaCommentTemplate = ProfileNaComment
       };
       profile.AutomationPolicy = new AutomationPolicy
       {
-        Mode = AutomationMode.Standard,
+        Mode = ParseAutomationMode(ProfileAutomationMode),
         NewRuleGraceDays = ProfileGraceDays,
-        AutoApplyRequiresMapping = true,
-        ReleaseDateSource = ReleaseDateSource.ContentPack
+        AutoApplyRequiresMapping = ProfileRequiresMapping,
+        ReleaseDateSource = ParseReleaseDateSource(ProfileReleaseDateSource)
       };
       profile.OverlayIds = GetSelectedOverlayIds();
 
@@ -974,6 +974,7 @@ public partial class MainViewModel
     ProfileGraceDays = profile.AutomationPolicy.NewRuleGraceDays;
     ProfileAutoNa = profile.NaPolicy.AutoNaOutOfScope;
     ProfileNaComment = profile.NaPolicy.DefaultNaCommentTemplate;
+    LoadProfileFieldsExtended(profile);
   }
 
    private async Task LoadPackDetailsAsync(ContentPack pack)

@@ -111,6 +111,37 @@
                 </StackPanel>
               </Border>
 
+              <!-- Review Queue Step (shown when controls are flagged for review) -->
+              <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="12" Margin="0,0,0,8" Background="{StaticResource SurfaceBrush}"
+                      Visibility="{Binding ReviewQueueSummary, Converter={StaticResource NullOrEmptyToCollapsed}}"
+                      AutomationProperties.Name="Review queue panel">
+                <StackPanel>
+                  <TextBlock Text="3b) Controls Requiring Review" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                  <TextBlock Text="{Binding ReviewQueueSummary}" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,8"/>
+                  <ItemsControl ItemsSource="{Binding ReviewQueueItems}" AutomationProperties.Name="Review queue items">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <Border Margin="0,1,0,0" Padding="6,3" Background="{StaticResource SurfaceMutedBrush}"
+                                BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                          <Grid>
+                            <Grid.ColumnDefinitions>
+                              <ColumnDefinition Width="80"/>
+                              <ColumnDefinition Width="120"/>
+                              <ColumnDefinition Width="*"/>
+                              <ColumnDefinition Width="200"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="{Binding VulnId}" FontSize="11" FontFamily="Consolas" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock Grid.Column="1" Text="{Binding RuleId}" FontSize="11" FontFamily="Consolas" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock Grid.Column="2" Text="{Binding Title}" FontSize="11" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock Grid.Column="3" Text="{Binding ReviewReason}" FontSize="11" Foreground="{StaticResource TextMutedBrush}" TextTrimming="CharacterEllipsis"/>
+                          </Grid>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </Border>
+
               <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="12" Margin="0,0,0,8" Background="{StaticResource SurfaceBrush}">
                 <StackPanel>
                   <TextBlock Text="4) Run Orchestration" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
