@@ -40,7 +40,13 @@ Plans:
   3. Scope filtering supports `classified`, `unclassified`, and `mixed` modes, including deterministic confidence-threshold auto-NA behavior.
   4. Ambiguous scope decisions route to a review queue and `na_scope_filter_report.csv` is emitted with traceable rationale.
   5. New or changed controls are blocked from auto-apply until release-age grace and trusted mapping criteria are satisfied.
-**Plans**: TBD
+**Plans**: 5 plans
+Plans:
+- [ ] 02-01-PLAN.md — Profile CLI CRUD commands and profile validation service.
+- [ ] 02-02-PLAN.md — Extend ClassificationScopeService for Unclassified and Mixed mode evaluation.
+- [ ] 02-03-PLAN.md — Overlay conflict detection service and overlay_conflict_report.csv in BundleBuilder.
+- [ ] 02-04-PLAN.md — CLI commands for overlay diff and bundle review-queue inspection.
+- [ ] 02-05-PLAN.md — WPF profile editor, guided run review queue step, and break-glass dialog.
 
 ### Phase 3: Deterministic Mission Execution Core
 **Goal**: Operators can run the core mission loop (build, apply, verify) deterministically with strict SCAP association rules.
@@ -80,7 +86,7 @@ Plans:
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Canonical Ingestion Contracts | 4/4 | Complete   | 2026-02-22 |
-| 2. Policy Scope and Safety Gates | 0/TBD | Not started | - |
+| 2. Policy Scope and Safety Gates | 0/5 | Not started | - |
 | 3. Deterministic Mission Execution Core | 0/TBD | Not started | - |
 | 4. Human Resolution and Evidence Continuity | 0/TBD | Not started | - |
 | 5. Proof Packaging, Fleet-lite, and Integrity | 0/TBD | Not started | - |
