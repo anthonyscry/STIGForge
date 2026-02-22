@@ -612,6 +612,52 @@ public sealed class ContentPackImporterTests : IDisposable
     await Assert.ThrowsAsync<ArgumentNullException>(act);
   }
 
+  [Fact]
+  public void ImportScanSummary_StagedOutcomeFields_DefaultToEmptyCollectionsAndZeroCounts()
+  {
+    var summary = new ImportScanSummary();
+
+    Assert.Empty(summary.StagedOutcomes);
+    Assert.Equal(0, summary.StagedCommittedCount);
+    Assert.Equal(0, summary.StagedFailedCount);
+  }
+
+  [Fact]
+  public void StagedOperationOutcome_FailedRow_HasNonNullFailureReasonAndMatchingState()
+  {
+    var outcome = new StagedOperationOutcome
+    {
+      FileName = "bad-pack.zip",
+      ArtifactKind = "Stig",
+      Route = "ConsolidatedZip",
+      SourceLabel = "unit-test",
+      State = ImportOperationState.Failed.ToString(),
+      FailureReason = "ZIP not found",
+      CommittedPackCount = 0
+    };
+
+    Assert.Equal(ImportOperationState.Failed.ToString(), outcome.State);
+    Assert.NotNull(outcome.FailureReason);
+    Assert.Equal(0, outcome.CommittedPackCount);
+  }
+
+  [Fact]
+  public void StagedOperationOutcome_CommittedRow_HasNullFailureReason()
+  {
+    var outcome = new StagedOperationOutcome
+    {
+      FileName = "good-pack.zip",
+      ArtifactKind = "Stig",
+      Route = "ConsolidatedZip",
+      SourceLabel = "unit-test",
+      State = ImportOperationState.Committed.ToString(),
+      FailureReason = null
+    };
+
+    Assert.Equal(ImportOperationState.Committed.ToString(), outcome.State);
+    Assert.Null(outcome.FailureReason);
+  }
+
   private ContentPackImporter CreateImporter(out Mock<IContentPackRepository> packsMock, out Mock<IControlRepository> controlsMock)
   {
     var pathsMock = new Mock<IPathBuilder>();

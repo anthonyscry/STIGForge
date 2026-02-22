@@ -126,6 +126,7 @@ public partial class MainViewModel
       var failures = new List<string>();
       var importedByType = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
       var importedPacks = new List<ContentPack>();
+      var stagedOutcomes = new List<StagedOperationOutcome>();
 
       var totalWorkItems = contentImportQueue.Count + (toolWinners.Count > 0 ? 1 : 0);
       ProgressMax = Math.Max(1, totalWorkItems);
@@ -140,7 +141,7 @@ public partial class MainViewModel
         try
         {
           var imported = await Task.Run(
-            () => ImportPlannedContentAsync(planned, _cts.Token),
+            () => _importer.ExecutePlannedImportAsync(planned, _cts.Token),
             _cts.Token);
 
           importedPackCount += imported.Count;
@@ -151,6 +152,24 @@ public partial class MainViewModel
         {
           failures.Add(planned.FileName + " (" + planned.Route + "): " + ex.Message);
         }
+
+        // Capture staged outcome row regardless of success or failure.
+        // planned.State and planned.FailureReason are updated by ExecutePlannedImportAsync.
+        stagedOutcomes.Add(new StagedOperationOutcome
+        {
+          FileName = planned.FileName,
+          ArtifactKind = planned.ArtifactKind.ToString(),
+          Route = planned.Route.ToString(),
+          SourceLabel = planned.SourceLabel,
+          State = planned.State.ToString(),
+          FailureReason = planned.FailureReason,
+          CommittedPackCount = planned.State == ImportOperationState.Committed
+            ? importedPacks.Count(p => string.Equals(
+                Path.GetDirectoryName(planned.ZipPath),
+                Path.GetDirectoryName(p.SourceLabel),
+                StringComparison.OrdinalIgnoreCase))
+            : 0
+        });
 
         ProgressValue = i + 1;
       }
@@ -193,13 +212,17 @@ public partial class MainViewModel
         ImportedToolCount = importedToolCount,
         ImportedByType = importedByType,
         Warnings = scan.Warnings.Concat(suppressedWarnings).Concat(dedupDecisionNotes).Concat(multiRouteWarnings).ToList(),
-        Failures = failures
+        Failures = failures,
+        StagedOutcomes = stagedOutcomes,
+        StagedCommittedCount = stagedOutcomes.Count(o => string.Equals(o.State, ImportOperationState.Committed.ToString(), StringComparison.Ordinal)),
+        StagedFailedCount = stagedOutcomes.Count(o => string.Equals(o.State, ImportOperationState.Failed.ToString(), StringComparison.Ordinal))
       };
       PersistImportScanSummary(summary);
 
       StatusText = "Scan complete: imported packs=" + importedPackCount
         + ", tools=" + importedToolCount
         + ", warnings=" + warningCount
+        + (stagedOutcomes.Count > 0 ? ", staged=" + summary.StagedCommittedCount + "/" + stagedOutcomes.Count + " committed" : "")
         + (failures.Count > 0 ? ", failures=" + failures.Count : "");
     }
     catch (Exception ex)
@@ -314,6 +337,20 @@ public partial class MainViewModel
       lines.Add("Warnings:");
       foreach (var warning in summary.Warnings)
         lines.Add("- " + warning);
+      lines.Add(string.Empty);
+    }
+
+    if (summary.StagedOutcomes.Count > 0)
+    {
+      lines.Add("Staged transitions: " + summary.StagedCommittedCount + " committed, " + summary.StagedFailedCount + " failed");
+      lines.Add("Operations:");
+      foreach (var outcome in summary.StagedOutcomes)
+      {
+        var row = "- [" + outcome.State + "] " + outcome.FileName + " (" + outcome.ArtifactKind + "/" + outcome.Route + ")";
+        if (!string.IsNullOrWhiteSpace(outcome.FailureReason))
+          row += " -- " + outcome.FailureReason;
+        lines.Add(row);
+      }
       lines.Add(string.Empty);
     }
 
