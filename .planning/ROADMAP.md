@@ -26,8 +26,8 @@ This roadmap delivers deterministic offline compliance operations end-to-end: op
 **Plans**: 4 plans
 Plans:
 - [x] 01-01-PLAN.md - Establish MissionRun timeline contracts and append-only SQLite ledger wiring.
-- [ ] 01-02-PLAN.md - Add deterministic import staging transitions before content commit.
-- [ ] 01-03-PLAN.md - Wire orchestration/apply evidence capture with deterministic rerun lineage.
+- [x] 01-02-PLAN.md - Add deterministic import staging transitions before content commit.
+- [x] 01-03-PLAN.md - Pack-derived rule selection and ControlOverride persistence to Overlay.Overrides.
 - [ ] 01-04-PLAN.md - Expose mission timeline visibility in CLI and WPF mission surfaces.
 
 ### Phase 2: Policy Scope and Safety Gates
@@ -118,6 +118,12 @@ Plans:
   2. Apply preflight and backend implementations verified with test evidence.
   3. SCAP mapping invariants verified (per-STIG computation, benchmark-overlap primary, no broad fallback).
   4. Phase 3 VERIFICATION.md created with verification status and evidence citations.
+**Plans**: 4 plans
+Plans:
+- [ ] 09-01-PLAN.md — Verify BLD-01 (deterministic bundle compiler) - gather test evidence.
+- [ ] 09-02-PLAN.md — Verify APL-01 (apply preflight and backends) - gather test evidence.
+- [ ] 09-03-PLAN.md — Verify VER-01/MAP-01 (verification normalization and SCAP mapping) - gather test evidence.
+- [ ] 09-04-PLAN.md — Create 03-VERIFICATION.md with all evidence (Wave 2, depends on 01-03).
 
 ## Progress
 
