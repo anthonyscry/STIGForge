@@ -2,7 +2,7 @@
 
 ## What This Is
 
-STIGForge Next is a full reboot of STIGForge as an offline-first Windows compliance platform for operators, ISSO/ISSM teams, and maintainers. It replaces fragmented workflows with one deterministic mission loop: Build -> Apply -> Verify -> Prove. The reboot is driven by `PROJECT_SPEC.md` as the canonical source and rebuilds both UX and backend module contracts.
+STIGForge Next is an offline-first Windows compliance platform for operators, ISSO/ISSM teams, and maintainers. It provides a deterministic mission loop: Build → Apply → Verify → Prove. The v1.0 release delivers full mission parity across CLI and WPF with strict per-STIG SCAP mapping and complete evidence packaging.
 
 ## Core Value
 
@@ -12,45 +12,60 @@ Produce deterministic, defensible compliance outcomes with strict control mappin
 
 ### Validated
 
-(None yet - ship to validate)
+- ✓ Canonical ingestion pipeline (STIG/SCAP/GPO/LGPO/ADMX with dedupe) — v1.0
+- ✓ Profile-based scope filtering and safety gates — v1.0
+- ✓ Overlay precedence/conflict resolution with deterministic reports — v1.0
+- ✓ Deterministic bundle compiler with strict per-STIG SCAP mapping — v1.0
+- ✓ Multi-backend apply (PowerSTIG/DSC/GPO/LGPO) with convergence tracking — v1.0
+- ✓ Verify normalization with provenance — v1.0
+- ✓ Manual wizard with reusable answer files — v1.0
+- ✓ Evidence autopilot with checksums — v1.0
+- ✓ Pack diff and answer rebase workflows — v1.0
+- ✓ CKL/POA&M/eMASS export packages — v1.0
+- ✓ WinRM fleet-lite operations — v1.0
+- ✓ Hash-chained integrity verification — v1.0
 
 ### Active
 
-- [ ] Rebuild the product from scratch against `PROJECT_SPEC.md` with side-by-side `STIGForge.Next.*` delivery and phased cutover.
-- [ ] Enforce strict per-STIG SCAP mapping invariants at design, implementation, and test layers.
-- [ ] Guarantee deterministic bundle/export outputs (ordering, indices, checksums) for identical inputs.
-- [ ] Deliver full mission loop parity (Build, Apply, Verify, Manual, Evidence, Export) in WPF and CLI.
-- [ ] Deliver mission-console UX overhaul from scratch, backed by new contracts and workflows.
+(Ready for next milestone planning)
 
 ### Out of Scope
 
-- Direct eMASS API sync/upload - export package only in v1.
-- Enterprise-wide GPO management replacement - consume/apply workflows only.
-- Broad best-effort SCAP auto-matching - explicitly disallowed by strict mapping invariant.
+- Direct eMASS API sync/upload — export package only in v1
+- Enterprise-wide GPO management replacement — consume/apply workflows only
+- Broad best-effort SCAP auto-matching — explicitly disallowed by strict mapping invariant
 
 ## Context
 
-The repository contains mature v1.1 release-candidate artifacts and planning history in `.planning/` and `docs/release/`, but those are legacy context for this reboot. The team decision for this initiative is a full rewrite including backend, with existing runtime paths treated as reference-only rather than authoritative behavior. Delivery is phased as vertical slices, and architecture/contracts are derived from the reboot planning pack under `docs/plans/2026-02-19-stigforge-next/` and `PROJECT_SPEC.md`.
+**Shipped v1.0** with ~43,800 LOC C# across 7 phases and 30 plans.
+
+**Tech stack:** .NET 8, WPF, PowerShell 5.1 interop, SQLite persistence, WinRM fleet operations.
+
+**Known technical debt:**
+- Pre-existing flaky test: `BuildHost_UsesConfiguredPathBuilderForSerilogLogDirectory`
+- Service registration pattern inconsistency between CLI and WPF (intentional architectural choice)
 
 ## Constraints
 
-- **Platform**: Windows 11 and Windows Server 2019 targets - required mission environments.
-- **Runtime**: .NET 8 + PowerShell 5.1 interoperability - compatibility and support baseline.
-- **Offline-first**: No internet dependency for critical workflows - required for air-gapped operations.
-- **Determinism**: Identical inputs must produce reproducible outputs - required for audit trust.
-- **Safety**: Ambiguity must route to review-required states - no silent risky automation.
-- **Delivery**: Phased vertical slices (M1-M6), not big-bang cutover - controlled risk and measurable gates.
+- **Platform**: Windows 11 and Windows Server 2019 targets
+- **Runtime**: .NET 8 + PowerShell 5.1 interoperability
+- **Offline-first**: No internet dependency for critical workflows
+- **Determinism**: Identical inputs must produce reproducible outputs
+- **Safety**: Ambiguity must route to review-required states
+- **Delivery**: Phased vertical slices (M1-M6)
 
 ## Key Decisions
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Full rewrite including backend | Existing implementation does not satisfy reboot charter as canonical baseline | ✓ Good |
-| Existing code is reference-only | Avoid accidental carry-forward of legacy assumptions | ✓ Good |
-| Side-by-side replacement strategy | Enables controlled migration and milestone gating | ✓ Good |
-| Phased vertical slice delivery | Keeps execution testable and shippable per milestone | ✓ Good |
-| Mission-console visual direction for WPF | Aligns UX with operator workflow and status-heavy operations | — Pending |
-| `PROJECT_SPEC.md` is canonical | Single source of truth for scope and acceptance invariants | ✓ Good |
+| Full rewrite including backend | Existing implementation does not satisfy reboot charter | ✓ Good |
+| Strict per-STIG SCAP mapping | Disallow broad fallback, enforce deterministic mapping | ✓ Good |
+| Deterministic bundle/export outputs | Required for audit trust | ✓ Good |
+| Side-by-side replacement strategy | Enables controlled migration | ✓ Good |
+| SQLite append-only mission ledger | Immutable audit trail | ✓ Good |
+| OverlayMergeService last-wins precedence | Deterministic conflict resolution | ✓ Good |
+| Pack-derived rule selection UX | Eliminate manual ID entry errors | ✓ Good |
+| Directory manifest SHA-256 hashing | Stable import identity | ✓ Good |
 
 ---
-*Last updated: 2026-02-20 after `/gsd-new-project --auto` reboot initialization*
+*Last updated: 2026-02-22 after v1.0 milestone*

@@ -45,3 +45,13 @@ Key accomplishments:
 - Completed operator mission workflow including manual review/evidence ergonomics and mission status normalization.
 - Enforced security hardening: break-glass controls, secure XML parsing, archive boundary checks, strict offline security gate semantics, and fail-closed completion checks.
 - Added release-readiness gates for quarterly compatibility, stability budgets, upgrade/rebase contracts, and reproducibility evidence packaging.
+
+## v1.0 STIGForge Next (Shipped: 2026-02-22)
+
+**Phases completed:** 10 phases, 34 plans, 0 tasks
+
+**Key accomplishments:**
+- (none recorded)
+
+---
+
