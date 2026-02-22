@@ -10,7 +10,7 @@ This roadmap delivers deterministic offline compliance operations end-to-end: op
 - [x] **Phase 2: Policy Scope and Safety Gates** - Make deterministic scope and automation decisions with explicit review-required handling. (completed 2026-02-22)
 - [ ] **Phase 3: Deterministic Mission Execution Core** - Build deterministic bundles and run apply/verify with strict per-STIG mapping invariants.
 - [x] **Phase 4: Human Resolution and Evidence Continuity** - Close unresolved controls and carry answers/overlays forward through pack updates. (completed 2026-02-22)
-- [ ] **Phase 5: Proof Packaging, Fleet-lite, and Integrity** - Produce deterministic submission packages with fleet-lite summaries and cryptographic audit proof.
+- [x] **Phase 5: Proof Packaging, Fleet-lite, and Integrity** - Produce deterministic submission packages with fleet-lite summaries and cryptographic audit proof. (completed 2026-02-22)
 
 ## Phase Details
 
@@ -90,7 +90,12 @@ Plans:
   1. Export produces CKL, standalone POA&M, and deterministic eMASS package artifacts with complete indices, checksums, and attestations.
   2. Fleet-lite WinRM runs generate host-separated apply/verify artifacts and a unified operator summary.
   3. Critical actions are hash-chained and verifiable, and package-level SHA-256 manifests validate end-to-end integrity.
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [x] 05-01-PLAN.md — Export determinism, manifest enhancement, attestation import, and export-emass CLI.
+- [x] 05-02-PLAN.md — Fleet artifact collection, per-host CKL, fleet summary service, and fleet-summary CLI.
+- [x] 05-03-PLAN.md — Audit completeness for fleet/attestation operations and package-level SHA-256 verification.
+- [x] 05-04-PLAN.md — WPF submission readiness display in ExportView and fleet compliance table in FleetView.
 
 ## Progress
 
@@ -100,4 +105,4 @@ Plans:
 | 2. Policy Scope and Safety Gates | 5/5 | Complete   | 2026-02-22 |
 | 3. Deterministic Mission Execution Core | 5/5 | Complete   | 2026-02-22 |
 | 4. Human Resolution and Evidence Continuity | 4/4 | Complete   | 2026-02-22 |
-| 5. Proof Packaging, Fleet-lite, and Integrity | 0/TBD | Not started | - |
+| 5. Proof Packaging, Fleet-lite, and Integrity | 4/4 | Complete   | 2026-02-22 |
