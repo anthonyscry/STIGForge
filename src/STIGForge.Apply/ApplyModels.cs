@@ -74,3 +74,20 @@ public sealed class ApplyResult
    /// <summary>Prior run ID used for continuity markers, if a rerun was detected.</summary>
    public string? PriorRunId { get; set; }
 }
+
+public sealed class PreflightRequest
+{
+  public string BundleRoot { get; set; } = string.Empty;
+  public string? ModulesPath { get; set; }
+  public string? PowerStigModulePath { get; set; }
+  public bool CheckLgpoConflict { get; set; }
+  public string? BundleManifestPath { get; set; }
+}
+
+public sealed class PreflightResult
+{
+  public bool Ok { get; set; }
+  public IReadOnlyList<string> Issues { get; set; } = Array.Empty<string>();
+  public string Timestamp { get; set; } = string.Empty;
+  public int ExitCode { get; set; }
+}

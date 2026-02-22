@@ -20,4 +20,8 @@
     <NoWarn>$(NoWarn);CA1416</NoWarn>
   </PropertyGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="STIGForge.UnitTests" />
+  </ItemGroup>
+
 </Project>
