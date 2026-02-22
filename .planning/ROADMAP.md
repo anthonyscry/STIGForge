@@ -97,6 +97,28 @@ Plans:
 - [x] 05-03-PLAN.md — Audit completeness for fleet/attestation operations and package-level SHA-256 verification.
 - [x] 05-04-PLAN.md — WPF submission readiness display in ExportView and fleet compliance table in FleetView.
 
+### Phase 8: Canonical Model Completion
+**Goal**: Complete canonical ingestion contracts by adding missing model fields and schema types.
+**Depends on**: Phase 1
+**Requirements**: ING-01, ING-02, CORE-01, CORE-02
+**Gap Closure**: Closes gaps from vNext milestone audit (orphaned Phase 1 requirements)
+**Success Criteria** (what must be TRUE):
+  1. ContentPack exposes BenchmarkIds list and ApplicabilityTags for downstream filtering.
+  2. ControlRecord includes SourcePackId provenance field linking to import source.
+  3. Core.Models contains VerificationResult, EvidenceRecord, ExportIndexEntry schemas.
+  4. Import infrastructure is documented and claimed in Phase 1 VERIFICATION.md.
+
+### Phase 9: Phase 3 Verification
+**Goal**: Verify Phase 3 implementation and create VERIFICATION.md to confirm requirements satisfied.
+**Depends on**: Phase 3
+**Requirements**: BLD-01, APL-01, APL-02, VER-01, MAP-01
+**Gap Closure**: Closes gaps from vNext milestone audit (unverified Phase 3 requirements)
+**Success Criteria** (what must be TRUE):
+  1. Deterministic build contract validated with evidence of identical outputs for identical inputs.
+  2. Apply preflight and backend implementations verified with test evidence.
+  3. SCAP mapping invariants verified (per-STIG computation, benchmark-overlap primary, no broad fallback).
+  4. Phase 3 VERIFICATION.md created with verification status and evidence citations.
+
 ## Progress
 
 | Phase | Plans Complete | Status | Completed |
@@ -106,3 +128,5 @@ Plans:
 | 3. Deterministic Mission Execution Core | 5/5 | Complete   | 2026-02-22 |
 | 4. Human Resolution and Evidence Continuity | 4/4 | Complete   | 2026-02-22 |
 | 5. Proof Packaging, Fleet-lite, and Integrity | 4/4 | Complete   | 2026-02-22 |
+| 8. Canonical Model Completion | 0/4 | Pending    | — |
+| 9. Phase 3 Verification | 0/4 | Pending    | — |

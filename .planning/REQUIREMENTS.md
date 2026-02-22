@@ -3,6 +3,7 @@
 **Defined:** 2026-02-20
 **Milestone:** vNext
 **Status:** Active (new-project bootstrap)
+**Coverage:** 12/21 satisfied (57%) — 4 orphaned, 5 unverified → Phase 8 & 9
 
 ## Core Value
 
@@ -19,11 +20,11 @@ Operators can run a deterministic offline hardening mission with reusable manual
 
 ### Policy, Scope, and Safety Gates
 
-- [ ] **POL-01**: Profile dimensions and policy knobs support deterministic gating (`new_rule_grace_days`, mapping confidence thresholds, automation guardrails).
-- [ ] **POL-02**: Overlay precedence and conflict resolution are deterministic and reportable.
-- [ ] **SCOPE-01**: Classification filter supports `classified`, `unclassified`, and `mixed` modes with confidence-threshold auto-NA.
-- [ ] **SCOPE-02**: Ambiguous scope decisions route to review queue and emit `na_scope_filter_report.csv`.
-- [ ] **SAFE-01**: Release-age gate blocks auto-apply for new/changed controls until grace period and trusted mapping criteria are satisfied.
+- [x] **POL-01**: Profile dimensions and policy knobs support deterministic gating (`new_rule_grace_days`, mapping confidence thresholds, automation guardrails).
+- [x] **POL-02**: Overlay precedence and conflict resolution are deterministic and reportable.
+- [x] **SCOPE-01**: Classification filter supports `classified`, `unclassified`, and `mixed` modes with confidence-threshold auto-NA.
+- [x] **SCOPE-02**: Ambiguous scope decisions route to review queue and emit `na_scope_filter_report.csv`.
+- [x] **SAFE-01**: Release-age gate blocks auto-apply for new/changed controls until grace period and trusted mapping criteria are satisfied.
 
 ### Build, Apply, Verify, Manual, Evidence
 
@@ -32,16 +33,16 @@ Operators can run a deterministic offline hardening mission with reusable manual
 - [ ] **APL-02**: Apply supports PowerSTIG/DSC primary backend, optional GPO/LGPO path, and script fallback with reboot-aware convergence.
 - [ ] **VER-01**: Verify wrappers normalize SCAP/SCC and Evaluate-STIG outputs into canonical result model.
 - [ ] **MAP-01**: Strict per-STIG SCAP mapping contract is enforced (per-STIG computation, benchmark-overlap primary, strict fallback tags, no broad fallback).
-- [ ] **MAN-01**: Manual wizard shows unresolved controls only, with status capture and reusable answer files.
-- [ ] **EVD-01**: Evidence autopilot captures control-level artifacts with metadata and checksums.
+- [x] **MAN-01**: Manual wizard shows unresolved controls only, with status capture and reusable answer files.
+- [x] **EVD-01**: Evidence autopilot captures control-level artifacts with metadata and checksums.
 
 ### Diff/Rebase, Export, Fleet, Integrity
 
-- [ ] **REB-01**: Pack diff highlights add/remove/text/mapping deltas.
-- [ ] **REB-02**: Overlay/answer rebase auto-carries high-confidence matches and flags uncertain carries.
-- [ ] **EXP-01**: Export produces CKL, standalone POA&M, and deterministic eMASS package with indices/checksums/attestations.
-- [ ] **FLT-01**: v1-lite fleet ops support WinRM apply/verify with host-separated artifacts and unified summary.
-- [ ] **AUD-01**: Critical actions are hash-chained and verifiable; package-level SHA-256 manifest is complete.
+- [x] **REB-01**: Pack diff highlights add/remove/text/mapping deltas.
+- [x] **REB-02**: Overlay/answer rebase auto-carries high-confidence matches and flags uncertain carries.
+- [x] **EXP-01**: Export produces CKL, standalone POA&M, and deterministic eMASS package with indices/checksums/attestations.
+- [x] **FLT-01**: v1-lite fleet ops support WinRM apply/verify with host-separated artifacts and unified summary.
+- [x] **AUD-01**: Critical actions are hash-chained and verifiable; package-level SHA-256 manifest is complete.
 
 ## Acceptance Gate (MVP)
 
@@ -68,27 +69,27 @@ All of the following must pass before milestone close:
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| ING-01 | Phase 1 | Pending |
-| ING-02 | Phase 1 | Pending |
-| CORE-01 | Phase 1 | Pending |
-| CORE-02 | Phase 1 | Pending |
-| POL-01 | Phase 2 | Pending |
-| POL-02 | Phase 2 | Pending |
-| SCOPE-01 | Phase 2 | Pending |
-| SCOPE-02 | Phase 2 | Pending |
-| SAFE-01 | Phase 2 | Pending |
-| BLD-01 | Phase 3 | Pending |
-| APL-01 | Phase 3 | Pending |
-| APL-02 | Phase 3 | Pending |
-| VER-01 | Phase 4 | Pending |
-| MAP-01 | Phase 4 | Pending |
-| MAN-01 | Phase 5 | Pending |
-| EVD-01 | Phase 5 | Pending |
-| REB-01 | Phase 5 | Pending |
-| REB-02 | Phase 5 | Pending |
-| EXP-01 | Phase 6 | Pending |
-| FLT-01 | Phase 6 | Pending |
-| AUD-01 | Phase 6 | Pending |
+| ING-01 | Phase 8 | Pending |
+| ING-02 | Phase 8 | Pending |
+| CORE-01 | Phase 8 | Pending |
+| CORE-02 | Phase 8 | Pending |
+| POL-01 | Phase 2 | Satisfied |
+| POL-02 | Phase 2 | Satisfied |
+| SCOPE-01 | Phase 2 | Satisfied |
+| SCOPE-02 | Phase 2 | Satisfied |
+| SAFE-01 | Phase 2 | Satisfied |
+| BLD-01 | Phase 9 | Pending |
+| APL-01 | Phase 9 | Pending |
+| APL-02 | Phase 9 | Pending |
+| VER-01 | Phase 9 | Pending |
+| MAP-01 | Phase 9 | Pending |
+| MAN-01 | Phase 4 | Satisfied |
+| EVD-01 | Phase 4 | Satisfied |
+| REB-01 | Phase 4 | Satisfied |
+| REB-02 | Phase 4 | Satisfied |
+| EXP-01 | Phase 5 | Satisfied |
+| FLT-01 | Phase 5 | Satisfied |
+| AUD-01 | Phase 5 | Satisfied |
 
 ---
 *Last updated: 2026-02-20 from `PROJECT_SPEC.md` vNext bootstrap*
