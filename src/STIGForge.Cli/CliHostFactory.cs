@@ -75,6 +75,7 @@ public static class CliHostFactory
     services.AddSingleton<IControlRepository>(sp => new SqliteJsonControlRepository(sp.GetRequiredService<string>()));
     services.AddSingleton<IProfileRepository>(sp => new SqliteJsonProfileRepository(sp.GetRequiredService<string>()));
     services.AddSingleton<IOverlayRepository>(sp => new SqliteJsonOverlayRepository(sp.GetRequiredService<string>()));
+    services.AddSingleton<IMissionRunRepository>(sp => new MissionRunRepository(sp.GetRequiredService<string>()));
     services.AddSingleton<ContentPackImporter>();
     services.AddSingleton<BundleBuilder>();
     services.AddSingleton<SnapshotService>();
