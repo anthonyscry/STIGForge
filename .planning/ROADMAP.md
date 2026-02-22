@@ -6,7 +6,7 @@ This roadmap delivers deterministic offline compliance operations end-to-end: op
 
 ## Phases
 
-- [ ] **Phase 1: Canonical Ingestion Contracts** - Import and normalize compliance sources into stable versioned canonical records.
+- [x] **Phase 1: Canonical Ingestion Contracts** - Import and normalize compliance sources into stable versioned canonical records. (completed 2026-02-22)
 - [ ] **Phase 2: Policy Scope and Safety Gates** - Make deterministic scope and automation decisions with explicit review-required handling.
 - [ ] **Phase 3: Deterministic Mission Execution Core** - Build deterministic bundles and run apply/verify with strict per-STIG mapping invariants.
 - [ ] **Phase 4: Human Resolution and Evidence Continuity** - Close unresolved controls and carry answers/overlays forward through pack updates.
@@ -79,7 +79,7 @@ Plans:
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Canonical Ingestion Contracts | 3/4 | In Progress|  |
+| 1. Canonical Ingestion Contracts | 4/4 | Complete   | 2026-02-22 |
 | 2. Policy Scope and Safety Gates | 0/TBD | Not started | - |
 | 3. Deterministic Mission Execution Core | 0/TBD | Not started | - |
 | 4. Human Resolution and Evidence Continuity | 0/TBD | Not started | - |
