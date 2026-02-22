@@ -2,6 +2,52 @@ using STIGForge.Core.Models;
 
 namespace STIGForge.Core.Abstractions;
 
+/// <summary>
+/// Append-only repository for mission run records and their deterministic timeline events.
+/// Implementations must not allow in-place mutation of historical events.
+/// </summary>
+public interface IMissionRunRepository
+{
+  /// <summary>
+  /// Creates a new mission run record. Fails if a run with the same RunId already exists.
+  /// </summary>
+  Task CreateRunAsync(MissionRun run, CancellationToken ct);
+
+  /// <summary>
+  /// Updates the status and terminal fields of an existing run (status, FinishedAt, Detail).
+  /// This is the only permitted mutation path; timeline events remain append-only.
+  /// </summary>
+  Task UpdateRunStatusAsync(string runId, MissionRunStatus status, DateTimeOffset? finishedAt, string? detail, CancellationToken ct);
+
+  /// <summary>
+  /// Returns the most recently created run record, or null if none exist.
+  /// </summary>
+  Task<MissionRun?> GetLatestRunAsync(CancellationToken ct);
+
+  /// <summary>
+  /// Returns the run record with the given ID, or null if not found.
+  /// </summary>
+  Task<MissionRun?> GetRunAsync(string runId, CancellationToken ct);
+
+  /// <summary>
+  /// Returns all run records ordered by CreatedAt descending.
+  /// </summary>
+  Task<IReadOnlyList<MissionRun>> ListRunsAsync(CancellationToken ct);
+
+  /// <summary>
+  /// Appends a timeline event to the run's ledger. Rejects duplicate (RunId, Seq) pairs.
+  /// </summary>
+  /// <exception cref="InvalidOperationException">
+  /// Thrown when a duplicate (RunId, Seq) is detected; the database enforces uniqueness.
+  /// </exception>
+  Task AppendEventAsync(MissionTimelineEvent evt, CancellationToken ct);
+
+  /// <summary>
+  /// Returns all timeline events for the given run, ordered by Seq ascending (deterministic).
+  /// </summary>
+  Task<IReadOnlyList<MissionTimelineEvent>> GetTimelineAsync(string runId, CancellationToken ct);
+}
+
 public interface IClock
 {
   DateTimeOffset Now { get; }
