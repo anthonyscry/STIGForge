@@ -11,10 +11,12 @@ namespace STIGForge.Infrastructure.System;
 public sealed class FleetService
 {
   private readonly ICredentialStore? _credentialStore;
+  private readonly IAuditTrailService? _audit;
 
-  public FleetService(ICredentialStore? credentialStore = null)
+  public FleetService(ICredentialStore? credentialStore = null, IAuditTrailService? audit = null)
   {
     _credentialStore = credentialStore;
+    _audit = audit;
   }
   /// <summary>
   /// Execute a fleet operation (apply or verify) across multiple target machines.
@@ -55,7 +57,7 @@ public sealed class FleetService
     var allResults = results.ToList();
     var finishedAt = DateTimeOffset.Now;
 
-    return new FleetResult
+    var fleetResult = new FleetResult
     {
       MachineResults = allResults,
       StartedAt = startedAt,
@@ -65,6 +67,29 @@ public sealed class FleetService
       FailureCount = allResults.Count(r => !r.Success),
       Operation = request.Operation
     };
+
+    // Record per-host audit entries
+    foreach (var mr in allResults)
+    {
+      await RecordAuditAsync(
+        $"fleet-{request.Operation}-host",
+        mr.MachineName,
+        mr.Success ? "success" : "failure",
+        $"ExitCode={mr.ExitCode}, Error={Truncate(mr.Error, 100)}",
+        ct).ConfigureAwait(false);
+    }
+
+    // Record summary audit entry
+    var duration = (finishedAt - startedAt).TotalSeconds;
+    var hostNames = string.Join(",", request.Targets.Select(t => t.HostName));
+    await RecordAuditAsync(
+      $"fleet-{request.Operation}",
+      hostNames,
+      fleetResult.SuccessCount == fleetResult.TotalMachines ? "success" : "partial",
+      $"Machines={fleetResult.TotalMachines}, Success={fleetResult.SuccessCount}, Failed={fleetResult.FailureCount}, Duration={duration:F1}s",
+      ct).ConfigureAwait(false);
+
+    return fleetResult;
   }
 
   /// <summary>
@@ -82,13 +107,23 @@ public sealed class FleetService
     await Task.WhenAll(tasks).ConfigureAwait(false);
 
     var allResults = results.ToList();
-    return new FleetStatusResult
+    var statusResult = new FleetStatusResult
     {
       MachineStatuses = allResults,
       TotalMachines = allResults.Count,
       ReachableCount = allResults.Count(s => s.IsReachable),
       UnreachableCount = allResults.Count(s => !s.IsReachable)
     };
+
+    var hostNames = string.Join(",", targets.Select(t => t.HostName));
+    await RecordAuditAsync(
+      "fleet-status",
+      hostNames,
+      statusResult.ReachableCount == statusResult.TotalMachines ? "success" : "partial",
+      $"Reachable={statusResult.ReachableCount}/{statusResult.TotalMachines}",
+      ct).ConfigureAwait(false);
+
+    return statusResult;
   }
 
   private async Task<FleetMachineResult> ExecuteOnMachineAsync(FleetTarget target, FleetRequest request, CancellationToken ct)
@@ -420,13 +455,24 @@ public sealed class FleetService
     await Task.WhenAll(tasks).ConfigureAwait(false);
 
     var allResults = results.ToList();
-    return new FleetCollectionResult
+    var collectResult = new FleetCollectionResult
     {
       HostResults = allResults,
       TotalHosts = allResults.Count,
       SuccessCount = allResults.Count(r => r.Success),
       FailureCount = allResults.Count(r => !r.Success)
     };
+
+    var hostNames = string.Join(",", request.Targets.Select(t => t.HostName));
+    var totalFiles = allResults.Sum(r => r.FilesCollected);
+    await RecordAuditAsync(
+      "fleet-collect",
+      hostNames,
+      collectResult.SuccessCount == collectResult.TotalHosts ? "success" : "partial",
+      $"Hosts={collectResult.TotalHosts}, Success={collectResult.SuccessCount}, Failed={collectResult.FailureCount}, FilesCollected={totalFiles}",
+      ct).ConfigureAwait(false);
+
+    return collectResult;
   }
 
   private async Task<FleetHostCollectionResult> CopyFromRemoteAsync(FleetTarget target, string remoteBundleRoot, string localDir, int timeoutSeconds, CancellationToken ct)
@@ -488,6 +534,34 @@ public sealed class FleetService
         Error = ex.Message
       };
     }
+  }
+
+  private async Task RecordAuditAsync(string action, string target, string result, string detail, CancellationToken ct)
+  {
+    if (_audit == null) return;
+    try
+    {
+      await _audit.RecordAsync(new AuditEntry
+      {
+        Action = action,
+        Target = target,
+        Result = result,
+        Detail = detail,
+        User = Environment.UserName,
+        Machine = Environment.MachineName,
+        Timestamp = DateTimeOffset.Now
+      }, ct).ConfigureAwait(false);
+    }
+    catch
+    {
+      // Audit failure should not block fleet operations
+    }
+  }
+
+  private static string Truncate(string? value, int maxLength)
+  {
+    if (string.IsNullOrEmpty(value)) return string.Empty;
+    return value.Length <= maxLength ? value : value.Substring(0, maxLength) + "...";
   }
 
   private FleetTarget ResolveCredentials(FleetTarget target)

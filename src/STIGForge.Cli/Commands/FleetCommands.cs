@@ -50,7 +50,9 @@ internal static class FleetCommands
       };
 
       logger.LogInformation("fleet-apply started: {Count} targets, mode={Mode}", targets.Count, request.ApplyMode);
-      var svc = new FleetService();
+      var credStore = host.Services.GetService<ICredentialStore>();
+      var audit = host.Services.GetService<IAuditTrailService>();
+      var svc = new FleetService(credStore, audit);
       var result = await svc.ExecuteAsync(request, CancellationToken.None);
       WriteFleetResult(result, ctx.ParseResult.GetValueForOption(jsonOpt), logger);
       await host.StopAsync();
@@ -89,7 +91,9 @@ internal static class FleetCommands
       };
 
       logger.LogInformation("fleet-verify started: {Count} targets", targets.Count);
-      var svc = new FleetService();
+      var credStore = host.Services.GetService<ICredentialStore>();
+      var audit = host.Services.GetService<IAuditTrailService>();
+      var svc = new FleetService(credStore, audit);
       var result = await svc.ExecuteAsync(request, CancellationToken.None);
       WriteFleetResult(result, ctx.ParseResult.GetValueForOption(jsonOpt), logger);
       await host.StopAsync();
@@ -113,7 +117,9 @@ internal static class FleetCommands
       var targetList = ParseTargets(targets);
 
       logger.LogInformation("fleet-status: checking {Count} targets", targetList.Count);
-      var svc = new FleetService();
+      var credStore = host.Services.GetService<ICredentialStore>();
+      var audit = host.Services.GetService<IAuditTrailService>();
+      var svc = new FleetService(credStore, audit);
       var result = await svc.CheckStatusAsync(targetList, CancellationToken.None);
 
       if (json)
@@ -170,7 +176,9 @@ internal static class FleetCommands
       };
 
       logger.LogInformation("fleet-collect started: {Count} targets, output={Output}", targets.Count, outputDir);
-      var svc = new FleetService();
+      var credStore = host.Services.GetService<ICredentialStore>();
+      var audit = host.Services.GetService<IAuditTrailService>();
+      var svc = new FleetService(credStore, audit);
       var result = await svc.CollectArtifactsAsync(request, CancellationToken.None);
 
       // Generate per-host CKL from collected artifacts
