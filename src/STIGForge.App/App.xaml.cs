@@ -80,6 +80,7 @@ public partial class App : Application
           services.AddSingleton<IMissionRunRepository>(sp => new MissionRunRepository(sp.GetRequiredService<string>()));
 
           services.AddSingleton<ContentPackImporter>();
+          services.AddSingleton<STIGForge.Core.Services.OverlayConflictDetector>();
           services.AddSingleton<BundleBuilder>();
           services.AddSingleton<SnapshotService>();
           services.AddSingleton<RollbackScriptGenerator>();

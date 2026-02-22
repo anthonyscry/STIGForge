@@ -77,6 +77,7 @@ public static class CliHostFactory
     services.AddSingleton<IOverlayRepository>(sp => new SqliteJsonOverlayRepository(sp.GetRequiredService<string>()));
     services.AddSingleton<IMissionRunRepository>(sp => new MissionRunRepository(sp.GetRequiredService<string>()));
     services.AddSingleton<ContentPackImporter>();
+    services.AddSingleton<STIGForge.Core.Services.OverlayConflictDetector>();
     services.AddSingleton<BundleBuilder>();
     services.AddSingleton<SnapshotService>();
     services.AddSingleton<RollbackScriptGenerator>();

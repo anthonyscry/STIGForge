@@ -11,13 +11,15 @@ public sealed class BundleBuilder
   private readonly IHashingService _hash;
   private readonly IClassificationScopeService _scope;
   private readonly STIGForge.Core.Services.ReleaseAgeGate _releaseGate;
+  private readonly STIGForge.Core.Services.OverlayConflictDetector _conflictDetector;
 
-  public BundleBuilder(IPathBuilder paths, IHashingService hash, IClassificationScopeService scope, STIGForge.Core.Services.ReleaseAgeGate releaseGate)
+  public BundleBuilder(IPathBuilder paths, IHashingService hash, IClassificationScopeService scope, STIGForge.Core.Services.ReleaseAgeGate releaseGate, STIGForge.Core.Services.OverlayConflictDetector conflictDetector)
   {
     _paths = paths;
     _hash = hash;
     _scope = scope;
     _releaseGate = releaseGate;
+    _conflictDetector = conflictDetector;
   }
 
   public async Task<BundleBuildResult> BuildAsync(BundleBuildRequest request, CancellationToken ct)
@@ -55,6 +57,17 @@ public sealed class BundleBuilder
 
     WriteNaScopeReport(Path.Combine(reportsDir, "na_scope_filter_report.csv"), compiled.Controls);
     WriteReviewQueue(Path.Combine(reportsDir, "review_required.csv"), reviewQueue);
+
+    var conflictReport = _conflictDetector.DetectConflicts(request.Overlays);
+    WriteOverlayConflictReport(Path.Combine(reportsDir, "overlay_conflict_report.csv"), conflictReport);
+
+    if (conflictReport.HasBlockingConflicts && !request.ForceAutoApply)
+    {
+      var blockingDetails = string.Join("; ", conflictReport.Conflicts
+        .Where(c => c.IsBlockingConflict)
+        .Select(c => $"{c.ControlKey} (overlays {c.WinningOverlayId} vs {c.OverriddenOverlayId})"));
+      throw new InvalidOperationException($"Overlay conflicts block build: {blockingDetails}");
+    }
 
     var automationNote = new
     {
@@ -234,6 +247,27 @@ public sealed class BundleBuilder
     }
 
     File.WriteAllText(outputPath, sb.ToString(), Encoding.UTF8);
+  }
+
+  private static void WriteOverlayConflictReport(string path, STIGForge.Core.Services.OverlayConflictReport report)
+  {
+    var sb = new StringBuilder(2048);
+    sb.AppendLine("ControlKey,WinningOverlayId,OverriddenOverlayId,WinningValue,OverriddenValue,Reason");
+
+    foreach (var c in report.Conflicts
+      .OrderBy(x => x.ControlKey, StringComparer.OrdinalIgnoreCase)
+      .ThenBy(x => x.OverriddenOverlayId, StringComparer.OrdinalIgnoreCase))
+    {
+      sb.AppendLine(string.Join(",",
+        Csv(c.ControlKey),
+        Csv(c.WinningOverlayId),
+        Csv(c.OverriddenOverlayId),
+        Csv(c.WinningValue),
+        Csv(c.OverriddenValue),
+        Csv(c.Reason)));
+    }
+
+    File.WriteAllText(path, sb.ToString(), Encoding.UTF8);
   }
 
   private static string Csv(string? value)
