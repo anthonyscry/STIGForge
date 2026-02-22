@@ -236,6 +236,12 @@ public interface IBundleMissionSummaryService
 {
   BundleMissionSummary LoadSummary(string bundleRoot);
 
+  /// <summary>
+  /// Loads the latest mission run timeline projection for the given bundle.
+  /// Returns null if no timeline data is available (repository not configured).
+  /// </summary>
+  Task<MissionTimelineSummary?> LoadTimelineSummaryAsync(string bundleRoot, CancellationToken ct);
+
   string NormalizeStatus(string? status);
 }
 
@@ -292,4 +298,35 @@ public sealed class BundleManualSummary
   public int TotalCount { get; set; }
 
   public double PercentComplete { get; set; }
+}
+
+/// <summary>
+/// Timeline projection summary derived from persisted mission run ledger data.
+/// Contains the latest run and its ordered timeline events for operator visibility.
+/// </summary>
+public sealed class MissionTimelineSummary
+{
+  /// <summary>The latest mission run that produced this timeline, or null if no runs exist.</summary>
+  public MissionRun? LatestRun { get; set; }
+
+  /// <summary>Deterministically ordered timeline events for the latest run (Seq ascending).</summary>
+  public IReadOnlyList<MissionTimelineEvent> Events { get; set; } = Array.Empty<MissionTimelineEvent>();
+
+  /// <summary>Last phase reached in the latest run (derived from events), or null if no events.</summary>
+  public MissionPhase? LastPhase { get; set; }
+
+  /// <summary>The last event step name recorded in the timeline, or null if no events.</summary>
+  public string? LastStepName { get; set; }
+
+  /// <summary>The last event status recorded (i.e. whether the last step started/finished/failed/skipped).</summary>
+  public MissionEventStatus? LastEventStatus { get; set; }
+
+  /// <summary>
+  /// True when the latest run has a blocking failed event with no subsequent finished event
+  /// for the same phase+step, indicating the mission is currently in a blocked state.
+  /// </summary>
+  public bool IsBlocked { get; set; }
+
+  /// <summary>Human-readable next-action message derived from the timeline state.</summary>
+  public string NextAction { get; set; } = string.Empty;
 }

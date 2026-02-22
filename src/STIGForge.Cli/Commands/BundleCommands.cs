@@ -18,6 +18,7 @@ internal static class BundleCommands
     RegisterManualAnswer(rootCmd);
     RegisterEvidenceSave(rootCmd);
     RegisterBundleSummary(rootCmd, buildHost);
+    RegisterMissionTimeline(rootCmd, buildHost);
     RegisterSupportBundle(rootCmd, buildHost);
     RegisterOverlayEdit(rootCmd, buildHost);
   }
@@ -227,6 +228,125 @@ internal static class BundleCommands
         Console.WriteLine($"  Pass: {summary.Manual.PassCount}  Fail: {summary.Manual.FailCount}  NA: {summary.Manual.NotApplicableCount}  Open: {summary.Manual.OpenCount}");
       }
       await Task.CompletedTask;
+    });
+
+    rootCmd.AddCommand(cmd);
+  }
+
+  private static void RegisterMissionTimeline(RootCommand rootCmd, Func<IHost> buildHost)
+  {
+    var cmd = new Command("mission-timeline", "Show ordered mission run timeline events from the mission ledger");
+    var jsonOpt = new Option<bool>("--json", "Output as JSON");
+    var runIdOpt = new Option<string>("--run-id", () => string.Empty, "Specific run ID to show (defaults to latest run)");
+    var limitOpt = new Option<int>("--limit", () => 0, "Limit the number of events shown (0 = all)");
+    cmd.AddOption(jsonOpt);
+    cmd.AddOption(runIdOpt);
+    cmd.AddOption(limitOpt);
+
+    cmd.SetHandler(async (InvocationContext ctx) =>
+    {
+      var json = ctx.ParseResult.GetValueForOption(jsonOpt);
+      var runId = ctx.ParseResult.GetValueForOption(runIdOpt) ?? string.Empty;
+      var limit = ctx.ParseResult.GetValueForOption(limitOpt);
+
+      using var host = buildHost();
+      await host.StartAsync();
+
+      try
+      {
+        var repo = host.Services.GetRequiredService<IMissionRunRepository>();
+
+        MissionRun? run;
+        if (!string.IsNullOrWhiteSpace(runId))
+        {
+          run = await repo.GetRunAsync(runId.Trim(), CancellationToken.None);
+          if (run == null)
+          {
+            Console.Error.WriteLine("Run not found: " + runId);
+            Environment.ExitCode = 2;
+            return;
+          }
+        }
+        else
+        {
+          run = await repo.GetLatestRunAsync(CancellationToken.None);
+          if (run == null)
+          {
+            if (json)
+              Console.WriteLine(JsonSerializer.Serialize(new { runs = Array.Empty<object>(), events = Array.Empty<object>(), message = "No mission runs recorded yet." }, new JsonSerializerOptions { WriteIndented = true }));
+            else
+              Console.WriteLine("No mission runs recorded yet. Run orchestration to start a mission.");
+            return;
+          }
+        }
+
+        var events = await repo.GetTimelineAsync(run.RunId, CancellationToken.None);
+        IEnumerable<MissionTimelineEvent> filteredEvents = events;
+        if (limit > 0)
+          filteredEvents = events.Take(limit);
+
+        var eventList = filteredEvents.ToList();
+
+        if (json)
+        {
+          Console.WriteLine(JsonSerializer.Serialize(new
+          {
+            run = new
+            {
+              runId = run.RunId,
+              label = run.Label,
+              bundleRoot = run.BundleRoot,
+              status = run.Status.ToString(),
+              createdAt = run.CreatedAt.ToString("o"),
+              finishedAt = run.FinishedAt?.ToString("o"),
+              detail = run.Detail
+            },
+            events = eventList.Select(e => new
+            {
+              seq = e.Seq,
+              phase = e.Phase.ToString(),
+              stepName = e.StepName,
+              status = e.Status.ToString(),
+              occurredAt = e.OccurredAt.ToString("o"),
+              message = e.Message,
+              evidencePath = e.EvidencePath
+            })
+          }, new JsonSerializerOptions { WriteIndented = true }));
+        }
+        else
+        {
+          Console.WriteLine($"Run:     {run.RunId}");
+          Console.WriteLine($"Label:   {run.Label}");
+          Console.WriteLine($"Bundle:  {run.BundleRoot}");
+          Console.WriteLine($"Status:  {run.Status}");
+          Console.WriteLine($"Created: {run.CreatedAt:yyyy-MM-dd HH:mm:ss}");
+          if (run.FinishedAt.HasValue)
+            Console.WriteLine($"Finished:{run.FinishedAt.Value:yyyy-MM-dd HH:mm:ss}");
+          if (!string.IsNullOrWhiteSpace(run.Detail))
+            Console.WriteLine($"Detail:  {run.Detail}");
+          Console.WriteLine();
+
+          if (eventList.Count == 0)
+          {
+            Console.WriteLine("No timeline events recorded for this run.");
+          }
+          else
+          {
+            Console.WriteLine($"{"Seq",-5} {"Phase",-12} {"Step",-25} {"Status",-12} {"Time",-20} {"Message"}");
+            Console.WriteLine(new string('-', 100));
+            foreach (var e in eventList)
+            {
+              Console.WriteLine($"{e.Seq,-5} {e.Phase,-12} {Helpers.Truncate(e.StepName, 25),-25} {e.Status,-12} {e.OccurredAt:yyyy-MM-dd HH:mm:ss,-20} {Helpers.Truncate(e.Message, 40)}");
+            }
+            Console.WriteLine();
+            Console.WriteLine($"Total events: {eventList.Count}" + (limit > 0 && events.Count > limit ? $" (showing {limit} of {events.Count})" : string.Empty));
+          }
+        }
+      }
+      finally
+      {
+        await host.StopAsync();
+      }
     });
 
     rootCmd.AddCommand(cmd);

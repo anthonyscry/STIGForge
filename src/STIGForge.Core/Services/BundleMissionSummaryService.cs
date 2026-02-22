@@ -8,10 +8,12 @@ namespace STIGForge.Core.Services;
 public sealed class BundleMissionSummaryService : IBundleMissionSummaryService
 {
   private readonly ManualAnswerService _manualAnswers;
+  private readonly IMissionRunRepository? _missionRunRepo;
 
-  public BundleMissionSummaryService(ManualAnswerService? manualAnswers = null)
+  public BundleMissionSummaryService(ManualAnswerService? manualAnswers = null, IMissionRunRepository? missionRunRepo = null)
   {
     _manualAnswers = manualAnswers ?? new ManualAnswerService();
+    _missionRunRepo = missionRunRepo;
   }
 
   public BundleMissionSummary LoadSummary(string bundleRoot)
@@ -54,6 +56,87 @@ public sealed class BundleMissionSummaryService : IBundleMissionSummaryService
 
     summary.Diagnostics = diagnostics;
     return summary;
+  }
+
+  public async Task<MissionTimelineSummary?> LoadTimelineSummaryAsync(string bundleRoot, CancellationToken ct)
+  {
+    if (_missionRunRepo == null)
+      return null;
+
+    MissionRun? latestRun;
+    try
+    {
+      latestRun = await _missionRunRepo.GetLatestRunAsync(ct).ConfigureAwait(false);
+    }
+    catch (Exception ex)
+    {
+      System.Diagnostics.Trace.TraceWarning("BundleMissionSummaryService: failed to read latest run: " + ex.Message);
+      return null;
+    }
+
+    if (latestRun == null)
+    {
+      return new MissionTimelineSummary
+      {
+        LatestRun = null,
+        Events = Array.Empty<MissionTimelineEvent>(),
+        NextAction = "No mission runs recorded yet. Run orchestration to start a mission."
+      };
+    }
+
+    IReadOnlyList<MissionTimelineEvent> events;
+    try
+    {
+      events = await _missionRunRepo.GetTimelineAsync(latestRun.RunId, ct).ConfigureAwait(false);
+    }
+    catch (Exception ex)
+    {
+      System.Diagnostics.Trace.TraceWarning("BundleMissionSummaryService: failed to read timeline for run " + latestRun.RunId + ": " + ex.Message);
+      events = Array.Empty<MissionTimelineEvent>();
+    }
+
+    var lastEvent = events.Count > 0 ? events[events.Count - 1] : null;
+    var isBlocked = events.Any(e => e.Status == MissionEventStatus.Failed);
+
+    var nextAction = DeriveNextAction(latestRun, events, isBlocked);
+
+    return new MissionTimelineSummary
+    {
+      LatestRun = latestRun,
+      Events = events,
+      LastPhase = lastEvent?.Phase,
+      LastStepName = lastEvent?.StepName,
+      LastEventStatus = lastEvent?.Status,
+      IsBlocked = isBlocked,
+      NextAction = nextAction
+    };
+  }
+
+  private static string DeriveNextAction(MissionRun run, IReadOnlyList<MissionTimelineEvent> events, bool isBlocked)
+  {
+    if (run.Status == MissionRunStatus.Completed)
+      return "Mission complete. Review results and export eMASS package.";
+
+    if (run.Status == MissionRunStatus.Failed || isBlocked)
+    {
+      var failedEvent = events.LastOrDefault(e => e.Status == MissionEventStatus.Failed);
+      if (failedEvent != null)
+        return $"Mission blocked at {failedEvent.Phase}/{failedEvent.StepName}. Resolve failure and rerun.";
+      return "Mission failed. Review logs and rerun orchestration.";
+    }
+
+    if (run.Status == MissionRunStatus.Running)
+    {
+      var lastEvent = events.Count > 0 ? events[events.Count - 1] : null;
+      if (lastEvent != null)
+        return $"Mission running: last recorded event {lastEvent.Phase}/{lastEvent.StepName} ({lastEvent.Status}).";
+      return "Mission running. Waiting for timeline events.";
+    }
+
+    if (run.Status == MissionRunStatus.Cancelled)
+      return "Mission was cancelled. Rerun orchestration when ready.";
+
+    return "Mission pending. Run orchestration to proceed.";
   }
 
   public string NormalizeStatus(string? status)
