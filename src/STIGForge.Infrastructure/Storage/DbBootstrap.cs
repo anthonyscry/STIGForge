@@ -115,5 +115,58 @@ CREATE TABLE IF NOT EXISTS audit_trail (
 );
 ";
     cmd.ExecuteNonQuery();
+
+    // Migrations: Add new columns to content_packs if they don't exist
+    try
+    {
+      using var alterCmd = conn.CreateCommand();
+      alterCmd.CommandText = @"
+ALTER TABLE content_packs ADD COLUMN benchmark_ids_json TEXT NOT NULL DEFAULT '[]';
+";
+      alterCmd.ExecuteNonQuery();
+    }
+    catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.Message.Contains("duplicate column name"))
+    {
+      // Column already exists, ignore
+    }
+
+    try
+    {
+      using var alterCmd = conn.CreateCommand();
+      alterCmd.CommandText = @"
+ALTER TABLE content_packs ADD COLUMN applicability_tags_json TEXT NOT NULL DEFAULT '[]';
+";
+      alterCmd.ExecuteNonQuery();
+    }
+    catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.Message.Contains("duplicate column name"))
+    {
+      // Column already exists, ignore
+    }
+
+    try
+    {
+      using var alterCmd = conn.CreateCommand();
+      alterCmd.CommandText = @"
+ALTER TABLE content_packs ADD COLUMN version TEXT NOT NULL DEFAULT '';
+";
+      alterCmd.ExecuteNonQuery();
+    }
+    catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.Message.Contains("duplicate column name"))
+    {
+      // Column already exists, ignore
+    }
+
+    try
+    {
+      using var alterCmd = conn.CreateCommand();
+      alterCmd.CommandText = @"
+ALTER TABLE content_packs ADD COLUMN release TEXT NOT NULL DEFAULT '';
+";
+      alterCmd.ExecuteNonQuery();
+    }
+    catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.Message.Contains("duplicate column name"))
+    {
+      // Column already exists, ignore
+    }
   }
 }

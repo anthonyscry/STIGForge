@@ -97,6 +97,31 @@ public sealed class ContentPackImporterTests : IDisposable
   }
 
   [Fact]
+  public async Task ImportZipAsync_SetsSourcePackIdOnControls()
+  {
+    var zipPath = Path.Combine(_tempRoot, "source-pack-id-test.zip");
+    using (var archive = ZipFile.Open(zipPath, ZipArchiveMode.Create))
+    {
+      var xccdf = archive.CreateEntry("test-xccdf.xml");
+      await using var writer = new StreamWriter(xccdf.Open());
+      await writer.WriteAsync(CreateMinimalXccdf());
+    }
+
+    var importer = CreateImporter(out var packsMock, out var controlsMock);
+    var result = await importer.ImportZipAsync(zipPath, "source-pack-test", "unit-test", CancellationToken.None);
+
+    Assert.Equal("source-pack-test", result.Name);
+    Assert.NotNull(result.PackId);
+    Assert.False(string.IsNullOrEmpty(result.PackId));
+
+    // Verify all controls have SourcePackId set to the pack's ID
+    controlsMock.Verify(c => c.SaveControlsAsync(
+      It.Is<string>(packId => packId == result.PackId),
+      It.Is<IReadOnlyList<ControlRecord>>(list => list.Count > 0 && list.All(ctrl => ctrl.SourcePackId == result.PackId)),
+      It.IsAny<CancellationToken>()), Times.Once);
+  }
+
+  [Fact]
   public async Task ImportZipAsync_ParsesScapDataStreamBenchmarkXml()
   {
     var zipPath = Path.Combine(_tempRoot, "scap-datastream-benchmark.zip");

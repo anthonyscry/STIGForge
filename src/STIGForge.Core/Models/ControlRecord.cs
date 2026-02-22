@@ -27,6 +27,13 @@ public sealed class Applicability
 public sealed class ControlRecord
 {
   public string ControlId { get; set; } = string.Empty;
+
+  /// <summary>
+  /// Foreign key reference to the ContentPack.PackId this control was imported from.
+  /// Set at import time; immutable after initial ingestion.
+  /// </summary>
+  public string SourcePackId { get; set; } = string.Empty;
+
   public ExternalIds ExternalIds { get; set; } = new();
   public string Title { get; set; } = string.Empty;
   public string Severity { get; set; } = "unknown";

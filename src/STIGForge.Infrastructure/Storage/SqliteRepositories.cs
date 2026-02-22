@@ -9,38 +9,88 @@ namespace STIGForge.Infrastructure.Storage;
 public sealed class SqliteContentPackRepository : IContentPackRepository
 {
   private readonly string _cs;
+  private static readonly JsonSerializerOptions J = new();
   public SqliteContentPackRepository(string connectionString) => _cs = connectionString;
 
   public async Task SaveAsync(ContentPack pack, CancellationToken ct)
   {
-    const string sql = @"INSERT INTO content_packs(pack_id,name,imported_at,release_date,source_label,hash_algorithm,manifest_sha256)
-VALUES(@PackId,@Name,@ImportedAt,@ReleaseDate,@SourceLabel,@HashAlgorithm,@ManifestSha256)
+    const string sql = @"INSERT INTO content_packs(pack_id,name,imported_at,release_date,source_label,hash_algorithm,manifest_sha256,benchmark_ids_json,applicability_tags_json,version,release)
+VALUES(@PackId,@Name,@ImportedAt,@ReleaseDate,@SourceLabel,@HashAlgorithm,@ManifestSha256,@BenchmarkIdsJson,@ApplicabilityTagsJson,@Version,@Release)
 ON CONFLICT(pack_id) DO UPDATE SET
 name=excluded.name,
 imported_at=excluded.imported_at,
 release_date=excluded.release_date,
 source_label=excluded.source_label,
 hash_algorithm=excluded.hash_algorithm,
-manifest_sha256=excluded.manifest_sha256;";
+manifest_sha256=excluded.manifest_sha256,
+benchmark_ids_json=excluded.benchmark_ids_json,
+applicability_tags_json=excluded.applicability_tags_json,
+version=excluded.version,
+release=excluded.release;";
     using var conn = new SqliteConnection(_cs);
-    await conn.ExecuteAsync(new CommandDefinition(sql, pack, cancellationToken: ct)).ConfigureAwait(false);
+    var parameters = new
+    {
+      pack.PackId,
+      pack.Name,
+      pack.ImportedAt,
+      pack.ReleaseDate,
+      pack.SourceLabel,
+      pack.HashAlgorithm,
+      pack.ManifestSha256,
+      BenchmarkIdsJson = JsonSerializer.Serialize(pack.BenchmarkIds, J),
+      ApplicabilityTagsJson = JsonSerializer.Serialize(pack.ApplicabilityTags, J),
+      pack.Version,
+      pack.Release
+    };
+    await conn.ExecuteAsync(new CommandDefinition(sql, parameters, cancellationToken: ct)).ConfigureAwait(false);
   }
 
   public async Task<ContentPack?> GetAsync(string packId, CancellationToken ct)
   {
     using var conn = new SqliteConnection(_cs);
-    return await conn.QuerySingleOrDefaultAsync<ContentPack>(new CommandDefinition(
-      "SELECT pack_id PackId, name Name, imported_at ImportedAt, release_date ReleaseDate, source_label SourceLabel, hash_algorithm HashAlgorithm, manifest_sha256 ManifestSha256 FROM content_packs WHERE pack_id=@packId",
+    var row = await conn.QuerySingleOrDefaultAsync(new CommandDefinition(
+      "SELECT pack_id PackId, name Name, imported_at ImportedAt, release_date ReleaseDate, source_label SourceLabel, hash_algorithm HashAlgorithm, manifest_sha256 ManifestSha256, benchmark_ids_json BenchmarkIdsJson, applicability_tags_json ApplicabilityTagsJson, version Version, release Release FROM content_packs WHERE pack_id=@packId",
       new { packId }, cancellationToken: ct)).ConfigureAwait(false);
+
+    if (row is null) return null;
+
+    return new ContentPack
+    {
+      PackId = row.PackId,
+      Name = row.Name,
+      ImportedAt = row.ImportedAt,
+      ReleaseDate = row.ReleaseDate,
+      SourceLabel = row.SourceLabel,
+      HashAlgorithm = row.HashAlgorithm,
+      ManifestSha256 = row.ManifestSha256,
+      BenchmarkIds = JsonSerializer.Deserialize<List<string>>(row.BenchmarkIdsJson ?? "[]", J) ?? new List<string>(),
+      ApplicabilityTags = JsonSerializer.Deserialize<List<string>>(row.ApplicabilityTagsJson ?? "[]", J) ?? new List<string>(),
+      Version = row.Version ?? string.Empty,
+      Release = row.Release ?? string.Empty
+    };
   }
 
   public async Task<IReadOnlyList<ContentPack>> ListAsync(CancellationToken ct)
   {
     using var conn = new SqliteConnection(_cs);
-    var rows = await conn.QueryAsync<ContentPack>(new CommandDefinition(
-      "SELECT pack_id PackId, name Name, imported_at ImportedAt, release_date ReleaseDate, source_label SourceLabel, hash_algorithm HashAlgorithm, manifest_sha256 ManifestSha256 FROM content_packs ORDER BY imported_at DESC",
+    var rows = await conn.QueryAsync(new CommandDefinition(
+      "SELECT pack_id PackId, name Name, imported_at ImportedAt, release_date ReleaseDate, source_label SourceLabel, hash_algorithm HashAlgorithm, manifest_sha256 ManifestSha256, benchmark_ids_json BenchmarkIdsJson, applicability_tags_json ApplicabilityTagsJson, version Version, release Release FROM content_packs ORDER BY imported_at DESC",
       cancellationToken: ct)).ConfigureAwait(false);
-    return rows.ToList();
+
+    return rows.Select(row => new ContentPack
+    {
+      PackId = row.PackId,
+      Name = row.Name,
+      ImportedAt = row.ImportedAt,
+      ReleaseDate = row.ReleaseDate,
+      SourceLabel = row.SourceLabel,
+      HashAlgorithm = row.HashAlgorithm,
+      ManifestSha256 = row.ManifestSha256,
+      BenchmarkIds = JsonSerializer.Deserialize<List<string>>(row.BenchmarkIdsJson ?? "[]", J) ?? new List<string>(),
+      ApplicabilityTags = JsonSerializer.Deserialize<List<string>>(row.ApplicabilityTagsJson ?? "[]", J) ?? new List<string>(),
+      Version = row.Version ?? string.Empty,
+      Release = row.Release ?? string.Empty
+    }).ToList();
   }
 
   public async Task DeleteAsync(string packId, CancellationToken ct)

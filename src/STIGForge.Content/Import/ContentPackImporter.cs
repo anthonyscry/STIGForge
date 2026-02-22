@@ -434,6 +434,10 @@ public sealed class ContentPackImporter
             checkpoint.Stage = ImportStage.Persisting;
             checkpoint.Save(packRoot);
 
+            // Wire SourcePackId provenance on all controls
+            foreach (var c in parsed)
+                c.SourcePackId = pack.PackId;
+
             await _packs.SaveAsync(pack, ct).ConfigureAwait(false);
             if (parsed.Count > 0)
                 await _controls.SaveControlsAsync(pack.PackId, parsed, ct).ConfigureAwait(false);
@@ -582,6 +586,10 @@ public sealed class ContentPackImporter
 
             checkpoint.Stage = ImportStage.Persisting;
             checkpoint.Save(packRoot);
+
+            // Wire SourcePackId provenance on all controls
+            foreach (var c in parsed)
+                c.SourcePackId = pack.PackId;
 
             // Atomic save: both pack and controls in a logical transaction
             await _packs.SaveAsync(pack, ct).ConfigureAwait(false);
