@@ -34,6 +34,12 @@ public sealed class EmassPackageValidator
     // Validate content integrity
     ValidateContentIntegrity(packageRoot, errors, warnings, metrics);
 
+    // Validate package-level hash
+    ValidatePackageHash(packageRoot, errors, warnings, metrics);
+
+    // Validate submission readiness
+    ValidateSubmissionReadiness(packageRoot, errors, warnings, metrics);
+
     var isValid = errors.Count == 0;
 
     return new ValidationResult
@@ -454,6 +460,33 @@ public sealed class EmassPackageValidator
       sb.AppendLine();
     }
 
+    // Package Integrity section
+    sb.AppendLine("PACKAGE INTEGRITY:");
+    if (result.Metrics.PackageHashExpected != null)
+    {
+      sb.AppendLine($"  Package hash: {(result.Metrics.PackageHashValid ? "VALID" : "INVALID")} ({(result.Metrics.PackageHashValid ? "matches" : "DOES NOT match")} file_hashes.sha256)");
+    }
+    else
+    {
+      sb.AppendLine("  Package hash: NOT PRESENT (no packageHash in manifest)");
+    }
+    sb.AppendLine($"  Hash manifest entries: {result.Metrics.HashManifestEntryCount}");
+    sb.AppendLine($"  File hash mismatches: {result.Metrics.HashMismatchCount}");
+    sb.AppendLine();
+
+    // Submission Readiness section
+    if (result.Metrics.SubmissionReadiness != null)
+    {
+      var sr = result.Metrics.SubmissionReadiness;
+      sb.AppendLine("SUBMISSION READINESS:");
+      sb.AppendLine($"  [{(sr.AllControlsCovered ? "PASS" : "FAIL")}] All controls covered");
+      sb.AppendLine($"  [{(sr.EvidencePresent ? "PASS" : "FAIL")}] Evidence present");
+      sb.AppendLine($"  [{(sr.PoamComplete ? "PASS" : "FAIL")}] POA&M complete");
+      sb.AppendLine($"  [{(sr.AttestationsComplete ? "PASS" : "FAIL")}] Attestations complete");
+      sb.AppendLine($"  Verdict: {(sr.IsReady ? "READY" : "NOT READY")}");
+      sb.AppendLine();
+    }
+
     if (result.IsValid && result.Warnings.Count == 0)
     {
       sb.AppendLine("Package passed all validation checks.");
@@ -471,6 +504,86 @@ public sealed class EmassPackageValidator
     }
 
     File.WriteAllText(outputPath, sb.ToString(), Encoding.UTF8);
+  }
+
+  private static void ValidatePackageHash(string root, List<string> errors, List<string> warnings, ValidationMetrics metrics)
+  {
+    var manifestPath = Path.Combine(root, "00_Manifest", "manifest.json");
+    var hashManifestPath = Path.Combine(root, "00_Manifest", "file_hashes.sha256");
+
+    if (!File.Exists(manifestPath) || !File.Exists(hashManifestPath))
+      return;
+
+    try
+    {
+      using var doc = System.Text.Json.JsonDocument.Parse(File.ReadAllText(manifestPath));
+      if (!doc.RootElement.TryGetProperty("packageHash", out var packageHashElement) ||
+          packageHashElement.ValueKind != System.Text.Json.JsonValueKind.String)
+      {
+        warnings.Add("No packageHash in manifest - package integrity cannot be verified at package level");
+        return;
+      }
+
+      var expectedHash = packageHashElement.GetString() ?? string.Empty;
+      var actualHash = ComputeSha256(hashManifestPath);
+
+      metrics.PackageHashExpected = expectedHash;
+      metrics.PackageHashActual = actualHash;
+
+      if (string.Equals(expectedHash, actualHash, StringComparison.OrdinalIgnoreCase))
+      {
+        metrics.PackageHashValid = true;
+      }
+      else
+      {
+        errors.Add("Package hash mismatch: hash manifest has been modified after package creation");
+        metrics.PackageHashValid = false;
+      }
+    }
+    catch (Exception ex)
+    {
+      warnings.Add("Unable to verify package hash: " + ex.Message);
+    }
+  }
+
+  private static void ValidateSubmissionReadiness(string root, List<string> errors, List<string> warnings, ValidationMetrics metrics)
+  {
+    var manifestPath = Path.Combine(root, "00_Manifest", "manifest.json");
+    if (!File.Exists(manifestPath))
+      return;
+
+    try
+    {
+      using var doc = System.Text.Json.JsonDocument.Parse(File.ReadAllText(manifestPath));
+      if (!doc.RootElement.TryGetProperty("submissionReadiness", out var readiness))
+        return;
+
+      var result = new SubmissionReadinessResult();
+
+      if (readiness.TryGetProperty("allControlsCovered", out var acc))
+        result.AllControlsCovered = acc.GetBoolean();
+      if (readiness.TryGetProperty("evidencePresent", out var ep))
+        result.EvidencePresent = ep.GetBoolean();
+      if (readiness.TryGetProperty("poamComplete", out var pc))
+        result.PoamComplete = pc.GetBoolean();
+      if (readiness.TryGetProperty("attestationsComplete", out var atc))
+        result.AttestationsComplete = atc.GetBoolean();
+
+      metrics.SubmissionReadiness = result;
+
+      if (!result.AllControlsCovered)
+        warnings.Add("Not all controls have been reviewed (some remain NotReviewed)");
+      if (!result.EvidencePresent)
+        warnings.Add("No evidence files found for controls");
+      if (!result.PoamComplete)
+        warnings.Add("POA&M may be incomplete");
+      if (!result.AttestationsComplete)
+        warnings.Add("Some attestations are still Pending");
+    }
+    catch (Exception ex)
+    {
+      warnings.Add("Unable to read submission readiness: " + ex.Message);
+    }
   }
 
   private static string[] ParseCsvLine(string line)

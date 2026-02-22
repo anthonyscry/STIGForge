@@ -3,6 +3,7 @@ using System.CommandLine.Invocation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using STIGForge.Core.Abstractions;
 using STIGForge.Export;
 
 namespace STIGForge.Cli.Commands;
@@ -13,6 +14,8 @@ internal static class ExportCommands
   {
     RegisterExportPoam(rootCmd, buildHost);
     RegisterExportCkl(rootCmd, buildHost);
+    RegisterExportEmass(rootCmd, buildHost);
+    RegisterImportAttestations(rootCmd, buildHost);
   }
 
   private static void RegisterExportPoam(RootCommand rootCmd, Func<IHost> buildHost)
@@ -113,6 +116,97 @@ internal static class ExportCommands
       logger.LogInformation("export-ckl completed: {ControlCount} controls exported to {Output}", result.ControlCount, result.OutputPath);
       await host.StopAsync();
     });
+
+    rootCmd.AddCommand(cmd);
+  }
+
+  private static void RegisterExportEmass(RootCommand rootCmd, Func<IHost> buildHost)
+  {
+    var cmd = new Command("export-emass", "Export deterministic eMASS submission package from a bundle");
+    var bundleOpt = new Option<string>("--bundle", "Bundle root path") { IsRequired = true };
+    var outOpt = new Option<string>("--output", () => string.Empty, "Output root directory override");
+    cmd.AddOption(bundleOpt); cmd.AddOption(outOpt);
+
+    cmd.SetHandler(async (InvocationContext ctx) =>
+    {
+      var bundle = ctx.ParseResult.GetValueForOption(bundleOpt) ?? string.Empty;
+      var output = ctx.ParseResult.GetValueForOption(outOpt) ?? string.Empty;
+
+      using var host = buildHost();
+      await host.StartAsync();
+      var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("ExportCommands");
+      logger.LogInformation("export-emass started: bundle={Bundle}", bundle);
+
+      var paths = host.Services.GetRequiredService<IPathBuilder>();
+      var hash = host.Services.GetRequiredService<IHashingService>();
+      var audit = host.Services.GetService<IAuditTrailService>();
+      var exporter = new EmassExporter(paths, hash, audit);
+
+      var result = await exporter.ExportAsync(new ExportRequest
+      {
+        BundleRoot = bundle,
+        OutputRoot = string.IsNullOrWhiteSpace(output) ? null : output
+      }, CancellationToken.None);
+
+      Console.WriteLine("eMASS export:");
+      Console.WriteLine("  Output: " + result.OutputRoot);
+      Console.WriteLine("  Manifest: " + result.ManifestPath);
+      Console.WriteLine("  Valid: " + (result.ValidationResult?.IsValid ?? false));
+      Console.WriteLine("  Ready for submission: " + result.IsReadyForSubmission);
+      if (result.BlockingFailures.Count > 0)
+      {
+        Console.WriteLine("  Errors:");
+        foreach (var err in result.BlockingFailures)
+          Console.WriteLine("    - " + err);
+      }
+      if (result.Warnings.Count > 0)
+      {
+        Console.WriteLine("  Warnings:");
+        foreach (var warn in result.Warnings)
+          Console.WriteLine("    - " + warn);
+      }
+
+      logger.LogInformation("export-emass completed: output={Output}, valid={Valid}, ready={Ready}",
+        result.OutputRoot, result.ValidationResult?.IsValid, result.IsReadyForSubmission);
+      if (!result.IsReadyForSubmission) Environment.ExitCode = 1;
+      await host.StopAsync();
+    });
+
+    rootCmd.AddCommand(cmd);
+  }
+
+  private static void RegisterImportAttestations(RootCommand rootCmd, Func<IHost> buildHost)
+  {
+    var cmd = new Command("import-attestations", "Import completed attestation CSV into eMASS package");
+    var packageOpt = new Option<string>("--package", "eMASS package root path") { IsRequired = true };
+    var fileOpt = new Option<string>("--file", "Path to filled attestation CSV file") { IsRequired = true };
+    cmd.AddOption(packageOpt); cmd.AddOption(fileOpt);
+
+    cmd.SetHandler(async (package, file) =>
+    {
+      using var host = buildHost();
+      await host.StartAsync();
+      var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("ExportCommands");
+      logger.LogInformation("import-attestations started: package={Package}, file={File}", package, file);
+
+      var audit = host.Services.GetService<IAuditTrailService>();
+      var result = AttestationImporter.ImportAttestations(package, file, audit);
+
+      Console.WriteLine("Attestation import:");
+      Console.WriteLine($"  Updated: {result.Updated}");
+      Console.WriteLine($"  Skipped: {result.Skipped}");
+      Console.WriteLine($"  Not found: {result.NotFound}");
+      if (result.NotFoundControls.Count > 0)
+      {
+        Console.WriteLine("  Not found controls:");
+        foreach (var ctrl in result.NotFoundControls)
+          Console.WriteLine("    - " + ctrl);
+      }
+
+      logger.LogInformation("import-attestations completed: updated={Updated}, skipped={Skipped}, notFound={NotFound}",
+        result.Updated, result.Skipped, result.NotFound);
+      await host.StopAsync();
+    }, packageOpt, fileOpt);
 
     rootCmd.AddCommand(cmd);
   }
