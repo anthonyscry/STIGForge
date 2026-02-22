@@ -75,7 +75,12 @@ Plans:
   2. Evidence autopilot captures control-level artifacts with metadata and checksums suitable for downstream audit packaging.
   3. Pack diff deterministically reports add/remove/text/mapping deltas between source versions.
   4. Rebase carries only high-confidence matches automatically and routes uncertain carries for explicit operator review.
-**Plans**: TBD
+**Plans**: 4 plans
+Plans:
+- [ ] 04-01-PLAN.md — Answer file export/import with CLI commands for cross-bundle portability.
+- [ ] 04-02-PLAN.md — Evidence index service with build/query/manifest and CLI command.
+- [ ] 04-03-PLAN.md — Pack diff answer impact assessment and answer rebase service with CLI.
+- [ ] 04-04-PLAN.md — WPF answer export/import buttons, AnswerRebaseWizard, and DiffViewer answer impact.
 
 ### Phase 5: Proof Packaging, Fleet-lite, and Integrity
 **Goal**: Operators can produce defensible export packages and integrity proofs for single-host and fleet-lite operations.
@@ -94,5 +99,5 @@ Plans:
 | 1. Canonical Ingestion Contracts | 4/4 | Complete   | 2026-02-22 |
 | 2. Policy Scope and Safety Gates | 5/5 | Complete   | 2026-02-22 |
 | 3. Deterministic Mission Execution Core | 5/5 | Complete   | 2026-02-22 |
-| 4. Human Resolution and Evidence Continuity | 0/TBD | Not started | - |
+| 4. Human Resolution and Evidence Continuity | 0/4 | Not started | - |
 | 5. Proof Packaging, Fleet-lite, and Integrity | 0/TBD | Not started | - |
