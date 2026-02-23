@@ -13,12 +13,12 @@ public sealed class LocalSetupValidator
 
   public string ValidateRequiredTools()
   {
-    var toolsRoot = _paths.GetToolsRoot();
-    var candidates = new[]
-    {
-      Path.Combine(toolsRoot, "Evaluate-STIG", "Evaluate-STIG"),
-      Path.Combine(toolsRoot, "Evaluate-STIG")
-    };
+    return ValidateRequiredTools(null);
+  }
+
+  public string ValidateRequiredTools(string? evaluateStigToolRoot)
+  {
+    var candidates = ResolveCandidates(evaluateStigToolRoot);
 
     foreach (var candidate in candidates)
     {
@@ -32,6 +32,19 @@ public sealed class LocalSetupValidator
 
     throw new InvalidOperationException(
       "Required Evaluate-STIG tool path is missing or invalid. " +
-      $"Expected Evaluate-STIG.ps1 under '{candidates[0]}' or '{candidates[1]}'.");
+      $"Expected Evaluate-STIG.ps1 under {string.Join(" or ", candidates.Select(static c => $"'{c}'"))}.");
+  }
+
+  private IReadOnlyList<string> ResolveCandidates(string? evaluateStigToolRoot)
+  {
+    if (!string.IsNullOrWhiteSpace(evaluateStigToolRoot))
+      return new[] { evaluateStigToolRoot };
+
+    var toolsRoot = _paths.GetToolsRoot();
+    return new[]
+    {
+      Path.Combine(toolsRoot, "Evaluate-STIG", "Evaluate-STIG"),
+      Path.Combine(toolsRoot, "Evaluate-STIG")
+    };
   }
 }

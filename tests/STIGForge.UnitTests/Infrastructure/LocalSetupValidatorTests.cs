@@ -64,6 +64,20 @@ public sealed class LocalSetupValidatorTests : IDisposable
     result.Should().Be(toolRoot);
   }
 
+  [Fact]
+  public void ValidateRequiredTools_Throws_WhenExplicitEvaluateStigRootIsInvalid()
+  {
+    var paths = new TestPathBuilder(_tempRoot);
+    var validator = new LocalSetupValidator(paths);
+    var explicitRoot = Path.Combine(paths.GetToolsRoot(), "missing-tool-root");
+
+    var act = () => validator.ValidateRequiredTools(explicitRoot);
+
+    act.Should().Throw<InvalidOperationException>()
+      .WithMessage("*Evaluate-STIG*")
+      .WithMessage("*Evaluate-STIG.ps1*");
+  }
+
   private sealed class TestPathBuilder : IPathBuilder
   {
     private readonly string _root;
