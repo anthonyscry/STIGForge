@@ -38,7 +38,7 @@ Requirements for Operational Maturity milestone. Each maps to roadmap phases.
 
 - [ ] **ERRX-01**: Human-readable error messages replace raw exception output
 - [ ] **ERRX-02**: Recovery guidance included in error output ("Next steps")
-- [ ] **ERRX-03**: Structured error codes enable machine-readable error cataloging
+- [x] **ERRX-03**: Structured error codes enable machine-readable error cataloging
 - [ ] **ERRX-04**: Error catalog documentation searchable by error code
 - [ ] **ERRX-05**: Graceful degradation allows partial mission completion
 - [ ] **ERRX-06**: Unified error UX across CLI and WPF surfaces
@@ -97,7 +97,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PERF-06 | Phase 13 | Pending |
 | ERRX-01 | Phase 15 | Pending |
 | ERRX-02 | Phase 15 | Pending |
-| ERRX-03 | Phase 11 | Pending |
+| ERRX-03 | Phase 11 | Complete |
 | ERRX-04 | Phase 15 | Pending |
 | ERRX-05 | Phase 15 | Pending |
 | ERRX-06 | Phase 15 | Pending |
@@ -109,4 +109,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-22*
-*Last updated: 2026-02-22 after v1.1 milestone research*
+*Last updated: 2026-02-23 after 11-03 completion*
