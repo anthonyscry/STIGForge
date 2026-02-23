@@ -84,6 +84,24 @@ function Invoke-CoverageGate {
     [void]$criticalLookup.Add($assembly)
   }
 
+  $availablePackageLookup = New-Object System.Collections.Generic.HashSet[string]([StringComparer]::OrdinalIgnoreCase)
+  foreach ($package in $allPackages) {
+    [void]$availablePackageLookup.Add([string]$package.name)
+  }
+
+  $missingCriticalAssemblies = New-Object 'System.Collections.Generic.List[string]'
+  $missingSeenLookup = New-Object System.Collections.Generic.HashSet[string]([StringComparer]::OrdinalIgnoreCase)
+  foreach ($assembly in $criticalAssemblies) {
+    if (-not $availablePackageLookup.Contains($assembly) -and $missingSeenLookup.Add($assembly)) {
+      [void]$missingCriticalAssemblies.Add($assembly)
+    }
+  }
+
+  if ($missingCriticalAssemblies.Count -gt 0) {
+    $missingCriticalAssemblies.Sort([StringComparer]::OrdinalIgnoreCase)
+    throw "Cobertura report is missing policy critical assemblies: $($missingCriticalAssemblies -join ', ')"
+  }
+
   $scopedPackages = @($allPackages | Where-Object { $criticalLookup.Contains([string]$_.name) })
   if ($scopedPackages.Count -eq 0) {
     throw "Cobertura report did not contain any policy critical assemblies: $($criticalAssemblies -join ', ')"

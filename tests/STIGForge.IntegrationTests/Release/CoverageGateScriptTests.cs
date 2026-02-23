@@ -87,6 +87,20 @@ public sealed class CoverageGateScriptTests
     result.Output.Should().Contain("minimumLineCoveragePercent must be between 0 and 100");
   }
 
+  [Fact]
+  public async Task InvokeCoverageGate_WhenAnyPolicyCriticalAssemblyIsMissing_ReturnsFailureWithMissingAssemblies()
+  {
+    var repositoryRoot = FindRepositoryRoot();
+    var scriptPath = Path.Combine(repositoryRoot, "tools", "release", "Invoke-CoverageGate.ps1");
+    var coveragePath = Path.Combine(repositoryRoot, "tests", "STIGForge.IntegrationTests", "Release", "Fixtures", "coverage-pass.cobertura.xml");
+    await using var policyFile = await CreatePolicyFileAsync(85, ["Critical.Assembly", "Missing.Assembly.B", "Missing.Assembly.A"]);
+
+    var result = await ExecuteCoverageGateAsync(scriptPath, coveragePath, policyFile.Path);
+
+    result.ExitCode.Should().NotBe(0);
+    result.Output.Should().Contain("missing policy critical assemblies: Missing.Assembly.A, Missing.Assembly.B");
+  }
+
   private static async Task<TemporaryPolicyFile> CreatePolicyFileAsync(double minimumLineCoveragePercent, string[] criticalAssemblies)
   {
     var policyPath = Path.Combine(Path.GetTempPath(), $"coverage-gate-policy-{Guid.NewGuid():N}.json");
