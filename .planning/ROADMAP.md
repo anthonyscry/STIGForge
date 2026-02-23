@@ -53,7 +53,13 @@
   3. Structured logs include correlation IDs that enable trace correlation
   4. Log verbosity is configurable between debug and production environments
   5. Error codes are structured and machine-readable for cataloging
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 11-01-PLAN.md - Fix flaky test and establish test categorization (TEST-01, TEST-05)
+- [ ] 11-02-PLAN.md - Create correlation enricher and logging configuration (OBSV-01, OBSV-04)
+- [ ] 11-03-PLAN.md - Create structured error code infrastructure (ERRX-03)
+- [ ] 11-04-PLAN.md - Wire observability into CLI and WPF hosts (OBSV-01, OBSV-04 integration)
 
 ### Phase 12: Observability Integration
 **Goal**: Enable end-to-end mission observability with tracing, correlation, and offline diagnostics
@@ -112,7 +118,7 @@
 | 5. Proof Packaging, Fleet-lite, and Integrity | v1.0 | 4/4 | Complete | 2026-02-22 |
 | 8. Canonical Model Completion | v1.0 | 4/4 | Complete | 2026-02-22 |
 | 9. Phase 3 Verification | v1.0 | 4/4 | Complete | 2026-02-22 |
-| 11. Foundation and Test Stability | v1.1 | 0/TBD | Not started | - |
+| 11. Foundation and Test Stability | v1.1 | 0/4 | Ready | - |
 | 12. Observability Integration | v1.1 | 0/TBD | Not started | - |
 | 13. Performance Baselining | v1.1 | 0/TBD | Not started | - |
 | 14. Test Coverage Expansion | v1.1 | 0/TBD | Not started | - |
