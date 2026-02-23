@@ -1,15 +1,16 @@
 ---
 phase: 14-test-coverage-expansion
-plan: 01
+artifact: summary
+slice: phase-status
 subsystem: release-quality-gates
 tags: [coverage-gate, branch-coverage, mutation-policy, TEST-02, TEST-03, TEST-04, TEST-06]
-completed: 2026-02-23
 status: in-progress
+last_updated: 2026-02-23
 ---
 
-# Phase 14 Summary: Coverage and Mutation Gate Rollout
+# Phase 14 Status: Coverage Gates Complete, Mutation Rollout In Progress
 
-## Scope delivered
+## Current scope status
 
 - Coverage gate policy is aligned to Phase 14 requirements: `80%` minimum line coverage on critical assemblies (`STIGForge.Build`, `STIGForge.Apply`, `STIGForge.Verify`, `STIGForge.Infrastructure`).
 - Coverage reporting pipeline includes branch coverage metrics and deterministic artifact selection in CI.
@@ -23,9 +24,9 @@ status: in-progress
 - `TEST-04`: Complete (coverage gate executed in CI and blocks on threshold failure)
 - `TEST-06`: In progress (policy/evaluation plumbing implemented; full mutation execution rollout remains pending)
 
-## Verification evidence (local)
+## Verification evidence (local snapshot)
 
-Verification commands executed for Phase 14 completion checks:
+Verification commands executed for current Phase 14 status checks:
 
 1. `dotnet test tests/STIGForge.UnitTests/STIGForge.UnitTests.csproj --configuration Release --framework net8.0 --filter "FullyQualifiedName!~RebootCoordinator"`
 2. `dotnet test tests/STIGForge.IntegrationTests/STIGForge.IntegrationTests.csproj --configuration Release --framework net8.0 --filter "FullyQualifiedName!~E2E"`

@@ -105,14 +105,10 @@ Plans:
   2. Branch coverage reports are available in CI pipeline output
   3. CI blocks PRs that drop coverage below the threshold
   4. Mutation testing validates that tests catch real bugs, not just hit coverage targets
-**Plans**: 5 plans (4 complete, 1 in progress)
+**Traceability artifacts**: 1 summary file (phase status in progress)
 
-Plans:
-- [x] 14-01-PLAN.md - Add deterministic coverage gate policy + script tests (TEST-02)
-- [x] 14-02-PLAN.md - Add coverage summary report with branch metrics + parser hardening (TEST-03)
-- [x] 14-03-PLAN.md - Wire coverage report/gate into CI with deterministic artifact selection (TEST-04)
-- [x] 14-04-PLAN.md - Add mutation baseline/regression policy script with enforcement safety checks (TEST-06 partial)
-- [ ] 14-05-PLAN.md - Finalize phase traceability docs and verification evidence (TEST-02/03/04 confirmation)
+Artifacts:
+- [ ] 14-01-SUMMARY.md - Phase-level status and requirement traceability for TEST-02/03/04/06 (coverage gates complete; mutation rollout in progress)
 
 ### Phase 15: Error UX Integration
 **Goal**: Provide human-friendly error experiences with recovery guidance across CLI and WPF
