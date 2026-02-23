@@ -67,7 +67,7 @@ public partial class MainViewModel
       AppendImportActivityLog((autoMode ? "AUTO" : "MANUAL") + " scan started");
 
       var scanner = new ImportInboxScanner(new Sha256HashingService());
-      var scan = await Task.Run(() => scanner.ScanAsync(importFolder, _cts.Token), _cts.Token);
+      var scan = await Task.Run(() => scanner.ScanWithCanonicalChecklistAsync(importFolder, _cts.Token), _cts.Token);
 
       if (scan.Candidates.Count == 0)
       {
