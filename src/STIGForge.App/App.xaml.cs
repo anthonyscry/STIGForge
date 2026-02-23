@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.IO;
 using System.Text;
 using System.Windows;
@@ -25,11 +26,33 @@ public partial class App : Application
   private static readonly object StartupTraceLock = new();
   public IServiceProvider Services => _host!.Services;
 
+  // Startup timing measurement
+  private static readonly Stopwatch StartupStopwatch = new();
+  private static bool _isColdStart = true;
+  private static bool _exitAfterLoad;
+
   protected override void OnStartup(StartupEventArgs e)
   {
+    // Start high-resolution timing at the very beginning of startup
+    StartupStopwatch.Start();
+
     TraceStartup("OnStartup begin");
     RegisterUnhandledExceptionHandlers();
     TraceStartup("Unhandled exception handlers registered");
+
+    // Check for --exit-after-load flag (used by cold startup benchmarks)
+    if (e?.Args != null)
+    {
+      foreach (var arg in e.Args)
+      {
+        if (string.Equals(arg, "--exit-after-load", StringComparison.OrdinalIgnoreCase))
+        {
+          _exitAfterLoad = true;
+          TraceStartup("--exit-after-load flag detected");
+          break;
+        }
+      }
+    }
 
     try
     {
@@ -186,6 +209,10 @@ public partial class App : Application
       TraceStartup("Main window constructed");
 
       MainWindow = main;
+
+      // Attach Loaded event handler for startup timing measurement
+      main.Loaded += MainWindow_Loaded;
+
       main.Show();
       TraceStartup("Main window shown");
 
@@ -238,6 +265,33 @@ public partial class App : Application
           MessageBoxButton.OK,
           MessageBoxImage.Warning);
       });
+    }
+  }
+
+  /// <summary>
+  /// Handles the MainWindow.Loaded event to capture startup timing.
+  /// Records the elapsed time from OnStartup to MainWindow.Loaded to PerformanceInstrumenter.
+  /// If --exit-after-load flag is set, exits the application after recording.
+  /// </summary>
+  private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+  {
+    // Stop timing and calculate elapsed milliseconds
+    StartupStopwatch.Stop();
+    var elapsedMs = StartupStopwatch.Elapsed.TotalMilliseconds;
+
+    TraceStartup($"MainWindow.Loaded - Startup time: {elapsedMs:F2}ms, IsColdStart: {_isColdStart}");
+
+    // Record to PerformanceInstrumenter
+    PerformanceInstrumenter.RecordStartupTime(elapsedMs, _isColdStart);
+
+    // Mark subsequent starts as warm starts
+    _isColdStart = false;
+
+    // If --exit-after-load flag was set, exit now (used by cold startup benchmarks)
+    if (_exitAfterLoad)
+    {
+      TraceStartup("Exiting after load (--exit-after-load flag)");
+      Shutdown(0);
     }
   }
 
