@@ -5,6 +5,7 @@ namespace STIGForge.Infrastructure.Paths;
 public sealed class PathBuilder : IPathBuilder
 {
   private readonly string _root;
+  private readonly string _projectRoot;
 
   public PathBuilder()
     : this(AppContext.BaseDirectory, Environment.CurrentDirectory)
@@ -14,6 +15,7 @@ public sealed class PathBuilder : IPathBuilder
   public PathBuilder(string appBaseDirectory, string currentDirectory)
   {
     _root = ResolveRoot(appBaseDirectory, currentDirectory);
+    _projectRoot = Directory.GetParent(_root)?.FullName ?? NormalizeDirectory(currentDirectory, Environment.CurrentDirectory);
   }
 
   private static string ResolveRoot(string appBaseDirectory, string currentDirectory)
@@ -53,7 +55,7 @@ public sealed class PathBuilder : IPathBuilder
   public string GetPackRoot(string packId) => Path.Combine(GetContentPacksRoot(), packId);
   public string GetBundleRoot(string bundleId) => Path.Combine(_root, "bundles", bundleId);
   public string GetLogsRoot() => Path.Combine(_root, "logs");
-  public string GetImportRoot() => Path.Combine(_root, "import");
+  public string GetImportRoot() => Path.Combine(_projectRoot, "import");
   public string GetImportInboxRoot() => Path.Combine(GetImportRoot(), "inbox");
   public string GetImportIndexPath() => Path.Combine(GetImportRoot(), "inbox_index.json");
   public string GetToolsRoot() => Path.Combine(_root, "tools");

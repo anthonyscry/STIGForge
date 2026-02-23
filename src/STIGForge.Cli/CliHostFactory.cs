@@ -74,7 +74,6 @@ public static class CliHostFactory
     services.AddSingleton(sp =>
     {
       var paths = sp.GetRequiredService<IPathBuilder>();
-      sp.GetRequiredService<LocalSetupValidator>().ValidateRequiredTools();
       Directory.CreateDirectory(paths.GetAppDataRoot());
       Directory.CreateDirectory(paths.GetLogsRoot());
       var dbPath = Path.Combine(paths.GetAppDataRoot(), "data", "stigforge.db");
