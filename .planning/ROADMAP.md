@@ -69,7 +69,13 @@ Plans:
   1. Mission lifecycle (Build -> Apply -> Verify -> Prove) emits trace spans that can be correlated
   2. Trace IDs propagate across PowerShell process boundaries during mission execution
   3. Debug export bundles can be created and contain all diagnostics needed for offline support
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 12-01-PLAN.md - Create mission tracing infrastructure (OBSV-02 foundation)
+- [ ] 12-02-PLAN.md - Create debug bundle exporter (OBSV-05)
+- [ ] 12-03-PLAN.md - Wire mission tracing into orchestrator (OBSV-02)
+- [ ] 12-04-PLAN.md - Add PowerShell trace propagation (OBSV-06)
 
 ### Phase 13: Performance Baselining
 **Goal**: Establish documented performance baselines and validate scale handling
@@ -119,7 +125,7 @@ Plans:
 | 8. Canonical Model Completion | v1.0 | 4/4 | Complete | 2026-02-22 |
 | 9. Phase 3 Verification | v1.0 | 4/4 | Complete | 2026-02-22 |
 | 11. Foundation and Test Stability | 4/4 | Complete    | 2026-02-23 | 2026-02-23 |
-| 12. Observability Integration | v1.1 | 0/TBD | Not started | - |
+| 12. Observability Integration | v1.1 | 0/4 | Not started | - |
 | 13. Performance Baselining | v1.1 | 0/TBD | Not started | - |
 | 14. Test Coverage Expansion | v1.1 | 0/TBD | Not started | - |
 | 15. Error UX Integration | v1.1 | 0/TBD | Not started | - |
