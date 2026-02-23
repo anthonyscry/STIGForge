@@ -9,6 +9,8 @@ on:
 jobs:
   build-test:
     runs-on: windows-latest
+    env:
+      COVERAGE_ROOT: .\.artifacts\test-coverage\ci
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,12 +35,13 @@ jobs:
       - name: Collect unit test coverage
         shell: pwsh
         run: |
-          $coverageRoot = '.\.artifacts\test-coverage\ci'
+          $coverageRoot = $env:COVERAGE_ROOT
           New-Item -ItemType Directory -Force -Path $coverageRoot | Out-Null
 
+          # Coverage requires the collector-enabled test run, so unit tests execute again here.
           dotnet test .\tests\STIGForge.UnitTests\STIGForge.UnitTests.csproj --configuration Release --framework net8.0 --collect:"XPlat Code Coverage" --results-directory $coverageRoot
 
-          $coverageFile = Get-ChildItem -Path $coverageRoot -Recurse -Filter 'coverage.cobertura.xml' | Select-Object -First 1
+          $coverageFile = Get-ChildItem -Path $coverageRoot -Recurse -Filter 'coverage.cobertura.xml' | Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1
           if ($null -eq $coverageFile) {
             throw 'Coverage collection did not produce coverage.cobertura.xml under .artifacts/test-coverage/ci'
           }
@@ -48,12 +51,14 @@ jobs:
       - name: Generate coverage report
         shell: pwsh
         run: |
-          powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\release\Invoke-CoverageReport.ps1 -CoverageReportPath .\.artifacts\test-coverage\ci\coverage.cobertura.xml -OutputDirectory .\.artifacts\test-coverage\ci
+          $coverageRoot = $env:COVERAGE_ROOT
+          powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\release\Invoke-CoverageReport.ps1 -CoverageReportPath (Join-Path $coverageRoot 'coverage.cobertura.xml') -OutputDirectory $coverageRoot
 
       - name: Enforce coverage gate
         shell: pwsh
         run: |
-          powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\release\Invoke-CoverageGate.ps1 -CoverageReportPath .\.artifacts\test-coverage\ci\coverage.cobertura.xml -PolicyPath .\tools\release\coverage-gate-policy.json
+          $coverageRoot = $env:COVERAGE_ROOT
+          powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\release\Invoke-CoverageGate.ps1 -CoverageReportPath (Join-Path $coverageRoot 'coverage.cobertura.xml') -PolicyPath .\tools\release\coverage-gate-policy.json
 
       - name: Run release gate
         shell: pwsh
