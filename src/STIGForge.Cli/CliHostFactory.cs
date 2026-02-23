@@ -13,6 +13,7 @@ using STIGForge.Infrastructure.Paths;
 using STIGForge.Infrastructure.Storage;
 using STIGForge.Infrastructure.System;
 using STIGForge.Infrastructure.Telemetry;
+using STIGForge.Infrastructure.Workflow;
 using STIGForge.Verify;
 
 namespace STIGForge.Cli;
@@ -67,11 +68,13 @@ public static class CliHostFactory
     services.AddSingleton<IClassificationScopeService, ClassificationScopeService>();
     services.AddSingleton<ReleaseAgeGate>();
     services.AddSingleton<IPathBuilder>(_ => pathBuilderFactory());
+    services.AddSingleton<LocalSetupValidator>();
     services.AddSingleton<IHashingService, Sha256HashingService>();
 
     services.AddSingleton(sp =>
     {
       var paths = sp.GetRequiredService<IPathBuilder>();
+      sp.GetRequiredService<LocalSetupValidator>().ValidateRequiredTools();
       Directory.CreateDirectory(paths.GetAppDataRoot());
       Directory.CreateDirectory(paths.GetLogsRoot());
       var dbPath = Path.Combine(paths.GetAppDataRoot(), "data", "stigforge.db");
