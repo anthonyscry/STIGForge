@@ -30,6 +30,31 @@ jobs:
           dotnet test .\tests\STIGForge.UnitTests\STIGForge.UnitTests.csproj --configuration Release --framework net8.0 --filter "FullyQualifiedName~BaselineDiffServiceTests|FullyQualifiedName~OverlayRebaseServiceTests|FullyQualifiedName~BundleMissionSummaryServiceTests"
           dotnet test .\tests\STIGForge.IntegrationTests\STIGForge.IntegrationTests.csproj --configuration Release --framework net8.0 --filter "FullyQualifiedName~CliCommandTests.DiffPacks|FullyQualifiedName~CliCommandTests.RebaseOverlay"
 
+      - name: Collect unit test coverage
+        shell: pwsh
+        run: |
+          $coverageRoot = '.\.artifacts\test-coverage\ci'
+          New-Item -ItemType Directory -Force -Path $coverageRoot | Out-Null
+
+          dotnet test .\tests\STIGForge.UnitTests\STIGForge.UnitTests.csproj --configuration Release --framework net8.0 --collect:"XPlat Code Coverage" --results-directory $coverageRoot
+
+          $coverageFile = Get-ChildItem -Path $coverageRoot -Recurse -Filter 'coverage.cobertura.xml' | Select-Object -First 1
+          if ($null -eq $coverageFile) {
+            throw 'Coverage collection did not produce coverage.cobertura.xml under .artifacts/test-coverage/ci'
+          }
+
+          Copy-Item -LiteralPath $coverageFile.FullName -Destination (Join-Path $coverageRoot 'coverage.cobertura.xml') -Force
+
+      - name: Generate coverage report
+        shell: pwsh
+        run: |
+          powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\release\Invoke-CoverageReport.ps1 -CoverageReportPath .\.artifacts\test-coverage\ci\coverage.cobertura.xml -OutputDirectory .\.artifacts\test-coverage\ci
+
+      - name: Enforce coverage gate
+        shell: pwsh
+        run: |
+          powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\release\Invoke-CoverageGate.ps1 -CoverageReportPath .\.artifacts\test-coverage\ci\coverage.cobertura.xml -PolicyPath .\tools\release\coverage-gate-policy.json
+
       - name: Run release gate
         shell: pwsh
         run: |
@@ -215,4 +240,12 @@ jobs:
         with:
           name: stability-budget-ci-${{ github.run_id }}
           path: ./.artifacts/stability-budget/ci
+          if-no-files-found: warn
+
+      - name: Upload test-coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-coverage-ci-${{ github.run_id }}
+          path: ./.artifacts/test-coverage/ci
           if-no-files-found: warn
