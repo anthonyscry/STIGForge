@@ -10,23 +10,23 @@ See: `.planning/PROJECT.md` (updated 2026-02-22)
 ## Current Position
 
 Phase: 11 of 15 (Foundation and Test Stability)
-Plan: 1 of 4
-Status: In progress
-Last activity: 2026-02-23 - Completed 11-01 flaky test fix and test categories
+Plan: 4 of 4
+Status: Phase complete
+Last activity: 2026-02-23 - Completed 11-04 host logging integration
 
-Progress: [**........] 25% (1/4 plans complete)
+Progress: [**********] 100% (4/4 plans complete)
 
 ## Performance Metrics
 
 **Velocity (v1.1 milestone):**
-- Total plans completed: 1
-- Average duration: 9 min
-- Total execution time: ~9 min
+- Total plans completed: 4
+- Average duration: 8 min
+- Total execution time: ~32 min
 
 **All-time (including previous milestones):**
-- Total plans completed: 28
+- Total plans completed: 31
 - Average duration: 6 min
-- Total execution time: ~170 min
+- Total execution time: ~192 min
 
 ## Accumulated Context
 
@@ -40,6 +40,8 @@ Recent decisions affecting current work:
 - 11-01: IAsyncLifetime over IDisposable for tests with IHost or file I/O (fixes async disposal race condition)
 - 11-01: TestCategories constants duplicated per project (avoids shared test utility dependency)
 - 11-01: Trait attributes for categorization (xUnit standard, IDE/CI supported)
+- 11-04: CorrelationIdEnricher integrated into CLI and WPF hosts for trace correlation
+- 11-04: LoggingConfiguration.LevelSwitch for runtime log level control via STIGFORGE_LOG_LEVEL
 
 ### Pending Todos
 
@@ -52,5 +54,5 @@ None yet.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 11-01-PLAN.md (flaky test fix and test categories)
+Stopped at: Completed 11-04-PLAN.md (host logging integration)
 Resume file: None
