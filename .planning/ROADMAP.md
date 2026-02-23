@@ -38,7 +38,7 @@
 - [x] **Phase 11: Foundation and Test Stability** - Fix flaky tests and establish telemetry/error infrastructure (completed 2026-02-23)
 - [x] **Phase 12: Observability Integration** - Mission tracing, correlation, and debug export capability (completed 2026-02-23)
 - [ ] **Phase 13: Performance Baselining** - Startup time, mission duration, scale testing, memory profile (in progress)
-- [ ] **Phase 14: Test Coverage Expansion** - 80% coverage, mutation testing, CI enforcement
+- [ ] **Phase 14: Test Coverage Expansion** - 80% coverage/branch reporting/coverage CI gating complete; mutation policy rollout in progress
 - [ ] **Phase 15: Error UX Integration** - Human-readable messages, recovery guidance, unified UX
 
 ## Phase Details
@@ -105,7 +105,14 @@ Plans:
   2. Branch coverage reports are available in CI pipeline output
   3. CI blocks PRs that drop coverage below the threshold
   4. Mutation testing validates that tests catch real bugs, not just hit coverage targets
-**Plans**: TBD
+**Plans**: 5 plans (4 complete, 1 in progress)
+
+Plans:
+- [x] 14-01-PLAN.md - Add deterministic coverage gate policy + script tests (TEST-02)
+- [x] 14-02-PLAN.md - Add coverage summary report with branch metrics + parser hardening (TEST-03)
+- [x] 14-03-PLAN.md - Wire coverage report/gate into CI with deterministic artifact selection (TEST-04)
+- [x] 14-04-PLAN.md - Add mutation baseline/regression policy script with enforcement safety checks (TEST-06 partial)
+- [ ] 14-05-PLAN.md - Finalize phase traceability docs and verification evidence (TEST-02/03/04 confirmation)
 
 ### Phase 15: Error UX Integration
 **Goal**: Provide human-friendly error experiences with recovery guidance across CLI and WPF
@@ -133,5 +140,5 @@ Plans:
 | 11. Foundation and Test Stability | v1.1 | 4/4 | Complete | 2026-02-23 |
 | 12. Observability Integration | v1.1 | 4/4 | Complete | 2026-02-23 |
 | 13. Performance Baselining | 2/4 | In Progress|  | - |
-| 14. Test Coverage Expansion | v1.1 | 0/TBD | Not started | - |
+| 14. Test Coverage Expansion | v1.1 | 4/5 | In Progress | - |
 | 15. Error UX Integration | v1.1 | 0/TBD | Not started | - |

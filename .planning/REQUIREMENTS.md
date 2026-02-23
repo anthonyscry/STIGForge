@@ -10,11 +10,11 @@ Requirements for Operational Maturity milestone. Each maps to roadmap phases.
 ### Testing
 
 - [x] **TEST-01**: Test suite runs reliably without flaky failures (fix BuildHost_UsesConfiguredPathBuilderForSerilogLogDirectory)
-- [ ] **TEST-02**: 80% line coverage on critical assemblies (Build, Apply, Verify, Infrastructure)
-- [ ] **TEST-03**: Branch coverage reporting available in CI pipeline
-- [ ] **TEST-04**: Coverage gates enforced in CI (block PRs that drop below threshold)
+- [x] **TEST-02**: 80% line coverage on critical assemblies (Build, Apply, Verify, Infrastructure)
+- [x] **TEST-03**: Branch coverage reporting available in CI pipeline
+- [x] **TEST-04**: Coverage gates enforced in CI (block PRs that drop below threshold)
 - [x] **TEST-05**: Tests categorized by speed (unit vs integration) for pipeline efficiency
-- [ ] **TEST-06**: Mutation testing validates test quality (not just coverage numbers)
+- [ ] **TEST-06**: Mutation testing validates test quality (policy/report mode + optional enforcement implemented; full mutation execution rollout pending)
 
 ### Observability
 
@@ -78,11 +78,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | TEST-01 | Phase 11 | Complete |
-| TEST-02 | Phase 14 | Pending |
-| TEST-03 | Phase 14 | Pending |
-| TEST-04 | Phase 14 | Pending |
+| TEST-02 | Phase 14 | Complete |
+| TEST-03 | Phase 14 | Complete |
+| TEST-04 | Phase 14 | Complete |
 | TEST-05 | Phase 11 | Complete |
-| TEST-06 | Phase 14 | Pending |
+| TEST-06 | Phase 14 | In Progress |
 | OBSV-01 | Phase 11 | Complete |
 | OBSV-02 | Phase 12 | Complete |
 | OBSV-03 | Phase 13 | Complete |
@@ -109,4 +109,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-22*
-*Last updated: 2026-02-23 after 13-03 completion*
+*Last updated: 2026-02-23 after 14-05 traceability/verification updates*

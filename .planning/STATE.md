@@ -5,16 +5,16 @@
 See: `.planning/PROJECT.md` (updated 2026-02-22)
 
 **Core value:** Produce deterministic, defensible compliance outcomes with strict control mapping and complete evidence packaging, without requiring internet access.
-**Current focus:** Phase 13 - Performance Baselining
+**Current focus:** Phase 14 - Test Coverage Expansion
 
 ## Current Position
 
-Phase: 13 of 15 (Performance Baselining)
-Plan: 3 of 4
+Phase: 14 of 15 (Test Coverage Expansion)
+Plan: 4 of 5
 Status: In progress
-Last activity: 2026-02-23 - Completed 13-03 Mission/Scale benchmarks with GenerateTestBundle
+Last activity: 2026-02-23 - Completed 14-04 mutation policy safety fix; 14-05 docs/verification in progress
 
-Progress: [***---------] 75% (3/4 plans complete)
+Progress: [********----] 80% (4/5 plans complete)
 
 ## Performance Metrics
 
@@ -58,6 +58,10 @@ Recent decisions affecting current work:
 - 13-03: Apply phase as placeholder in MissionBenchmarks - requires PowerShell/system context for real measurement
 - 13-03: ScaleBenchmarks pushes to 15K rules to validate margin beyond 10K target
 - 13-03: Mock services for VerificationWorkflowService to isolate workflow orchestration overhead
+- 14-01: Coverage gate policy is scoped to critical assemblies only (Build/Apply/Verify/Infrastructure) at 80% line threshold
+- 14-02: Coverage report includes branch coverage totals and per-assembly branch percentages
+- 14-03: CI coverage artifact selection is deterministic (latest coverage copied to stable artifact path)
+- 14-04: Mutation policy supports report mode by default and optional enforce mode with seeded-fallback protection
 
 ### Pending Todos
 
@@ -70,5 +74,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 13-03-PLAN.md (Mission/Scale benchmarks)
+Stopped at: Completed 14-04 implementation; finalizing 14-05 traceability + verification
 Resume file: None
