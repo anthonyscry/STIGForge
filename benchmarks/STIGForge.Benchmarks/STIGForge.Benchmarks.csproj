@@ -9,6 +9,16 @@
 
   <ItemGroup>
     <PackageReference Include="BenchmarkDotNet" Version="0.15.2" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\STIGForge.Core\STIGForge.Core.csproj" />
+    <ProjectReference Include="..\..\src\STIGForge.Build\STIGForge.Build.csproj" />
+    <ProjectReference Include="..\..\src\STIGForge.Verify\STIGForge.Verify.csproj" />
+    <ProjectReference Include="..\..\src\STIGForge.Export\STIGForge.Export.csproj" />
+    <ProjectReference Include="..\..\src\STIGForge.Infrastructure\STIGForge.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
