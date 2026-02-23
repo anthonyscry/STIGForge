@@ -159,6 +159,25 @@ public interface IVerificationWorkflowService
   Task<VerificationWorkflowResult> RunAsync(VerificationWorkflowRequest request, CancellationToken ct);
 }
 
+public interface ILocalWorkflowService
+{
+  Task<LocalWorkflowResult> RunAsync(LocalWorkflowRequest request, CancellationToken ct);
+}
+
+public sealed class LocalWorkflowRequest
+{
+  public string OutputRoot { get; set; } = string.Empty;
+
+  public string ImportRoot { get; set; } = string.Empty;
+}
+
+public sealed class LocalWorkflowResult
+{
+  public LocalWorkflowMission Mission { get; set; } = new();
+
+  public IReadOnlyList<string> Diagnostics { get; set; } = Array.Empty<string>();
+}
+
 public sealed class VerificationWorkflowRequest
 {
   public string OutputRoot { get; set; } = string.Empty;
