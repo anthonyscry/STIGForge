@@ -73,8 +73,8 @@ Plans:
 
 Plans:
 - [x] 12-01-PLAN.md - Create mission tracing infrastructure (OBSV-02 foundation)
-- [ ] 12-02-PLAN.md - Create debug bundle exporter (OBSV-05)
-- [ ] 12-03-PLAN.md - Wire mission tracing into orchestrator (OBSV-02)
+- [x] 12-02-PLAN.md - Create debug bundle exporter (OBSV-05)
+- [x] 12-03-PLAN.md - Wire mission tracing into orchestrator (OBSV-02)
 - [ ] 12-04-PLAN.md - Add PowerShell trace propagation (OBSV-06)
 
 ### Phase 13: Performance Baselining
