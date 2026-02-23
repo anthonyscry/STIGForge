@@ -8,6 +8,7 @@ using STIGForge.Core.Abstractions;
 using STIGForge.Core.Services;
 using STIGForge.Evidence;
 using STIGForge.Infrastructure.Hashing;
+using STIGForge.Infrastructure.Logging;
 using STIGForge.Infrastructure.Paths;
 using STIGForge.Infrastructure.Storage;
 using STIGForge.Infrastructure.System;
@@ -29,10 +30,18 @@ public static class CliHostFactory
     return Host.CreateDefaultBuilder()
       .UseSerilog((_, lc) =>
       {
+        LoggingConfiguration.ConfigureFromEnvironment();
+
         var root = pathBuilderFactory().GetLogsRoot();
         Directory.CreateDirectory(root);
-        lc.MinimumLevel.Information()
-          .WriteTo.File(Path.Combine(root, "stigforge-cli.log"), rollingInterval: RollingInterval.Day);
+
+        lc.MinimumLevel.ControlledBy(LoggingConfiguration.LevelSwitch)
+          .Enrich.With(new CorrelationIdEnricher())
+          .Enrich.FromLogContext()
+          .WriteTo.File(
+            Path.Combine(root, "stigforge-cli.log"),
+            rollingInterval: RollingInterval.Day,
+            outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{TraceId}] {Message:lj}{NewLine}{Exception}");
       })
       .UseDefaultServiceProvider((_, options) =>
       {
