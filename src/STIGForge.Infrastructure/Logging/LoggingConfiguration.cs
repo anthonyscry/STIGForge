@@ -1,15 +1,19 @@
 using Serilog.Core;
 using Serilog.Events;
+using STIGForge.Infrastructure.Telemetry;
 
 namespace STIGForge.Infrastructure.Logging;
 
 /// <summary>
 /// Centralized logging configuration for STIGForge.
 /// Provides a shared LoggingLevelSwitch for runtime log level control
-/// and environment-based configuration.
+/// and environment-based configuration. Also manages the TraceFileListener
+/// for distributed tracing output.
 /// </summary>
 public static class LoggingConfiguration
 {
+    private static TraceFileListener? _traceFileListener;
+
     /// <summary>
     /// Shared logging level switch that can be modified at runtime.
     /// Initialized to Information level by default.
@@ -36,6 +40,26 @@ public static class LoggingConfiguration
         };
 
         LevelSwitch.MinimumLevel = level;
+    }
+
+    /// <summary>
+    /// Initializes the TraceFileListener for distributed tracing output.
+    /// Should be called once at application startup.
+    /// </summary>
+    /// <param name="logsRoot">The root directory where traces.json will be created.</param>
+    public static void InitializeTraceListener(string logsRoot)
+    {
+        _traceFileListener ??= new TraceFileListener(logsRoot);
+    }
+
+    /// <summary>
+    /// Disposes the TraceFileListener if it was initialized.
+    /// Should be called at application shutdown.
+    /// </summary>
+    public static void Shutdown()
+    {
+        _traceFileListener?.Dispose();
+        _traceFileListener = null;
     }
 
     /// <summary>
