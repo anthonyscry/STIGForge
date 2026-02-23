@@ -5,28 +5,28 @@
 See: `.planning/PROJECT.md` (updated 2026-02-22)
 
 **Core value:** Produce deterministic, defensible compliance outcomes with strict control mapping and complete evidence packaging, without requiring internet access.
-**Current focus:** Phase 12 - Observability Integration
+**Current focus:** Phase 13 - Performance Baselining
 
 ## Current Position
 
-Phase: 12 of 15 (Observability Integration)
-Plan: 3 of 4
+Phase: 13 of 15 (Performance Baselining)
+Plan: 1 of 4
 Status: In progress
-Last activity: 2026-02-23 - Completed 12-03 BundleOrchestrator tracing integration
+Last activity: 2026-02-23 - Completed 13-01 PerformanceInstrumenter and BenchmarkDotNet scaffolding
 
-Progress: [*******----] 75% (3/4 plans complete)
+Progress: [*-----------] 25% (1/4 plans complete)
 
 ## Performance Metrics
 
 **Velocity (v1.1 milestone):**
-- Total plans completed: 7
+- Total plans completed: 8
 - Average duration: 7 min
-- Total execution time: ~47 min
+- Total execution time: ~50 min
 
 **All-time (including previous milestones):**
-- Total plans completed: 33
+- Total plans completed: 34
 - Average duration: 6 min
-- Total execution time: ~203 min
+- Total execution time: ~206 min
 
 ## Accumulated Context
 
@@ -51,6 +51,8 @@ Recent decisions affecting current work:
 - 12-03: Each phase (Apply, Verify-Evaluate-STIG, Verify-SCAP, Evidence) wrapped with child Activity spans
 - 12-04: Environment variables for trace context propagation to PowerShell (STIGFORGE_TRACE_ID, STIGFORGE_PARENT_SPAN_ID, STIGFORGE_TRACE_FLAGS)
 - 12-04: InjectTraceContext helper in ApplyRunner for centralized trace context injection
+- 13-01: PerformanceInstrumenter uses System.Diagnostics.Metrics (built-in .NET 8) for mission and startup metrics
+- 13-01: BenchmarkDotNet 0.15.2 configured with ShortRun job, MemoryDiagnoser, and MarkdownExporter
 
 ### Pending Todos
 
@@ -63,5 +65,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 12-03-PLAN.md (BundleOrchestrator tracing integration)
+Stopped at: Completed 13-01-PLAN.md (Performance infrastructure)
 Resume file: None

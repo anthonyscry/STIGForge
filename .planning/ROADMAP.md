@@ -37,7 +37,7 @@
 
 - [x] **Phase 11: Foundation and Test Stability** - Fix flaky tests and establish telemetry/error infrastructure (completed 2026-02-23)
 - [x] **Phase 12: Observability Integration** - Mission tracing, correlation, and debug export capability (completed 2026-02-23)
-- [ ] **Phase 13: Performance Baselining** - Startup time, mission duration, scale testing, memory profile
+- [ ] **Phase 13: Performance Baselining** - Startup time, mission duration, scale testing, memory profile (in progress)
 - [ ] **Phase 14: Test Coverage Expansion** - 80% coverage, mutation testing, CI enforcement
 - [ ] **Phase 15: Error UX Integration** - Human-readable messages, recovery guidance, unified UX
 
@@ -91,7 +91,7 @@ Plans:
 **Plans**: 4 plans
 
 Plans:
-- [ ] 13-01-PLAN.md - Create PerformanceInstrumenter and BenchmarkDotNet project (OBSV-03)
+- [x] 13-01-PLAN.md - Create PerformanceInstrumenter and BenchmarkDotNet project (OBSV-03)
 - [ ] 13-02-PLAN.md - Implement startup time benchmarks (PERF-01, PERF-02)
 - [ ] 13-03-PLAN.md - Implement mission duration and scale benchmarks (PERF-03, PERF-04)
 - [ ] 13-04-PLAN.md - Memory profiling, I/O analysis, and baseline documentation (OBSV-03, PERF-05, PERF-06)
@@ -132,6 +132,6 @@ Plans:
 | 9. Phase 3 Verification | v1.0 | 4/4 | Complete | 2026-02-22 |
 | 11. Foundation and Test Stability | v1.1 | 4/4 | Complete | 2026-02-23 |
 | 12. Observability Integration | v1.1 | 4/4 | Complete | 2026-02-23 |
-| 13. Performance Baselining | v1.1 | 0/4 | Not started | - |
+| 13. Performance Baselining | v1.1 | 1/4 | In progress | - |
 | 14. Test Coverage Expansion | v1.1 | 0/TBD | Not started | - |
 | 15. Error UX Integration | v1.1 | 0/TBD | Not started | - |
