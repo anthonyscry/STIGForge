@@ -9,9 +9,6 @@ on:
 jobs:
   build-test:
     runs-on: windows-latest
-    env:
-      COVERAGE_ROOT: .\.artifacts\test-coverage\ci
-      MUTATION_ROOT: .\.artifacts\mutation\ci
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -32,82 +29,6 @@ jobs:
         run: |
           dotnet test .\tests\STIGForge.UnitTests\STIGForge.UnitTests.csproj --configuration Release --framework net8.0 --filter "FullyQualifiedName~BaselineDiffServiceTests|FullyQualifiedName~OverlayRebaseServiceTests|FullyQualifiedName~BundleMissionSummaryServiceTests"
           dotnet test .\tests\STIGForge.IntegrationTests\STIGForge.IntegrationTests.csproj --configuration Release --framework net8.0 --filter "FullyQualifiedName~CliCommandTests.DiffPacks|FullyQualifiedName~CliCommandTests.RebaseOverlay"
-
-      - name: Collect unit test coverage
-        shell: pwsh
-        run: |
-          $coverageRoot = $env:COVERAGE_ROOT
-          New-Item -ItemType Directory -Force -Path $coverageRoot | Out-Null
-
-          # Coverage requires the collector-enabled test run, so unit tests execute again here.
-          dotnet test .\tests\STIGForge.UnitTests\STIGForge.UnitTests.csproj --configuration Release --framework net8.0 --collect:"XPlat Code Coverage" --results-directory $coverageRoot
-
-          $coverageFile = Get-ChildItem -Path $coverageRoot -Recurse -Filter 'coverage.cobertura.xml' | Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1
-          if ($null -eq $coverageFile) {
-            throw 'Coverage collection did not produce coverage.cobertura.xml under .artifacts/test-coverage/ci'
-          }
-
-          Copy-Item -LiteralPath $coverageFile.FullName -Destination (Join-Path $coverageRoot 'coverage.cobertura.xml') -Force
-
-      - name: Generate coverage report
-        shell: pwsh
-        run: |
-          $coverageRoot = $env:COVERAGE_ROOT
-          powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\release\Invoke-CoverageReport.ps1 -CoverageReportPath (Join-Path $coverageRoot 'coverage.cobertura.xml') -OutputDirectory $coverageRoot
-
-      - name: Enforce coverage gate
-        shell: pwsh
-        run: |
-          $coverageRoot = $env:COVERAGE_ROOT
-          powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\release\Invoke-CoverageGate.ps1 -CoverageReportPath (Join-Path $coverageRoot 'coverage.cobertura.xml') -PolicyPath .\tools\release\coverage-gate-policy.json
-
-      - name: Restore .NET tools
-        shell: pwsh
-        run: |
-          dotnet tool restore
-
-      - name: Prepare mutation baseline input
-        shell: pwsh
-        run: |
-          $mutationRoot = $env:MUTATION_ROOT
-          New-Item -ItemType Directory -Force -Path $mutationRoot | Out-Null
-
-          $currentResultPath = Join-Path $mutationRoot 'current-result.json'
-          if (-not (Test-Path -LiteralPath $currentResultPath)) {
-            $policy = Get-Content -Path '.\tools\release\mutation-policy.json' -Raw | ConvertFrom-Json
-            $baselineScore = [double]$policy.baselineMutationScore
-
-            $seed = [ordered]@{
-              mutationScore = $baselineScore
-              source = 'policy-baseline-seed'
-              seededFallback = $true
-            }
-
-            $seed | ConvertTo-Json -Depth 3 | Set-Content -Path $currentResultPath -Encoding UTF8
-            Write-Host "Seeded mutation current-result from baseline score $baselineScore at $currentResultPath" -ForegroundColor Yellow
-          }
-
-      - name: Evaluate mutation baseline policy
-        shell: pwsh
-        run: |
-          $args = @(
-            '-NoProfile',
-            '-ExecutionPolicy', 'Bypass',
-            '-File', '.\tools\release\Invoke-MutationPolicy.ps1',
-            '-CurrentResultPath', (Join-Path $env:MUTATION_ROOT 'current-result.json'),
-            '-PolicyPath', '.\tools\release\mutation-policy.json'
-          )
-
-          $enforceSetting = '${{ vars.STIGFORGE_MUTATION_POLICY_ENFORCE }}'
-          if (-not [string]::IsNullOrWhiteSpace($enforceSetting) -and $enforceSetting.Equals('true', [StringComparison]::OrdinalIgnoreCase)) {
-            $args += '-Enforce'
-            Write-Host 'Mutation policy enforcement enabled.' -ForegroundColor Yellow
-          }
-          else {
-            Write-Host 'Mutation policy enforcement disabled (report mode).' -ForegroundColor Yellow
-          }
-
-          powershell @args
 
       - name: Run release gate
         shell: pwsh
@@ -294,20 +215,4 @@ jobs:
         with:
           name: stability-budget-ci-${{ github.run_id }}
           path: ./.artifacts/stability-budget/ci
-          if-no-files-found: warn
-
-      - name: Upload test-coverage artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: test-coverage-ci-${{ github.run_id }}
-          path: ./.artifacts/test-coverage/ci
-          if-no-files-found: warn
-
-      - name: Upload mutation artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: mutation-ci-${{ github.run_id }}
-          path: ./.artifacts/mutation/ci
           if-no-files-found: warn

@@ -37,8 +37,8 @@
 
 - [x] **Phase 11: Foundation and Test Stability** - Fix flaky tests and establish telemetry/error infrastructure (completed 2026-02-23)
 - [x] **Phase 12: Observability Integration** - Mission tracing, correlation, and debug export capability (completed 2026-02-23)
-- [ ] **Phase 13: Performance Baselining** - Startup time, mission duration, scale testing, memory profile (in progress)
-- [ ] **Phase 14: Test Coverage Expansion** - 80% coverage/branch reporting/coverage CI gating complete; mutation policy rollout in progress
+- [x] **Phase 13: Performance Baselining** - Startup time, mission duration, scale testing, memory profile (completed 2026-02-23)
+- [ ] **Phase 14: Test Coverage Expansion** - 80% coverage, mutation testing, CI enforcement
 - [ ] **Phase 15: Error UX Integration** - Human-readable messages, recovery guidance, unified UX
 
 ## Phase Details
@@ -75,7 +75,7 @@ Plans:
 - [x] 12-01-PLAN.md - Create mission tracing infrastructure (OBSV-02 foundation)
 - [x] 12-02-PLAN.md - Create debug bundle exporter (OBSV-05)
 - [x] 12-03-PLAN.md - Wire mission tracing into orchestrator (OBSV-02)
-- [ ] 12-04-PLAN.md - Add PowerShell trace propagation (OBSV-06)
+- [x] 12-04-PLAN.md - Add PowerShell trace propagation (OBSV-06)
 
 ### Phase 13: Performance Baselining
 **Goal**: Establish documented performance baselines and validate scale handling
@@ -94,7 +94,7 @@ Plans:
 - [x] 13-01-PLAN.md - Create PerformanceInstrumenter and BenchmarkDotNet project (OBSV-03)
 - [x] 13-02-PLAN.md - Implement startup time benchmarks (PERF-01, PERF-02)
 - [x] 13-03-PLAN.md - Implement mission duration and scale benchmarks (PERF-03, PERF-04)
-- [ ] 13-04-PLAN.md - Memory profiling, I/O analysis, and baseline documentation (OBSV-03, PERF-05, PERF-06)
+- [x] 13-04-PLAN.md - Memory profiling, I/O analysis, and baseline documentation (OBSV-03, PERF-05, PERF-06)
 
 ### Phase 14: Test Coverage Expansion
 **Goal**: Achieve 80% test coverage with quality gates enforced in CI
@@ -105,10 +105,7 @@ Plans:
   2. Branch coverage reports are available in CI pipeline output
   3. CI blocks PRs that drop coverage below the threshold
   4. Mutation testing validates that tests catch real bugs, not just hit coverage targets
-**Traceability artifacts**: 1 summary file (phase status in progress)
-
-Artifacts:
-- [ ] 14-01-SUMMARY.md - Phase-level status and requirement traceability for TEST-02/03/04/06 (coverage gates complete; mutation rollout in progress)
+**Plans**: TBD
 
 ### Phase 15: Error UX Integration
 **Goal**: Provide human-friendly error experiences with recovery guidance across CLI and WPF
@@ -135,6 +132,6 @@ Artifacts:
 | 9. Phase 3 Verification | v1.0 | 4/4 | Complete | 2026-02-22 |
 | 11. Foundation and Test Stability | v1.1 | 4/4 | Complete | 2026-02-23 |
 | 12. Observability Integration | v1.1 | 4/4 | Complete | 2026-02-23 |
-| 13. Performance Baselining | 2/4 | In Progress|  | - |
-| 14. Test Coverage Expansion | v1.1 | 4/5 | In Progress | - |
+| 13. Performance Baselining | v1.1 | 4/4 | Complete | 2026-02-23 |
+| 14. Test Coverage Expansion | v1.1 | 0/TBD | Not started | - |
 | 15. Error UX Integration | v1.1 | 0/TBD | Not started | - |

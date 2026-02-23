@@ -10,11 +10,11 @@ See: `.planning/PROJECT.md` (updated 2026-02-22)
 ## Current Position
 
 Phase: 14 of 15 (Test Coverage Expansion)
-Plan: 4 of 5
-Status: In progress
-Last activity: 2026-02-23 - Completed 14-04 mutation policy safety fix; 14-05 docs/verification in progress
+Plan: 0 of TBD
+Status: Discuss complete (ready for planning)
+Last activity: 2026-02-22 - Completed phase 14 research and plan-shape decisions for coverage, branch reporting, CI gates, and mutation testing
 
-Progress: [********----] 80% (4/5 plans complete)
+Progress: [------------] 0% (0/TBD plans complete)
 
 ## Performance Metrics
 
@@ -58,14 +58,13 @@ Recent decisions affecting current work:
 - 13-03: Apply phase as placeholder in MissionBenchmarks - requires PowerShell/system context for real measurement
 - 13-03: ScaleBenchmarks pushes to 15K rules to validate margin beyond 10K target
 - 13-03: Mock services for VerificationWorkflowService to isolate workflow orchestration overhead
-- 14-01: Coverage gate policy is scoped to critical assemblies only (Build/Apply/Verify/Infrastructure) at 80% line threshold
-- 14-02: Coverage report includes branch coverage totals and per-assembly branch percentages
-- 14-03: CI coverage artifact selection is deterministic (latest coverage copied to stable artifact path)
-- 14-04: Mutation policy supports report mode by default and optional enforce mode with seeded-fallback protection
+- 14-discuss: Scope enforcement targets critical assemblies only (Build, Apply, Verify, Infrastructure)
+- 14-discuss: Coverage collection/reporting separated from gate enforcement for deterministic CI behavior
+- 14-discuss: Mutation testing introduced with bounded scope first, then expanded after baseline stabilizes
 
 ### Pending Todos
 
-None yet.
+None.
 
 ### Blockers/Concerns
 
@@ -73,6 +72,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-23
-Stopped at: Completed 14-04 implementation; finalizing 14-05 traceability + verification
-Resume file: None
+Last session: 2026-02-22
+Stopped at: Completed phase 14 discuss/research output
+Resume file: .planning/phases/14-test-coverage-expansion/14-RESEARCH.md

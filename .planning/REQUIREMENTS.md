@@ -10,11 +10,11 @@ Requirements for Operational Maturity milestone. Each maps to roadmap phases.
 ### Testing
 
 - [x] **TEST-01**: Test suite runs reliably without flaky failures (fix BuildHost_UsesConfiguredPathBuilderForSerilogLogDirectory)
-- [x] **TEST-02**: 80% line coverage on critical assemblies (Build, Apply, Verify, Infrastructure)
-- [x] **TEST-03**: Branch coverage reporting available in CI pipeline
-- [x] **TEST-04**: Coverage gates enforced in CI (block PRs that drop below threshold)
+- [ ] **TEST-02**: 80% line coverage on critical assemblies (Build, Apply, Verify, Infrastructure)
+- [ ] **TEST-03**: Branch coverage reporting available in CI pipeline
+- [ ] **TEST-04**: Coverage gates enforced in CI (block PRs that drop below threshold)
 - [x] **TEST-05**: Tests categorized by speed (unit vs integration) for pipeline efficiency
-- [ ] **TEST-06**: Mutation testing validates test quality (policy/report mode + optional enforcement implemented; full mutation execution rollout pending)
+- [ ] **TEST-06**: Mutation testing validates test quality (not just coverage numbers)
 
 ### Observability
 
@@ -31,8 +31,8 @@ Requirements for Operational Maturity milestone. Each maps to roadmap phases.
 - [x] **PERF-02**: Warm startup time baseline established (< 1s target)
 - [x] **PERF-03**: Mission duration baselines documented for each mission type
 - [x] **PERF-04**: Scale testing validates 10K+ rule processing without OOM
-- [ ] **PERF-05**: Memory profile baseline established with leak detection
-- [ ] **PERF-06**: I/O bottlenecks identified and documented
+- [x] **PERF-05**: Memory profile baseline established with leak detection
+- [x] **PERF-06**: I/O bottlenecks identified and documented
 
 ### Error Ergonomics
 
@@ -78,11 +78,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 | Requirement | Phase | Status |
 |-------------|-------|--------|
 | TEST-01 | Phase 11 | Complete |
-| TEST-02 | Phase 14 | Complete |
-| TEST-03 | Phase 14 | Complete |
-| TEST-04 | Phase 14 | Complete |
+| TEST-02 | Phase 14 | Pending |
+| TEST-03 | Phase 14 | Pending |
+| TEST-04 | Phase 14 | Pending |
 | TEST-05 | Phase 11 | Complete |
-| TEST-06 | Phase 14 | In Progress |
+| TEST-06 | Phase 14 | Pending |
 | OBSV-01 | Phase 11 | Complete |
 | OBSV-02 | Phase 12 | Complete |
 | OBSV-03 | Phase 13 | Complete |
@@ -93,8 +93,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | PERF-02 | Phase 13 | Complete |
 | PERF-03 | Phase 13 | Complete |
 | PERF-04 | Phase 13 | Complete |
-| PERF-05 | Phase 13 | Pending |
-| PERF-06 | Phase 13 | Pending |
+| PERF-05 | Phase 13 | Complete |
+| PERF-06 | Phase 13 | Complete |
 | ERRX-01 | Phase 15 | Pending |
 | ERRX-02 | Phase 15 | Pending |
 | ERRX-03 | Phase 11 | Complete |
@@ -109,4 +109,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-22*
-*Last updated: 2026-02-23 after 14-05 traceability/verification updates*
+*Last updated: 2026-02-23 after 13-03 completion*

@@ -30,6 +30,7 @@ public partial class App : Application
   private static readonly Stopwatch StartupStopwatch = new();
   private static bool _isColdStart = true;
   private static bool _exitAfterLoad;
+  private PerformanceInstrumenter? _performanceInstrumenter;
 
   protected override void OnStartup(StartupEventArgs e)
   {
@@ -126,6 +127,7 @@ public partial class App : Application
           services.AddSingleton<IVerificationWorkflowService, VerificationWorkflowService>();
           services.AddSingleton<VerificationArtifactAggregationService>();
           services.AddSingleton<MissionTracingService>();
+          services.AddSingleton<PerformanceInstrumenter>();
           services.AddSingleton<IBundleMissionSummaryService, BundleMissionSummaryService>();
           services.AddSingleton<ImportSelectionOrchestrator>();
           services.AddSingleton<BundleOrchestrator>();
@@ -204,6 +206,7 @@ public partial class App : Application
         })
         .Build();
       TraceStartup("Host build complete");
+      _performanceInstrumenter = _host.Services.GetRequiredService<PerformanceInstrumenter>();
 
       var main = new MainWindow();
       TraceStartup("Main window constructed");
@@ -282,7 +285,7 @@ public partial class App : Application
     TraceStartup($"MainWindow.Loaded - Startup time: {elapsedMs:F2}ms, IsColdStart: {_isColdStart}");
 
     // Record to PerformanceInstrumenter
-    PerformanceInstrumenter.RecordStartupTime(elapsedMs, _isColdStart);
+    _performanceInstrumenter?.RecordStartupTime(elapsedMs, _isColdStart);
 
     // Mark subsequent starts as warm starts
     _isColdStart = false;

@@ -7,7 +7,7 @@ namespace STIGForge.Infrastructure.Telemetry;
 /// Provides counters and histograms for mission duration, startup time, and rule processing.
 /// No external NuGet packages required - uses built-in .NET 8 APIs.
 /// </summary>
-public static class PerformanceInstrumenter
+public sealed class PerformanceInstrumenter
 {
     private static readonly Meter Meter = new("STIGForge.Performance");
 
@@ -39,7 +39,7 @@ public static class PerformanceInstrumenter
     /// <param name="missionType">The type of mission (build, apply, verify, prove).</param>
     /// <param name="ruleCount">The number of rules processed in this mission.</param>
     /// <param name="durationMs">The total mission duration in milliseconds.</param>
-    public static void RecordMissionCompleted(string missionType, int ruleCount, double durationMs)
+    public void RecordMissionCompleted(string missionType, int ruleCount, double durationMs)
     {
         MissionsCompletedCounter.Add(1, new KeyValuePair<string, object?>("mission.type", missionType));
         RulesProcessedCounter.Add(ruleCount, new KeyValuePair<string, object?>("mission.type", missionType));
@@ -55,7 +55,7 @@ public static class PerformanceInstrumenter
     /// </summary>
     /// <param name="durationMs">The startup duration in milliseconds.</param>
     /// <param name="isColdStart">True if this was a cold start (first run), false for warm starts.</param>
-    public static void RecordStartupTime(double durationMs, bool isColdStart)
+    public void RecordStartupTime(double durationMs, bool isColdStart)
     {
         if (durationMs > 0)
         {

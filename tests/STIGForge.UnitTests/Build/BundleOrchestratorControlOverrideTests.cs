@@ -7,6 +7,7 @@ using STIGForge.Core.Models;
 using STIGForge.Apply;
 using STIGForge.Verify;
 using STIGForge.Build;
+using STIGForge.Infrastructure.Telemetry;
 
 namespace STIGForge.UnitTests.Build;
 
@@ -128,7 +129,9 @@ public sealed class BundleOrchestratorControlOverrideTests : IDisposable
       _mockBuilder.Object,
       _mockApply.Object,
       _mockVerification.Object,
-      _mockArtifactAggregation.Object
+      _mockArtifactAggregation.Object,
+      new MissionTracingService(),
+      new PerformanceInstrumenter()
     );
 
     var request = new OrchestrateRequest
@@ -183,7 +186,9 @@ public sealed class BundleOrchestratorControlOverrideTests : IDisposable
       Mock.Of<BundleBuilder>(),
       Mock.Of<ApplyRunner>(),
       Mock.Of<IVerificationWorkflowService>(),
-      Mock.Of<VerificationArtifactAggregationService>()
+      Mock.Of<VerificationArtifactAggregationService>(),
+      new MissionTracingService(),
+      new PerformanceInstrumenter()
     );
 
     var method = typeof(BundleOrchestrator).GetMethod("LoadOverlayDecisions",
@@ -208,7 +213,9 @@ public sealed class BundleOrchestratorControlOverrideTests : IDisposable
       Mock.Of<BundleBuilder>(),
       Mock.Of<ApplyRunner>(),
       Mock.Of<IVerificationWorkflowService>(),
-      Mock.Of<VerificationArtifactAggregationService>()
+      Mock.Of<VerificationArtifactAggregationService>(),
+      new MissionTracingService(),
+      new PerformanceInstrumenter()
     );
 
     var method = typeof(BundleOrchestrator).GetMethod("LoadOverlayDecisions",

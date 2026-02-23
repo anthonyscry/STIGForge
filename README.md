@@ -164,19 +164,6 @@ Outputs:
 See `docs/release/ShipReadinessChecklist.md` for go/no-go criteria.
 See `docs/release/SecurityGatePolicies.md` for policy file and exception management.
 
-## Coverage report and gate
-Collect unit-test coverage (Cobertura), then generate the coverage report and run the scoped gate:
-
-Note: unit tests run again in this flow because coverage data is produced only by the collector-enabled test execution.
-
-```powershell
-$coverageRoot = '.\.artifacts\test-coverage\local'
-dotnet test .\tests\STIGForge.UnitTests\STIGForge.UnitTests.csproj --configuration Release --framework net8.0 --collect:"XPlat Code Coverage" --results-directory $coverageRoot
-Copy-Item (Get-ChildItem $coverageRoot -Recurse -Filter coverage.cobertura.xml | Sort-Object LastWriteTimeUtc -Descending | Select-Object -First 1).FullName (Join-Path $coverageRoot 'coverage.cobertura.xml') -Force
-powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\release\Invoke-CoverageReport.ps1 -CoverageReportPath (Join-Path $coverageRoot 'coverage.cobertura.xml') -OutputDirectory $coverageRoot
-powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\release\Invoke-CoverageGate.ps1 -CoverageReportPath (Join-Path $coverageRoot 'coverage.cobertura.xml') -PolicyPath .\tools\release\coverage-gate-policy.json
-```
-
 ## Release workflows
 - `ci.yml` runs release gate and uploads gate artifacts for every push/PR.
 - `release-package.yml` (manual dispatch) runs optional release gate + package build and uploads release bundles.

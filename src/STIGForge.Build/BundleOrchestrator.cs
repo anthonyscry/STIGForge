@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using System.Diagnostics;
 using STIGForge.Apply;
 using STIGForge.Apply.PowerStig;
 using STIGForge.Core.Abstractions;
@@ -17,6 +18,7 @@ public sealed class BundleOrchestrator
   private readonly IVerificationWorkflowService _verificationWorkflow;
   private readonly VerificationArtifactAggregationService _artifactAggregation;
   private readonly MissionTracingService _tracing;
+  private readonly PerformanceInstrumenter _performanceInstrumenter;
   private readonly IAuditTrailService? _audit;
   private readonly IMissionRunRepository? _missionRunRepository;
 
@@ -26,6 +28,7 @@ public sealed class BundleOrchestrator
       IVerificationWorkflowService verificationWorkflow,
       VerificationArtifactAggregationService artifactAggregation,
       MissionTracingService tracing,
+      PerformanceInstrumenter performanceInstrumenter,
       IAuditTrailService? audit = null,
       IMissionRunRepository? missionRunRepository = null)
   {
@@ -34,6 +37,7 @@ public sealed class BundleOrchestrator
     _verificationWorkflow = verificationWorkflow;
     _artifactAggregation = artifactAggregation;
     _tracing = tracing ?? throw new ArgumentNullException(nameof(tracing));
+    _performanceInstrumenter = performanceInstrumenter ?? throw new ArgumentNullException(nameof(performanceInstrumenter));
     _audit = audit;
     _missionRunRepository = missionRunRepository;
   }
@@ -64,6 +68,9 @@ public sealed class BundleOrchestrator
       ValidateBreakGlass(request.BreakGlassAcknowledged, request.BreakGlassReason, "orchestrate --skip-snapshot");
       await RecordBreakGlassAsync(root, "skip-snapshot", request.BreakGlassReason, ct).ConfigureAwait(false);
     }
+
+    var bundleControls = LoadBundleControls(root);
+    var bundleRuleCount = bundleControls.Count;
 
     // Load overlay decisions to filter NotApplicable controls
     var overlayDecisions = LoadOverlayDecisions(root);
@@ -104,8 +111,7 @@ public sealed class BundleOrchestrator
         Directory.CreateDirectory(Path.GetDirectoryName(generated)!);
 
         // Load bundle controls and filter out NotApplicable from overlay decisions
-        var allControls = LoadBundleControls(root);
-        var filteredControls = allControls
+        var filteredControls = bundleControls
           .Where(c => !IsControlNotApplicable(c, notApplicableKeys))
           .ToList();
 
@@ -122,6 +128,7 @@ public sealed class BundleOrchestrator
 
       // --- Apply phase ---
       using var applyActivity = _tracing.StartPhaseSpan(ActivitySourceNames.ApplyPhase, root);
+      var applyStartedAt = Stopwatch.GetTimestamp();
       await AppendEventAsync(runId, ++seq, MissionPhase.Apply, "apply", MissionEventStatus.Started, null, ct).ConfigureAwait(false);
 
       ApplyResult applyResult;
@@ -146,6 +153,7 @@ public sealed class BundleOrchestrator
         WritePhaseMarker(Path.Combine(root, "Apply", "apply.complete"), applyResult.LogPath);
         _tracing.SetStatusOk(applyActivity);
         _tracing.AddPhaseEvent(applyActivity, "apply_completed", $"Steps={applyResult.Steps.Count}");
+        _performanceInstrumenter.RecordMissionCompleted("Apply", bundleRuleCount, Stopwatch.GetElapsedTime(applyStartedAt).TotalMilliseconds);
         await AppendEventAsync(runId, ++seq, MissionPhase.Apply, "apply", MissionEventStatus.Finished,
           "Apply completed. Steps=" + applyResult.Steps.Count, ct).ConfigureAwait(false);
       }
@@ -165,6 +173,7 @@ public sealed class BundleOrchestrator
       if (!string.IsNullOrWhiteSpace(request.EvaluateStigRoot))
       {
         using var verifyActivity = _tracing.StartPhaseSpan("verify_evaluate_stig", root);
+        var verifyStartedAt = Stopwatch.GetTimestamp();
         await AppendEventAsync(runId, ++seq, MissionPhase.Verify, "evaluate_stig", MissionEventStatus.Started, null, ct).ConfigureAwait(false);
         try
         {
@@ -194,6 +203,7 @@ public sealed class BundleOrchestrator
 
           _tracing.SetStatusOk(verifyActivity);
           _tracing.AddPhaseEvent(verifyActivity, "evaluate_stig_completed", $"Results={evalWorkflow.ConsolidatedResultCount}");
+          _performanceInstrumenter.RecordMissionCompleted("Verify", bundleRuleCount, Stopwatch.GetElapsedTime(verifyStartedAt).TotalMilliseconds);
           await AppendEventAsync(runId, ++seq, MissionPhase.Verify, "evaluate_stig", MissionEventStatus.Finished,
             "Evaluate-STIG completed. Results=" + evalWorkflow.ConsolidatedResultCount, ct).ConfigureAwait(false);
         }
@@ -218,6 +228,7 @@ public sealed class BundleOrchestrator
       {
         var toolName = string.IsNullOrWhiteSpace(request.ScapToolLabel) ? "SCAP" : request.ScapToolLabel!;
         using var scapActivity = _tracing.StartPhaseSpan("verify_scap", root);
+        var scapStartedAt = Stopwatch.GetTimestamp();
         await AppendEventAsync(runId, ++seq, MissionPhase.Verify, "scap", MissionEventStatus.Started, null, ct).ConfigureAwait(false);
         try
         {
@@ -247,6 +258,7 @@ public sealed class BundleOrchestrator
 
           _tracing.SetStatusOk(scapActivity);
           _tracing.AddPhaseEvent(scapActivity, "scap_completed", $"Results={scapWorkflow.ConsolidatedResultCount}");
+          _performanceInstrumenter.RecordMissionCompleted("Verify", bundleRuleCount, Stopwatch.GetElapsedTime(scapStartedAt).TotalMilliseconds);
           await AppendEventAsync(runId, ++seq, MissionPhase.Verify, "scap", MissionEventStatus.Finished,
             toolName + " completed. Results=" + scapWorkflow.ConsolidatedResultCount, ct).ConfigureAwait(false);
         }
@@ -270,10 +282,12 @@ public sealed class BundleOrchestrator
       if (coverageInputs.Count > 0)
       {
         using var evidenceActivity = _tracing.StartPhaseSpan(ActivitySourceNames.ProvePhase, root);
+        var evidenceStartedAt = Stopwatch.GetTimestamp();
         await AppendEventAsync(runId, ++seq, MissionPhase.Evidence, "coverage_artifacts", MissionEventStatus.Started, null, ct).ConfigureAwait(false);
         _artifactAggregation.WriteCoverageArtifacts(Path.Combine(root, "Reports"), coverageInputs);
         _tracing.SetStatusOk(evidenceActivity);
         _tracing.AddPhaseEvent(evidenceActivity, "coverage_artifacts_completed", $"CoverageInputs={coverageInputs.Count}");
+        _performanceInstrumenter.RecordMissionCompleted("Prove", bundleRuleCount, Stopwatch.GetElapsedTime(evidenceStartedAt).TotalMilliseconds);
         await AppendEventAsync(runId, ++seq, MissionPhase.Evidence, "coverage_artifacts", MissionEventStatus.Finished,
           "CoverageInputs=" + coverageInputs.Count, ct).ConfigureAwait(false);
       }

@@ -7,8 +7,10 @@ using STIGForge.Apply.Snapshot;
 using STIGForge.Build;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
+using STIGForge.Infrastructure.Telemetry;
 using STIGForge.Verify;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics.Metrics;
 
 namespace STIGForge.UnitTests.Build;
 
@@ -241,6 +243,48 @@ public sealed class BundleOrchestratorTimelineTests : IDisposable
         await act.Should().NotThrowAsync();
     }
 
+    [Fact]
+    public async Task OrchestrateAsync_RecordsApplyMissionDurationMetric()
+    {
+        var missionTypes = new List<string>();
+
+        using var listener = new MeterListener();
+        listener.InstrumentPublished = (instrument, meterListener) =>
+        {
+            if (instrument.Meter.Name == "STIGForge.Performance" &&
+                instrument.Name == "mission.duration")
+            {
+                meterListener.EnableMeasurementEvents(instrument);
+            }
+        };
+
+        listener.SetMeasurementEventCallback<double>((instrument, measurement, tags, _) =>
+        {
+            if (instrument.Name != "mission.duration" || measurement <= 0)
+                return;
+
+            foreach (var tag in tags)
+            {
+                if (tag.Key == "mission.type" && tag.Value is string missionType)
+                    missionTypes.Add(missionType);
+            }
+        });
+
+        listener.Start();
+
+        var orchestrator = CreateOrchestrator(null);
+
+        await orchestrator.OrchestrateAsync(new OrchestrateRequest
+        {
+            BundleRoot = _bundleRoot,
+            SkipSnapshot = true,
+            BreakGlassAcknowledged = true,
+            BreakGlassReason = "Unit test - not a real deployment"
+        }, CancellationToken.None);
+
+        missionTypes.Should().Contain("Apply");
+    }
+
     private BundleOrchestrator CreateOrchestrator(IMissionRunRepository? repo)
     {
         var audit = new Mock<IAuditTrailService>();
@@ -279,6 +323,8 @@ public sealed class BundleOrchestratorTimelineTests : IDisposable
             applyRunner,
             verificationWorkflow.Object,
             artifactAggregation,
+            new MissionTracingService(),
+            new PerformanceInstrumenter(),
             audit.Object,
             repo);
     }

@@ -99,6 +99,7 @@ public static class CliHostFactory
     services.AddSingleton<IVerificationWorkflowService, VerificationWorkflowService>();
     services.AddSingleton<VerificationArtifactAggregationService>();
     services.AddSingleton<MissionTracingService>();
+    services.AddSingleton<PerformanceInstrumenter>();
     services.AddSingleton<BaselineDiffService>();
     services.AddSingleton<OverlayRebaseService>();
     services.AddSingleton<ManualAnswerService>();
