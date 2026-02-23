@@ -10,18 +10,18 @@ See: `.planning/PROJECT.md` (updated 2026-02-22)
 ## Current Position
 
 Phase: 13 of 15 (Performance Baselining)
-Plan: 1 of 4
+Plan: 2 of 4
 Status: In progress
-Last activity: 2026-02-23 - Completed 13-01 PerformanceInstrumenter and BenchmarkDotNet scaffolding
+Last activity: 2026-02-23 - Completed 13-02 StartupBenchmarks with cold start measurement
 
-Progress: [*-----------] 25% (1/4 plans complete)
+Progress: [**----------] 50% (2/4 plans complete)
 
 ## Performance Metrics
 
 **Velocity (v1.1 milestone):**
-- Total plans completed: 8
+- Total plans completed: 9
 - Average duration: 7 min
-- Total execution time: ~50 min
+- Total execution time: ~55 min
 
 **All-time (including previous milestones):**
 - Total plans completed: 34
@@ -53,6 +53,8 @@ Recent decisions affecting current work:
 - 12-04: InjectTraceContext helper in ApplyRunner for centralized trace context injection
 - 13-01: PerformanceInstrumenter uses System.Diagnostics.Metrics (built-in .NET 8) for mission and startup metrics
 - 13-01: BenchmarkDotNet 0.15.2 configured with ShortRun job, MemoryDiagnoser, and MarkdownExporter
+- 13-02: Process.Start with --exit-after-load flag for cold startup measurement (clean process isolation)
+- 13-02: WarmStartupInternal documented as requiring external orchestration (BenchmarkDotNet limitation)
 
 ### Pending Todos
 
@@ -65,5 +67,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 13-01-PLAN.md (Performance infrastructure)
+Stopped at: Completed 13-02-PLAN.md (Startup time benchmarks)
 Resume file: None
