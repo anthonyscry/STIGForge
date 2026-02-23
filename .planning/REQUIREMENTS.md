@@ -19,7 +19,7 @@ Requirements for Operational Maturity milestone. Each maps to roadmap phases.
 ### Observability
 
 - [x] **OBSV-01**: Structured logging with correlation IDs for trace correlation
-- [ ] **OBSV-02**: Mission-level tracing spans Build → Apply → Verify → Prove lifecycle
+- [x] **OBSV-02**: Mission-level tracing spans Build → Apply → Verify → Prove lifecycle
 - [ ] **OBSV-03**: Performance metrics collected (startup time, mission duration, memory usage)
 - [x] **OBSV-04**: Log levels configurable per environment (debug vs production)
 - [ ] **OBSV-05**: Debug export bundles create portable diagnostics for offline support
@@ -84,7 +84,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | TEST-05 | Phase 11 | Complete |
 | TEST-06 | Phase 14 | Pending |
 | OBSV-01 | Phase 11 | Complete |
-| OBSV-02 | Phase 12 | Pending |
+| OBSV-02 | Phase 12 | Complete |
 | OBSV-03 | Phase 13 | Pending |
 | OBSV-04 | Phase 11 | Complete |
 | OBSV-05 | Phase 12 | Pending |
@@ -109,4 +109,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-22*
-*Last updated: 2026-02-23 after 11-03 completion*
+*Last updated: 2026-02-23 after 12-01 completion*

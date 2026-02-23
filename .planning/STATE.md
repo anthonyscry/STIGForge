@@ -5,28 +5,28 @@
 See: `.planning/PROJECT.md` (updated 2026-02-22)
 
 **Core value:** Produce deterministic, defensible compliance outcomes with strict control mapping and complete evidence packaging, without requiring internet access.
-**Current focus:** Phase 11 - Foundation and Test Stability
+**Current focus:** Phase 12 - Observability Integration
 
 ## Current Position
 
-Phase: 11 of 15 (Foundation and Test Stability)
-Plan: 4 of 4
-Status: Phase complete
-Last activity: 2026-02-23 - Completed 11-04 host logging integration
+Phase: 12 of 15 (Observability Integration)
+Plan: 1 of 4
+Status: In progress
+Last activity: 2026-02-23 - Completed 12-01 mission tracing infrastructure
 
-Progress: [**********] 100% (4/4 plans complete)
+Progress: [**---------] 25% (1/4 plans complete)
 
 ## Performance Metrics
 
 **Velocity (v1.1 milestone):**
-- Total plans completed: 4
-- Average duration: 8 min
-- Total execution time: ~32 min
+- Total plans completed: 5
+- Average duration: 7 min
+- Total execution time: ~36 min
 
 **All-time (including previous milestones):**
-- Total plans completed: 31
+- Total plans completed: 32
 - Average duration: 6 min
-- Total execution time: ~192 min
+- Total execution time: ~196 min
 
 ## Accumulated Context
 
@@ -42,6 +42,9 @@ Recent decisions affecting current work:
 - 11-01: Trait attributes for categorization (xUnit standard, IDE/CI supported)
 - 11-04: CorrelationIdEnricher integrated into CLI and WPF hosts for trace correlation
 - 11-04: LoggingConfiguration.LevelSwitch for runtime log level control via STIGFORGE_LOG_LEVEL
+- 12-01: No new NuGet packages - uses built-in System.Diagnostics for W3C-compatible distributed tracing
+- 12-01: TraceFileListener writes to traces.json for offline analysis without requiring OTLP collector
+- 12-01: LoggingConfiguration manages TraceFileListener lifecycle with InitializeTraceListener and Shutdown
 
 ### Pending Todos
 
@@ -49,10 +52,10 @@ None yet.
 
 ### Blockers/Concerns
 
-- ~~**Phase 11 prerequisite:** The pre-existing flaky test `BuildHost_UsesConfiguredPathBuilderForSerilogLogDirectory` must be fixed before coverage gates can be enforced in CI~~ **RESOLVED** in 11-01
+None.
 
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 11-04-PLAN.md (host logging integration)
+Stopped at: Completed 12-01-PLAN.md (mission tracing infrastructure)
 Resume file: None
