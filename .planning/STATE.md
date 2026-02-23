@@ -10,18 +10,18 @@ See: `.planning/PROJECT.md` (updated 2026-02-22)
 ## Current Position
 
 Phase: 12 of 15 (Observability Integration)
-Plan: 2 of 4
+Plan: 3 of 4
 Status: In progress
-Last activity: 2026-02-23 - Completed 12-02 debug bundle exporter
+Last activity: 2026-02-23 - Completed 12-03 BundleOrchestrator tracing integration
 
-Progress: [*****------] 50% (2/4 plans complete)
+Progress: [*******----] 75% (3/4 plans complete)
 
 ## Performance Metrics
 
 **Velocity (v1.1 milestone):**
-- Total plans completed: 6
+- Total plans completed: 7
 - Average duration: 7 min
-- Total execution time: ~43 min
+- Total execution time: ~47 min
 
 **All-time (including previous milestones):**
 - Total plans completed: 33
@@ -47,6 +47,10 @@ Recent decisions affecting current work:
 - 12-01: LoggingConfiguration manages TraceFileListener lifecycle with InitializeTraceListener and Shutdown
 - 12-02: DebugBundleExporter handles missing files/directories gracefully by skipping rather than failing
 - 12-02: No external NuGet packages for ZIP creation - uses built-in System.IO.Compression
+- 12-03: MissionTracingService injected into BundleOrchestrator for end-to-end mission lifecycle tracing
+- 12-03: Each phase (Apply, Verify-Evaluate-STIG, Verify-SCAP, Evidence) wrapped with child Activity spans
+- 12-04: Environment variables for trace context propagation to PowerShell (STIGFORGE_TRACE_ID, STIGFORGE_PARENT_SPAN_ID, STIGFORGE_TRACE_FLAGS)
+- 12-04: InjectTraceContext helper in ApplyRunner for centralized trace context injection
 
 ### Pending Todos
 
@@ -59,5 +63,5 @@ None.
 ## Session Continuity
 
 Last session: 2026-02-23
-Stopped at: Completed 12-02-PLAN.md (debug bundle exporter)
+Stopped at: Completed 12-04-PLAN.md (PowerShell trace context propagation)
 Resume file: None
