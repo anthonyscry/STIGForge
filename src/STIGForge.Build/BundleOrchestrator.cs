@@ -5,6 +5,7 @@ using STIGForge.Apply.PowerStig;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
 using STIGForge.Core.Services;
+using STIGForge.Infrastructure.Telemetry;
 using STIGForge.Verify;
 
 namespace STIGForge.Build;
@@ -15,15 +16,24 @@ public sealed class BundleOrchestrator
   private readonly ApplyRunner _apply;
   private readonly IVerificationWorkflowService _verificationWorkflow;
   private readonly VerificationArtifactAggregationService _artifactAggregation;
+  private readonly MissionTracingService _tracing;
   private readonly IAuditTrailService? _audit;
   private readonly IMissionRunRepository? _missionRunRepository;
 
-  public BundleOrchestrator(BundleBuilder builder, ApplyRunner apply, IVerificationWorkflowService verificationWorkflow, VerificationArtifactAggregationService artifactAggregation, IAuditTrailService? audit = null, IMissionRunRepository? missionRunRepository = null)
+  public BundleOrchestrator(
+      BundleBuilder builder,
+      ApplyRunner apply,
+      IVerificationWorkflowService verificationWorkflow,
+      VerificationArtifactAggregationService artifactAggregation,
+      MissionTracingService tracing,
+      IAuditTrailService? audit = null,
+      IMissionRunRepository? missionRunRepository = null)
   {
     _builder = builder;
     _apply = apply;
     _verificationWorkflow = verificationWorkflow;
     _artifactAggregation = artifactAggregation;
+    _tracing = tracing ?? throw new ArgumentNullException(nameof(tracing));
     _audit = audit;
     _missionRunRepository = missionRunRepository;
   }
@@ -82,6 +92,9 @@ public sealed class BundleOrchestrator
 
     var seq = 0;
 
+    // Start root mission span for end-to-end tracing
+    using var missionActivity = _tracing.StartMissionSpan(root, runId);
+
     try
     {
       var psd1Path = request.PowerStigDataFile;
@@ -89,25 +102,26 @@ public sealed class BundleOrchestrator
       {
         var generated = Path.Combine(root, "Apply", "PowerStigData", "stigdata.psd1");
         Directory.CreateDirectory(Path.GetDirectoryName(generated)!);
-        
+
         // Load bundle controls and filter out NotApplicable from overlay decisions
         var allControls = LoadBundleControls(root);
         var filteredControls = allControls
           .Where(c => !IsControlNotApplicable(c, notApplicableKeys))
           .ToList();
-        
+
         var overrides = LoadBundlePowerStigOverrides(root);
-        
+
         // Generate PowerStig data from filtered controls
         var data = filteredControls.Count > 0 || overrides.Count > 0
           ? PowerStigDataGenerator.CreateFromControls(filteredControls, overrides)
           : PowerStigDataGenerator.CreateDefault(request.PowerStigModulePath!, request.BundleRoot);
-        
+
         PowerStigDataWriter.Write(generated, data);
         psd1Path = generated;
       }
 
       // --- Apply phase ---
+      using var applyActivity = _tracing.StartPhaseSpan(ActivitySourceNames.ApplyPhase, root);
       await AppendEventAsync(runId, ++seq, MissionPhase.Apply, "apply", MissionEventStatus.Started, null, ct).ConfigureAwait(false);
 
       ApplyResult applyResult;
@@ -130,11 +144,15 @@ public sealed class BundleOrchestrator
         }, ct).ConfigureAwait(false);
 
         WritePhaseMarker(Path.Combine(root, "Apply", "apply.complete"), applyResult.LogPath);
+        _tracing.SetStatusOk(applyActivity);
+        _tracing.AddPhaseEvent(applyActivity, "apply_completed", $"Steps={applyResult.Steps.Count}");
         await AppendEventAsync(runId, ++seq, MissionPhase.Apply, "apply", MissionEventStatus.Finished,
           "Apply completed. Steps=" + applyResult.Steps.Count, ct).ConfigureAwait(false);
       }
       catch (Exception applyEx)
       {
+        _tracing.SetStatusError(applyActivity, applyEx.Message);
+        applyActivity?.SetTag("error.type", applyEx.GetType().FullName);
         await AppendEventAsync(runId, ++seq, MissionPhase.Apply, "apply", MissionEventStatus.Failed,
           applyEx.Message, ct).ConfigureAwait(false);
         await FinishRunAsync(runId, MissionRunStatus.Failed, applyEx.Message, ct).ConfigureAwait(false);
@@ -146,6 +164,7 @@ public sealed class BundleOrchestrator
       // --- Verify phase: Evaluate-STIG ---
       if (!string.IsNullOrWhiteSpace(request.EvaluateStigRoot))
       {
+        using var verifyActivity = _tracing.StartPhaseSpan("verify_evaluate_stig", root);
         await AppendEventAsync(runId, ++seq, MissionPhase.Verify, "evaluate_stig", MissionEventStatus.Started, null, ct).ConfigureAwait(false);
         try
         {
@@ -173,11 +192,15 @@ public sealed class BundleOrchestrator
             ReportPath = evalWorkflow.ConsolidatedJsonPath
           });
 
+          _tracing.SetStatusOk(verifyActivity);
+          _tracing.AddPhaseEvent(verifyActivity, "evaluate_stig_completed", $"Results={evalWorkflow.ConsolidatedResultCount}");
           await AppendEventAsync(runId, ++seq, MissionPhase.Verify, "evaluate_stig", MissionEventStatus.Finished,
             "Evaluate-STIG completed. Results=" + evalWorkflow.ConsolidatedResultCount, ct).ConfigureAwait(false);
         }
         catch (Exception verifyEx)
         {
+          _tracing.SetStatusError(verifyActivity, verifyEx.Message);
+          verifyActivity?.SetTag("error.type", verifyEx.GetType().FullName);
           await AppendEventAsync(runId, ++seq, MissionPhase.Verify, "evaluate_stig", MissionEventStatus.Failed,
             verifyEx.Message, ct).ConfigureAwait(false);
           await FinishRunAsync(runId, MissionRunStatus.Failed, verifyEx.Message, ct).ConfigureAwait(false);
@@ -194,6 +217,7 @@ public sealed class BundleOrchestrator
       if (!string.IsNullOrWhiteSpace(request.ScapCommandPath))
       {
         var toolName = string.IsNullOrWhiteSpace(request.ScapToolLabel) ? "SCAP" : request.ScapToolLabel!;
+        using var scapActivity = _tracing.StartPhaseSpan("verify_scap", root);
         await AppendEventAsync(runId, ++seq, MissionPhase.Verify, "scap", MissionEventStatus.Started, null, ct).ConfigureAwait(false);
         try
         {
@@ -221,11 +245,15 @@ public sealed class BundleOrchestrator
             ReportPath = scapWorkflow.ConsolidatedJsonPath
           });
 
+          _tracing.SetStatusOk(scapActivity);
+          _tracing.AddPhaseEvent(scapActivity, "scap_completed", $"Results={scapWorkflow.ConsolidatedResultCount}");
           await AppendEventAsync(runId, ++seq, MissionPhase.Verify, "scap", MissionEventStatus.Finished,
             toolName + " completed. Results=" + scapWorkflow.ConsolidatedResultCount, ct).ConfigureAwait(false);
         }
         catch (Exception scapEx)
         {
+          _tracing.SetStatusError(scapActivity, scapEx.Message);
+          scapActivity?.SetTag("error.type", scapEx.GetType().FullName);
           await AppendEventAsync(runId, ++seq, MissionPhase.Verify, "scap", MissionEventStatus.Failed,
             scapEx.Message, ct).ConfigureAwait(false);
           await FinishRunAsync(runId, MissionRunStatus.Failed, scapEx.Message, ct).ConfigureAwait(false);
@@ -238,11 +266,14 @@ public sealed class BundleOrchestrator
           "ScapCommandPath not configured", ct).ConfigureAwait(false);
       }
 
-      // --- Coverage phase ---
+      // --- Evidence phase ---
       if (coverageInputs.Count > 0)
       {
+        using var evidenceActivity = _tracing.StartPhaseSpan(ActivitySourceNames.ProvePhase, root);
         await AppendEventAsync(runId, ++seq, MissionPhase.Evidence, "coverage_artifacts", MissionEventStatus.Started, null, ct).ConfigureAwait(false);
         _artifactAggregation.WriteCoverageArtifacts(Path.Combine(root, "Reports"), coverageInputs);
+        _tracing.SetStatusOk(evidenceActivity);
+        _tracing.AddPhaseEvent(evidenceActivity, "coverage_artifacts_completed", $"CoverageInputs={coverageInputs.Count}");
         await AppendEventAsync(runId, ++seq, MissionPhase.Evidence, "coverage_artifacts", MissionEventStatus.Finished,
           "CoverageInputs=" + coverageInputs.Count, ct).ConfigureAwait(false);
       }
@@ -273,10 +304,13 @@ public sealed class BundleOrchestrator
         }
       }
 
+      _tracing.SetStatusOk(missionActivity);
       await FinishRunAsync(runId, MissionRunStatus.Completed, null, ct).ConfigureAwait(false);
     }
-    catch
+    catch (Exception ex)
     {
+      _tracing.SetStatusError(missionActivity, ex.Message);
+      missionActivity?.SetTag("error.type", ex.GetType().FullName);
       // Failure events are appended at the point of failure; re-throw to caller.
       throw;
     }
