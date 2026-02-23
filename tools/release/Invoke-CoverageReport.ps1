@@ -56,13 +56,18 @@ function New-PackageSummary {
     [Parameter(Mandatory = $true)]$PackageElement
   )
 
+  $packageName = [string]$PackageElement.GetAttribute("name")
+  if ([string]::IsNullOrWhiteSpace($packageName)) {
+    throw "Cobertura report does not contain valid <packages>/<package> entries."
+  }
+
   $linesCovered = Get-IntAttributeOrZero -Element $PackageElement -AttributeName "lines-covered"
   $linesValid = Get-IntAttributeOrZero -Element $PackageElement -AttributeName "lines-valid"
   $branchesCovered = Get-IntAttributeOrZero -Element $PackageElement -AttributeName "branches-covered"
   $branchesValid = Get-IntAttributeOrZero -Element $PackageElement -AttributeName "branches-valid"
 
   return [ordered]@{
-    name = [string]$PackageElement.name
+    name = $packageName
     linesCovered = $linesCovered
     linesValid = $linesValid
     lineCoveragePercent = Get-CoveragePercent -Covered $linesCovered -Valid $linesValid
@@ -70,6 +75,33 @@ function New-PackageSummary {
     branchesValid = $branchesValid
     branchCoveragePercent = Get-CoveragePercent -Covered $branchesCovered -Valid $branchesValid
   }
+}
+
+function Get-PackageElements {
+  param(
+    [Parameter(Mandatory = $true)][xml]$CoverageXml
+  )
+
+  $packageNodes = $CoverageXml.SelectNodes("/coverage/packages/package")
+  if ($null -eq $packageNodes -or $packageNodes.Count -eq 0) {
+    throw "Cobertura report does not contain valid <packages>/<package> entries."
+  }
+
+  $packageElements = New-Object System.Collections.Generic.List[System.Xml.XmlElement]
+  foreach ($node in $packageNodes) {
+    if ($node -is [System.Xml.XmlElement]) {
+      $name = [string]$node.GetAttribute("name")
+      if (-not [string]::IsNullOrWhiteSpace($name)) {
+        [void]$packageElements.Add($node)
+      }
+    }
+  }
+
+  if ($packageElements.Count -eq 0) {
+    throw "Cobertura report does not contain valid <packages>/<package> entries."
+  }
+
+  return @($packageElements)
 }
 
 function Write-Utf8NoBom {
@@ -93,10 +125,7 @@ try {
   }
 
   [xml]$coverageXml = Get-Content -LiteralPath $coveragePathFull -Raw
-  $packageNodes = @($coverageXml.coverage.packages.package)
-  if ($packageNodes.Count -eq 0) {
-    throw "Cobertura report does not contain package coverage entries."
-  }
+  $packageNodes = Get-PackageElements -CoverageXml $coverageXml
 
   $packageSummaries = @($packageNodes | ForEach-Object { New-PackageSummary -PackageElement $_ } | Sort-Object -Property name)
 

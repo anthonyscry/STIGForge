@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text;
 using System.Text.Json;
 using FluentAssertions;
 
@@ -44,12 +45,101 @@ public sealed class CoverageReportScriptTests
     var totals = document.RootElement.GetProperty("totals");
     totals.GetProperty("lineCoveragePercent").GetDouble().Should().Be(75.0);
     totals.GetProperty("branchCoveragePercent").GetDouble().Should().Be(60.0);
+    totals.GetProperty("linesCovered").GetInt32().Should().Be(75);
+    totals.GetProperty("linesValid").GetInt32().Should().Be(100);
+    totals.GetProperty("branchesCovered").GetInt32().Should().Be(30);
+    totals.GetProperty("branchesValid").GetInt32().Should().Be(50);
+
+    var packages = document.RootElement.GetProperty("packages");
+    packages.GetArrayLength().Should().Be(2);
+
+    packages[0].GetProperty("name").GetString().Should().Be("Critical.Assembly");
+    packages[0].GetProperty("linesCovered").GetInt32().Should().Be(40);
+    packages[0].GetProperty("linesValid").GetInt32().Should().Be(50);
+    packages[0].GetProperty("lineCoveragePercent").GetDouble().Should().Be(80.0);
+    packages[0].GetProperty("branchesCovered").GetInt32().Should().Be(20);
+    packages[0].GetProperty("branchesValid").GetInt32().Should().Be(30);
+    packages[0].GetProperty("branchCoveragePercent").GetDouble().Should().Be(66.67);
+
+    packages[1].GetProperty("name").GetString().Should().Be("NonCritical.Assembly");
+    packages[1].GetProperty("linesCovered").GetInt32().Should().Be(35);
+    packages[1].GetProperty("linesValid").GetInt32().Should().Be(50);
+    packages[1].GetProperty("lineCoveragePercent").GetDouble().Should().Be(70.0);
+    packages[1].GetProperty("branchesCovered").GetInt32().Should().Be(10);
+    packages[1].GetProperty("branchesValid").GetInt32().Should().Be(20);
+    packages[1].GetProperty("branchCoveragePercent").GetDouble().Should().Be(50.0);
 
     var reportMarkdownPath = Path.Combine(outputDirectory.Path, "coverage-report.md");
     var markdown = await File.ReadAllTextAsync(reportMarkdownPath);
-    markdown.Should().Contain("Line Coverage");
-    markdown.Should().Contain("Branch Coverage");
-    markdown.Should().Contain("60.00%");
+    markdown.Should().Contain("# Coverage Report");
+    markdown.Should().Contain("## Totals");
+    markdown.Should().Contain("- Line Coverage: 75.00% (75/100)");
+    markdown.Should().Contain("- Branch Coverage: 60.00% (30/50)");
+    markdown.Should().Contain("## Packages");
+    markdown.Should().Contain("| Package | Line Coverage | Branch Coverage |");
+    markdown.Should().Contain("| Critical.Assembly | 80.00% | 66.67% |");
+    markdown.Should().Contain("| NonCritical.Assembly | 70.00% | 50.00% |");
+  }
+
+  [Fact]
+  public async Task InvokeCoverageReport_WhenCoverageFileIsMissing_ReturnsFailure()
+  {
+    var repositoryRoot = FindRepositoryRoot();
+    var scriptPath = Path.Combine(repositoryRoot, "tools", "release", "Invoke-CoverageReport.ps1");
+    var missingCoveragePath = Path.Combine(Path.GetTempPath(), $"coverage-missing-{Guid.NewGuid():N}.xml");
+    await using var outputDirectory = new TemporaryDirectory();
+
+    var result = await ExecuteCoverageReportAsync(scriptPath, missingCoveragePath, outputDirectory.Path);
+
+    result.ExitCode.Should().NotBe(0);
+    result.Output.Should().Contain("Coverage report file not found:");
+  }
+
+  [Theory]
+  [InlineData("<?xml version=\"1.0\" encoding=\"utf-8\"?><coverage lines-covered=\"1\" lines-valid=\"1\" branches-covered=\"1\" branches-valid=\"1\"></coverage>")]
+  [InlineData("<?xml version=\"1.0\" encoding=\"utf-8\"?><coverage lines-covered=\"1\" lines-valid=\"1\" branches-covered=\"1\" branches-valid=\"1\"><packages></packages></coverage>")]
+  [InlineData("<?xml version=\"1.0\" encoding=\"utf-8\"?><coverage lines-covered=\"1\" lines-valid=\"1\" branches-covered=\"1\" branches-valid=\"1\"><packages><package /></packages></coverage>")]
+  public async Task InvokeCoverageReport_WhenPackagesAreMissingOrEmpty_ReturnsFailure(string coverageXml)
+  {
+    var repositoryRoot = FindRepositoryRoot();
+    var scriptPath = Path.Combine(repositoryRoot, "tools", "release", "Invoke-CoverageReport.ps1");
+    await using var coverageFile = await CreateCoverageFileAsync(coverageXml);
+    await using var outputDirectory = new TemporaryDirectory();
+
+    var result = await ExecuteCoverageReportAsync(scriptPath, coverageFile.Path, outputDirectory.Path);
+
+    result.ExitCode.Should().NotBe(0);
+    result.Output.Should().Contain("Cobertura report does not contain valid <packages>/<package> entries.");
+  }
+
+  [Fact]
+  public async Task InvokeCoverageReport_WhenMetricsAreNotIntegers_ReturnsFailure()
+  {
+    const string coverageXml = """
+      <?xml version="1.0" encoding="utf-8"?>
+      <coverage lines-covered="not-a-number" lines-valid="100" branches-covered="30" branches-valid="50">
+        <packages>
+          <package name="Critical.Assembly" lines-covered="40" lines-valid="50" branches-covered="20" branches-valid="30" />
+        </packages>
+      </coverage>
+      """;
+
+    var repositoryRoot = FindRepositoryRoot();
+    var scriptPath = Path.Combine(repositoryRoot, "tools", "release", "Invoke-CoverageReport.ps1");
+    await using var coverageFile = await CreateCoverageFileAsync(coverageXml);
+    await using var outputDirectory = new TemporaryDirectory();
+
+    var result = await ExecuteCoverageReportAsync(scriptPath, coverageFile.Path, outputDirectory.Path);
+
+    result.ExitCode.Should().NotBe(0);
+    result.Output.Should().Contain("Cobertura attribute 'lines-covered' must be an integer, found 'not-a-number'.");
+  }
+
+  private static async Task<TemporaryCoverageFile> CreateCoverageFileAsync(string coverageXml)
+  {
+    var coveragePath = Path.Combine(Path.GetTempPath(), $"coverage-report-tests-{Guid.NewGuid():N}.xml");
+    await File.WriteAllTextAsync(coveragePath, coverageXml, Encoding.UTF8);
+    return new TemporaryCoverageFile(coveragePath);
   }
 
   private static async Task<ScriptResult> ExecuteCoverageReportAsync(string scriptPath, string coveragePath, string outputDirectory)
@@ -152,6 +242,21 @@ public sealed class CoverageReportScriptTests
       if (Directory.Exists(Path))
       {
         Directory.Delete(Path, recursive: true);
+      }
+
+      return ValueTask.CompletedTask;
+    }
+  }
+
+  private sealed class TemporaryCoverageFile(string path) : IAsyncDisposable
+  {
+    public string Path { get; } = path;
+
+    public ValueTask DisposeAsync()
+    {
+      if (File.Exists(Path))
+      {
+        File.Delete(Path);
       }
 
       return ValueTask.CompletedTask;
