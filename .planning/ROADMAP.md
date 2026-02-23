@@ -88,7 +88,13 @@ Plans:
   4. System processes 10K+ rules without out-of-memory errors
   5. Memory profile baseline is documented with leak detection capability
   6. I/O bottlenecks are identified and documented for future optimization
-**Plans**: TBD
+**Plans**: 4 plans
+
+Plans:
+- [ ] 13-01-PLAN.md - Create PerformanceInstrumenter and BenchmarkDotNet project (OBSV-03)
+- [ ] 13-02-PLAN.md - Implement startup time benchmarks (PERF-01, PERF-02)
+- [ ] 13-03-PLAN.md - Implement mission duration and scale benchmarks (PERF-03, PERF-04)
+- [ ] 13-04-PLAN.md - Memory profiling, I/O analysis, and baseline documentation (OBSV-03, PERF-05, PERF-06)
 
 ### Phase 14: Test Coverage Expansion
 **Goal**: Achieve 80% test coverage with quality gates enforced in CI
@@ -124,8 +130,8 @@ Plans:
 | 5. Proof Packaging, Fleet-lite, and Integrity | v1.0 | 4/4 | Complete | 2026-02-22 |
 | 8. Canonical Model Completion | v1.0 | 4/4 | Complete | 2026-02-22 |
 | 9. Phase 3 Verification | v1.0 | 4/4 | Complete | 2026-02-22 |
-| 11. Foundation and Test Stability | 4/4 | Complete    | 2026-02-23 | 2026-02-23 |
-| 12. Observability Integration | 4/4 | Complete    | 2026-02-23 | 2026-02-23 |
-| 13. Performance Baselining | v1.1 | 0/TBD | Not started | - |
+| 11. Foundation and Test Stability | v1.1 | 4/4 | Complete | 2026-02-23 |
+| 12. Observability Integration | v1.1 | 4/4 | Complete | 2026-02-23 |
+| 13. Performance Baselining | v1.1 | 0/4 | Not started | - |
 | 14. Test Coverage Expansion | v1.1 | 0/TBD | Not started | - |
 | 15. Error UX Integration | v1.1 | 0/TBD | Not started | - |
