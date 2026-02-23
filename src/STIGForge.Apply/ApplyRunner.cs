@@ -633,6 +633,8 @@ public sealed class ApplyRunner
     psi.Environment["STIGFORGE_SNAPSHOT_DIR"] = snapshotsDir;
     psi.Environment["STIGFORGE_HARDENING_MODE"] = mode.ToString();
 
+    InjectTraceContext(psi);
+
     var started = DateTimeOffset.Now;
     using var process = Process.Start(psi);
     if (process == null)
@@ -696,6 +698,8 @@ public sealed class ApplyRunner
     psi.Environment["STIGFORGE_APPLY_LOG_DIR"] = logsDir;
     psi.Environment["STIGFORGE_SNAPSHOT_DIR"] = snapshotsDir;
     psi.Environment["STIGFORGE_HARDENING_MODE"] = mode.ToString();
+
+    InjectTraceContext(psi);
 
     var started = DateTimeOffset.Now;
     using var process = Process.Start(psi);
@@ -768,6 +772,8 @@ public sealed class ApplyRunner
     psi.Environment["STIGFORGE_APPLY_LOG_DIR"] = logsDir;
     psi.Environment["STIGFORGE_SNAPSHOT_DIR"] = snapshotsDir;
     psi.Environment["STIGFORGE_HARDENING_MODE"] = mode.ToString();
+
+    InjectTraceContext(psi);
 
     var started = DateTimeOffset.Now;
     using var process = Process.Start(psi);
