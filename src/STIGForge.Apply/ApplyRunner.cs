@@ -6,6 +6,7 @@ using STIGForge.Apply.Snapshot;
 using STIGForge.Apply.Dsc;
 using STIGForge.Apply.Reboot;
 using STIGForge.Evidence;
+using STIGForge.Infrastructure.Telemetry;
 using Microsoft.Extensions.Logging;
 
  namespace STIGForge.Apply;
@@ -548,6 +549,21 @@ public sealed class ApplyRunner
     using var sha = System.Security.Cryptography.SHA256.Create();
     var hash = sha.ComputeHash(stream);
     return BitConverter.ToString(hash).Replace("-", string.Empty).ToLowerInvariant();
+  }
+
+  /// <summary>
+  /// Injects W3C trace context into PowerShell process environment variables.
+  /// PowerShell scripts can access via $env:STIGFORGE_TRACE_ID, $env:STIGFORGE_PARENT_SPAN_ID.
+  /// </summary>
+  private static void InjectTraceContext(ProcessStartInfo psi)
+  {
+    var context = TraceContext.GetCurrentContext();
+    if (context != null)
+    {
+      psi.Environment["STIGFORGE_TRACE_ID"] = context.TraceId;
+      psi.Environment["STIGFORGE_PARENT_SPAN_ID"] = context.SpanId;
+      psi.Environment["STIGFORGE_TRACE_FLAGS"] = context.TraceFlags;
+    }
   }
 
   private static HardeningMode? TryReadModeFromManifest(string bundleRoot)
