@@ -21,7 +21,7 @@ public sealed class CanonicalChecklistProjectorTests : IDisposable
   }
 
   [Fact]
-  public async Task Project_BuildsCanonicalChecklistFromScannerCandidates()
+  public async Task ScanWithCanonicalChecklistAsync_ProjectsCanonicalChecklistAfterMetadataScan()
   {
     var zipPath = Path.Combine(_tempRoot, "win11_stig_v2r1.zip");
     using (var archive = ZipFile.Open(zipPath, ZipArchiveMode.Create))
@@ -32,13 +32,13 @@ public sealed class CanonicalChecklistProjectorTests : IDisposable
     }
 
     var scanner = new ImportInboxScanner(new TestHashingService());
-    var result = await scanner.ScanAsync(_tempRoot, CancellationToken.None);
-    var projector = new CanonicalChecklistProjector();
-    var checklist = projector.Project(result.Candidates);
+    var metadataOnly = await scanner.ScanAsync(_tempRoot, CancellationToken.None);
+    var staged = await scanner.ScanWithCanonicalChecklistAsync(_tempRoot, CancellationToken.None);
 
-    Assert.Equal(2, checklist.Count);
-    Assert.Contains(checklist, i => i.StigId == "xccdf_org.test.benchmark_win11" && i.RuleId == "SV-1000r1_rule");
-    Assert.Contains(checklist, i => i.StigId == "xccdf_org.test.benchmark_win11" && i.RuleId == "SV-1001r1_rule");
+    Assert.Empty(metadataOnly.CanonicalChecklist);
+    Assert.Equal(2, staged.CanonicalChecklist.Count);
+    Assert.Contains(staged.CanonicalChecklist, i => i.StigId == "xccdf_org.test.benchmark_win11" && i.RuleId == "SV-1000r1_rule");
+    Assert.Contains(staged.CanonicalChecklist, i => i.StigId == "xccdf_org.test.benchmark_win11" && i.RuleId == "SV-1001r1_rule");
   }
 
   [Fact]

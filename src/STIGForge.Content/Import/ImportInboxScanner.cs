@@ -54,6 +54,24 @@ public sealed class ImportInboxScanner
     };
   }
 
+  public async Task<ImportInboxScanResult> ScanWithCanonicalChecklistAsync(
+    string inboxFolder,
+    CancellationToken ct,
+    CanonicalChecklistProjector? canonicalChecklistProjector = null)
+  {
+    var scan = await ScanAsync(inboxFolder, ct).ConfigureAwait(false);
+    var warnings = scan.Warnings.ToList();
+    var projector = canonicalChecklistProjector ?? new CanonicalChecklistProjector();
+    var canonicalChecklist = projector.Project(scan.Candidates, warnings);
+
+    return new ImportInboxScanResult
+    {
+      Candidates = scan.Candidates,
+      Warnings = warnings,
+      CanonicalChecklist = canonicalChecklist
+    };
+  }
+
   private static List<string> EnumerateZipFiles(string rootFolder, ICollection<string> warnings, CancellationToken ct)
   {
     var directories = new Stack<string>();
