@@ -1,5 +1,3 @@
-using STIGForge.Core.Models;
-
 namespace STIGForge.Content.Import;
 
 public enum ImportArtifactKind
@@ -48,7 +46,6 @@ public sealed class ImportInboxScanResult
 {
   public IReadOnlyList<ImportInboxCandidate> Candidates { get; set; } = Array.Empty<ImportInboxCandidate>();
   public IReadOnlyList<string> Warnings { get; set; } = Array.Empty<string>();
-  public IReadOnlyList<LocalWorkflowChecklistItem> CanonicalChecklist { get; set; } = Array.Empty<LocalWorkflowChecklistItem>();
 }
 
 public sealed class ImportDedupOutcome

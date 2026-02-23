@@ -21,7 +21,7 @@ public sealed class CanonicalChecklistProjectorTests : IDisposable
   }
 
   [Fact]
-  public async Task ScanAsync_ProjectsCanonicalChecklistFromImportedStigContent()
+  public async Task Project_BuildsCanonicalChecklistFromScannerCandidates()
   {
     var zipPath = Path.Combine(_tempRoot, "win11_stig_v2r1.zip");
     using (var archive = ZipFile.Open(zipPath, ZipArchiveMode.Create))
@@ -33,10 +33,57 @@ public sealed class CanonicalChecklistProjectorTests : IDisposable
 
     var scanner = new ImportInboxScanner(new TestHashingService());
     var result = await scanner.ScanAsync(_tempRoot, CancellationToken.None);
+    var projector = new CanonicalChecklistProjector();
+    var checklist = projector.Project(result.Candidates);
 
-    Assert.Equal(2, result.CanonicalChecklist.Count);
-    Assert.Contains(result.CanonicalChecklist, i => i.StigId == "xccdf_org.test.benchmark_win11" && i.RuleId == "SV-1000r1_rule");
-    Assert.Contains(result.CanonicalChecklist, i => i.StigId == "xccdf_org.test.benchmark_win11" && i.RuleId == "SV-1001r1_rule");
+    Assert.Equal(2, checklist.Count);
+    Assert.Contains(checklist, i => i.StigId == "xccdf_org.test.benchmark_win11" && i.RuleId == "SV-1000r1_rule");
+    Assert.Contains(checklist, i => i.StigId == "xccdf_org.test.benchmark_win11" && i.RuleId == "SV-1001r1_rule");
+  }
+
+  [Fact]
+  public async Task Project_DedupesDuplicateRuleAcrossImportedCandidates()
+  {
+    var firstZip = Path.Combine(_tempRoot, "benchmark-copy-1.zip");
+    using (var archive = ZipFile.Open(firstZip, ZipArchiveMode.Create))
+    {
+      var entry = archive.CreateEntry("benchmark-xccdf.xml");
+      await using var writer = new StreamWriter(entry.Open());
+      await writer.WriteAsync(CreateXccdfWithRules("xccdf_org.test.dup_benchmark", "SV-2000r1_rule", "SV-2001r1_rule"));
+    }
+
+    var secondZip = Path.Combine(_tempRoot, "benchmark-copy-2.zip");
+    using (var archive = ZipFile.Open(secondZip, ZipArchiveMode.Create))
+    {
+      var entry = archive.CreateEntry("benchmark-xccdf.xml");
+      await using var writer = new StreamWriter(entry.Open());
+      await writer.WriteAsync(CreateXccdfWithRules("xccdf_org.test.dup_benchmark", "SV-2000r1_rule", "SV-2001r1_rule"));
+    }
+
+    var scanner = new ImportInboxScanner(new TestHashingService());
+    var result = await scanner.ScanAsync(_tempRoot, CancellationToken.None);
+    var checklist = new CanonicalChecklistProjector().Project(result.Candidates);
+
+    Assert.Equal(2, checklist.Count);
+    Assert.Single(checklist, i => i.StigId == "xccdf_org.test.dup_benchmark" && i.RuleId == "SV-2000r1_rule");
+    Assert.Single(checklist, i => i.StigId == "xccdf_org.test.dup_benchmark" && i.RuleId == "SV-2001r1_rule");
+  }
+
+  [Fact]
+  public void Project_IgnoresCandidatesWithMissingZipPath()
+  {
+    var candidates = new List<ImportInboxCandidate>
+    {
+      new()
+      {
+        ArtifactKind = ImportArtifactKind.Stig,
+        ZipPath = Path.Combine(_tempRoot, "missing.zip")
+      }
+    };
+
+    var checklist = new CanonicalChecklistProjector().Project(candidates);
+
+    Assert.Empty(checklist);
   }
 
   private static string CreateXccdfWithRules(string benchmarkId, string firstRuleId, string secondRuleId)
