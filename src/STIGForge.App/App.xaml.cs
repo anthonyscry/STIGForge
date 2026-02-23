@@ -12,6 +12,7 @@ using STIGForge.Apply.Snapshot;
 using STIGForge.Infrastructure.Hashing;
 using STIGForge.Infrastructure.Logging;
 using STIGForge.Infrastructure.Paths;
+using STIGForge.Infrastructure.Telemetry;
 using STIGForge.Infrastructure.Storage;
 using STIGForge.Infrastructure.System;
 using STIGForge.Verify;
@@ -101,6 +102,7 @@ public partial class App : Application
           services.AddSingleton<ScapRunner>();
           services.AddSingleton<IVerificationWorkflowService, VerificationWorkflowService>();
           services.AddSingleton<VerificationArtifactAggregationService>();
+          services.AddSingleton<MissionTracingService>();
           services.AddSingleton<IBundleMissionSummaryService, BundleMissionSummaryService>();
           services.AddSingleton<ImportSelectionOrchestrator>();
           services.AddSingleton<BundleOrchestrator>();

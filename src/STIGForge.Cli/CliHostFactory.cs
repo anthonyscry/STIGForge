@@ -12,6 +12,7 @@ using STIGForge.Infrastructure.Logging;
 using STIGForge.Infrastructure.Paths;
 using STIGForge.Infrastructure.Storage;
 using STIGForge.Infrastructure.System;
+using STIGForge.Infrastructure.Telemetry;
 using STIGForge.Verify;
 
 namespace STIGForge.Cli;
@@ -97,6 +98,7 @@ public static class CliHostFactory
     services.AddSingleton<ScapRunner>();
     services.AddSingleton<IVerificationWorkflowService, VerificationWorkflowService>();
     services.AddSingleton<VerificationArtifactAggregationService>();
+    services.AddSingleton<MissionTracingService>();
     services.AddSingleton<BaselineDiffService>();
     services.AddSingleton<OverlayRebaseService>();
     services.AddSingleton<ManualAnswerService>();
