@@ -105,6 +105,25 @@ jobs:
 
           Write-Host "Upgrade/rebase validation passed with $(@($summary.steps).Count) evidence step(s)." -ForegroundColor Green
 
+      - name: Report mutation policy
+        if: ${{ inputs.run_release_gate }}
+        shell: pwsh
+        run: |
+          $resultPath = '.\.artifacts\mutation\current-result.json'
+          if (-not (Test-Path -LiteralPath $resultPath)) {
+            Write-Host "[mutation-policy] Skipping mutation policy: result file missing at $resultPath"
+          }
+          else {
+            $mutationArgs = @(
+              '-NoProfile',
+              '-ExecutionPolicy', 'Bypass',
+              '-File', '.\tools\release\Invoke-MutationPolicy.ps1',
+              '-CurrentResultPath', $resultPath,
+              '-PolicyPath', '.\tools\release\mutation-policy.json'
+            )
+            powershell @mutationArgs
+          }
+
       - name: Validate quarterly trend evidence
         if: ${{ inputs.run_release_gate && inputs.run_quarterly_pack }}
         shell: pwsh
