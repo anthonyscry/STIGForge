@@ -10,6 +10,7 @@ using STIGForge.Core.Abstractions;
 using STIGForge.Core.Services;
 using STIGForge.Apply.Snapshot;
 using STIGForge.Infrastructure.Hashing;
+using STIGForge.Infrastructure.Logging;
 using STIGForge.Infrastructure.Paths;
 using STIGForge.Infrastructure.Storage;
 using STIGForge.Infrastructure.System;
@@ -35,11 +36,20 @@ public partial class App : Application
       _host = Host.CreateDefaultBuilder()
         .UseSerilog((ctx, lc) =>
         {
-          lc.MinimumLevel.Information()
-            .WriteTo.File(Path.Combine(
-              Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-              "STIGForge", "logs", "stigforge.log"),
-              rollingInterval: RollingInterval.Day);
+          LoggingConfiguration.ConfigureFromEnvironment();
+
+          var logRoot = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+            "STIGForge", "logs");
+          Directory.CreateDirectory(logRoot);
+
+          lc.MinimumLevel.ControlledBy(LoggingConfiguration.LevelSwitch)
+            .Enrich.With(new CorrelationIdEnricher())
+            .Enrich.FromLogContext()
+            .WriteTo.File(
+              Path.Combine(logRoot, "stigforge.log"),
+              rollingInterval: RollingInterval.Day,
+              outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{TraceId}] {Message:lj}{NewLine}{Exception}");
         })
         .UseDefaultServiceProvider((_, options) =>
         {
