@@ -22,7 +22,7 @@ Requirements for Operational Maturity milestone. Each maps to roadmap phases.
 - [x] **OBSV-02**: Mission-level tracing spans Build → Apply → Verify → Prove lifecycle
 - [ ] **OBSV-03**: Performance metrics collected (startup time, mission duration, memory usage)
 - [x] **OBSV-04**: Log levels configurable per environment (debug vs production)
-- [ ] **OBSV-05**: Debug export bundles create portable diagnostics for offline support
+- [x] **OBSV-05**: Debug export bundles create portable diagnostics for offline support
 - [ ] **OBSV-06**: Trace IDs propagate across PowerShell process boundaries
 
 ### Performance
@@ -87,7 +87,7 @@ Which phases cover which requirements. Updated during roadmap creation.
 | OBSV-02 | Phase 12 | Complete |
 | OBSV-03 | Phase 13 | Pending |
 | OBSV-04 | Phase 11 | Complete |
-| OBSV-05 | Phase 12 | Pending |
+| OBSV-05 | Phase 12 | Complete |
 | OBSV-06 | Phase 12 | Pending |
 | PERF-01 | Phase 13 | Pending |
 | PERF-02 | Phase 13 | Pending |
