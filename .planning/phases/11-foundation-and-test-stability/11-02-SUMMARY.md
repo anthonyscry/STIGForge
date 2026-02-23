@@ -127,6 +127,19 @@ None - no external service configuration required.
 - Correlation enricher can be added to Serilog configuration in hosts
 - Log level can be controlled via STIGFORGE_LOG_LEVEL environment variable
 
+## Self-Check: PASSED
+
+**Files verified:**
+- FOUND: src/STIGForge.Infrastructure/Logging/CorrelationIdEnricher.cs
+- FOUND: src/STIGForge.Infrastructure/Logging/LoggingConfiguration.cs
+- FOUND: tests/STIGForge.UnitTests/Infrastructure/Logging/CorrelationIdEnricherTests.cs
+- FOUND: tests/STIGForge.IntegrationTests/Infrastructure/Logging/CorrelationIdEnricherTests.cs
+
+**Commits verified:**
+- FOUND: ca8e63f (Task 1: CorrelationIdEnricher)
+- FOUND: aef4160 (Task 2: LoggingConfiguration)
+- FOUND: 0e676bd (Task 3: Tests)
+
 ---
 *Phase: 11-foundation-and-test-stability*
 *Completed: 2026-02-23*
