@@ -29,8 +29,8 @@ Requirements for Operational Maturity milestone. Each maps to roadmap phases.
 
 - [x] **PERF-01**: Cold startup time baseline established (< 3s target)
 - [x] **PERF-02**: Warm startup time baseline established (< 1s target)
-- [ ] **PERF-03**: Mission duration baselines documented for each mission type
-- [ ] **PERF-04**: Scale testing validates 10K+ rule processing without OOM
+- [x] **PERF-03**: Mission duration baselines documented for each mission type
+- [x] **PERF-04**: Scale testing validates 10K+ rule processing without OOM
 - [ ] **PERF-05**: Memory profile baseline established with leak detection
 - [ ] **PERF-06**: I/O bottlenecks identified and documented
 
@@ -91,8 +91,8 @@ Which phases cover which requirements. Updated during roadmap creation.
 | OBSV-06 | Phase 12 | Complete |
 | PERF-01 | Phase 13 | Complete |
 | PERF-02 | Phase 13 | Complete |
-| PERF-03 | Phase 13 | Pending |
-| PERF-04 | Phase 13 | Pending |
+| PERF-03 | Phase 13 | Complete |
+| PERF-04 | Phase 13 | Complete |
 | PERF-05 | Phase 13 | Pending |
 | PERF-06 | Phase 13 | Pending |
 | ERRX-01 | Phase 15 | Pending |
@@ -109,4 +109,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-02-22*
-*Last updated: 2026-02-23 after 12-01 completion*
+*Last updated: 2026-02-23 after 13-03 completion*

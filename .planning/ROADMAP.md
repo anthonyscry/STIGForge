@@ -92,8 +92,8 @@ Plans:
 
 Plans:
 - [x] 13-01-PLAN.md - Create PerformanceInstrumenter and BenchmarkDotNet project (OBSV-03)
-- [ ] 13-02-PLAN.md - Implement startup time benchmarks (PERF-01, PERF-02)
-- [ ] 13-03-PLAN.md - Implement mission duration and scale benchmarks (PERF-03, PERF-04)
+- [x] 13-02-PLAN.md - Implement startup time benchmarks (PERF-01, PERF-02)
+- [x] 13-03-PLAN.md - Implement mission duration and scale benchmarks (PERF-03, PERF-04)
 - [ ] 13-04-PLAN.md - Memory profiling, I/O analysis, and baseline documentation (OBSV-03, PERF-05, PERF-06)
 
 ### Phase 14: Test Coverage Expansion
