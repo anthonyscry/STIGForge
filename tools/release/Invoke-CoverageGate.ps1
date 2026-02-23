@@ -40,7 +40,6 @@ function Get-IntAttribute {
 
 function Invoke-CoverageGate {
   param(
-    [Parameter(Mandatory = $true)][string]$RepositoryRoot,
     [Parameter(Mandatory = $true)][string]$CoveragePath,
     [Parameter(Mandatory = $true)][string]$CoveragePolicyPath
   )
@@ -54,7 +53,20 @@ function Invoke-CoverageGate {
   }
 
   $policy = Get-Content -Path $CoveragePolicyPath -Raw | ConvertFrom-Json
-  $threshold = [double]$policy.minimumLineCoveragePercent
+  $thresholdRaw = $policy.minimumLineCoveragePercent
+  if ($null -eq $thresholdRaw -or [string]::IsNullOrWhiteSpace([string]$thresholdRaw)) {
+    throw "Coverage policy minimumLineCoveragePercent is required."
+  }
+
+  $threshold = 0.0
+  if (-not [double]::TryParse([string]$thresholdRaw, [Globalization.NumberStyles]::Float, [Globalization.CultureInfo]::InvariantCulture, [ref]$threshold)) {
+    throw "Coverage policy minimumLineCoveragePercent must be numeric, found '$thresholdRaw'."
+  }
+
+  if ($threshold -lt 0 -or $threshold -gt 100) {
+    throw "Coverage policy minimumLineCoveragePercent must be between 0 and 100 (inclusive), found '$thresholdRaw'."
+  }
+
   $criticalAssemblies = @($policy.criticalAssemblies | ForEach-Object { [string]$_ })
 
   if ($criticalAssemblies.Count -eq 0) {
@@ -88,10 +100,11 @@ function Invoke-CoverageGate {
     throw "Scoped coverage has zero valid lines; cannot evaluate gate."
   }
 
-  $actualPercent = [math]::Round(($scopedLinesCovered / $scopedLinesValid) * 100, 2)
-  $diagnostic = "threshold=$threshold actual=$actualPercent scopedLinesCovered=$scopedLinesCovered scopedLinesValid=$scopedLinesValid"
+  $actualPercentRaw = ($scopedLinesCovered / $scopedLinesValid) * 100
+  $actualPercentRounded = [math]::Round($actualPercentRaw, 2)
+  $diagnostic = "threshold=$threshold actual=$actualPercentRounded scopedLinesCovered=$scopedLinesCovered scopedLinesValid=$scopedLinesValid"
 
-  if ($actualPercent -lt $threshold) {
+  if ($actualPercentRaw -lt $threshold) {
     Write-Host "[coverage-gate] Coverage gate failed: $diagnostic" -ForegroundColor Red
     return 1
   }
@@ -115,7 +128,7 @@ $policyPathFull = Resolve-FromRepositoryRoot -RepositoryRoot $repositoryRoot -Ca
 $coveragePathFull = Resolve-FromRepositoryRoot -RepositoryRoot $repositoryRoot -Candidate $CoverageReportPath
 
 try {
-  $exitCode = Invoke-CoverageGate -RepositoryRoot $repositoryRoot -CoveragePath $coveragePathFull -CoveragePolicyPath $policyPathFull
+  $exitCode = Invoke-CoverageGate -CoveragePath $coveragePathFull -CoveragePolicyPath $policyPathFull
   exit $exitCode
 }
 catch {

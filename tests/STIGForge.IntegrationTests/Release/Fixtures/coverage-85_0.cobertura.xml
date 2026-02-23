@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<coverage line-rate="0.85" branch-rate="0" lines-covered="17000" lines-valid="20000" timestamp="1735689600" version="1.9">
+  <packages>
+    <package name="Critical.Assembly" line-rate="0.85" branch-rate="0" complexity="0" lines-covered="17000" lines-valid="20000">
+      <classes>
+        <class name="Critical.Assembly.Sample" filename="Critical.Assembly/Sample.cs" line-rate="0.85" branch-rate="0" complexity="0">
+          <methods />
+          <lines />
+        </class>
+      </classes>
+    </package>
+    <package name="NonCritical.Assembly" line-rate="1" branch-rate="0" complexity="0" lines-covered="100" lines-valid="100">
+      <classes>
+        <class name="NonCritical.Assembly.Sample" filename="NonCritical.Assembly/Sample.cs" line-rate="1" branch-rate="0" complexity="0">
+          <methods />
+          <lines />
+        </class>
+      </classes>
+    </package>
+  </packages>
+</coverage>
