@@ -60,6 +60,23 @@ public sealed class MutationPolicyScriptTests
     result.Output.Should().Contain("current=81");
   }
 
+  [Fact]
+  public async Task InvokeMutationPolicy_WhenEnforcementEnabledAndSeededBaselineResult_ReturnsFailure()
+  {
+    var repositoryRoot = FindRepositoryRoot();
+    var scriptPath = Path.Combine(repositoryRoot, "tools", "release", "Invoke-MutationPolicy.ps1");
+    var currentResultPath = Path.Combine(repositoryRoot, "tests", "STIGForge.IntegrationTests", "Release", "Fixtures", "mutation-current-seeded.json");
+    await using var policyFile = await CreatePolicyFileAsync(85, 3);
+
+    var result = await ExecuteMutationPolicyAsync(scriptPath, currentResultPath, policyFile.Path, enforce: true);
+
+    result.ExitCode.Should().NotBe(0);
+    result.Output.Should().Contain("Mutation policy failed");
+    result.Output.Should().Contain("mode=enforce");
+    result.Output.Should().Contain("source=policy-baseline-seed");
+    result.Output.Should().Contain("seeded fallback");
+  }
+
   private static async Task<TemporaryPolicyFile> CreatePolicyFileAsync(double baselineMutationScore, double allowedRegression)
   {
     var policyPath = Path.Combine(Path.GetTempPath(), $"mutation-policy-{Guid.NewGuid():N}.json");

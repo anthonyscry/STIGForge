@@ -79,6 +79,53 @@ function Resolve-MutationScore {
   return Get-NumericValue -Name "Current mutation score" -RawValue $scoreRaw
 }
 
+function Resolve-MutationSource {
+  param(
+    [Parameter(Mandatory = $true)]$CurrentResult
+  )
+
+  $sourceRaw = Get-ObjectPropertyValue -Object $CurrentResult -PropertyName "source"
+  if (-not [string]::IsNullOrWhiteSpace([string]$sourceRaw)) {
+    return [string]$sourceRaw
+  }
+
+  $metadata = Get-ObjectPropertyValue -Object $CurrentResult -PropertyName "metadata"
+  if ($null -ne $metadata) {
+    $sourceRaw = Get-ObjectPropertyValue -Object $metadata -PropertyName "source"
+    if (-not [string]::IsNullOrWhiteSpace([string]$sourceRaw)) {
+      return [string]$sourceRaw
+    }
+  }
+
+  return ""
+}
+
+function Test-IsSeededMutationResult {
+  param(
+    [Parameter(Mandatory = $true)]$CurrentResult,
+    [Parameter(Mandatory = $false)][string]$Source = ""
+  )
+
+  $seededFallbackRaw = Get-ObjectPropertyValue -Object $CurrentResult -PropertyName "seededFallback"
+  if ($null -ne $seededFallbackRaw -and [bool]$seededFallbackRaw) {
+    return $true
+  }
+
+  $metadata = Get-ObjectPropertyValue -Object $CurrentResult -PropertyName "metadata"
+  if ($null -ne $metadata) {
+    $metadataSeededFallbackRaw = Get-ObjectPropertyValue -Object $metadata -PropertyName "seededFallback"
+    if ($null -ne $metadataSeededFallbackRaw -and [bool]$metadataSeededFallbackRaw) {
+      return $true
+    }
+  }
+
+  if ([string]::IsNullOrWhiteSpace($Source)) {
+    return $false
+  }
+
+  return $Source.IndexOf("seed", [StringComparison]::OrdinalIgnoreCase) -ge 0
+}
+
 function Format-Percent {
   param([double]$Value)
 
@@ -115,14 +162,24 @@ function Invoke-MutationPolicy {
   $allowedRegression = Get-NumericValue -Name "Mutation policy allowedRegression" -RawValue $allowedRegressionRaw
   $currentResult = Get-Content -Path $CurrentMutationResultPath -Raw | ConvertFrom-Json
   $currentMutationScore = Resolve-MutationScore -CurrentResult $currentResult
+  $currentMutationSource = Resolve-MutationSource -CurrentResult $currentResult
+  $isSeededMutationResult = Test-IsSeededMutationResult -CurrentResult $currentResult -Source $currentMutationSource
 
   $minimumAllowedScore = [Math]::Max(0.0, $baselineMutationScore - $allowedRegression)
   $mode = if ($EnableEnforcement) { "enforce" } else { "report" }
   $diagnostic = "mode=$mode baseline=$(Format-Percent -Value $baselineMutationScore) allowedRegression=$(Format-Percent -Value $allowedRegression) minimumAllowed=$(Format-Percent -Value $minimumAllowedScore) current=$(Format-Percent -Value $currentMutationScore)"
+  if (-not [string]::IsNullOrWhiteSpace($currentMutationSource)) {
+    $diagnostic = "$diagnostic source=$currentMutationSource"
+  }
 
   if (-not $EnableEnforcement) {
     Write-Host "[mutation-policy] Mutation policy report: $diagnostic" -ForegroundColor Yellow
     return 0
+  }
+
+  if ($isSeededMutationResult) {
+    Write-Host "[mutation-policy] Mutation policy failed: seeded fallback mutation result cannot be used for enforcement. $diagnostic" -ForegroundColor Red
+    return 1
   }
 
   if ($currentMutationScore -lt $minimumAllowedScore) {

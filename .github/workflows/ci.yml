@@ -80,6 +80,7 @@ jobs:
             $seed = [ordered]@{
               mutationScore = $baselineScore
               source = 'policy-baseline-seed'
+              seededFallback = $true
             }
 
             $seed | ConvertTo-Json -Depth 3 | Set-Content -Path $currentResultPath -Encoding UTF8
