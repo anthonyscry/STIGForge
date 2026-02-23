@@ -16,6 +16,7 @@ ProfileCommands.Register(rootCmd, STIGForge.Cli.CliHostFactory.BuildHost);
 OverlayCommands.Register(rootCmd, STIGForge.Cli.CliHostFactory.BuildHost);
 ManualCommands.Register(rootCmd, STIGForge.Cli.CliHostFactory.BuildHost);
 EvidenceCommands.Register(rootCmd, STIGForge.Cli.CliHostFactory.BuildHost);
+ExportDebugBundleCommand.Register(rootCmd, STIGForge.Cli.CliHostFactory.BuildHost);
 
 return await InvokeWithErrorHandlingAsync(rootCmd, args);
 
