@@ -11,6 +11,7 @@ jobs:
     runs-on: windows-latest
     env:
       COVERAGE_ROOT: .\.artifacts\test-coverage\ci
+      MUTATION_ROOT: .\.artifacts\mutation\ci
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -59,6 +60,53 @@ jobs:
         run: |
           $coverageRoot = $env:COVERAGE_ROOT
           powershell -NoProfile -ExecutionPolicy Bypass -File .\tools\release\Invoke-CoverageGate.ps1 -CoverageReportPath (Join-Path $coverageRoot 'coverage.cobertura.xml') -PolicyPath .\tools\release\coverage-gate-policy.json
+
+      - name: Restore .NET tools
+        shell: pwsh
+        run: |
+          dotnet tool restore
+
+      - name: Prepare mutation baseline input
+        shell: pwsh
+        run: |
+          $mutationRoot = $env:MUTATION_ROOT
+          New-Item -ItemType Directory -Force -Path $mutationRoot | Out-Null
+
+          $currentResultPath = Join-Path $mutationRoot 'current-result.json'
+          if (-not (Test-Path -LiteralPath $currentResultPath)) {
+            $policy = Get-Content -Path '.\tools\release\mutation-policy.json' -Raw | ConvertFrom-Json
+            $baselineScore = [double]$policy.baselineMutationScore
+
+            $seed = [ordered]@{
+              mutationScore = $baselineScore
+              source = 'policy-baseline-seed'
+            }
+
+            $seed | ConvertTo-Json -Depth 3 | Set-Content -Path $currentResultPath -Encoding UTF8
+            Write-Host "Seeded mutation current-result from baseline score $baselineScore at $currentResultPath" -ForegroundColor Yellow
+          }
+
+      - name: Evaluate mutation baseline policy
+        shell: pwsh
+        run: |
+          $args = @(
+            '-NoProfile',
+            '-ExecutionPolicy', 'Bypass',
+            '-File', '.\tools\release\Invoke-MutationPolicy.ps1',
+            '-CurrentResultPath', (Join-Path $env:MUTATION_ROOT 'current-result.json'),
+            '-PolicyPath', '.\tools\release\mutation-policy.json'
+          )
+
+          $enforceSetting = '${{ vars.STIGFORGE_MUTATION_POLICY_ENFORCE }}'
+          if (-not [string]::IsNullOrWhiteSpace($enforceSetting) -and $enforceSetting.Equals('true', [StringComparison]::OrdinalIgnoreCase)) {
+            $args += '-Enforce'
+            Write-Host 'Mutation policy enforcement enabled.' -ForegroundColor Yellow
+          }
+          else {
+            Write-Host 'Mutation policy enforcement disabled (report mode).' -ForegroundColor Yellow
+          }
+
+          powershell @args
 
       - name: Run release gate
         shell: pwsh
@@ -253,4 +301,12 @@ jobs:
         with:
           name: test-coverage-ci-${{ github.run_id }}
           path: ./.artifacts/test-coverage/ci
+          if-no-files-found: warn
+
+      - name: Upload mutation artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mutation-ci-${{ github.run_id }}
+          path: ./.artifacts/mutation/ci
           if-no-files-found: warn
