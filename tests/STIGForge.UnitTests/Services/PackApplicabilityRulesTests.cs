@@ -312,4 +312,39 @@ public class PackApplicabilityRulesTests
     decision.Confidence.Should().Be(ApplicabilityConfidence.High);
     decision.ReasonCode.Should().Be("domain_gpo_dc_role_match");
   }
+
+  [Fact]
+  public void IsScapFallbackTagCompatible_FeatureScap_DoesNotMatch_OsOnlyStig()
+  {
+    var result = PackApplicabilityRules.IsScapFallbackTagCompatible(
+      new[] { "win11" },
+      new[] { "win11", "firewall" });
+
+    result.Should().BeFalse();
+  }
+
+  [Fact]
+  public void IsScapFallbackTagCompatible_FeatureScap_Matches_FeatureAlignedStig()
+  {
+    var result = PackApplicabilityRules.IsScapFallbackTagCompatible(
+      new[] { "win11", "firewall" },
+      new[] { "win11", "firewall" });
+
+    result.Should().BeTrue();
+  }
+
+  [Fact]
+  public void IsScapFallbackTagCompatible_GenericScap_Requires_ExplicitOsOverlap()
+  {
+    var noOverlap = PackApplicabilityRules.IsScapFallbackTagCompatible(
+      new[] { "win11" },
+      new[] { "server" });
+
+    var withOverlap = PackApplicabilityRules.IsScapFallbackTagCompatible(
+      new[] { "server2019", "server" },
+      new[] { "server" });
+
+    noOverlap.Should().BeFalse();
+    withOverlap.Should().BeTrue();
+  }
 }

@@ -210,6 +210,7 @@ Normalize all results into:
 
 - consolidated JSON + CSV
 - per-control status, evidence links, scan source links, timestamps, tool versions
+- strict STIG-to-SCAP association per selected STIG: benchmark overlap first, deterministic canonical selection second, and review-required when no confident match exists (never broad fallback that maps one SCAP to unrelated STIG rows)
 
 ### 5.4 Manual Check Wizard + Answer Files
 

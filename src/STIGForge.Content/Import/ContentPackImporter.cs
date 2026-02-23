@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using System.Text.Json;
 using System.Xml;
+using System.Linq;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
 using STIGForge.Content.Models;
@@ -83,6 +84,36 @@ public sealed class ContentPackImporter
         }
 
         return incomplete;
+    }
+
+    /// <summary>
+    /// Executes a planned import operation, updating <paramref name="planned"/>'s
+    /// <see cref="PlannedContentImport.State"/> through the staged lifecycle:
+    /// <c>Planned</c> -> <c>Staged</c> (execution started) ->
+    /// <c>Committed</c> (success) or <c>Failed</c> (error captured in <see cref="PlannedContentImport.FailureReason"/>).
+    /// The existing route-based import APIs are used internally; this method adds observable staging transitions on top.
+    /// </summary>
+    public async Task<IReadOnlyList<ContentPack>> ExecutePlannedImportAsync(PlannedContentImport planned, CancellationToken ct)
+    {
+        if (planned == null)
+            throw new ArgumentNullException(nameof(planned));
+
+        planned.State = ImportOperationState.Staged;
+        try
+        {
+            IReadOnlyList<ContentPack> result = planned.Route == ContentImportRoute.AdmxTemplatesFromZip
+                ? await ImportAdmxTemplatesFromZipAsync(planned.ZipPath, planned.SourceLabel, ct).ConfigureAwait(false)
+                : await ImportConsolidatedZipAsync(planned.ZipPath, planned.SourceLabel, ct).ConfigureAwait(false);
+
+            planned.State = ImportOperationState.Committed;
+            return result;
+        }
+        catch (Exception ex)
+        {
+            planned.State = ImportOperationState.Failed;
+            planned.FailureReason = ex.Message;
+            throw;
+        }
     }
 
     public async Task<IReadOnlyList<ContentPack>> ImportConsolidatedZipAsync(string consolidatedZipPath, string sourceLabel, CancellationToken ct)
@@ -348,7 +379,21 @@ public sealed class ContentPackImporter
             checkpoint.Stage = ImportStage.Parsing;
             checkpoint.Save(packRoot);
 
-            var pack = new ContentPack
+            var directoryManifestHash = await ComputeDirectoryManifestSha256Async(rawRoot, ct).ConfigureAwait(false);
+
+            // Check for existing pack with same manifest hash (dedupe)
+            var existingPacks = await _packs.ListAsync(ct).ConfigureAwait(false);
+            var existingPack = existingPacks.FirstOrDefault(p =>
+                string.Equals(p.ManifestSha256, directoryManifestHash, StringComparison.OrdinalIgnoreCase));
+
+            ContentPack pack;
+            if (existingPack != null)
+            {
+                // Return existing pack instead of creating duplicate
+                return existingPack;
+            }
+
+            pack = new ContentPack
             {
                 PackId = packId,
                 Name = packName,
@@ -356,7 +401,7 @@ public sealed class ContentPackImporter
                 ReleaseDate = GuessReleaseDate(extractedDir, packName),
                 SourceLabel = sourceLabel,
                 HashAlgorithm = "sha256",
-                ManifestSha256 = packId,
+                ManifestSha256 = directoryManifestHash,
                 SchemaVersion = CanonicalContract.Version
             };
 
@@ -403,6 +448,10 @@ public sealed class ContentPackImporter
 
             checkpoint.Stage = ImportStage.Persisting;
             checkpoint.Save(packRoot);
+
+            // Wire SourcePackId provenance on all controls
+            foreach (var c in parsed)
+                c.SourcePackId = pack.PackId;
 
             await _packs.SaveAsync(pack, ct).ConfigureAwait(false);
             if (parsed.Count > 0)
@@ -552,6 +601,10 @@ public sealed class ContentPackImporter
 
             checkpoint.Stage = ImportStage.Persisting;
             checkpoint.Save(packRoot);
+
+            // Wire SourcePackId provenance on all controls
+            foreach (var c in parsed)
+                c.SourcePackId = pack.PackId;
 
             // Atomic save: both pack and controls in a logical transaction
             await _packs.SaveAsync(pack, ct).ConfigureAwait(false);
@@ -1393,5 +1446,58 @@ public sealed class ContentPackImporter
             using var outputStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None);
             entryStream.CopyTo(outputStream);
         }
+    }
+
+    private async Task<string> ComputeDirectoryManifestSha256Async(string rootPath, CancellationToken ct)
+    {
+        ct.ThrowIfCancellationRequested();
+
+        var rootFullPath = Path.GetFullPath(rootPath);
+        var files = EnumerateManifestFiles(
+            rootFullPath,
+            Directory.EnumerateFiles(rootFullPath, "*", SearchOption.AllDirectories),
+            ct);
+
+        var orderedFiles = files
+            .Select(file => new
+            {
+                file.FullPath,
+                file.RelativePath
+            })
+            .OrderBy(file => file.RelativePath, StringComparer.OrdinalIgnoreCase)
+            .ThenBy(file => file.RelativePath, StringComparer.Ordinal)
+            .ToList();
+
+        ct.ThrowIfCancellationRequested();
+
+        var lines = new List<string>(orderedFiles.Count);
+        foreach (var file in orderedFiles)
+        {
+            ct.ThrowIfCancellationRequested();
+            var fileHash = await _hash.Sha256FileAsync(file.FullPath, ct).ConfigureAwait(false);
+            lines.Add(file.RelativePath + ":" + fileHash);
+        }
+
+        var payload = string.Join("\n", lines);
+        return await _hash.Sha256TextAsync(payload, ct).ConfigureAwait(false);
+    }
+
+    private static List<(string FullPath, string RelativePath)> EnumerateManifestFiles(
+        string rootFullPath,
+        IEnumerable<string> sourceFiles,
+        CancellationToken ct)
+    {
+        var files = new List<(string FullPath, string RelativePath)>();
+        foreach (var filePath in sourceFiles)
+        {
+            ct.ThrowIfCancellationRequested();
+            files.Add((
+                FullPath: filePath,
+                RelativePath: Path.GetRelativePath(rootFullPath, filePath)
+                    .Replace(Path.DirectorySeparatorChar, '/')
+                    .Replace(Path.AltDirectorySeparatorChar, '/')));
+        }
+
+        return files;
     }
 }

@@ -165,7 +165,67 @@
                 <TextBlock Text="Last eMASS export:" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,8,0"/>
                 <TextBlock Text="{Binding DashLastExport}" Foreground="{DynamicResource TextMutedBrush}"/>
               </StackPanel>
-              <TextBlock Text="{Binding ReportSummary}" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap"/>
+              <TextBlock Text="{Binding ReportSummary}" Foreground="{DynamicResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,0,0,8"/>
+
+              <!-- Submission Readiness -->
+              <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="12" Margin="0,0,0,8"
+                      Background="{DynamicResource SurfaceMutedBrush}"
+                      Visibility="{Binding ExportReadinessVisible, Converter={StaticResource BoolToVisibility}}">
+                <StackPanel>
+                  <TextBlock Text="Submission Readiness" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                  <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                    <TextBlock Text="{Binding ReadinessAllControls, Converter={StaticResource BoolToPassFail}}" Width="50" FontWeight="Bold"/>
+                    <TextBlock Text="All Controls Covered"/>
+                  </StackPanel>
+                  <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                    <TextBlock Text="{Binding ReadinessEvidence, Converter={StaticResource BoolToPassFail}}" Width="50" FontWeight="Bold"/>
+                    <TextBlock Text="Evidence Present"/>
+                  </StackPanel>
+                  <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                    <TextBlock Text="{Binding ReadinessPoam, Converter={StaticResource BoolToPassFail}}" Width="50" FontWeight="Bold"/>
+                    <TextBlock Text="POA&amp;M Complete"/>
+                  </StackPanel>
+                  <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                    <TextBlock Text="{Binding ReadinessAttestations, Converter={StaticResource BoolToPassFail}}" Width="50" FontWeight="Bold"/>
+                    <TextBlock Text="Attestations Complete"/>
+                  </StackPanel>
+                  <Separator Margin="0,8,0,8"/>
+                  <TextBlock FontSize="14" FontWeight="Bold"
+                             Text="{Binding ReadinessIsReady, Converter={StaticResource BoolToReadyVerdict}}"
+                             Foreground="{Binding ReadinessIsReady, Converter={StaticResource BoolToReadyColor}}"/>
+                </StackPanel>
+              </Border>
+
+              <!-- Package Integrity -->
+              <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="12" Margin="0,0,0,8"
+                      Background="{DynamicResource SurfaceMutedBrush}"
+                      Visibility="{Binding ExportReadinessVisible, Converter={StaticResource BoolToVisibility}}">
+                <StackPanel>
+                  <TextBlock Text="Package Integrity" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                  <StackPanel Orientation="Horizontal" Margin="0,0,0,4">
+                    <TextBlock Text="Package Hash:" FontWeight="SemiBold" Width="110"/>
+                    <TextBlock Text="{Binding ExportPackageHash}" FontFamily="Consolas" FontSize="11" Foreground="{DynamicResource TextMutedBrush}"/>
+                  </StackPanel>
+                  <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="Validation:" FontWeight="SemiBold" Width="110"/>
+                    <TextBlock Text="{Binding ExportValidationSummary}" Foreground="{DynamicResource TextMutedBrush}"/>
+                  </StackPanel>
+                </StackPanel>
+              </Border>
+
+              <!-- Attestation Import -->
+              <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="12" Margin="0,0,0,8"
+                      Background="{DynamicResource SurfaceMutedBrush}">
+                <StackPanel>
+                  <TextBlock Text="Attestation Import" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
+                  <TextBlock Text="Import a completed attestation CSV back into the eMASS package." Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,8"/>
+                  <Button Content="Import Completed Attestations" MinWidth="220" Height="32" Padding="14,0"
+                          Command="{Binding ImportAttestationsCommand}" IsEnabled="{Binding ActionsEnabled}"
+                          AutomationProperties.Name="Import attestation CSV"
+                          ToolTipService.ToolTip="Browse for a filled attestation CSV and merge it into the eMASS attestation package."/>
+                  <TextBlock Text="{Binding AttestationImportStatus}" Margin="0,8,0,0" Foreground="{DynamicResource TextMutedBrush}"/>
+                </StackPanel>
+              </Border>
             </StackPanel>
           </ScrollViewer>
         </TabItem>

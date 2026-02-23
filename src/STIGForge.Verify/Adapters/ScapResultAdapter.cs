@@ -59,6 +59,7 @@ public sealed class ScapResultAdapter : IVerifyResultAdapter
         StartedAt = fileTimestamp,
         FinishedAt = fileTimestamp,
         OutputRoot = Path.GetDirectoryName(outputPath) ?? string.Empty,
+      RawArtifactPath = Path.GetFullPath(outputPath),
         Results = Array.Empty<NormalizedVerifyResult>(),
         Summary = new VerifySummary(),
         DiagnosticMessages = diagnostics
@@ -99,6 +100,7 @@ public sealed class ScapResultAdapter : IVerifyResultAdapter
       StartedAt = startTime,
       FinishedAt = endTime,
       OutputRoot = Path.GetDirectoryName(outputPath) ?? string.Empty,
+      RawArtifactPath = Path.GetFullPath(outputPath),
       Results = results,
       Summary = summary,
       DiagnosticMessages = diagnostics
@@ -155,6 +157,7 @@ public sealed class ScapResultAdapter : IVerifyResultAdapter
       Comments = null,
       Tool = ToolName,
       SourceFile = sourcePath,
+      RawArtifactPath = Path.GetFullPath(sourcePath),
       VerifiedAt = itemVerifiedAt,
       EvidencePaths = Array.Empty<string>(),
       Metadata = metadata

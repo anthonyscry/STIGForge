@@ -18,6 +18,10 @@ public sealed class ClassificationScopeService : IClassificationScopeService
       if (cc.NeedsReview) review.Add(cc);
     }
 
+    // Deterministic ordering: sort by ControlId to ensure identical inputs always produce identical output
+    compiled = compiled.OrderBy(c => c.Control.ControlId, StringComparer.OrdinalIgnoreCase).ToList();
+    review = review.OrderBy(c => c.Control.ControlId, StringComparer.OrdinalIgnoreCase).ToList();
+
     return new CompiledControls(compiled, review);
   }
 
@@ -43,6 +47,30 @@ public sealed class ClassificationScopeService : IClassificationScopeService
         return (status, comment, true, "Low confidence scope match: UnclassifiedOnly");
       }
 
+      if (c.Applicability.ClassificationScope == ScopeTag.Unknown)
+        return (status, comment, true, "Unknown classification scope");
+    }
+    else if (profile.ClassificationMode == ClassificationMode.Unclassified)
+    {
+      // Symmetric to Classified: ClassifiedOnly controls are out-of-scope in Unclassified mode
+      if (c.Applicability.ClassificationScope == ScopeTag.ClassifiedOnly)
+      {
+        if (MeetsThreshold(c.Applicability.Confidence, profile.NaPolicy.ConfidenceThreshold))
+        {
+          status = ControlStatus.NotApplicable;
+          comment = profile.NaPolicy.DefaultNaCommentTemplate;
+          return (status, comment, false, null);
+        }
+
+        return (status, comment, true, "Low confidence scope match: ClassifiedOnly");
+      }
+
+      if (c.Applicability.ClassificationScope == ScopeTag.Unknown)
+        return (status, comment, true, "Unknown classification scope");
+    }
+    else if (profile.ClassificationMode == ClassificationMode.Mixed)
+    {
+      // Mixed mode: no auto-NA filtering, but Unknown scope still warrants review
       if (c.Applicability.ClassificationScope == ScopeTag.Unknown)
         return (status, comment, true, "Unknown classification scope");
     }

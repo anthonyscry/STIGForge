@@ -191,6 +191,7 @@ public partial class MainViewModel
       var failures = new List<string>();
       var importedByType = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
       var importedPacks = new List<ContentPack>();
+      var stagedOutcomes = new List<StagedOperationOutcome>();
 
       var totalWorkItems = contentImportQueue.Count + (toolWinners.Count > 0 ? 1 : 0);
       ProgressMax = Math.Max(1, totalWorkItems);
@@ -205,7 +206,7 @@ public partial class MainViewModel
         try
         {
           var imported = await Task.Run(
-            () => ImportPlannedContentAsync(planned, _cts.Token),
+            () => _importer.ExecutePlannedImportAsync(planned, _cts.Token),
             _cts.Token);
 
           importedPackCount += imported.Count;
@@ -217,6 +218,24 @@ public partial class MainViewModel
         {
           failures.Add(planned.FileName + " (" + planned.Route + "): " + ex.Message);
         }
+
+        // Capture staged outcome row regardless of success or failure.
+        // planned.State and planned.FailureReason are updated by ExecutePlannedImportAsync.
+        stagedOutcomes.Add(new StagedOperationOutcome
+        {
+          FileName = planned.FileName,
+          ArtifactKind = planned.ArtifactKind.ToString(),
+          Route = planned.Route.ToString(),
+          SourceLabel = planned.SourceLabel,
+          State = planned.State.ToString(),
+          FailureReason = planned.FailureReason,
+          CommittedPackCount = planned.State == ImportOperationState.Committed
+            ? importedPacks.Count(p => string.Equals(
+                Path.GetDirectoryName(planned.ZipPath),
+                Path.GetDirectoryName(p.SourceLabel),
+                StringComparison.OrdinalIgnoreCase))
+            : 0
+        });
 
         ProgressValue = i + 1;
       }
@@ -304,6 +323,9 @@ public partial class MainViewModel
         ImportedByType = importedByType,
         Warnings = warnings,
         Failures = failures,
+        StagedOutcomes = stagedOutcomes,
+        StagedCommittedCount = stagedOutcomes.Count(o => string.Equals(o.State, ImportOperationState.Committed.ToString(), StringComparison.Ordinal)),
+        StagedFailedCount = stagedOutcomes.Count(o => string.Equals(o.State, ImportOperationState.Failed.ToString(), StringComparison.Ordinal)),
         ProcessedArtifactLedgerSnapshot = ledgerSnapshot
       };
       PersistImportScanSummary(summary);
@@ -323,6 +345,7 @@ public partial class MainViewModel
       StatusText = "Scan complete: imported packs=" + importedPackCount
         + ", tools=" + importedToolCount
         + ", warnings=" + warningCount
+        + (stagedOutcomes.Count > 0 ? ", staged=" + summary.StagedCommittedCount + "/" + stagedOutcomes.Count + " committed" : "")
         + (failures.Count > 0 ? ", failures=" + failures.Count : "");
     }
     catch (Exception ex)
@@ -557,6 +580,20 @@ public partial class MainViewModel
       lines.Add("Warnings:");
       foreach (var warning in summary.Warnings)
         lines.Add("- " + warning);
+      lines.Add(string.Empty);
+    }
+
+    if (summary.StagedOutcomes.Count > 0)
+    {
+      lines.Add("Staged transitions: " + summary.StagedCommittedCount + " committed, " + summary.StagedFailedCount + " failed");
+      lines.Add("Operations:");
+      foreach (var outcome in summary.StagedOutcomes)
+      {
+        var row = "- [" + outcome.State + "] " + outcome.FileName + " (" + outcome.ArtifactKind + "/" + outcome.Route + ")";
+        if (!string.IsNullOrWhiteSpace(outcome.FailureReason))
+          row += " -- " + outcome.FailureReason;
+        lines.Add(row);
+      }
       lines.Add(string.Empty);
     }
 
@@ -905,15 +942,15 @@ public partial class MainViewModel
       profile.NaPolicy = new NaPolicy
       {
         AutoNaOutOfScope = ProfileAutoNa,
-        ConfidenceThreshold = Confidence.High,
+        ConfidenceThreshold = ParseConfidence(ProfileConfidenceThreshold),
         DefaultNaCommentTemplate = ProfileNaComment
       };
       profile.AutomationPolicy = new AutomationPolicy
       {
-        Mode = AutomationMode.Standard,
+        Mode = ParseAutomationMode(ProfileAutomationMode),
         NewRuleGraceDays = ProfileGraceDays,
-        AutoApplyRequiresMapping = true,
-        ReleaseDateSource = ReleaseDateSource.ContentPack
+        AutoApplyRequiresMapping = ProfileRequiresMapping,
+        ReleaseDateSource = ParseReleaseDateSource(ProfileReleaseDateSource)
       };
       profile.OverlayIds = GetSelectedOverlayIds();
 
@@ -1042,7 +1079,12 @@ public partial class MainViewModel
   [RelayCommand]
   private void OpenOverlayEditor()
   {
-    var win = new OverlayEditorWindow();
+    // Get selected pack IDs for rule selection
+    var packIds = SelectedMissionPacks.Count > 0
+      ? SelectedMissionPacks.Select(p => p.PackId).ToList()
+      : SelectedPack != null ? new List<string> { SelectedPack.PackId } : new List<string>();
+
+    var win = new OverlayEditorWindow(packIds);
     win.ShowDialog();
   }
 
@@ -1180,6 +1222,7 @@ public partial class MainViewModel
     ProfileGraceDays = profile.AutomationPolicy.NewRuleGraceDays;
     ProfileAutoNa = profile.NaPolicy.AutoNaOutOfScope;
     ProfileNaComment = profile.NaPolicy.DefaultNaCommentTemplate;
+    LoadProfileFieldsExtended(profile);
   }
 
    private async Task LoadPackDetailsAsync(ContentPack pack)
@@ -1614,12 +1657,14 @@ public partial class MainViewModel
 
     foreach (var stigPack in selectedStigPacks)
     {
+      var stigTags = ExtractMatchingTags(stigPack.Name + " " + stigPack.SourceLabel)
+        .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
       var candidateScapPacks = await GetScapCandidatesForStigAsync(
         stigPack,
         allScapPacks,
-        selectedStigTags,
-        machineInfo,
-        machineFeatureTags);
+        stigTags,
+        machineInfo);
 
       var selection = await SelectCanonicalScapAsync(stigPack, candidateScapPacks);
       if (selection.Winner != null)
@@ -1684,9 +1729,8 @@ public partial class MainViewModel
   private async Task<List<ContentPack>> GetScapCandidatesForStigAsync(
     ContentPack stigPack,
     IReadOnlyList<ContentPack> allScapPacks,
-    HashSet<string> selectedStigTags,
-    MachineInfo? machineInfo,
-    HashSet<string> machineFeatureTags)
+    HashSet<string> stigTags,
+    MachineInfo? machineInfo)
   {
     var candidates = new List<ContentPack>();
     var stigBenchmarkIds = await GetPackBenchmarkIdsAsync(stigPack);
@@ -1721,14 +1765,7 @@ public partial class MainViewModel
         continue;
       }
 
-      var packFeatureTags = packTags.Where(IsFeatureTag).ToHashSet(StringComparer.OrdinalIgnoreCase);
-      var featureMatch = packFeatureTags.Count > 0
-        && (packFeatureTags.Overlaps(selectedStigTags) || packFeatureTags.Overlaps(machineFeatureTags));
-      var osTagMatch = machineInfo != null
-        && packTags.Any(IsOsTag)
-        && IsPackOsCompatible(packTags, machineInfo.OsTarget, requireOsTag: true);
-
-      if (featureMatch || osTagMatch)
+      if (PackApplicabilityRules.IsScapFallbackTagCompatible(stigTags, packTags))
       {
         candidates.Add(pack);
         System.Diagnostics.Trace.TraceInformation("SCAP candidate: " + pack.Name + " (fallback tag match)");

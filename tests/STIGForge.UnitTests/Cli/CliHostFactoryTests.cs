@@ -1,13 +1,19 @@
+using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using STIGForge.Cli;
 using STIGForge.Content.Import;
 using STIGForge.Core.Abstractions;
+using Xunit;
+using static STIGForge.UnitTests.TestCategories;
 
 namespace STIGForge.UnitTests.Cli;
 
-public sealed class CliHostFactoryTests : IDisposable
+public sealed class CliHostFactoryTests : IAsyncLifetime
 {
   private readonly string _tempRoot;
+  private IHost? _host;
 
   public CliHostFactoryTests()
   {
@@ -15,8 +21,18 @@ public sealed class CliHostFactoryTests : IDisposable
     Directory.CreateDirectory(_tempRoot);
   }
 
-  public void Dispose()
+  public Task InitializeAsync() => Task.CompletedTask;
+
+  public async Task DisposeAsync()
   {
+    if (_host is not null)
+    {
+      await _host.StopAsync();
+      _host.Dispose();
+      // Allow file handles to release before deleting directory
+      await Task.Delay(50);
+    }
+
     if (Directory.Exists(_tempRoot))
       Directory.Delete(_tempRoot, true);
   }
@@ -52,14 +68,38 @@ public sealed class CliHostFactoryTests : IDisposable
   [Fact]
   public async Task BuildHost_UsesConfiguredPathBuilderForSerilogLogDirectory()
   {
-    using var host = CliHostFactory.BuildHost(() => new TestPathBuilder(_tempRoot));
+    _host = CliHostFactory.BuildHost(() => new TestPathBuilder(_tempRoot));
 
-    await host.StartAsync();
-    await host.StopAsync();
+    await _host.StartAsync();
+    await _host.StopAsync();
 
     var logsRoot = Path.Combine(_tempRoot, "logs");
     Assert.True(Directory.Exists(logsRoot));
     Assert.NotEmpty(Directory.GetFiles(logsRoot, "stigforge-cli*.log", SearchOption.TopDirectoryOnly));
+  }
+
+  [Fact]
+  [Trait("Category", Integration)]
+  public async Task BuildHost_LogContainsCorrelationId()
+  {
+    _host = CliHostFactory.BuildHost(() => new TestPathBuilder(_tempRoot));
+
+    await _host.StartAsync();
+
+    // Create a scope that logs something
+    var logger = _host.Services.GetRequiredService<ILogger<CliHostFactoryTests>>();
+    logger.LogInformation("Test log message with correlation");
+
+    await _host.StopAsync();
+
+    var logsRoot = Path.Combine(_tempRoot, "logs");
+    var logFiles = Directory.GetFiles(logsRoot, "stigforge-cli*.log", SearchOption.TopDirectoryOnly);
+    logFiles.Should().NotBeEmpty();
+
+    var logContent = await File.ReadAllTextAsync(logFiles[0]);
+    // Log should contain either TraceId (if Activity started) or CorrelationId
+    // Both are 32-char hex strings (GUID without dashes)
+    logContent.Should().MatchRegex(@"\[[a-f0-9]{32}\]", "log should contain correlation ID");
   }
 
   private sealed class TestPathBuilder : IPathBuilder

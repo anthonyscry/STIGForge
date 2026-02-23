@@ -1,4 +1,5 @@
 using System.Text.Json;
+using STIGForge.Core.Models;
 using STIGForge.Verify.Adapters;
 
 namespace STIGForge.Verify;
@@ -58,6 +59,70 @@ public sealed class VerifyOrchestrator
     }
 
     return MergeReports(reports, errors);
+  }
+
+  /// <summary>
+  /// Parse multiple result files, merge, and apply ScapMappingManifest for per-STIG result association.
+  /// </summary>
+  public ConsolidatedVerifyReport ParseAndMergeResults(IEnumerable<string> resultFilePaths, ScapMappingManifest? manifest)
+  {
+    var report = ParseAndMergeResults(resultFilePaths);
+    ApplyMappingManifest(report, manifest);
+    return report;
+  }
+
+  /// <summary>
+  /// Applies a ScapMappingManifest to enrich verification results with BenchmarkId and mapping status.
+  /// If manifest is null, this is a no-op for backward compatibility.
+  /// </summary>
+  public void ApplyMappingManifest(ConsolidatedVerifyReport report, ScapMappingManifest? manifest)
+  {
+    if (manifest == null)
+      return;
+
+    var mappingLookup = new Dictionary<string, ScapControlMapping>(StringComparer.OrdinalIgnoreCase);
+    foreach (var mapping in manifest.ControlMappings)
+    {
+      if (!string.IsNullOrWhiteSpace(mapping.VulnId))
+        mappingLookup.TryAdd(mapping.VulnId, mapping);
+      if (!string.IsNullOrWhiteSpace(mapping.RuleId))
+        mappingLookup.TryAdd(mapping.RuleId, mapping);
+    }
+
+    foreach (var result in report.Results)
+    {
+      ScapControlMapping? mapping = null;
+
+      // Look up by VulnId first, then RuleId, then ControlId
+      if (!string.IsNullOrWhiteSpace(result.VulnId))
+        mappingLookup.TryGetValue(result.VulnId, out mapping);
+      if (mapping == null && !string.IsNullOrWhiteSpace(result.RuleId))
+        mappingLookup.TryGetValue(result.RuleId, out mapping);
+      if (mapping == null && !string.IsNullOrWhiteSpace(result.ControlId))
+        mappingLookup.TryGetValue(result.ControlId, out mapping);
+
+      if (mapping != null)
+      {
+        if (mapping.Method != ScapMappingMethod.Unmapped)
+        {
+          result.BenchmarkId = mapping.BenchmarkId;
+        }
+        else
+        {
+          // Unmapped control: add mapping_status to metadata
+          var mutableMetadata = new Dictionary<string, string>(result.Metadata, StringComparer.OrdinalIgnoreCase);
+          mutableMetadata["mapping_status"] = "no_scap_mapping";
+          result.Metadata = mutableMetadata;
+        }
+      }
+      else
+      {
+        // Not found in manifest at all
+        var mutableMetadata = new Dictionary<string, string>(result.Metadata, StringComparer.OrdinalIgnoreCase);
+        mutableMetadata["mapping_status"] = "not_in_manifest";
+        result.Metadata = mutableMetadata;
+      }
+    }
   }
 
   /// <summary>
@@ -214,6 +279,16 @@ public sealed class VerifyOrchestrator
       var prefix = alt.Tool.ToLowerInvariant().Replace(" ", "_") + "_";
       AddMetadata(mergedMetadata, alt.Metadata, prefix);
     }
+
+    // Include raw artifact paths from all conflicting results for provenance
+    var rawPaths = results
+      .Where(r => !string.IsNullOrWhiteSpace(r.RawArtifactPath))
+      .Select(r => r.RawArtifactPath!)
+      .Distinct(StringComparer.OrdinalIgnoreCase)
+      .OrderBy(p => p, StringComparer.OrdinalIgnoreCase);
+    var rawPathsJoined = string.Join(";", rawPaths);
+    if (rawPathsJoined.Length > 0)
+      mergedMetadata["raw_artifact_paths"] = rawPathsJoined;
 
     // Merge evidence paths
     var evidencePaths = results

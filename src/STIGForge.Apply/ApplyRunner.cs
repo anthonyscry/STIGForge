@@ -5,15 +5,18 @@ using STIGForge.Core.Models;
 using STIGForge.Apply.Snapshot;
 using STIGForge.Apply.Dsc;
 using STIGForge.Apply.Reboot;
+using STIGForge.Evidence;
+using STIGForge.Infrastructure.Telemetry;
 using Microsoft.Extensions.Logging;
- 
+
  namespace STIGForge.Apply;
- 
+
 public sealed class ApplyRunner
 {
     private const string PowerStigStepName = "powerstig_compile";
     private const string ScriptStepName = "apply_script";
     private const string DscStepName = "apply_dsc";
+    private const string LgpoStepName = "apply_lgpo";
 
     private readonly ILogger<ApplyRunner> _logger;
     private readonly SnapshotService _snapshotService;
@@ -21,6 +24,9 @@ public sealed class ApplyRunner
     private readonly LcmService _lcmService;
     private readonly RebootCoordinator _rebootCoordinator;
     private readonly IAuditTrailService? _audit;
+    private readonly EvidenceCollector? _evidenceCollector;
+    private readonly Lgpo.LgpoRunner? _lgpoRunner;
+    private readonly PreflightRunner? _preflightRunner;
 
     public ApplyRunner(
       ILogger<ApplyRunner> logger,
@@ -28,7 +34,10 @@ public sealed class ApplyRunner
       RollbackScriptGenerator rollbackScriptGenerator,
       LcmService lcmService,
       RebootCoordinator rebootCoordinator,
-      IAuditTrailService? audit = null)
+      IAuditTrailService? audit = null,
+      EvidenceCollector? evidenceCollector = null,
+      Lgpo.LgpoRunner? lgpoRunner = null,
+      PreflightRunner? preflightRunner = null)
     {
        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
        _snapshotService = snapshotService ?? throw new ArgumentNullException(nameof(snapshotService));
@@ -36,6 +45,9 @@ public sealed class ApplyRunner
        _lcmService = lcmService ?? throw new ArgumentNullException(nameof(lcmService));
        _rebootCoordinator = rebootCoordinator ?? throw new ArgumentNullException(nameof(rebootCoordinator));
        _audit = audit;
+       _evidenceCollector = evidenceCollector;
+       _lgpoRunner = lgpoRunner;
+       _preflightRunner = preflightRunner;
     }
 
    public async Task<ApplyResult> RunAsync(ApplyRequest request, CancellationToken ct)
@@ -55,6 +67,13 @@ public sealed class ApplyRunner
     Directory.CreateDirectory(snapshotsDir);
 
     var mode = request.ModeOverride ?? TryReadModeFromManifest(root) ?? HardeningMode.Safe;
+
+    // Resolve effective run ID - generate one if not provided by orchestrator
+    var runId = string.IsNullOrWhiteSpace(request.RunId) ? Guid.NewGuid().ToString() : request.RunId!;
+    var priorRunId = request.PriorRunId;
+
+    // Load prior run step evidence for continuity deduplication
+    var priorStepSha256 = LoadPriorRunStepSha256(root, priorRunId);
 
       var plannedSteps = BuildPlannedStepNames(request);
 
@@ -161,6 +180,8 @@ public sealed class ApplyRunner
            mode,
            request.PowerStigVerbose,
            ct).ConfigureAwait(false);
+
+        outcome = WriteStepEvidence(outcome, root, runId, priorStepSha256);
         steps.Add(outcome);
       }
 
@@ -186,7 +207,9 @@ public sealed class ApplyRunner
              RollbackScriptPath = snapshot?.RollbackScriptPath ?? string.Empty,
              IsMissionComplete = false,
              IntegrityVerified = false,
-             RecoveryArtifactPaths = GetRecoveryArtifactPaths(snapshot, snapshotsDir, string.Empty)
+             RecoveryArtifactPaths = GetRecoveryArtifactPaths(snapshot, snapshotsDir, string.Empty),
+             RunId = runId,
+             PriorRunId = priorRunId
           };
        }
     }
@@ -200,6 +223,7 @@ public sealed class ApplyRunner
       else
       {
         var outcome = await RunScriptAsync(request.ScriptPath!, request.ScriptArgs, root, logsDir, snapshotsDir, mode, ct).ConfigureAwait(false);
+        outcome = WriteStepEvidence(outcome, root, runId, priorStepSha256);
         steps.Add(outcome);
       }
 
@@ -225,7 +249,9 @@ public sealed class ApplyRunner
              RollbackScriptPath = snapshot?.RollbackScriptPath ?? string.Empty,
              IsMissionComplete = false,
              IntegrityVerified = false,
-             RecoveryArtifactPaths = GetRecoveryArtifactPaths(snapshot, snapshotsDir, string.Empty)
+             RecoveryArtifactPaths = GetRecoveryArtifactPaths(snapshot, snapshotsDir, string.Empty),
+             RunId = runId,
+             PriorRunId = priorRunId
           };
        }
     }
@@ -239,6 +265,7 @@ public sealed class ApplyRunner
         else
         {
           var outcome = await RunDscAsync(request.DscMofPath!, root, logsDir, snapshotsDir, mode, request.DscVerbose, ct).ConfigureAwait(false);
+          outcome = WriteStepEvidence(outcome, root, runId, priorStepSha256);
           steps.Add(outcome);
         }
 
@@ -258,14 +285,90 @@ public sealed class ApplyRunner
        }
      }
 
+    // LGPO step (secondary backend after DSC)
+    if (!string.IsNullOrWhiteSpace(request.LgpoPolFilePath) && _lgpoRunner != null)
+    {
+      if (completedSteps.Contains(LgpoStepName))
+      {
+        _logger.LogInformation("Skipping previously completed step: {StepName}", LgpoStepName);
+      }
+      else
+      {
+        var outcome = await RunLgpoAsync(request, root, logsDir, ct).ConfigureAwait(false);
+        outcome = WriteStepEvidence(outcome, root, runId, priorStepSha256);
+        steps.Add(outcome);
+      }
+
+      // Check for reboot after LGPO execution
+      if (await _rebootCoordinator.DetectRebootRequired(ct).ConfigureAwait(false))
+      {
+        _logger.LogInformation("Reboot required after LGPO apply");
+        var rebootCount = resumeContext?.RebootCount ?? 0;
+        var context = new RebootContext
+        {
+          BundleRoot = root,
+          CurrentStepIndex = steps.Count,
+          CompletedSteps = steps.Select(s => s.StepName).ToList(),
+          RebootScheduledAt = DateTimeOffset.UtcNow,
+          RebootCount = rebootCount
+        };
+        await _rebootCoordinator.ScheduleReboot(context, ct).ConfigureAwait(false);
+        return new ApplyResult
+        {
+          BundleRoot = root,
+          Mode = mode,
+          LogPath = string.Empty,
+          Steps = steps,
+          SnapshotId = snapshot?.SnapshotId ?? string.Empty,
+          RollbackScriptPath = snapshot?.RollbackScriptPath ?? string.Empty,
+          IsMissionComplete = false,
+          IntegrityVerified = false,
+          RecoveryArtifactPaths = GetRecoveryArtifactPaths(snapshot, snapshotsDir, string.Empty),
+          RunId = runId,
+          PriorRunId = priorRunId,
+          RebootCount = rebootCount + 1,
+          ConvergenceStatus = ConvergenceStatus.Diverged
+        };
+      }
+    }
+
+    // Calculate convergence status
+    var finalRebootCount = resumeContext?.RebootCount ?? 0;
+    var pendingReboot = await _rebootCoordinator.DetectRebootRequired(ct).ConfigureAwait(false);
+    var hasStepFailures = steps.Any(s => s.ExitCode != 0);
+    var convergenceStatus = ConvergenceStatus.NotApplicable;
+
+    if (steps.Count > 0)
+    {
+      if (!pendingReboot && !hasStepFailures)
+        convergenceStatus = ConvergenceStatus.Converged;
+      else if (finalRebootCount >= RebootCoordinator.MaxReboots)
+        convergenceStatus = ConvergenceStatus.Exceeded;
+      else
+        convergenceStatus = ConvergenceStatus.Diverged;
+    }
+
      var logPath = Path.Combine(applyRoot, "apply_run.json");
      var summary = new
      {
+       runId,
+       priorRunId,
        bundleRoot = root,
        mode = mode.ToString(),
        startedAt = steps.Count > 0 ? steps.Min(s => s.StartedAt) : DateTimeOffset.Now,
        finishedAt = steps.Count > 0 ? steps.Max(s => s.FinishedAt) : DateTimeOffset.Now,
-       steps = steps
+       steps = steps.Select(s => new
+       {
+         s.StepName,
+         s.ExitCode,
+         s.StartedAt,
+         s.FinishedAt,
+         s.StdOutPath,
+         s.StdErrPath,
+         s.EvidenceMetadataPath,
+         s.ArtifactSha256,
+         s.ContinuityMarker
+       })
      };
 
      var json = JsonSerializer.Serialize(summary, new JsonSerializerOptions { WriteIndented = true });
@@ -294,7 +397,7 @@ public sealed class ApplyRunner
            Action = "apply",
            Target = root,
             Result = stepFailures.Count == 0 ? "success" : "failure",
-            Detail = $"Mode={mode}, Steps={steps.Count}",
+            Detail = $"Mode={mode}, Steps={steps.Count}, RunId={runId}",
             User = Environment.UserName,
             Machine = Environment.MachineName,
             Timestamp = DateTimeOffset.Now
@@ -327,9 +430,141 @@ public sealed class ApplyRunner
         IsMissionComplete = true,
         IntegrityVerified = integrityVerified,
         BlockingFailures = blockingFailures,
-        RecoveryArtifactPaths = recoveryArtifacts
+        RecoveryArtifactPaths = recoveryArtifacts,
+        RunId = runId,
+        PriorRunId = priorRunId,
+        RebootCount = finalRebootCount,
+        ConvergenceStatus = convergenceStatus
       };
    }
+
+  /// <summary>
+  /// Writes per-step evidence metadata with run-scoped provenance and SHA-256.
+  /// Assigns a continuity marker by comparing the step's artifact SHA-256 against the prior run.
+  /// Returns the updated outcome (immutable update via record copy pattern on mutable object).
+  /// </summary>
+  private ApplyStepOutcome WriteStepEvidence(ApplyStepOutcome outcome, string bundleRoot, string runId, IReadOnlyDictionary<string, string> priorStepSha256)
+  {
+    if (_evidenceCollector == null)
+      return outcome;
+
+    try
+    {
+      // Determine which artifact path to use for the SHA-256 (prefer stdout log)
+      var artifactPath = !string.IsNullOrWhiteSpace(outcome.StdOutPath) && File.Exists(outcome.StdOutPath)
+        ? outcome.StdOutPath
+        : null;
+
+      string? sha256 = null;
+      if (artifactPath != null)
+        sha256 = ComputeSha256(artifactPath);
+
+      // Determine continuity marker based on prior run comparison
+      string? continuityMarker = null;
+      string? supersedesEvidenceId = null;
+      if (sha256 != null && priorStepSha256.TryGetValue(outcome.StepName, out var priorSha))
+      {
+        continuityMarker = string.Equals(sha256, priorSha, StringComparison.OrdinalIgnoreCase)
+          ? "retained"
+          : "superseded";
+      }
+
+      var result = _evidenceCollector.WriteEvidence(new EvidenceWriteRequest
+      {
+        BundleRoot = bundleRoot,
+        Title = "Apply step: " + outcome.StepName,
+        Type = EvidenceArtifactType.File,
+        Source = "ApplyRunner",
+        SourceFilePath = artifactPath,
+        ContentText = artifactPath == null ? $"Step {outcome.StepName} completed with exit code {outcome.ExitCode}" : null,
+        FileExtension = artifactPath == null ? ".txt" : null,
+        RunId = runId,
+        StepName = outcome.StepName,
+        SupersedesEvidenceId = supersedesEvidenceId
+      });
+
+      outcome.EvidenceMetadataPath = result.MetadataPath;
+      outcome.ArtifactSha256 = sha256 ?? result.Sha256;
+      outcome.ContinuityMarker = continuityMarker;
+    }
+    catch (Exception ex)
+    {
+      _logger.LogWarning(ex, "Failed to write step evidence for {StepName} (non-blocking)", outcome.StepName);
+    }
+
+    return outcome;
+  }
+
+  /// <summary>
+  /// Loads the SHA-256 hashes for each apply step from a prior run's apply_run.json.
+  /// Returns empty dictionary if no prior run or file not found.
+  /// </summary>
+  private static IReadOnlyDictionary<string, string> LoadPriorRunStepSha256(string bundleRoot, string? priorRunId)
+  {
+    if (string.IsNullOrWhiteSpace(priorRunId))
+      return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+    // Prior run's apply_run.json is at the well-known path under the same bundle root
+    var logPath = Path.Combine(bundleRoot, "Apply", "apply_run.json");
+    if (!File.Exists(logPath))
+      return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+    try
+    {
+      using var stream = File.OpenRead(logPath);
+      using var doc = JsonDocument.Parse(stream);
+
+      // Match only if the prior run ID in the file matches the requested priorRunId
+      if (!doc.RootElement.TryGetProperty("runId", out var storedRunId))
+        return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+      if (!string.Equals(storedRunId.GetString(), priorRunId, StringComparison.OrdinalIgnoreCase))
+        return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+      if (!doc.RootElement.TryGetProperty("steps", out var stepsEl))
+        return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+      var result = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+      foreach (var step in stepsEl.EnumerateArray())
+      {
+        if (step.TryGetProperty("StepName", out var stepName)
+          && step.TryGetProperty("ArtifactSha256", out var sha)
+          && sha.ValueKind == JsonValueKind.String
+          && !string.IsNullOrWhiteSpace(sha.GetString()))
+        {
+          result[stepName.GetString()!] = sha.GetString()!;
+        }
+      }
+      return result;
+    }
+    catch
+    {
+      return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    }
+  }
+
+  private static string ComputeSha256(string path)
+  {
+    using var stream = File.OpenRead(path);
+    using var sha = System.Security.Cryptography.SHA256.Create();
+    var hash = sha.ComputeHash(stream);
+    return BitConverter.ToString(hash).Replace("-", string.Empty).ToLowerInvariant();
+  }
+
+  /// <summary>
+  /// Injects W3C trace context into PowerShell process environment variables.
+  /// PowerShell scripts can access via $env:STIGFORGE_TRACE_ID, $env:STIGFORGE_PARENT_SPAN_ID.
+  /// </summary>
+  private static void InjectTraceContext(ProcessStartInfo psi)
+  {
+    var context = TraceContext.GetCurrentContext();
+    if (context != null)
+    {
+      psi.Environment["STIGFORGE_TRACE_ID"] = context.TraceId;
+      psi.Environment["STIGFORGE_PARENT_SPAN_ID"] = context.SpanId;
+      psi.Environment["STIGFORGE_TRACE_FLAGS"] = context.TraceFlags;
+    }
+  }
 
   private static HardeningMode? TryReadModeFromManifest(string bundleRoot)
   {
@@ -398,6 +633,8 @@ public sealed class ApplyRunner
     psi.Environment["STIGFORGE_SNAPSHOT_DIR"] = snapshotsDir;
     psi.Environment["STIGFORGE_HARDENING_MODE"] = mode.ToString();
 
+    InjectTraceContext(psi);
+
     var started = DateTimeOffset.Now;
     using var process = Process.Start(psi);
     if (process == null)
@@ -461,6 +698,8 @@ public sealed class ApplyRunner
     psi.Environment["STIGFORGE_APPLY_LOG_DIR"] = logsDir;
     psi.Environment["STIGFORGE_SNAPSHOT_DIR"] = snapshotsDir;
     psi.Environment["STIGFORGE_HARDENING_MODE"] = mode.ToString();
+
+    InjectTraceContext(psi);
 
     var started = DateTimeOffset.Now;
     using var process = Process.Start(psi);
@@ -534,6 +773,8 @@ public sealed class ApplyRunner
     psi.Environment["STIGFORGE_SNAPSHOT_DIR"] = snapshotsDir;
     psi.Environment["STIGFORGE_HARDENING_MODE"] = mode.ToString();
 
+    InjectTraceContext(psi);
+
     var started = DateTimeOffset.Now;
     using var process = Process.Start(psi);
     if (process == null)
@@ -568,7 +809,43 @@ public sealed class ApplyRunner
     if (!string.IsNullOrWhiteSpace(request.PowerStigModulePath)) planned.Add(PowerStigStepName);
     if (!string.IsNullOrWhiteSpace(request.ScriptPath)) planned.Add(ScriptStepName);
     if (!string.IsNullOrWhiteSpace(request.DscMofPath)) planned.Add(DscStepName);
+    if (!string.IsNullOrWhiteSpace(request.LgpoPolFilePath)) planned.Add(LgpoStepName);
     return planned;
+  }
+
+  private async Task<ApplyStepOutcome> RunLgpoAsync(
+    ApplyRequest request,
+    string bundleRoot,
+    string logsDir,
+    CancellationToken ct)
+  {
+    var stepId = DateTimeOffset.Now.ToString("yyyyMMdd_HHmmss");
+    var stdout = Path.Combine(logsDir, "apply_lgpo_" + stepId + ".out.log");
+    var stderr = Path.Combine(logsDir, "apply_lgpo_" + stepId + ".err.log");
+
+    var started = DateTimeOffset.Now;
+
+    var lgpoRequest = new Lgpo.LgpoApplyRequest
+    {
+      PolFilePath = request.LgpoPolFilePath!,
+      Scope = request.LgpoScope ?? Lgpo.LgpoScope.Machine,
+      LgpoExePath = request.LgpoExePath
+    };
+
+    var result = await _lgpoRunner!.ApplyPolicyAsync(lgpoRequest, ct).ConfigureAwait(false);
+
+    File.WriteAllText(stdout, result.StdOut);
+    File.WriteAllText(stderr, result.StdErr);
+
+    return new ApplyStepOutcome
+    {
+      StepName = LgpoStepName,
+      ExitCode = result.ExitCode,
+      StartedAt = started,
+      FinishedAt = DateTimeOffset.Now,
+      StdOutPath = stdout,
+      StdErrPath = stderr
+    };
   }
 
   private static void ValidateResumeContext(RebootContext context, IReadOnlyList<string> plannedSteps, string bundleRoot)
@@ -615,5 +892,5 @@ public sealed class ApplyRunner
 
     return sb.ToString();
   }
- 
+
 }

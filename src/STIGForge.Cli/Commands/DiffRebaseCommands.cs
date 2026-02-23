@@ -18,6 +18,7 @@ internal static class DiffRebaseCommands
     RegisterListOverlays(rootCmd, buildHost);
     RegisterDiffPacks(rootCmd, buildHost);
     RegisterRebaseOverlay(rootCmd, buildHost);
+    RegisterRebaseAnswers(rootCmd, buildHost);
   }
 
   private static void RegisterListPacks(RootCommand rootCmd, Func<IHost> buildHost)
@@ -69,14 +70,23 @@ internal static class DiffRebaseCommands
     var targetOpt = new Option<string>("--target", "Target (new) pack id") { IsRequired = true };
     var outputOpt = new Option<string>("--output", () => string.Empty, "Write Markdown report to file");
     var jsonOpt = new Option<bool>("--json", "Output full diff as JSON");
-    cmd.AddOption(baselineOpt); cmd.AddOption(targetOpt); cmd.AddOption(outputOpt); cmd.AddOption(jsonOpt);
+    var bundleOpt = new Option<string>("--bundle", () => string.Empty, "Bundle root path (enables answer impact assessment)");
+    cmd.AddOption(baselineOpt); cmd.AddOption(targetOpt); cmd.AddOption(outputOpt); cmd.AddOption(jsonOpt); cmd.AddOption(bundleOpt);
 
-    cmd.SetHandler(async (baseline, target, output, json) =>
+    cmd.SetHandler(async (baseline, target, output, json, bundle) =>
     {
       using var host = buildHost();
       await host.StartAsync();
       var diffService = host.Services.GetRequiredService<BaselineDiffService>();
       var diff = await diffService.ComparePacksAsync(baseline, target, CancellationToken.None);
+
+      // Assess answer impact if bundle is provided
+      if (!string.IsNullOrWhiteSpace(bundle))
+      {
+        var answerService = new ManualAnswerService();
+        var answerFile = answerService.LoadAnswerFile(bundle);
+        diff.AssessAnswerImpact(answerFile);
+      }
 
       if (json)
       {
@@ -102,7 +112,10 @@ internal static class DiffRebaseCommands
           foreach (var c in diff.ModifiedControls)
           {
             var classification = c.RequiresReview ? "review-required" : "changed";
-            Console.WriteLine($"  {(c.RequiresReview ? "!!" : "~")} {c.ControlKey}  [{string.Join(", ", c.Changes.Select(ch => ch.FieldName))}] ({classification})");
+            var answerImpactText = c.AnswerImpact != null && c.AnswerImpact.Validity != AnswerValidity.NoAnswer
+              ? $" | Answer: {c.AnswerImpact.Validity} — {c.AnswerImpact.Reason}"
+              : string.Empty;
+            Console.WriteLine($"  {(c.RequiresReview ? "!!" : "~")} {c.ControlKey}  [{string.Join(", ", c.Changes.Select(ch => ch.FieldName))}] ({classification}){answerImpactText}");
           }
           Console.WriteLine();
         }
@@ -128,12 +141,14 @@ internal static class DiffRebaseCommands
           if (diff.RemovedControls.Count > 0) { md.AppendLine("## Removed Controls"); md.AppendLine(); foreach (var c in diff.RemovedControls) md.AppendLine($"- **{c.ControlKey}** \u2014 {c.BaselineControl?.Title}"); md.AppendLine(); }
           if (diff.ModifiedControls.Count > 0) { md.AppendLine("## Changed Controls"); md.AppendLine(); foreach (var c in diff.ModifiedControls) { md.AppendLine($"### {c.ControlKey}"); md.AppendLine(); md.AppendLine($"- Classification: **{(c.RequiresReview ? "review-required" : "changed")}**"); if (!string.IsNullOrWhiteSpace(c.ReviewReason)) md.AppendLine($"- Review reason: {c.ReviewReason}"); md.AppendLine(); md.AppendLine("| Field | Impact | Old | New |"); md.AppendLine("|-------|--------|-----|-----|"); foreach (var ch in c.Changes) md.AppendLine($"| {ch.FieldName} | {ch.Impact} | {Helpers.Truncate(ch.OldValue, 60)} | {Helpers.Truncate(ch.NewValue, 60)} |"); md.AppendLine(); } }
           if (diff.ReviewRequiredControls.Count > 0) { md.AppendLine("## Review Required Controls"); md.AppendLine(); foreach (var c in diff.ReviewRequiredControls) md.AppendLine($"- **{c.ControlKey}** - {c.ReviewReason}"); md.AppendLine(); }
+          var impactControls = diff.ModifiedControls.Concat(diff.RemovedControls).Where(c => c.AnswerImpact != null && c.AnswerImpact.Validity != AnswerValidity.NoAnswer).ToList();
+          if (impactControls.Count > 0) { md.AppendLine("## Answer Impact"); md.AppendLine(); md.AppendLine("| Control | Validity | Reason |"); md.AppendLine("|---------|----------|--------|"); foreach (var c in impactControls) md.AppendLine($"| {c.ControlKey} | {c.AnswerImpact!.Validity} | {c.AnswerImpact.Reason} |"); md.AppendLine(); }
           File.WriteAllText(output, md.ToString());
           Console.WriteLine("Markdown report written to: " + output);
         }
       }
       await host.StopAsync();
-    }, baselineOpt, targetOpt, outputOpt, jsonOpt);
+    }, baselineOpt, targetOpt, outputOpt, jsonOpt, bundleOpt);
 
     rootCmd.AddCommand(cmd);
   }
@@ -230,6 +245,123 @@ internal static class DiffRebaseCommands
         var rebased = await svc.ApplyRebaseAsync(overlayId, report, CancellationToken.None);
         Console.WriteLine($"Rebased overlay created: {rebased.OverlayId} ({rebased.Name})");
       }
+      await host.StopAsync();
+    });
+
+    rootCmd.AddCommand(cmd);
+  }
+
+  private static void RegisterRebaseAnswers(RootCommand rootCmd, Func<IHost> buildHost)
+  {
+    var cmd = new Command("rebase-answers", "Rebase manual answers from baseline pack to target pack");
+    var bundleOpt = new Option<string>("--bundle", "Bundle root path (source of answers)") { IsRequired = true };
+    var baselineOpt = new Option<string>("--baseline", "Current baseline pack id") { IsRequired = true };
+    var targetOpt = new Option<string>("--target", "New target pack id") { IsRequired = true };
+    var applyOpt = new Option<bool>("--apply", "Apply the rebase and write answers_rebased.json");
+    var outputOpt = new Option<string>("--output", () => string.Empty, "Write rebase report to file");
+    var jsonOpt = new Option<bool>("--json", "Output report as JSON");
+    cmd.AddOption(bundleOpt); cmd.AddOption(baselineOpt); cmd.AddOption(targetOpt);
+    cmd.AddOption(applyOpt); cmd.AddOption(outputOpt); cmd.AddOption(jsonOpt);
+
+    cmd.SetHandler(async (InvocationContext ctx) =>
+    {
+      var bundle = ctx.ParseResult.GetValueForOption(bundleOpt) ?? string.Empty;
+      var baseline = ctx.ParseResult.GetValueForOption(baselineOpt) ?? string.Empty;
+      var target = ctx.ParseResult.GetValueForOption(targetOpt) ?? string.Empty;
+      var apply = ctx.ParseResult.GetValueForOption(applyOpt);
+      var output = ctx.ParseResult.GetValueForOption(outputOpt) ?? string.Empty;
+      var json = ctx.ParseResult.GetValueForOption(jsonOpt);
+
+      using var host = buildHost();
+      await host.StartAsync();
+      var controlRepo = host.Services.GetRequiredService<IControlRepository>();
+      var diffService = new BaselineDiffService(controlRepo);
+      var answerService = new ManualAnswerService();
+      var audit = host.Services.GetService<IAuditTrailService>();
+      var svc = new AnswerRebaseService(answerService, diffService, audit);
+
+      var report = await svc.RebaseAnswersAsync(bundle, baseline, target, CancellationToken.None);
+
+      if (!report.Success)
+      {
+        Console.Error.WriteLine("Answer rebase failed: " + report.ErrorMessage);
+        Environment.ExitCode = 1;
+        await host.StopAsync();
+        return;
+      }
+
+      if (json)
+      {
+        var text = JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true });
+        if (!string.IsNullOrWhiteSpace(output)) { File.WriteAllText(output, text); Console.WriteLine("JSON report written to: " + output); }
+        else Console.WriteLine(text);
+      }
+      else
+      {
+        Console.WriteLine($"Answer Rebase: {bundle}  ({baseline} -> {target})");
+        Console.WriteLine($"  Overall confidence: {report.OverallConfidence:P0}");
+        Console.WriteLine($"  Safe actions:       {report.SafeActions}");
+        Console.WriteLine($"  Review needed:      {report.ReviewNeeded}");
+        Console.WriteLine($"  Blocking conflicts: {report.BlockingConflicts}");
+        Console.WriteLine($"  High risk:          {report.HighRisk}");
+        Console.WriteLine();
+        foreach (var a in report.Actions)
+        {
+          var icon = a.ActionType switch { AnswerRebaseActionType.Carry => "  OK", AnswerRebaseActionType.CarryWithWarning => "  ~~", AnswerRebaseActionType.ReviewRequired => "  !!", AnswerRebaseActionType.Remove => "  --", AnswerRebaseActionType.Remap => "  =>", _ => "  ??" };
+          Console.WriteLine($"{icon} {a.ControlKey,-40} {a.ActionType,-20} ({a.Confidence:P0})  {a.Reason}");
+          if (a.IsBlockingConflict || a.RequiresReview)
+            Console.WriteLine($"     Action: {a.RecommendedAction}");
+        }
+        Console.WriteLine();
+
+        var blockingActions = report.Actions.Where(a => a.IsBlockingConflict).ToList();
+        if (blockingActions.Count > 0)
+        {
+          Console.WriteLine("Blocking conflicts:");
+          foreach (var action in blockingActions)
+            Console.WriteLine($"  !! {action.ControlKey} - {action.Reason} | {action.RecommendedAction}");
+          Console.WriteLine();
+        }
+
+        if (!string.IsNullOrWhiteSpace(output))
+        {
+          var md = new System.Text.StringBuilder();
+          md.AppendLine($"# Answer Rebase Report"); md.AppendLine();
+          md.AppendLine($"- **Bundle:** {bundle}");
+          md.AppendLine($"- **Baseline:** {baseline}"); md.AppendLine($"- **Target:** {target}");
+          md.AppendLine($"- **Overall Confidence:** {report.OverallConfidence:P0}");
+          md.AppendLine($"- **Blocking conflicts:** {report.BlockingConflicts}");
+          md.AppendLine();
+          md.AppendLine("| Control | Action | Confidence | Requires Review | Blocking | Reason | Recommended Action |"); md.AppendLine("|---------|--------|------------|-----------------|----------|--------|--------------------|");
+          foreach (var a in report.Actions) md.AppendLine($"| {a.ControlKey} | {a.ActionType} | {a.Confidence:P0} | {(a.RequiresReview ? "Yes" : "No")} | {(a.IsBlockingConflict ? "Yes" : "No")} | {a.Reason} | {a.RecommendedAction} |");
+          File.WriteAllText(output, md.ToString());
+          Console.WriteLine("Markdown report written to: " + output);
+        }
+      }
+
+      if (apply)
+      {
+        var blockingActions = report.Actions.Where(a => a.IsBlockingConflict).ToList();
+        if (blockingActions.Count > 0)
+        {
+          Console.Error.WriteLine($"Answer rebase apply blocked: {blockingActions.Count} unresolved blocking conflict(s) require operator review.");
+          foreach (var action in blockingActions)
+            Console.Error.WriteLine($"  {action.ControlKey}: {action.RecommendedAction}");
+          Environment.ExitCode = 2;
+          await host.StopAsync();
+          return;
+        }
+
+        var sourceAnswers = answerService.LoadAnswerFile(bundle);
+        var rebased = svc.ApplyAnswerRebase(report, sourceAnswers);
+
+        var rebasedPath = Path.Combine(bundle, "Manual", "answers_rebased.json");
+        var rebasedJson = JsonSerializer.Serialize(rebased, new JsonSerializerOptions { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        Directory.CreateDirectory(Path.GetDirectoryName(rebasedPath)!);
+        File.WriteAllText(rebasedPath, rebasedJson);
+        Console.WriteLine($"Rebased answers written to: {rebasedPath}");
+      }
+
       await host.StopAsync();
     });
 

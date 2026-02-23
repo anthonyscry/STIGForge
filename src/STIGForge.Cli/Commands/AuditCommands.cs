@@ -4,6 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using STIGForge.Core.Abstractions;
+using STIGForge.Export;
 
 namespace STIGForge.Cli.Commands;
 
@@ -13,6 +14,7 @@ internal static class AuditCommands
   {
     RegisterAuditLog(rootCmd, buildHost);
     RegisterAuditVerify(rootCmd, buildHost);
+    RegisterAuditIntegrity(rootCmd, buildHost);
   }
 
   private static void RegisterAuditLog(RootCommand rootCmd, Func<IHost> buildHost)
@@ -111,6 +113,110 @@ internal static class AuditCommands
       }
       await host.StopAsync();
     });
+
+    rootCmd.AddCommand(cmd);
+  }
+
+  private static void RegisterAuditIntegrity(RootCommand rootCmd, Func<IHost> buildHost)
+  {
+    var cmd = new Command("audit-integrity", "Verify complete package integrity: package hash, audit trail chain, and submission readiness");
+    var packageOpt = new Option<string>("--package", "eMASS package root path") { IsRequired = true };
+    var jsonOpt = new Option<bool>("--json", "Output as JSON");
+    cmd.AddOption(packageOpt); cmd.AddOption(jsonOpt);
+
+    cmd.SetHandler(async (package, json) =>
+    {
+      using var host = buildHost();
+      await host.StartAsync();
+      var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("AuditCommands");
+
+      logger.LogInformation("audit-integrity started: package={Package}", package);
+
+      // 1. Package validation (includes packageHash and submission readiness)
+      var validator = new EmassPackageValidator();
+      var validationResult = validator.ValidatePackage(package);
+
+      // 2. Audit trail chain integrity
+      var audit = host.Services.GetRequiredService<IAuditTrailService>();
+      var chainValid = await audit.VerifyIntegrityAsync(CancellationToken.None);
+
+      var anyFailure = !validationResult.IsValid || !chainValid;
+
+      if (json)
+      {
+        var report = new
+        {
+          packagePath = package,
+          packageValidation = new
+          {
+            isValid = validationResult.IsValid,
+            errors = validationResult.Errors,
+            warnings = validationResult.Warnings,
+            packageHashValid = validationResult.Metrics.PackageHashValid,
+            submissionReadiness = validationResult.Metrics.SubmissionReadiness
+          },
+          auditTrailChain = new
+          {
+            isValid = chainValid
+          },
+          overallResult = anyFailure ? "FAIL" : "PASS"
+        };
+        Console.WriteLine(JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true, PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
+      }
+      else
+      {
+        Console.WriteLine("=== PACKAGE INTEGRITY REPORT ===");
+        Console.WriteLine();
+
+        // Package validation
+        Console.WriteLine($"Package validation: {(validationResult.IsValid ? "VALID" : "INVALID")}");
+        if (validationResult.Errors.Count > 0)
+        {
+          Console.WriteLine("  Errors:");
+          foreach (var err in validationResult.Errors)
+            Console.WriteLine("    - " + err);
+        }
+        if (validationResult.Warnings.Count > 0)
+        {
+          Console.WriteLine("  Warnings:");
+          foreach (var warn in validationResult.Warnings)
+            Console.WriteLine("    - " + warn);
+        }
+        Console.WriteLine();
+
+        // Package hash
+        Console.WriteLine($"Package hash: {(validationResult.Metrics.PackageHashValid ? "MATCH" : "MISMATCH")}");
+        if (!string.IsNullOrEmpty(validationResult.Metrics.PackageHashExpected))
+          Console.WriteLine($"  Expected: {validationResult.Metrics.PackageHashExpected}");
+        if (!string.IsNullOrEmpty(validationResult.Metrics.PackageHashActual))
+          Console.WriteLine($"  Actual:   {validationResult.Metrics.PackageHashActual}");
+        Console.WriteLine();
+
+        // Audit trail chain
+        Console.WriteLine($"Audit trail chain: {(chainValid ? "VALID" : "INVALID")}");
+        Console.WriteLine();
+
+        // Submission readiness
+        if (validationResult.Metrics.SubmissionReadiness != null)
+        {
+          var sr = validationResult.Metrics.SubmissionReadiness;
+          Console.WriteLine("Submission readiness:");
+          Console.WriteLine($"  All controls covered: {(sr.AllControlsCovered ? "PASS" : "FAIL")}");
+          Console.WriteLine($"  Evidence present:     {(sr.EvidencePresent ? "PASS" : "FAIL")}");
+          Console.WriteLine($"  POA&M complete:       {(sr.PoamComplete ? "PASS" : "FAIL")}");
+          Console.WriteLine($"  Attestations done:    {(sr.AttestationsComplete ? "PASS" : "FAIL")}");
+          Console.WriteLine($"  Verdict:              {(sr.IsReady ? "READY" : "NOT READY")}");
+          Console.WriteLine();
+        }
+
+        Console.WriteLine($"Overall: {(anyFailure ? "FAIL" : "PASS")}");
+      }
+
+      logger.LogInformation("audit-integrity completed: packageValid={PackageValid}, chainValid={ChainValid}",
+        validationResult.IsValid, chainValid);
+      if (anyFailure) Environment.ExitCode = 1;
+      await host.StopAsync();
+    }, packageOpt, jsonOpt);
 
     rootCmd.AddCommand(cmd);
   }

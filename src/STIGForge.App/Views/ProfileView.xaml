@@ -49,10 +49,41 @@
                     ToolTipService.ToolTip="Automatically mark controls as Not Applicable when they don't match the system classification."/>
 
           <WrapPanel Margin="0,0,0,8">
+            <TextBlock Text="Confidence:" Width="100" VerticalAlignment="Center"/>
+            <ComboBox Width="140" SelectedItem="{Binding ProfileConfidenceThreshold}"
+                      AutomationProperties.Name="Confidence threshold"
+                      ToolTipService.ToolTip="Minimum confidence level required for auto-NA decisions. Low confidence routes to review queue.">
+              <ComboBoxItem>High</ComboBoxItem>
+              <ComboBoxItem>Medium</ComboBoxItem>
+              <ComboBoxItem>Low</ComboBoxItem>
+            </ComboBox>
+          </WrapPanel>
+
+          <WrapPanel Margin="0,0,0,8">
             <TextBlock Text="Grace days:" Width="100" VerticalAlignment="Center"/>
             <TextBox Width="80" Text="{Binding ProfileGraceDays}"
                      AutomationProperties.Name="Grace period days"
                      ToolTipService.ToolTip="Number of days after a STIG release before findings become overdue."/>
+            <TextBlock Text="Automation:" Width="100" Margin="20,0,0,0" VerticalAlignment="Center"/>
+            <ComboBox Width="140" SelectedItem="{Binding ProfileAutomationMode}"
+                      AutomationProperties.Name="Automation mode"
+                      ToolTipService.ToolTip="Controls the level of automation during apply. Standard = normal, Manual = all controls require review.">
+              <ComboBoxItem>Standard</ComboBoxItem>
+              <ComboBoxItem>Manual</ComboBoxItem>
+            </ComboBox>
+          </WrapPanel>
+
+          <WrapPanel Margin="0,0,0,8">
+            <CheckBox Content="Require mapping for auto-apply" Margin="0,0,20,0" IsChecked="{Binding ProfileRequiresMapping}"
+                      AutomationProperties.Name="Require mapping for auto-apply"
+                      ToolTipService.ToolTip="When enabled, auto-apply only runs for controls with a confirmed PowerSTIG/DSC mapping."/>
+            <TextBlock Text="Release source:" Width="100" VerticalAlignment="Center"/>
+            <ComboBox Width="160" SelectedItem="{Binding ProfileReleaseDateSource}"
+                      AutomationProperties.Name="Release date source"
+                      ToolTipService.ToolTip="Source for determining STIG release dates used by the grace period gate.">
+              <ComboBoxItem>ContentPack</ComboBoxItem>
+              <ComboBoxItem>Manual</ComboBoxItem>
+            </ComboBox>
           </WrapPanel>
 
           <TextBlock Text="NA comment:" Margin="0,0,0,4"/>

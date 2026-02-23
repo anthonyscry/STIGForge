@@ -56,4 +56,35 @@ public sealed class ValidationMetrics
   public int AttestationCount { get; set; }
 
   public int CrossArtifactMismatchCount { get; set; }
+
+  public SubmissionReadinessResult? SubmissionReadiness { get; set; }
+
+  public bool PackageHashValid { get; set; }
+  public string? PackageHashExpected { get; set; }
+  public string? PackageHashActual { get; set; }
+}
+
+/// <summary>
+/// Submission readiness flags for eMASS package manifest.
+/// Gives operators a clear go/no-go signal before sending the package to assessors.
+/// </summary>
+public sealed class SubmissionReadiness
+{
+  public bool AllControlsCovered { get; set; }
+  public bool EvidencePresent { get; set; }
+  public bool PoamComplete { get; set; }
+  public bool AttestationsComplete { get; set; }
+  public bool IsReady => AllControlsCovered && EvidencePresent && PoamComplete && AttestationsComplete;
+}
+
+/// <summary>
+/// Submission readiness result for validation reporting.
+/// </summary>
+public sealed class SubmissionReadinessResult
+{
+  public bool AllControlsCovered { get; set; }
+  public bool EvidencePresent { get; set; }
+  public bool PoamComplete { get; set; }
+  public bool AttestationsComplete { get; set; }
+  public bool IsReady => AllControlsCovered && EvidencePresent && PoamComplete && AttestationsComplete;
 }

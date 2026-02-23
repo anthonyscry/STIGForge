@@ -8,9 +8,11 @@ using STIGForge.Core.Abstractions;
 using STIGForge.Core.Services;
 using STIGForge.Evidence;
 using STIGForge.Infrastructure.Hashing;
+using STIGForge.Infrastructure.Logging;
 using STIGForge.Infrastructure.Paths;
 using STIGForge.Infrastructure.Storage;
 using STIGForge.Infrastructure.System;
+using STIGForge.Infrastructure.Telemetry;
 using STIGForge.Verify;
 
 namespace STIGForge.Cli;
@@ -29,10 +31,18 @@ public static class CliHostFactory
     return Host.CreateDefaultBuilder()
       .UseSerilog((_, lc) =>
       {
+        LoggingConfiguration.ConfigureFromEnvironment();
+
         var root = pathBuilderFactory().GetLogsRoot();
         Directory.CreateDirectory(root);
-        lc.MinimumLevel.Information()
-          .WriteTo.File(Path.Combine(root, "stigforge-cli.log"), rollingInterval: RollingInterval.Day);
+
+        lc.MinimumLevel.ControlledBy(LoggingConfiguration.LevelSwitch)
+          .Enrich.With(new CorrelationIdEnricher())
+          .Enrich.FromLogContext()
+          .WriteTo.File(
+            Path.Combine(root, "stigforge-cli.log"),
+            rollingInterval: RollingInterval.Day,
+            outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{TraceId}] {Message:lj}{NewLine}{Exception}");
       })
       .UseDefaultServiceProvider((_, options) =>
       {
@@ -75,7 +85,9 @@ public static class CliHostFactory
     services.AddSingleton<IControlRepository>(sp => new SqliteJsonControlRepository(sp.GetRequiredService<string>()));
     services.AddSingleton<IProfileRepository>(sp => new SqliteJsonProfileRepository(sp.GetRequiredService<string>()));
     services.AddSingleton<IOverlayRepository>(sp => new SqliteJsonOverlayRepository(sp.GetRequiredService<string>()));
+    services.AddSingleton<IMissionRunRepository>(sp => new MissionRunRepository(sp.GetRequiredService<string>()));
     services.AddSingleton<ContentPackImporter>();
+    services.AddSingleton<STIGForge.Core.Services.OverlayConflictDetector>();
     services.AddSingleton<BundleBuilder>();
     services.AddSingleton<SnapshotService>();
     services.AddSingleton<RollbackScriptGenerator>();
@@ -86,6 +98,8 @@ public static class CliHostFactory
     services.AddSingleton<ScapRunner>();
     services.AddSingleton<IVerificationWorkflowService, VerificationWorkflowService>();
     services.AddSingleton<VerificationArtifactAggregationService>();
+    services.AddSingleton<MissionTracingService>();
+    services.AddSingleton<PerformanceInstrumenter>();
     services.AddSingleton<BaselineDiffService>();
     services.AddSingleton<OverlayRebaseService>();
     services.AddSingleton<ManualAnswerService>();

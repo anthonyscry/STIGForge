@@ -11,6 +11,8 @@ namespace STIGForge.Apply.Reboot;
 /// </summary>
 public sealed class RebootCoordinator
 {
+    public const int MaxReboots = 3;
+
     private readonly ILogger<RebootCoordinator> _logger;
     private readonly Func<int, bool> _scheduleReboot;
 
@@ -70,7 +72,17 @@ public sealed class RebootCoordinator
         if (string.IsNullOrWhiteSpace(context.BundleRoot))
             throw new ArgumentException("BundleRoot is required", nameof(context));
 
-        _logger.LogInformation("Scheduling reboot with resume marker...");
+        _logger.LogInformation("Scheduling reboot with resume marker (reboot #{RebootCount})...", context.RebootCount + 1);
+
+        // Enforce max reboot limit
+        if (context.RebootCount >= MaxReboots)
+        {
+            throw new RebootException(
+                $"Maximum reboot count ({MaxReboots}) exceeded for apply cycle. Aborting. Error: max_reboot_exceeded");
+        }
+
+        // Increment reboot count before writing marker
+        context.RebootCount++;
 
         try
         {

@@ -263,6 +263,12 @@ public sealed class ControlDiff
   public List<ControlFieldChange> Changes { get; set; } = new();
   public bool RequiresReview { get; set; }
   public string? ReviewReason { get; set; }
+
+  /// <summary>
+  /// Answer impact assessment. Null when no answers exist for this control.
+  /// Populated by AssessAnswerImpact.
+  /// </summary>
+  public AnswerImpact? AnswerImpact { get; set; }
 }
 
 /// <summary>
@@ -294,4 +300,117 @@ public enum FieldChangeImpact
   Low,      // Cosmetic changes (title, discussion)
   Medium,   // Significant but not breaking (fix text)
   High      // Breaking changes (check text, severity, manual status)
+}
+
+/// <summary>
+/// Validity assessment of an existing answer after a pack change.
+/// </summary>
+public enum AnswerValidity
+{
+  Valid,       // CheckText unchanged — answer still applies
+  Uncertain,   // CheckText changed but FixText same — review recommended
+  Invalid,     // Both CheckText and FixText changed — answer likely invalid
+  NoAnswer     // No answer exists for this control
+}
+
+/// <summary>
+/// Answer impact for a specific control in a diff.
+/// </summary>
+public sealed class AnswerImpact
+{
+  public string ControlKey { get; set; } = string.Empty;
+  public AnswerValidity Validity { get; set; }
+  public string Reason { get; set; } = string.Empty;
+  public ManualAnswer? ExistingAnswer { get; set; }
+}
+
+/// <summary>
+/// Extension to assess answer impact on a BaselineDiff.
+/// </summary>
+public static class BaselineDiffAnswerImpactExtensions
+{
+  /// <summary>
+  /// Assess the impact of a diff on existing manual answers.
+  /// Populates AnswerImpact on each ControlDiff where answers exist.
+  /// </summary>
+  public static void AssessAnswerImpact(this BaselineDiff diff, AnswerFile answerFile)
+  {
+    if (answerFile?.Answers == null) return;
+
+    // Build answer lookup by control key
+    var answerLookup = new Dictionary<string, ManualAnswer>(StringComparer.OrdinalIgnoreCase);
+    foreach (var answer in answerFile.Answers)
+    {
+      if (!string.IsNullOrWhiteSpace(answer.RuleId))
+        answerLookup["RULE:" + answer.RuleId] = answer;
+      if (!string.IsNullOrWhiteSpace(answer.VulnId))
+        answerLookup["VULN:" + answer.VulnId] = answer;
+    }
+
+    // Assess modified controls
+    foreach (var controlDiff in diff.ModifiedControls)
+    {
+      if (!answerLookup.TryGetValue(controlDiff.ControlKey, out var answer))
+      {
+        controlDiff.AnswerImpact = new AnswerImpact
+        {
+          ControlKey = controlDiff.ControlKey,
+          Validity = AnswerValidity.NoAnswer,
+          Reason = "No answer exists for this control"
+        };
+        continue;
+      }
+
+      var checkTextChanged = controlDiff.Changes.Any(c =>
+        string.Equals(c.FieldName, "CheckText", StringComparison.OrdinalIgnoreCase));
+      var fixTextChanged = controlDiff.Changes.Any(c =>
+        string.Equals(c.FieldName, "FixText", StringComparison.OrdinalIgnoreCase));
+
+      if (!checkTextChanged)
+      {
+        controlDiff.AnswerImpact = new AnswerImpact
+        {
+          ControlKey = controlDiff.ControlKey,
+          Validity = AnswerValidity.Valid,
+          Reason = "Answer still applies — check criteria unchanged",
+          ExistingAnswer = answer
+        };
+      }
+      else if (checkTextChanged && !fixTextChanged)
+      {
+        controlDiff.AnswerImpact = new AnswerImpact
+        {
+          ControlKey = controlDiff.ControlKey,
+          Validity = AnswerValidity.Uncertain,
+          Reason = "Check criteria changed but remediation unchanged — review recommended",
+          ExistingAnswer = answer
+        };
+      }
+      else
+      {
+        controlDiff.AnswerImpact = new AnswerImpact
+        {
+          ControlKey = controlDiff.ControlKey,
+          Validity = AnswerValidity.Invalid,
+          Reason = "Both check and fix criteria changed — answer likely invalid",
+          ExistingAnswer = answer
+        };
+      }
+    }
+
+    // Assess removed controls with answers
+    foreach (var controlDiff in diff.RemovedControls)
+    {
+      if (answerLookup.TryGetValue(controlDiff.ControlKey, out var answer))
+      {
+        controlDiff.AnswerImpact = new AnswerImpact
+        {
+          ControlKey = controlDiff.ControlKey,
+          Validity = AnswerValidity.Invalid,
+          Reason = "Control removed from baseline",
+          ExistingAnswer = answer
+        };
+      }
+    }
+  }
 }

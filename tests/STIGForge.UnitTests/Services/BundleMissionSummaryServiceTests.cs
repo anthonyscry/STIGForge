@@ -1,6 +1,8 @@
 using System.Text;
 using System.Text.Json;
 using FluentAssertions;
+using Moq;
+using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
 using STIGForge.Core.Services;
 
@@ -211,6 +213,79 @@ public sealed class BundleMissionSummaryServiceTests : IDisposable
     {
       WriteIndented = true
     }), Encoding.UTF8);
+  }
+
+  [Fact]
+  public async Task LoadTimelineSummaryAsync_ReturnsNull_WhenNoRepositoryConfigured()
+  {
+    var service = new BundleMissionSummaryService();
+
+    var result = await service.LoadTimelineSummaryAsync(_bundleRoot, CancellationToken.None);
+
+    result.Should().BeNull("the service has no repository configured");
+  }
+
+  [Fact]
+  public async Task LoadTimelineSummaryAsync_ReturnsEventsOrderedBySeq_WhenRunExists()
+  {
+    var runId = Guid.NewGuid().ToString();
+    var run = new MissionRun
+    {
+      RunId = runId,
+      Label = "Test",
+      BundleRoot = _bundleRoot,
+      Status = MissionRunStatus.Completed,
+      CreatedAt = DateTimeOffset.UtcNow.AddMinutes(-5),
+      FinishedAt = DateTimeOffset.UtcNow
+    };
+
+    // Events deliberately out of order to verify sorting
+    var events = new List<MissionTimelineEvent>
+    {
+      new() { EventId = Guid.NewGuid().ToString(), RunId = runId, Seq = 3, Phase = MissionPhase.Verify, StepName = "evaluate_stig", Status = MissionEventStatus.Skipped, OccurredAt = DateTimeOffset.UtcNow.AddMinutes(-1) },
+      new() { EventId = Guid.NewGuid().ToString(), RunId = runId, Seq = 1, Phase = MissionPhase.Apply, StepName = "apply", Status = MissionEventStatus.Started, OccurredAt = DateTimeOffset.UtcNow.AddMinutes(-4) },
+      new() { EventId = Guid.NewGuid().ToString(), RunId = runId, Seq = 2, Phase = MissionPhase.Apply, StepName = "apply", Status = MissionEventStatus.Finished, OccurredAt = DateTimeOffset.UtcNow.AddMinutes(-3) },
+    };
+
+    var repo = new Mock<IMissionRunRepository>();
+    repo.Setup(r => r.GetLatestRunAsync(It.IsAny<CancellationToken>())).ReturnsAsync(run);
+    repo.Setup(r => r.GetTimelineAsync(runId, It.IsAny<CancellationToken>()))
+        .ReturnsAsync(events.OrderBy(e => e.Seq).ToList());
+
+    var service = new BundleMissionSummaryService(missionRunRepo: repo.Object);
+
+    var result = await service.LoadTimelineSummaryAsync(_bundleRoot, CancellationToken.None);
+
+    result.Should().NotBeNull();
+    result!.Events.Should().HaveCount(3);
+    result.Events.Select(e => e.Seq).Should().BeInAscendingOrder("repository returns events ordered by seq");
+    result.LastPhase.Should().Be(MissionPhase.Verify);
+    result.LastStepName.Should().Be("evaluate_stig");
+    result.IsBlocked.Should().BeFalse();
+  }
+
+  [Fact]
+  public async Task LoadTimelineSummaryAsync_SetsIsBlocked_WhenFailedEventPresent()
+  {
+    var runId = Guid.NewGuid().ToString();
+    var run = new MissionRun { RunId = runId, Label = "Fail", BundleRoot = _bundleRoot, Status = MissionRunStatus.Failed, CreatedAt = DateTimeOffset.UtcNow.AddMinutes(-2) };
+
+    var events = new List<MissionTimelineEvent>
+    {
+      new() { EventId = Guid.NewGuid().ToString(), RunId = runId, Seq = 1, Phase = MissionPhase.Apply, StepName = "apply", Status = MissionEventStatus.Started, OccurredAt = DateTimeOffset.UtcNow.AddMinutes(-2) },
+      new() { EventId = Guid.NewGuid().ToString(), RunId = runId, Seq = 2, Phase = MissionPhase.Apply, StepName = "apply", Status = MissionEventStatus.Failed, OccurredAt = DateTimeOffset.UtcNow.AddMinutes(-1), Message = "Script error" },
+    };
+
+    var repo = new Mock<IMissionRunRepository>();
+    repo.Setup(r => r.GetLatestRunAsync(It.IsAny<CancellationToken>())).ReturnsAsync(run);
+    repo.Setup(r => r.GetTimelineAsync(runId, It.IsAny<CancellationToken>())).ReturnsAsync(events);
+
+    var service = new BundleMissionSummaryService(missionRunRepo: repo.Object);
+    var result = await service.LoadTimelineSummaryAsync(_bundleRoot, CancellationToken.None);
+
+    result.Should().NotBeNull();
+    result!.IsBlocked.Should().BeTrue();
+    result.NextAction.ToLowerInvariant().Should().Contain("blocked");
   }
 
   private static ControlRecord MakeControl(string ruleId, string vulnId, bool isManual)

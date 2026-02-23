@@ -18,8 +18,10 @@ internal static class BundleCommands
     RegisterManualAnswer(rootCmd);
     RegisterEvidenceSave(rootCmd);
     RegisterBundleSummary(rootCmd, buildHost);
+    RegisterMissionTimeline(rootCmd, buildHost);
     RegisterSupportBundle(rootCmd, buildHost);
     RegisterOverlayEdit(rootCmd, buildHost);
+    RegisterBundleReviewQueue(rootCmd);
   }
 
   private static void RegisterListManualControls(RootCommand rootCmd)
@@ -232,6 +234,125 @@ internal static class BundleCommands
     rootCmd.AddCommand(cmd);
   }
 
+  private static void RegisterMissionTimeline(RootCommand rootCmd, Func<IHost> buildHost)
+  {
+    var cmd = new Command("mission-timeline", "Show ordered mission run timeline events from the mission ledger");
+    var jsonOpt = new Option<bool>("--json", "Output as JSON");
+    var runIdOpt = new Option<string>("--run-id", () => string.Empty, "Specific run ID to show (defaults to latest run)");
+    var limitOpt = new Option<int>("--limit", () => 0, "Limit the number of events shown (0 = all)");
+    cmd.AddOption(jsonOpt);
+    cmd.AddOption(runIdOpt);
+    cmd.AddOption(limitOpt);
+
+    cmd.SetHandler(async (InvocationContext ctx) =>
+    {
+      var json = ctx.ParseResult.GetValueForOption(jsonOpt);
+      var runId = ctx.ParseResult.GetValueForOption(runIdOpt) ?? string.Empty;
+      var limit = ctx.ParseResult.GetValueForOption(limitOpt);
+
+      using var host = buildHost();
+      await host.StartAsync();
+
+      try
+      {
+        var repo = host.Services.GetRequiredService<IMissionRunRepository>();
+
+        MissionRun? run;
+        if (!string.IsNullOrWhiteSpace(runId))
+        {
+          run = await repo.GetRunAsync(runId.Trim(), CancellationToken.None);
+          if (run == null)
+          {
+            Console.Error.WriteLine("Run not found: " + runId);
+            Environment.ExitCode = 2;
+            return;
+          }
+        }
+        else
+        {
+          run = await repo.GetLatestRunAsync(CancellationToken.None);
+          if (run == null)
+          {
+            if (json)
+              Console.WriteLine(JsonSerializer.Serialize(new { runs = Array.Empty<object>(), events = Array.Empty<object>(), message = "No mission runs recorded yet." }, new JsonSerializerOptions { WriteIndented = true }));
+            else
+              Console.WriteLine("No mission runs recorded yet. Run orchestration to start a mission.");
+            return;
+          }
+        }
+
+        var events = await repo.GetTimelineAsync(run.RunId, CancellationToken.None);
+        IEnumerable<MissionTimelineEvent> filteredEvents = events;
+        if (limit > 0)
+          filteredEvents = events.Take(limit);
+
+        var eventList = filteredEvents.ToList();
+
+        if (json)
+        {
+          Console.WriteLine(JsonSerializer.Serialize(new
+          {
+            run = new
+            {
+              runId = run.RunId,
+              label = run.Label,
+              bundleRoot = run.BundleRoot,
+              status = run.Status.ToString(),
+              createdAt = run.CreatedAt.ToString("o"),
+              finishedAt = run.FinishedAt?.ToString("o"),
+              detail = run.Detail
+            },
+            events = eventList.Select(e => new
+            {
+              seq = e.Seq,
+              phase = e.Phase.ToString(),
+              stepName = e.StepName,
+              status = e.Status.ToString(),
+              occurredAt = e.OccurredAt.ToString("o"),
+              message = e.Message,
+              evidencePath = e.EvidencePath
+            })
+          }, new JsonSerializerOptions { WriteIndented = true }));
+        }
+        else
+        {
+          Console.WriteLine($"Run:     {run.RunId}");
+          Console.WriteLine($"Label:   {run.Label}");
+          Console.WriteLine($"Bundle:  {run.BundleRoot}");
+          Console.WriteLine($"Status:  {run.Status}");
+          Console.WriteLine($"Created: {run.CreatedAt:yyyy-MM-dd HH:mm:ss}");
+          if (run.FinishedAt.HasValue)
+            Console.WriteLine($"Finished:{run.FinishedAt.Value:yyyy-MM-dd HH:mm:ss}");
+          if (!string.IsNullOrWhiteSpace(run.Detail))
+            Console.WriteLine($"Detail:  {run.Detail}");
+          Console.WriteLine();
+
+          if (eventList.Count == 0)
+          {
+            Console.WriteLine("No timeline events recorded for this run.");
+          }
+          else
+          {
+            Console.WriteLine($"{"Seq",-5} {"Phase",-12} {"Step",-25} {"Status",-12} {"Time",-20} {"Message"}");
+            Console.WriteLine(new string('-', 100));
+            foreach (var e in eventList)
+            {
+              Console.WriteLine($"{e.Seq,-5} {e.Phase,-12} {Helpers.Truncate(e.StepName, 25),-25} {e.Status,-12} {e.OccurredAt:yyyy-MM-dd HH:mm:ss,-20} {Helpers.Truncate(e.Message, 40)}");
+            }
+            Console.WriteLine();
+            Console.WriteLine($"Total events: {eventList.Count}" + (limit > 0 && events.Count > limit ? $" (showing {limit} of {events.Count})" : string.Empty));
+          }
+        }
+      }
+      finally
+      {
+        await host.StopAsync();
+      }
+    });
+
+    rootCmd.AddCommand(cmd);
+  }
+
   private static void RegisterOverlayEdit(RootCommand rootCmd, Func<IHost> buildHost)
   {
     var cmd = new Command("overlay-edit", "Add or remove rule overrides from an overlay");
@@ -358,5 +479,109 @@ internal static class BundleCommands
     }
 
     return null;
+  }
+
+  private static void RegisterBundleReviewQueue(RootCommand rootCmd)
+  {
+    var cmd = new Command("review-queue", "Inspect the review queue for a built bundle");
+    var bundleOpt = new Option<string>("--bundle", "Bundle root path") { IsRequired = true };
+    cmd.AddOption(bundleOpt);
+
+    cmd.SetHandler((InvocationContext ctx) =>
+    {
+      var bundle = ctx.ParseResult.GetValueForOption(bundleOpt) ?? string.Empty;
+
+      if (!Directory.Exists(bundle))
+      {
+        Console.Error.WriteLine("Bundle not found: " + bundle);
+        Environment.ExitCode = 2;
+        return;
+      }
+
+      var reviewPath = Path.Combine(bundle, "Reports", "review_required.csv");
+      if (!File.Exists(reviewPath))
+      {
+        Console.WriteLine("No review queue found. Build the bundle first.");
+        return;
+      }
+
+      var lines = File.ReadAllLines(reviewPath);
+      var dataLines = lines.Skip(1).Where(l => !string.IsNullOrWhiteSpace(l)).ToList();
+
+      if (dataLines.Count == 0)
+      {
+        Console.WriteLine("Review queue is empty -- all controls passed scope filtering.");
+      }
+      else
+      {
+        Console.WriteLine($"{"VulnId",-15} {"RuleId",-20} {"Title",-40} {"Reason",-30}");
+        Console.WriteLine(new string('-', 105));
+
+        foreach (var line in dataLines)
+        {
+          var fields = ParseCsvLine(line);
+          var vulnId = fields.ElementAtOrDefault(0) ?? "";
+          var ruleId = fields.ElementAtOrDefault(1) ?? "";
+          var title = fields.ElementAtOrDefault(2) ?? "";
+          var reason = fields.ElementAtOrDefault(3) ?? "";
+
+          // Truncate title for display
+          if (title.Length > 38) title = title[..35] + "...";
+
+          Console.WriteLine($"{vulnId,-15} {ruleId,-20} {title,-40} {reason,-30}");
+        }
+
+        Console.WriteLine($"\n{dataLines.Count} control(s) flagged for review.");
+      }
+
+      // Check for overlay conflicts
+      var conflictPath = Path.Combine(bundle, "Reports", "overlay_conflict_report.csv");
+      if (File.Exists(conflictPath))
+      {
+        var conflictLines = File.ReadAllLines(conflictPath).Skip(1).Where(l => !string.IsNullOrWhiteSpace(l)).ToList();
+        if (conflictLines.Count > 0)
+        {
+          Console.WriteLine($"\nOverlay conflicts: {conflictLines.Count} conflict(s) detected. Run `overlay diff` for details.");
+        }
+      }
+    });
+
+    rootCmd.AddCommand(cmd);
+  }
+
+  private static List<string> ParseCsvLine(string line)
+  {
+    var fields = new List<string>();
+    var current = new System.Text.StringBuilder();
+    bool inQuotes = false;
+
+    for (int i = 0; i < line.Length; i++)
+    {
+      char c = line[i];
+      if (c == '"')
+      {
+        if (inQuotes && i + 1 < line.Length && line[i + 1] == '"')
+        {
+          current.Append('"');
+          i++;
+        }
+        else
+        {
+          inQuotes = !inQuotes;
+        }
+      }
+      else if (c == ',' && !inQuotes)
+      {
+        fields.Add(current.ToString());
+        current.Clear();
+      }
+      else
+      {
+        current.Append(c);
+      }
+    }
+
+    fields.Add(current.ToString());
+    return fields;
   }
 }

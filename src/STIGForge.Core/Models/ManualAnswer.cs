@@ -17,3 +17,15 @@ public sealed class AnswerFile
   public DateTimeOffset CreatedAt { get; set; }
   public List<ManualAnswer> Answers { get; set; } = new();
 }
+
+/// <summary>
+/// Portable answer file format for cross-bundle and cross-system export/import.
+/// Wraps AnswerFile with export-specific metadata for traceability.
+/// </summary>
+public sealed class AnswerFileExport
+{
+  public string? StigId { get; set; }
+  public string? ExportedAt { get; set; }
+  public string? ExportedBy { get; set; }
+  public AnswerFile Answers { get; set; } = new();
+}

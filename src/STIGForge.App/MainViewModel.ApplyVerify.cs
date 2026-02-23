@@ -49,6 +49,7 @@ public partial class MainViewModel
       ReportSummary = BuildReportSummary(BundleRoot);
       GuidedNextAction = "Apply complete. Next action: run Verify and review mission summary.";
       RefreshDashboard();
+      _ = RefreshTimelineAsync();
     }
     catch (Exception ex)
     {
@@ -148,6 +149,7 @@ public partial class MainViewModel
       VerifySummary = ReportSummary;
       LoadCoverageOverlap();
       RefreshDashboard();
+      _ = RefreshTimelineAsync();
     }
     catch (Exception ex)
     {
@@ -253,6 +255,7 @@ public partial class MainViewModel
       LastOutputPath = result.OutputRoot;
       ReportSummary = BuildReportSummary(BundleRoot);
       LoadCoverageOverlap();
+      UpdateSubmissionReadiness(result);
     }
     catch (Exception ex)
     {
@@ -522,9 +525,10 @@ public partial class MainViewModel
         GuidedNextAction = "No blocking mission findings. Next action: proceed with export and release evidence collection.";
       }
 
-      // Refresh dashboard
+      // Refresh dashboard and timeline
       LoadCoverageOverlap();
       RefreshDashboard();
+      _ = RefreshTimelineAsync();
     }
     catch (Exception ex)
     {
@@ -573,6 +577,69 @@ public partial class MainViewModel
       + (Directory.Exists(snapshotsDir) ? ", " + snapshotsDir : string.Empty)
       + ". Next action: review blocking failures, fix prerequisites, and rerun apply/verify. "
       + rollbackGuidance;
+  }
+
+  private async Task RefreshTimelineAsync()
+  {
+    try
+    {
+      var timeline = await _bundleMissionSummary.LoadTimelineSummaryAsync(BundleRoot, CancellationToken.None).ConfigureAwait(false);
+
+      System.Windows.Application.Current.Dispatcher.Invoke(() =>
+      {
+        if (timeline == null)
+        {
+          TimelineEmptyMessage = "Timeline unavailable: mission run repository not configured.";
+          TimelineRunId = "";
+          TimelineRunStatus = "";
+          TimelineNextAction = "Timeline not available.";
+          TimelineIsBlocked = false;
+          TimelineLastPhase = "";
+          TimelineLastStep = "";
+          TimelineEvents.Clear();
+          return;
+        }
+
+        if (timeline.LatestRun == null)
+        {
+          TimelineEmptyMessage = "No mission runs recorded yet. Run orchestration to start a mission.";
+          TimelineRunId = "";
+          TimelineRunStatus = "";
+          TimelineNextAction = timeline.NextAction;
+          TimelineIsBlocked = false;
+          TimelineLastPhase = "";
+          TimelineLastStep = "";
+          TimelineEvents.Clear();
+          return;
+        }
+
+        TimelineRunId = timeline.LatestRun.RunId;
+        TimelineRunStatus = timeline.LatestRun.Status.ToString();
+        TimelineNextAction = timeline.NextAction;
+        TimelineIsBlocked = timeline.IsBlocked;
+        TimelineLastPhase = timeline.LastPhase?.ToString() ?? "";
+        TimelineLastStep = timeline.LastStepName ?? "";
+        TimelineEmptyMessage = timeline.Events.Count == 0 ? "No events recorded for this run yet." : string.Empty;
+
+        TimelineEvents.Clear();
+        foreach (var e in timeline.Events)
+        {
+          TimelineEvents.Add(new MissionTimelineEventItem
+          {
+            Seq = e.Seq,
+            Phase = e.Phase.ToString(),
+            StepName = e.StepName,
+            Status = e.Status.ToString(),
+            OccurredAt = e.OccurredAt.ToLocalTime().ToString("HH:mm:ss"),
+            Message = e.Message
+          });
+        }
+      });
+    }
+    catch (Exception ex)
+    {
+      System.Diagnostics.Trace.TraceWarning("RefreshTimelineAsync failed: " + ex.Message);
+    }
   }
 
   private async Task ValidateAndRecordBreakGlassAsync(string action, string target, string bypassName, CancellationToken ct)

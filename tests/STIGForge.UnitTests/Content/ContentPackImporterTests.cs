@@ -97,6 +97,31 @@ public sealed class ContentPackImporterTests : IDisposable
   }
 
   [Fact]
+  public async Task ImportZipAsync_SetsSourcePackIdOnControls()
+  {
+    var zipPath = Path.Combine(_tempRoot, "source-pack-id-test.zip");
+    using (var archive = ZipFile.Open(zipPath, ZipArchiveMode.Create))
+    {
+      var xccdf = archive.CreateEntry("test-xccdf.xml");
+      await using var writer = new StreamWriter(xccdf.Open());
+      await writer.WriteAsync(CreateMinimalXccdf());
+    }
+
+    var importer = CreateImporter(out var packsMock, out var controlsMock);
+    var result = await importer.ImportZipAsync(zipPath, "source-pack-test", "unit-test", CancellationToken.None);
+
+    Assert.Equal("source-pack-test", result.Name);
+    Assert.NotNull(result.PackId);
+    Assert.False(string.IsNullOrEmpty(result.PackId));
+
+    // Verify all controls have SourcePackId set to the pack's ID
+    controlsMock.Verify(c => c.SaveControlsAsync(
+      It.Is<string>(packId => packId == result.PackId),
+      It.Is<IReadOnlyList<ControlRecord>>(list => list.Count > 0 && list.All(ctrl => ctrl.SourcePackId == result.PackId)),
+      It.IsAny<CancellationToken>()), Times.Once);
+  }
+
+  [Fact]
   public async Task ImportZipAsync_ParsesScapDataStreamBenchmarkXml()
   {
     var zipPath = Path.Combine(_tempRoot, "scap-datastream-benchmark.zip");
@@ -656,6 +681,113 @@ public sealed class ContentPackImporterTests : IDisposable
     Assert.DoesNotContain(imported, pack => pack.Name.IndexOf("{", StringComparison.Ordinal) >= 0);
 
     packsMock.Verify(p => p.SaveAsync(It.IsAny<ContentPack>(), It.IsAny<CancellationToken>()), Times.Exactly(2));
+  }
+
+  [Fact]
+  public async Task ExecutePlannedImportAsync_SuccessfulImport_TransitionsThroughStagedToCommitted()
+  {
+    var zipPath = Path.Combine(_tempRoot, "planned-stig.zip");
+    using (var archive = ZipFile.Open(zipPath, ZipArchiveMode.Create))
+    {
+      var xccdf = archive.CreateEntry("bundle-xccdf.xml");
+      await using var writer = new StreamWriter(xccdf.Open());
+      await writer.WriteAsync(CreateMinimalXccdf());
+    }
+
+    var planned = new PlannedContentImport
+    {
+      ZipPath = zipPath,
+      FileName = Path.GetFileName(zipPath),
+      ArtifactKind = ImportArtifactKind.Stig,
+      Route = ContentImportRoute.ConsolidatedZip,
+      SourceLabel = "unit-test",
+      State = ImportOperationState.Planned
+    };
+
+    var importer = CreateImporter(out _, out _);
+    var result = await importer.ExecutePlannedImportAsync(planned, CancellationToken.None);
+
+    Assert.NotEmpty(result);
+    Assert.Equal(ImportOperationState.Committed, planned.State);
+    Assert.Null(planned.FailureReason);
+  }
+
+  [Fact]
+  public async Task ExecutePlannedImportAsync_FailedImport_TransitionsToFailedWithReason()
+  {
+    // Provide a non-existent ZIP to force failure
+    var planned = new PlannedContentImport
+    {
+      ZipPath = Path.Combine(_tempRoot, "nonexistent.zip"),
+      FileName = "nonexistent.zip",
+      ArtifactKind = ImportArtifactKind.Stig,
+      Route = ContentImportRoute.ConsolidatedZip,
+      SourceLabel = "unit-test",
+      State = ImportOperationState.Planned
+    };
+
+    var importer = CreateImporter(out _, out _);
+    var act = () => importer.ExecutePlannedImportAsync(planned, CancellationToken.None);
+
+    await Assert.ThrowsAnyAsync<Exception>(act);
+    Assert.Equal(ImportOperationState.Failed, planned.State);
+    Assert.NotNull(planned.FailureReason);
+    Assert.False(string.IsNullOrWhiteSpace(planned.FailureReason));
+  }
+
+  [Fact]
+  public async Task ExecutePlannedImportAsync_NullPlanned_ThrowsArgumentNullException()
+  {
+    var importer = CreateImporter(out _, out _);
+    var act = () => importer.ExecutePlannedImportAsync(null!, CancellationToken.None);
+
+    await Assert.ThrowsAsync<ArgumentNullException>(act);
+  }
+
+  [Fact]
+  public void ImportScanSummary_StagedOutcomeFields_DefaultToEmptyCollectionsAndZeroCounts()
+  {
+    var summary = new ImportScanSummary();
+
+    Assert.Empty(summary.StagedOutcomes);
+    Assert.Equal(0, summary.StagedCommittedCount);
+    Assert.Equal(0, summary.StagedFailedCount);
+  }
+
+  [Fact]
+  public void StagedOperationOutcome_FailedRow_HasNonNullFailureReasonAndMatchingState()
+  {
+    var outcome = new StagedOperationOutcome
+    {
+      FileName = "bad-pack.zip",
+      ArtifactKind = "Stig",
+      Route = "ConsolidatedZip",
+      SourceLabel = "unit-test",
+      State = ImportOperationState.Failed.ToString(),
+      FailureReason = "ZIP not found",
+      CommittedPackCount = 0
+    };
+
+    Assert.Equal(ImportOperationState.Failed.ToString(), outcome.State);
+    Assert.NotNull(outcome.FailureReason);
+    Assert.Equal(0, outcome.CommittedPackCount);
+  }
+
+  [Fact]
+  public void StagedOperationOutcome_CommittedRow_HasNullFailureReason()
+  {
+    var outcome = new StagedOperationOutcome
+    {
+      FileName = "good-pack.zip",
+      ArtifactKind = "Stig",
+      Route = "ConsolidatedZip",
+      SourceLabel = "unit-test",
+      State = ImportOperationState.Committed.ToString(),
+      FailureReason = null
+    };
+
+    Assert.Equal(ImportOperationState.Committed.ToString(), outcome.State);
+    Assert.Null(outcome.FailureReason);
   }
 
   private ContentPackImporter CreateImporter(out Mock<IContentPackRepository> packsMock, out Mock<IControlRepository> controlsMock)

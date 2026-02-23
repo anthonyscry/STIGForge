@@ -14,6 +14,17 @@ public partial class MainViewModel
   [ObservableProperty] private string cklOutputFormat = "CKL";
   [ObservableProperty] private string cklStatus = "";
 
+  // Submission readiness (populated after eMASS export)
+  [ObservableProperty] private bool exportReadinessVisible;
+  [ObservableProperty] private bool readinessAllControls;
+  [ObservableProperty] private bool readinessEvidence;
+  [ObservableProperty] private bool readinessPoam;
+  [ObservableProperty] private bool readinessAttestations;
+  [ObservableProperty] private bool readinessIsReady;
+  [ObservableProperty] private string exportPackageHash = "";
+  [ObservableProperty] private string exportValidationSummary = "";
+  [ObservableProperty] private string attestationImportStatus = "";
+
   public IReadOnlyList<string> CklOutputFormats { get; } = new[]
   {
     "CKL",
@@ -112,6 +123,78 @@ public partial class MainViewModel
     {
       IsBusy = false;
     }
+  }
+
+  [RelayCommand]
+  private async Task ImportAttestations()
+  {
+    try
+    {
+      if (string.IsNullOrWhiteSpace(LastOutputPath) || !Directory.Exists(LastOutputPath))
+      {
+        StatusText = "Export eMASS first to create a package, or set the output path.";
+        return;
+      }
+
+      var dlg = new Microsoft.Win32.OpenFileDialog
+      {
+        Filter = "CSV Files (*.csv)|*.csv|All Files (*.*)|*.*",
+        Title = "Select completed attestation CSV"
+      };
+
+      if (dlg.ShowDialog() != true) return;
+
+      IsBusy = true;
+      StatusText = "Importing attestations...";
+
+      var csvPath = dlg.FileName;
+      var packageRoot = LastOutputPath;
+
+      await Task.Run(() =>
+      {
+        var result = AttestationImporter.ImportAttestations(packageRoot, csvPath, _audit);
+        AttestationImportStatus = $"Updated: {result.Updated}, Skipped: {result.Skipped}, Not found: {result.NotFound}";
+        if (result.NotFoundControls.Count > 0)
+          AttestationImportStatus += $" ({string.Join(", ", result.NotFoundControls)})";
+      }, _cts.Token);
+
+      StatusText = "Attestation import complete.";
+    }
+    catch (Exception ex)
+    {
+      AttestationImportStatus = "Failed: " + ex.Message;
+      StatusText = "Attestation import failed: " + ex.Message;
+    }
+    finally
+    {
+      IsBusy = false;
+    }
+  }
+
+  /// <summary>
+  /// Update submission readiness display from an export result.
+  /// Called from ExportEmassAsync in MainViewModel.ApplyVerify.cs after successful export.
+  /// </summary>
+  internal void UpdateSubmissionReadiness(ExportResult result)
+  {
+    if (result.ValidationResult?.Metrics?.SubmissionReadiness == null)
+    {
+      ExportReadinessVisible = false;
+      return;
+    }
+
+    var sr = result.ValidationResult.Metrics.SubmissionReadiness;
+    ReadinessAllControls = sr.AllControlsCovered;
+    ReadinessEvidence = sr.EvidencePresent;
+    ReadinessPoam = sr.PoamComplete;
+    ReadinessAttestations = sr.AttestationsComplete;
+    ReadinessIsReady = sr.IsReady;
+    ExportReadinessVisible = true;
+
+    ExportPackageHash = result.ValidationResult.Metrics.PackageHashExpected ?? "";
+    ExportValidationSummary = result.ValidationResult.IsValid
+      ? $"VALID ({result.ValidationResult.Warnings.Count} warnings)"
+      : $"INVALID ({result.ValidationResult.Errors.Count} errors, {result.ValidationResult.Warnings.Count} warnings)";
   }
 
   private List<string> ResolveChecklistBundleRoots()

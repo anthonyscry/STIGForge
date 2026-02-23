@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Serialization;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
 using STIGForge.Verify;
@@ -11,6 +12,13 @@ public sealed class EmassExporter
   private readonly IPathBuilder _paths;
   private readonly IHashingService _hash;
   private readonly IAuditTrailService? _audit;
+
+  private static readonly JsonSerializerOptions DeterministicJsonOptions = new()
+  {
+    WriteIndented = true,
+    PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+    DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull
+  };
 
   public EmassExporter(IPathBuilder paths, IHashingService hash, IAuditTrailService? audit = null)
   {
@@ -28,6 +36,9 @@ public sealed class EmassExporter
     if (!Directory.Exists(bundleRoot))
       throw new DirectoryNotFoundException("Bundle root not found: " + bundleRoot);
 
+    // Fixed export-start timestamp for determinism across all files
+    var exportStartTime = DateTimeOffset.Now;
+
     var bundleManifest = ReadBundleManifest(bundleRoot);
 
     var exportRoot = string.IsNullOrWhiteSpace(request.OutputRoot)
@@ -37,7 +48,7 @@ public sealed class EmassExporter
           bundleManifest.Run.RoleTemplate.ToString(),
           bundleManifest.Run.ProfileName,
           bundleManifest.Run.PackName,
-          DateTimeOffset.Now)
+          exportStartTime)
       : request.OutputRoot!;
 
     Directory.CreateDirectory(exportRoot);
@@ -97,18 +108,30 @@ public sealed class EmassExporter
 
     WriteIndexHtml(indexDir, consolidated);
 
-    var manifestPath = Path.Combine(manifestDir, "manifest.json");
-    var exportTrace = BuildExportTrace(bundleRoot, consolidatedLoad.SourceReports, consolidated);
-    WriteManifest(manifestPath, bundleManifest, consolidated, exportTrace);
-
     var logPath = Path.Combine(manifestDir, "export_log.txt");
-    File.WriteAllText(logPath, "Exported: " + DateTimeOffset.Now.ToString("o"), Encoding.UTF8);
-
-    var hashPath = Path.Combine(manifestDir, "file_hashes.sha256");
-    await WriteHashManifestAsync(exportRoot, hashPath, ct).ConfigureAwait(false);
+    File.WriteAllText(logPath, "Exported: " + exportStartTime.ToString("o"), Encoding.UTF8);
 
     var readmePath = Path.Combine(exportRoot, "README_Submission.txt");
     WriteReadme(readmePath);
+
+    // Write hash manifest first, then compute packageHash for manifest.json
+    var hashPath = Path.Combine(manifestDir, "file_hashes.sha256");
+    await WriteHashManifestAsync(exportRoot, hashPath, ct).ConfigureAwait(false);
+
+    // Compute package-level SHA-256 of file_hashes.sha256
+    var packageHash = await _hash.Sha256FileAsync(hashPath, ct).ConfigureAwait(false);
+
+    // Count files in hash manifest
+    var hashLines = File.ReadAllLines(hashPath).Where(l => !string.IsNullOrWhiteSpace(l)).ToList();
+    var fileCount = hashLines.Count;
+
+    // Compute submission readiness
+    var submissionReadiness = ComputeSubmissionReadiness(consolidated, evidenceDir, poamDir, attestDir);
+
+    // Write manifest with packageHash and submissionReadiness
+    var manifestPath = Path.Combine(manifestDir, "manifest.json");
+    var exportTrace = BuildExportTrace(bundleRoot, consolidatedLoad.SourceReports, consolidated);
+    WriteManifest(manifestPath, bundleManifest, consolidated, exportTrace, exportStartTime, fileCount, packageHash, submissionReadiness);
 
     // Validate package integrity
     var validator = new EmassPackageValidator();
@@ -131,10 +154,10 @@ public sealed class EmassExporter
           Action = "export-emass",
           Target = bundleRoot,
           Result = validationResult.IsValid ? "success" : "failure",
-          Detail = $"ExportRoot={exportRoot}, Controls={consolidated.Count}, Valid={validationResult.IsValid}, Errors={validationResult.Errors.Count}, Warnings={validationResult.Warnings.Count}",
+          Detail = $"ExportRoot={exportRoot}, Controls={consolidated.Count}, Valid={validationResult.IsValid}, Errors={validationResult.Errors.Count}, Warnings={validationResult.Warnings.Count}, PackageHash={packageHash}, Ready={submissionReadiness.IsReady}",
           User = Environment.UserName,
           Machine = Environment.MachineName,
-          Timestamp = DateTimeOffset.Now
+          Timestamp = exportStartTime
         }, ct).ConfigureAwait(false);
       }
       catch (Exception ex)
@@ -151,9 +174,62 @@ public sealed class EmassExporter
       ValidationReportPath = validationReportPath,
       ValidationReportJsonPath = validationReportJsonPath,
       ValidationResult = validationResult,
-      IsReadyForSubmission = validationResult.IsValid,
+      IsReadyForSubmission = validationResult.IsValid && submissionReadiness.IsReady,
       BlockingFailures = blockingFailures,
       Warnings = warnings
+    };
+  }
+
+  private static SubmissionReadiness ComputeSubmissionReadiness(
+    IReadOnlyList<ControlResult> consolidated,
+    string evidenceDir,
+    string poamDir,
+    string attestDir)
+  {
+    // allControlsCovered: all controls have been reviewed (no NotReviewed remain)
+    var allControlsCovered = consolidated.Count > 0 &&
+      !consolidated.Any(c => ExportStatusMapper.MapToVerifyStatus(c.Status) == VerifyStatus.NotReviewed);
+
+    // evidencePresent: evidence directory has files
+    var evidencePresent = Directory.Exists(evidenceDir) &&
+      Directory.GetFiles(evidenceDir, "*", SearchOption.AllDirectories).Length > 0;
+
+    // poamComplete: poam.json exists and has items
+    var poamPath = Path.Combine(poamDir, "poam.json");
+    var poamComplete = File.Exists(poamPath);
+    if (poamComplete)
+    {
+      try
+      {
+        var poamJson = File.ReadAllText(poamPath);
+        using var doc = JsonDocument.Parse(poamJson);
+        if (doc.RootElement.TryGetProperty("items", out var items))
+          poamComplete = items.GetArrayLength() > 0 || !consolidated.Any(c => ExportStatusMapper.MapToVerifyStatus(c.Status) == VerifyStatus.Fail);
+      }
+      catch { poamComplete = false; }
+    }
+
+    // attestationsComplete: all attestation records have ComplianceStatus != "Pending"
+    var attestationsComplete = true;
+    var attestPath = Path.Combine(attestDir, "attestations.json");
+    if (File.Exists(attestPath))
+    {
+      try
+      {
+        var attestJson = File.ReadAllText(attestPath);
+        var package = JsonSerializer.Deserialize<AttestationPackage>(attestJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        if (package?.Attestations != null && package.Attestations.Count > 0)
+          attestationsComplete = package.Attestations.All(a => !string.Equals(a.ComplianceStatus, "Pending", StringComparison.OrdinalIgnoreCase));
+      }
+      catch { attestationsComplete = false; }
+    }
+
+    return new SubmissionReadiness
+    {
+      AllControlsCovered = allControlsCovered,
+      EvidencePresent = evidencePresent,
+      PoamComplete = poamComplete,
+      AttestationsComplete = attestationsComplete
     };
   }
 
@@ -373,12 +449,12 @@ public sealed class EmassExporter
     File.WriteAllText(Path.Combine(indexDir, "index.html"), html.ToString(), Encoding.UTF8);
   }
 
-  private static void WriteManifest(string path, BundleManifestDto bundle, IReadOnlyList<ControlResult> results, ExportTrace exportTrace)
+  private static void WriteManifest(string path, BundleManifestDto bundle, IReadOnlyList<ControlResult> results, ExportTrace exportTrace, DateTimeOffset exportStartTime, int fileCount, string packageHash, SubmissionReadiness submissionReadiness)
   {
     var manifest = new
     {
       exportId = Guid.NewGuid().ToString("n"),
-      createdAt = DateTimeOffset.Now,
+      createdAt = exportStartTime,
       bundleId = bundle.BundleId,
       systemName = bundle.Run.SystemName,
       os = bundle.Run.OsTarget.ToString(),
@@ -386,10 +462,20 @@ public sealed class EmassExporter
       profile = bundle.Run.ProfileName,
       pack = bundle.Run.PackName,
       totalControls = results.Count,
+      fileCount,
+      packageHash,
+      submissionReadiness = new
+      {
+        allControlsCovered = submissionReadiness.AllControlsCovered,
+        evidencePresent = submissionReadiness.EvidencePresent,
+        poamComplete = submissionReadiness.PoamComplete,
+        attestationsComplete = submissionReadiness.AttestationsComplete,
+        isReady = submissionReadiness.IsReady
+      },
       exportTrace
     };
 
-    var json = JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true });
+    var json = JsonSerializer.Serialize(manifest, DeterministicJsonOptions);
     File.WriteAllText(path, json, Encoding.UTF8);
   }
 
@@ -428,11 +514,7 @@ public sealed class EmassExporter
 
   private static void WriteValidationReportJson(string outputPath, ValidationResult validationResult)
   {
-    var json = JsonSerializer.Serialize(validationResult, new JsonSerializerOptions
-    {
-      WriteIndented = true,
-      PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-    });
+    var json = JsonSerializer.Serialize(validationResult, DeterministicJsonOptions);
     File.WriteAllText(outputPath, json, Encoding.UTF8);
   }
 

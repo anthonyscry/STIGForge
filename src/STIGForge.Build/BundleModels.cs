@@ -1,4 +1,5 @@
 using STIGForge.Core.Models;
+using STIGForge.Core.Services;
 
 namespace STIGForge.Build;
 
@@ -12,6 +13,12 @@ public sealed class BundleBuildRequest
   public string? OutputRoot { get; set; }
   public string ToolVersion { get; set; } = "dev";
   public bool ForceAutoApply { get; set; }
+
+  /// <summary>
+  /// Optional SCAP benchmark candidates for per-STIG mapping manifest generation.
+  /// When provided with a CanonicalScapSelector, produces scap_mapping_manifest.json.
+  /// </summary>
+  public IReadOnlyList<CanonicalScapCandidate>? ScapCandidates { get; set; }
 }
 
 public sealed class OrchestrateRequest
@@ -43,10 +50,12 @@ public sealed class BundleBuildResult
   public string BundleId { get; set; } = string.Empty;
   public string BundleRoot { get; set; } = string.Empty;
   public string ManifestPath { get; set; } = string.Empty;
+  public string? ScapMappingManifestPath { get; set; }
 }
 
 public sealed class BundleManifest
 {
+  public int SchemaVersion { get; set; } = 1;
   public string BundleId { get; set; } = string.Empty;
   public string BundleRoot { get; set; } = string.Empty;
   public RunManifest Run { get; set; } = new();

@@ -2,6 +2,52 @@ using STIGForge.Core.Models;
 
 namespace STIGForge.Core.Abstractions;
 
+/// <summary>
+/// Append-only repository for mission run records and their deterministic timeline events.
+/// Implementations must not allow in-place mutation of historical events.
+/// </summary>
+public interface IMissionRunRepository
+{
+  /// <summary>
+  /// Creates a new mission run record. Fails if a run with the same RunId already exists.
+  /// </summary>
+  Task CreateRunAsync(MissionRun run, CancellationToken ct);
+
+  /// <summary>
+  /// Updates the status and terminal fields of an existing run (status, FinishedAt, Detail).
+  /// This is the only permitted mutation path; timeline events remain append-only.
+  /// </summary>
+  Task UpdateRunStatusAsync(string runId, MissionRunStatus status, DateTimeOffset? finishedAt, string? detail, CancellationToken ct);
+
+  /// <summary>
+  /// Returns the most recently created run record, or null if none exist.
+  /// </summary>
+  Task<MissionRun?> GetLatestRunAsync(CancellationToken ct);
+
+  /// <summary>
+  /// Returns the run record with the given ID, or null if not found.
+  /// </summary>
+  Task<MissionRun?> GetRunAsync(string runId, CancellationToken ct);
+
+  /// <summary>
+  /// Returns all run records ordered by CreatedAt descending.
+  /// </summary>
+  Task<IReadOnlyList<MissionRun>> ListRunsAsync(CancellationToken ct);
+
+  /// <summary>
+  /// Appends a timeline event to the run's ledger. Rejects duplicate (RunId, Seq) pairs.
+  /// </summary>
+  /// <exception cref="InvalidOperationException">
+  /// Thrown when a duplicate (RunId, Seq) is detected; the database enforces uniqueness.
+  /// </exception>
+  Task AppendEventAsync(MissionTimelineEvent evt, CancellationToken ct);
+
+  /// <summary>
+  /// Returns all timeline events for the given run, ordered by Seq ascending (deterministic).
+  /// </summary>
+  Task<IReadOnlyList<MissionTimelineEvent>> GetTimelineAsync(string runId, CancellationToken ct);
+}
+
 public interface IClock
 {
   DateTimeOffset Now { get; }
@@ -190,6 +236,12 @@ public interface IBundleMissionSummaryService
 {
   BundleMissionSummary LoadSummary(string bundleRoot);
 
+  /// <summary>
+  /// Loads the latest mission run timeline projection for the given bundle.
+  /// Returns null if no timeline data is available (repository not configured).
+  /// </summary>
+  Task<MissionTimelineSummary?> LoadTimelineSummaryAsync(string bundleRoot, CancellationToken ct);
+
   string NormalizeStatus(string? status);
 }
 
@@ -246,4 +298,35 @@ public sealed class BundleManualSummary
   public int TotalCount { get; set; }
 
   public double PercentComplete { get; set; }
+}
+
+/// <summary>
+/// Timeline projection summary derived from persisted mission run ledger data.
+/// Contains the latest run and its ordered timeline events for operator visibility.
+/// </summary>
+public sealed class MissionTimelineSummary
+{
+  /// <summary>The latest mission run that produced this timeline, or null if no runs exist.</summary>
+  public MissionRun? LatestRun { get; set; }
+
+  /// <summary>Deterministically ordered timeline events for the latest run (Seq ascending).</summary>
+  public IReadOnlyList<MissionTimelineEvent> Events { get; set; } = Array.Empty<MissionTimelineEvent>();
+
+  /// <summary>Last phase reached in the latest run (derived from events), or null if no events.</summary>
+  public MissionPhase? LastPhase { get; set; }
+
+  /// <summary>The last event step name recorded in the timeline, or null if no events.</summary>
+  public string? LastStepName { get; set; }
+
+  /// <summary>The last event status recorded (i.e. whether the last step started/finished/failed/skipped).</summary>
+  public MissionEventStatus? LastEventStatus { get; set; }
+
+  /// <summary>
+  /// True when the latest run has a blocking failed event with no subsequent finished event
+  /// for the same phase+step, indicating the mission is currently in a blocked state.
+  /// </summary>
+  public bool IsBlocked { get; set; }
+
+  /// <summary>Human-readable next-action message derived from the timeline state.</summary>
+  public string NextAction { get; set; } = string.Empty;
 }

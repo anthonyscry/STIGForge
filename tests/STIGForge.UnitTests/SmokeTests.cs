@@ -2,12 +2,14 @@ using FluentAssertions;
 using STIGForge.Core.Models;
 using STIGForge.Core.Services;
 using STIGForge.Infrastructure.Paths;
+using static STIGForge.UnitTests.TestCategories;
 
 namespace STIGForge.UnitTests;
 
 public class SmokeTests
 {
   [Fact]
+  [Trait("Category", Unit)]
   public void PathBuilder_Should_Create_Deterministic_ExportRoot()
   {
     var pb = new PathBuilder();
@@ -21,6 +23,7 @@ public class SmokeTests
   }
 
   [Fact]
+  [Trait("Category", Unit)]
   public void PathBuilder_Should_Resolve_Project_Import_Root()
   {
     var pb = new PathBuilder();
@@ -32,6 +35,7 @@ public class SmokeTests
   }
 
   [Fact]
+  [Trait("Category", Unit)]
   public void PathBuilder_Should_Prefer_AppBase_Over_CurrentDirectory()
   {
     var expectedRoot = Path.Combine(Path.GetTempPath(), "stigforge-pathbuilder-expected-" + Guid.NewGuid().ToString("n"));
@@ -61,6 +65,7 @@ public class SmokeTests
   }
 
   [Fact]
+  [Trait("Category", Unit)]
   public void ClassifiedProfile_Should_AutoNa_UnclassifiedOnly_When_Confident()
   {
     var svc = new ClassificationScopeService();

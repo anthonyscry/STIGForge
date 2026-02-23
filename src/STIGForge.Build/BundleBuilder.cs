@@ -11,13 +11,19 @@ public sealed class BundleBuilder
   private readonly IHashingService _hash;
   private readonly IClassificationScopeService _scope;
   private readonly STIGForge.Core.Services.ReleaseAgeGate _releaseGate;
+  private readonly STIGForge.Core.Services.OverlayConflictDetector _conflictDetector;
+  private readonly OverlayMergeService _overlayMerge;
+  private readonly STIGForge.Core.Services.CanonicalScapSelector? _scapSelector;
 
-  public BundleBuilder(IPathBuilder paths, IHashingService hash, IClassificationScopeService scope, STIGForge.Core.Services.ReleaseAgeGate releaseGate)
+  public BundleBuilder(IPathBuilder paths, IHashingService hash, IClassificationScopeService scope, STIGForge.Core.Services.ReleaseAgeGate releaseGate, STIGForge.Core.Services.OverlayConflictDetector conflictDetector, OverlayMergeService overlayMerge, STIGForge.Core.Services.CanonicalScapSelector? scapSelector = null)
   {
     _paths = paths;
     _hash = hash;
     _scope = scope;
     _releaseGate = releaseGate;
+    _conflictDetector = conflictDetector;
+    _overlayMerge = overlayMerge;
+    _scapSelector = scapSelector;
   }
 
   public async Task<BundleBuildResult> BuildAsync(BundleBuildRequest request, CancellationToken ct)
@@ -46,15 +52,42 @@ public sealed class BundleBuilder
     Directory.CreateDirectory(reportsDir);
     Directory.CreateDirectory(manifestDir);
 
-    CopyApplyTemplates(applyDir);
+    var templatesCopied = CopyApplyTemplates(applyDir);
+    ValidateApplyTemplates(applyDir, templatesCopied);
 
+    // Compile controls with classification scope
     var compiled = _scope.Compile(request.Profile, request.Controls);
-    var reviewQueue = compiled.ReviewQueue.ToList();
-    if (!request.ForceAutoApply && !_releaseGate.ShouldAutoApply(request.Profile, request.Pack))
-      reviewQueue.AddRange(compiled.Controls.Where(c => c.Status == ControlStatus.Open));
 
-    WriteNaScopeReport(Path.Combine(reportsDir, "na_scope_filter_report.csv"), compiled.Controls);
+    // Apply overlay merge with deterministic ordering
+    var overlayResult = _overlayMerge.Merge(compiled.Controls, request.Overlays);
+
+    // Build review queue from merged controls, excluding NotApplicable from overrides
+    var reviewQueue = overlayResult.MergedControls.ToList();
+    if (!request.ForceAutoApply && !_releaseGate.ShouldAutoApply(request.Profile, request.Pack))
+      reviewQueue.AddRange(overlayResult.MergedControls.Where(c => c.Status == ControlStatus.Open));
+
+    // Filter out controls that are NotApplicable (including from overlay overrides)
+    reviewQueue = reviewQueue.Where(c => c.Status != ControlStatus.NotApplicable).ToList();
+
+    // Write reports
+    WriteNaScopeReport(Path.Combine(reportsDir, "na_scope_filter_report.csv"), overlayResult.MergedControls);
     WriteReviewQueue(Path.Combine(reportsDir, "review_required.csv"), reviewQueue);
+
+    // Write overlay merge artifacts
+    WriteOverlayConflictsCsv(Path.Combine(reportsDir, "overlay_conflicts.csv"), overlayResult.Conflicts);
+    WriteOverlayDecisionsJson(Path.Combine(reportsDir, "overlay_decisions.json"), overlayResult.AppliedDecisions);
+
+    // Generate conflict report for blocking conflicts
+    var conflictReport = _conflictDetector.DetectConflicts(request.Overlays);
+    WriteOverlayConflictReport(Path.Combine(reportsDir, "overlay_conflict_report.csv"), conflictReport);
+
+    if (conflictReport.HasBlockingConflicts && !request.ForceAutoApply)
+    {
+      var blockingDetails = string.Join("; ", conflictReport.Conflicts
+        .Where(c => c.IsBlockingConflict)
+        .Select(c => $"{c.ControlKey} (overlays {c.WinningOverlayId} vs {c.OverriddenOverlayId})"));
+      throw new InvalidOperationException($"Overlay conflicts block build: {blockingDetails}");
+    }
 
     var automationNote = new
     {
@@ -91,8 +124,8 @@ public sealed class BundleBuilder
       Pack = request.Pack,
       Profile = request.Profile,
       TotalControls = request.Controls.Count,
-      AutoNaCount = compiled.Controls.Count(c => c.Status == ControlStatus.NotApplicable),
-      ReviewQueueCount = compiled.ReviewQueue.Count
+      AutoNaCount = overlayResult.MergedControls.Count(c => c.Status == ControlStatus.NotApplicable),
+      ReviewQueueCount = reviewQueue.Count
     };
 
     var manifestPath = Path.Combine(manifestDir, "manifest.json");
@@ -110,25 +143,62 @@ public sealed class BundleBuilder
     var runLogPath = Path.Combine(manifestDir, "run_log.txt");
     File.WriteAllText(runLogPath, "Bundle created: " + BuildTime.Now.ToString("o"), Encoding.UTF8);
 
+    string? scapMappingManifestPath = null;
+    if (_scapSelector != null && request.ScapCandidates != null)
+    {
+      var scapInput = new STIGForge.Core.Services.CanonicalScapSelectionInput
+      {
+        StigPackId = request.Pack.PackId,
+        StigName = request.Pack.Name,
+        StigImportedAt = request.Pack.ImportedAt,
+        StigBenchmarkIds = request.Controls
+          .Select(c => c.ExternalIds.BenchmarkId)
+          .Where(id => !string.IsNullOrWhiteSpace(id))
+          .Distinct(StringComparer.OrdinalIgnoreCase)
+          .ToArray()!,
+        Candidates = request.ScapCandidates
+      };
+
+      var scapManifest = _scapSelector.BuildMappingManifest(scapInput, request.Controls);
+      scapMappingManifestPath = Path.Combine(manifestDir, "scap_mapping_manifest.json");
+      var scapManifestJson = JsonSerializer.Serialize(scapManifest, new JsonSerializerOptions { WriteIndented = true });
+      File.WriteAllText(scapMappingManifestPath, scapManifestJson, Encoding.UTF8);
+    }
+
     await WriteHashManifestAsync(root, Path.Combine(manifestDir, "file_hashes.sha256"), ct).ConfigureAwait(false);
 
     return new BundleBuildResult
     {
       BundleId = bundleId,
       BundleRoot = root,
-      ManifestPath = manifestPath
+      ManifestPath = manifestPath,
+      ScapMappingManifestPath = scapMappingManifestPath
     };
   }
 
-  private static void CopyApplyTemplates(string applyDir)
+  private static bool CopyApplyTemplates(string applyDir)
   {
     var repoRoot = FindRepoRoot(Environment.CurrentDirectory);
-    if (repoRoot == null) return;
+    if (repoRoot == null) return false;
 
     var templateRoot = Path.Combine(repoRoot, "tools", "apply");
-    if (!Directory.Exists(templateRoot)) return;
+    if (!Directory.Exists(templateRoot)) return false;
 
     CopyDirectory(templateRoot, applyDir);
+    return true;
+  }
+
+  private static void ValidateApplyTemplates(string applyDir, bool templatesCopied)
+  {
+    if (!templatesCopied)
+      return; // Template copy is best-effort for non-repo contexts
+
+    if (!Directory.Exists(applyDir))
+      throw new InvalidOperationException($"Apply templates are incomplete: Apply directory does not exist at {applyDir}");
+
+    var hasApplyScripts = Directory.GetFiles(applyDir, "*.ps1", SearchOption.AllDirectories).Length > 0;
+    if (!hasApplyScripts)
+      throw new InvalidOperationException($"Apply templates are incomplete: no apply scripts found in {applyDir}");
   }
 
   private static string? FindRepoRoot(string start)
@@ -218,6 +288,60 @@ public sealed class BundleBuilder
     File.WriteAllText(path, sb.ToString(), Encoding.UTF8);
   }
 
+  private static void WriteOverlayConflictsCsv(string path, IReadOnlyList<OverlayConflict> conflicts)
+  {
+    var sb = new StringBuilder(2048);
+    sb.AppendLine("Key,PreviousOverlayId,PreviousOverlayName,PreviousStatus,CurrentOverlayId,CurrentOverlayName,CurrentStatus,ConflictType");
+
+    foreach (var c in conflicts
+      .OrderBy(x => x.Key, StringComparer.OrdinalIgnoreCase)
+      .ThenBy(x => x.Previous.OverlayOrder)
+      .ThenBy(x => x.Previous.OverrideOrder))
+    {
+      var previousStatus = c.Previous.Outcome.StatusOverride?.ToString() ?? "Open";
+      var currentStatus = c.Current.Outcome.StatusOverride?.ToString() ?? "Open";
+      var conflictType = previousStatus != currentStatus ? "Blocking" : "Non-blocking";
+
+      sb.AppendLine(string.Join(",",
+        Csv(c.Key),
+        Csv(c.Previous.OverlayId),
+        Csv(c.Previous.OverlayName),
+        Csv(previousStatus),
+        Csv(c.Current.OverlayId),
+        Csv(c.Current.OverlayName),
+        Csv(currentStatus),
+        Csv(conflictType)));
+    }
+
+    File.WriteAllText(path, sb.ToString(), Encoding.UTF8);
+  }
+
+  private static void WriteOverlayDecisionsJson(string path, IReadOnlyList<OverlayAppliedDecision> decisions)
+  {
+    var decisionsArray = decisions
+      .OrderBy(d => d.Key, StringComparer.OrdinalIgnoreCase)
+      .ThenBy(d => d.OverlayOrder)
+      .ThenBy(d => d.OverrideOrder)
+      .Select(d => new
+      {
+        key = d.Key,
+        overlayId = d.OverlayId,
+        overlayName = d.OverlayName,
+        overlayOrder = d.OverlayOrder,
+        overrideOrder = d.OverrideOrder,
+        outcome = new
+        {
+          statusOverride = d.Outcome.StatusOverride?.ToString(),
+          naReason = d.Outcome.NaReason,
+          notes = d.Outcome.Notes
+        }
+      })
+      .ToArray();
+
+    var json = JsonSerializer.Serialize(decisionsArray, new JsonSerializerOptions { WriteIndented = true });
+    File.WriteAllText(path, json, Encoding.UTF8);
+  }
+
   private async Task WriteHashManifestAsync(string root, string outputPath, CancellationToken ct)
   {
     var files = Directory.GetFiles(root, "*", SearchOption.AllDirectories)
@@ -234,6 +358,27 @@ public sealed class BundleBuilder
     }
 
     File.WriteAllText(outputPath, sb.ToString(), Encoding.UTF8);
+  }
+
+  private static void WriteOverlayConflictReport(string path, STIGForge.Core.Services.OverlayConflictReport report)
+  {
+    var sb = new StringBuilder(2048);
+    sb.AppendLine("ControlKey,WinningOverlayId,OverriddenOverlayId,WinningValue,OverriddenValue,Reason");
+
+    foreach (var c in report.Conflicts
+      .OrderBy(x => x.ControlKey, StringComparer.OrdinalIgnoreCase)
+      .ThenBy(x => x.OverriddenOverlayId, StringComparer.OrdinalIgnoreCase))
+    {
+      sb.AppendLine(string.Join(",",
+        Csv(c.ControlKey),
+        Csv(c.WinningOverlayId),
+        Csv(c.OverriddenOverlayId),
+        Csv(c.WinningValue),
+        Csv(c.OverriddenValue),
+        Csv(c.Reason)));
+    }
+
+    File.WriteAllText(path, sb.ToString(), Encoding.UTF8);
   }
 
   private static string Csv(string? value)

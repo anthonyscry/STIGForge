@@ -1,0 +1,105 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://stigforge.local/schemas/profile.schema.json",
+  "title": "Profile",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "profile_id",
+    "name",
+    "target",
+    "modes",
+    "automation_policy",
+    "na_policy",
+    "overlay_order",
+    "provenance"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "profile_id": { "type": "string" },
+    "name": { "type": "string" },
+    "target": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["os_target", "role_template"],
+      "properties": {
+        "os_target": {
+          "type": "string",
+          "enum": ["win11", "server2019", "server2022"]
+        },
+        "role_template": {
+          "type": "string",
+          "enum": ["workstation", "member_server", "domain_controller", "lab_vm"]
+        }
+      }
+    },
+    "modes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["classification_mode", "environment_mode"],
+      "properties": {
+        "classification_mode": {
+          "type": "string",
+          "enum": ["classified", "unclassified", "mixed"]
+        },
+        "environment_mode": {
+          "type": "string",
+          "enum": ["audit_only", "safe", "full"]
+        }
+      }
+    },
+    "automation_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["automation_mode", "new_rule_grace_days", "auto_apply_requires_mapping"],
+      "properties": {
+        "automation_mode": {
+          "type": "string",
+          "enum": ["conservative", "standard", "aggressive"]
+        },
+        "new_rule_grace_days": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "auto_apply_requires_mapping": {
+          "type": "boolean"
+        },
+        "release_date_source": {
+          "type": "string",
+          "enum": ["content_pack", "rule_revision", "manual_override"]
+        }
+      }
+    },
+    "na_policy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["auto_na_out_of_scope", "confidence_threshold"],
+      "properties": {
+        "auto_na_out_of_scope": { "type": "boolean" },
+        "confidence_threshold": {
+          "type": "string",
+          "enum": ["high", "medium", "aggressive"]
+        }
+      }
+    },
+    "overlay_order": {
+      "type": "array",
+      "items": { "type": "string" },
+      "uniqueItems": true
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["created_at_utc", "updated_at_utc", "author"],
+      "properties": {
+        "created_at_utc": { "type": "string", "format": "date-time" },
+        "updated_at_utc": { "type": "string", "format": "date-time" },
+        "author": { "type": "string" }
+      }
+    }
+  }
+}

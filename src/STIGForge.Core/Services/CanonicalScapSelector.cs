@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using STIGForge.Core.Models;
 
 namespace STIGForge.Core.Services;
 
@@ -128,6 +129,111 @@ public sealed class CanonicalScapSelector
       Winner = remaining[0],
       HasConflict = hasConflict,
       Reasons = reasons
+    };
+  }
+
+  /// <summary>
+  /// Builds a frozen per-control SCAP mapping manifest for MAP-01 compliance.
+  /// Each control maps to exactly one benchmark (the winner) with no cross-STIG fallback.
+  /// </summary>
+  public ScapMappingManifest BuildMappingManifest(
+    CanonicalScapSelectionInput input,
+    IReadOnlyList<ControlRecord> controls)
+  {
+    var selectionResult = Select(input);
+    var winner = selectionResult.Winner;
+
+    var winnerBenchmarkIds = winner != null
+      ? NormalizeIds(winner.BenchmarkIds)
+      : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+    var mappings = new List<ScapControlMapping>(controls.Count);
+
+    foreach (var ctrl in controls)
+    {
+      var vulnId = ctrl.ExternalIds.VulnId ?? string.Empty;
+      var ruleId = ctrl.ExternalIds.RuleId ?? string.Empty;
+      var benchmarkId = ctrl.ExternalIds.BenchmarkId;
+
+      if (winner == null)
+      {
+        mappings.Add(new ScapControlMapping
+        {
+          VulnId = vulnId,
+          RuleId = ruleId,
+          BenchmarkId = null,
+          BenchmarkRuleRef = null,
+          Method = ScapMappingMethod.Unmapped,
+          Confidence = 0.0,
+          Reason = "no_scap_mapping: no SCAP candidate selected"
+        });
+        continue;
+      }
+
+      // Try benchmark overlap (primary): control's BenchmarkId matches winner's benchmark IDs
+      var normalizedControlBenchmark = !string.IsNullOrWhiteSpace(benchmarkId)
+        ? NormalizeIds(new[] { benchmarkId })
+        : new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+      var hasOverlap = normalizedControlBenchmark.Count > 0
+        && normalizedControlBenchmark.Any(id => winnerBenchmarkIds.Contains(id));
+
+      if (hasOverlap)
+      {
+        mappings.Add(new ScapControlMapping
+        {
+          VulnId = vulnId,
+          RuleId = ruleId,
+          BenchmarkId = winner.BenchmarkIds.FirstOrDefault() ?? benchmarkId,
+          BenchmarkRuleRef = ruleId,
+          Method = ScapMappingMethod.BenchmarkOverlap,
+          Confidence = 1.0,
+          Reason = null
+        });
+        continue;
+      }
+
+      // Try strict tag match (secondary): control's RuleId or VulnId appears in the winner's name or IDs
+      var normalizedRuleId = NormalizeIds(new[] { ruleId });
+      var hasTagMatch = normalizedRuleId.Any(id => winnerBenchmarkIds.Contains(id));
+
+      if (hasTagMatch)
+      {
+        mappings.Add(new ScapControlMapping
+        {
+          VulnId = vulnId,
+          RuleId = ruleId,
+          BenchmarkId = winner.BenchmarkIds.FirstOrDefault(),
+          BenchmarkRuleRef = ruleId,
+          Method = ScapMappingMethod.StrictTagMatch,
+          Confidence = 0.7,
+          Reason = null
+        });
+        continue;
+      }
+
+      // Unmapped
+      mappings.Add(new ScapControlMapping
+      {
+        VulnId = vulnId,
+        RuleId = ruleId,
+        BenchmarkId = null,
+        BenchmarkRuleRef = null,
+        Method = ScapMappingMethod.Unmapped,
+        Confidence = 0.0,
+        Reason = "no_scap_mapping"
+      });
+    }
+
+    return new ScapMappingManifest
+    {
+      StigPackId = input.StigPackId,
+      StigName = input.StigName,
+      SelectedBenchmarkPackId = winner?.PackId,
+      SelectedBenchmarkName = winner?.Name,
+      SelectionReasons = selectionResult.Reasons,
+      ControlMappings = mappings,
+      GeneratedAt = DateTimeOffset.UtcNow
     };
   }
 

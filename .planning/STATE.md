@@ -1,160 +1,77 @@
-# STIGForge Development State
+# Project State
+
+## Project Reference
+
+See: `.planning/PROJECT.md` (updated 2026-02-22)
+
+**Core value:** Produce deterministic, defensible compliance outcomes with strict control mapping and complete evidence packaging, without requiring internet access.
+**Current focus:** Phase 14 - Test Coverage Expansion
 
 ## Current Position
 
-**Phase:** v1.1-release-candidate-go-no-go (finalization)
-**Last Completed:** 10-quality-and-release-signal-hardening-02 (trend-signal promotion checks across CI/release/vm workflows)
+Phase: 14 of 15 (Test Coverage Expansion)
+Plan: 0 of TBD
+Status: Discuss complete (ready for planning)
+Last activity: 2026-02-22 - Completed phase 14 research and plan-shape decisions for coverage, branch reporting, CI gates, and mutation testing
 
-**Started:** February 9, 2026
+Progress: [------------] 0% (0/TBD plans complete)
 
-Progress: ██████████████████████████████████████████████░░░░░░░░░░ (96%)
+## Performance Metrics
 
----
+**Velocity (v1.1 milestone):**
+- Total plans completed: 10
+- Average duration: 7 min
+- Total execution time: ~60 min
 
-## Decisions Accumulated
+**All-time (including previous milestones):**
+- Total plans completed: 34
+- Average duration: 6 min
+- Total execution time: ~206 min
 
-### Content Format
-- **Decision:** Use canonical ControlRecord as single source of truth
-- **Rationale:** Normalizes STIG/SCAP/PowerSTIG/GPO into unified format
-- **Status:** Implemented (models exist)
+## Accumulated Context
 
-### Data Storage
-- **Decision:** SQLite with JSON columns for complex objects
-- **Rationale:** SQLite for queries, JSON for flexible content serialization
-- **Status:** Implemented (SqliteJsonXRepository pattern exists)
+### Decisions
 
-### Classification Scope
-- **Decision:** Implement classification_scope: classified_only | unclassified_only | both | unknown
-- **Rationale:** Classified environments need auto-NA of unclassified-only controls
-- **Status:** Implemented (ClassificationScopeService exists)
+Decisions are logged in PROJECT.md Key Decisions table.
+Recent decisions affecting current work:
 
-### Release Age Gate
-- **Decision:** New rules default to Review Required, auto-apply after grace period
-- **Rationale:** Avoid unsafe auto-remediation immediately after quarterly updates
-- **Status:** Implemented (ReleaseAgeGate service exists)
+- v1.1 scope: Test coverage, observability, performance, error ergonomics (no new features)
+- Phase ordering: Flaky test fix is prerequisite for coverage enforcement
+- 11-01: IAsyncLifetime over IDisposable for tests with IHost or file I/O (fixes async disposal race condition)
+- 11-01: TestCategories constants duplicated per project (avoids shared test utility dependency)
+- 11-01: Trait attributes for categorization (xUnit standard, IDE/CI supported)
+- 11-04: CorrelationIdEnricher integrated into CLI and WPF hosts for trace correlation
+- 11-04: LoggingConfiguration.LevelSwitch for runtime log level control via STIGFORGE_LOG_LEVEL
+- 12-01: No new NuGet packages - uses built-in System.Diagnostics for W3C-compatible distributed tracing
+- 12-01: TraceFileListener writes to traces.json for offline analysis without requiring OTLP collector
+- 12-01: LoggingConfiguration manages TraceFileListener lifecycle with InitializeTraceListener and Shutdown
+- 12-02: DebugBundleExporter handles missing files/directories gracefully by skipping rather than failing
+- 12-02: No external NuGet packages for ZIP creation - uses built-in System.IO.Compression
+- 12-03: MissionTracingService injected into BundleOrchestrator for end-to-end mission lifecycle tracing
+- 12-03: Each phase (Apply, Verify-Evaluate-STIG, Verify-SCAP, Evidence) wrapped with child Activity spans
+- 12-04: Environment variables for trace context propagation to PowerShell (STIGFORGE_TRACE_ID, STIGFORGE_PARENT_SPAN_ID, STIGFORGE_TRACE_FLAGS)
+- 12-04: InjectTraceContext helper in ApplyRunner for centralized trace context injection
+- 13-01: PerformanceInstrumenter uses System.Diagnostics.Metrics (built-in .NET 8) for mission and startup metrics
+- 13-01: BenchmarkDotNet 0.15.2 configured with ShortRun job, MemoryDiagnoser, and MarkdownExporter
+- 13-02: Process.Start with --exit-after-load flag for cold startup measurement (clean process isolation)
+- 13-02: WarmStartupInternal documented as requiring external orchestration (BenchmarkDotNet limitation)
+- 13-03: Apply phase as placeholder in MissionBenchmarks - requires PowerShell/system context for real measurement
+- 13-03: ScaleBenchmarks pushes to 15K rules to validate margin beyond 10K target
+- 13-03: Mock services for VerificationWorkflowService to isolate workflow orchestration overhead
+- 14-discuss: Scope enforcement targets critical assemblies only (Build, Apply, Verify, Infrastructure)
+- 14-discuss: Coverage collection/reporting separated from gate enforcement for deterministic CI behavior
+- 14-discuss: Mutation testing introduced with bounded scope first, then expanded after baseline stabilizes
 
-### PowerShell Version
-- **Decision:** Target PowerShell 5.1 (not PS 6/Core)
-- **Rationale:** Windows Desktop/air-gapped environments may not have PS 6
-- **Status:** Implemented (CLI targets PS 5.1, WPF app will use 5.1)
+### Pending Todos
 
-### Offline-First
-- **Decision:** All operations must work without internet
-- **Rationale:** Air-gapped classified environments
-- **Status:** Implemented (content packs local, bundles self-contained)
+None.
 
-### LCM Configuration
-- **Decision:** Configure LCM before DSC application, reset optionally after
-- **Rationale:** Ensures proper reboot behavior and consistency checks, restores original settings
-- **Status:** Implemented (LcmService with ConfigureLcm, GetLcmState, ResetLcm)
+### Blockers/Concerns
 
-### Break-Glass Guardrails
-- **Decision:** High-risk bypass flags require explicit acknowledgment and specific reason before execution
-- **Rationale:** Prevent silent safety bypass and ensure operator intent is explicit for destructive paths
-- **Status:** Implemented (CLI apply/orchestrate/build + WPF apply/orchestrate guard semantics)
-
-### Break-Glass Audit Trace
-- **Decision:** Every accepted high-risk bypass emits dedicated `break-glass` audit entry with action, bypass type, and reason
-- **Rationale:** Preserve tamper-evident accountability for emergency override behavior
-- **Status:** Implemented (BuildCommands, MainViewModel.ApplyVerify, BundleOrchestrator)
-
-### Archive Extraction Boundary Enforcement
-- **Decision:** ZIP extraction now validates canonical destination paths and blocks writes outside extraction roots before any file write.
-- **Rationale:** Prevent path traversal and uncontrolled unpack behavior from untrusted content bundles.
-- **Status:** Implemented (ContentPackImporter, ScapBundleParser)
-
-### Hardened XML Parsing Baseline
-- **Decision:** OVAL and verify adapter XML entry points now enforce one hardened reader configuration (`DtdProcessing=Prohibit`, `XmlResolver=null`).
-- **Rationale:** Ensure unsafe XML constructs fail predictably with actionable diagnostics across import/verify workflows.
-- **Status:** Implemented (OvalParser, CklAdapter, EvaluateStigAdapter, ScapResultAdapter)
-
-### Deterministic Security Intelligence Handling
-- **Decision:** Security gate now classifies unavailable external intelligence as unresolved findings (review-required) instead of silent pass behavior.
-- **Rationale:** Preserve deterministic, auditable outcomes in air-gapped/offline environments without masking uncertainty.
-- **Status:** Implemented (Invoke-SecurityGate summary/report + unresolved intelligence model)
-
-### Strict Security Gate Execution Mode
-- **Decision:** Strict mode is exposed in release and CI workflows so unresolved findings can be treated as blocking by policy.
-- **Rationale:** Allow high-assurance environments to enforce fail-closed behavior while keeping default offline deterministic mode usable.
-- **Status:** Implemented (Invoke-ReleaseGate + GitHub workflows strict mode wiring)
-
-### Fail-Closed Mission Completion Gates
-- **Decision:** Apply/export completion is blocked when integrity-critical evidence fails (audit chain invalid, required export validation invalid).
-- **Rationale:** Mission completion and submission readiness must never report success when integrity evidence is invalid or unavailable.
-- **Status:** Implemented (ApplyRunner, EmassExporter, VerifyCommands, MainViewModel.ApplyVerify)
-
-### Resume Context Operator Decision Gate
-- **Decision:** Invalid or exhausted reboot resume context stops automated continuation and requires explicit operator decision.
-- **Rationale:** Prevent unsafe automatic continuation when reboot recovery evidence is stale or inconsistent.
-- **Status:** Implemented (RebootCoordinator + ApplyRunner validation)
-
-### Support Bundle Least-Disclosure Default
-- **Decision:** Support bundles redact sensitive metadata and exclude sensitive artifact paths by default, with explicit opt-in for sensitive collection.
-- **Rationale:** Troubleshooting bundles must remain portable without leaking secrets/credentials unless operator explicitly accepts risk.
-- **Status:** Implemented (SupportBundleBuilder + BundleCommands)
-
----
-
-## Pending Todos
-
-### High Priority
-- [x] Execute `08-upgrade-rebase-operator-workflow-01-PLAN.md`
-- [x] Execute `08-upgrade-rebase-operator-workflow-02-PLAN.md`
-- [x] Prepare Phase 09 context for WPF parity and recovery UX
-- [x] Execute `09-wpf-parity-and-recovery-ux-01-PLAN.md`
-- [x] Execute `09-wpf-parity-and-recovery-ux-02-PLAN.md`
-- [x] Prepare Phase 10 context for quality and release signal hardening
-- [x] Execute `10-quality-and-release-signal-hardening-01-PLAN.md`
-- [x] Execute `10-quality-and-release-signal-hardening-02-PLAN.md`
-- [x] Run release-gate and package-build evidence generation for v1.1 RC (`phase10-rc`)
-- [x] Execute `docs/release/ShipReadinessChecklist.md` for v1.1 release candidate
-- [ ] Close manual checklist blockers for functional UAT and upgrade/rollback validation
-- [x] Pin RC commit and regenerate release/package evidence from clean working tree
-- [x] Run `release-package.yml` for pinned RC commit (`0b0f5ed`)
-- [x] Run `vm-smoke-matrix.yml` for pinned RC commit (`0b0f5ed`) and archive outputs
-
-### Medium Priority
-- [x] Validate requirement traceability remains 100% after Phase 08 updates
-- [x] Validate WP-02/WP-03 acceptance criteria for severity and recovery guidance parity
-- [x] Validate QA-01/QA-02 gating evidence after Phase 10 Plan 01
-- [x] Define v1.1 quality/release signal acceptance thresholds for Phase 10
-- [x] Capture initial go/no-go decision record with artifact roots and commit hash
-- [ ] Capture final go/no-go decision record after manual and workflow signoff
-
-### Low Priority
-- [ ] SCCM packaging integration (v2/v3)
-- [ ] Direct eMASS API integration (v2)
-- [ ] Full enterprise GPO management platform (v2)
-
----
-
-## Blockers & Concerns
-
-- Current go/no-go is `NO-GO (temporary)` in `docs/release/GoNoGo-v1.1-rc1.md` until manual checklist validations complete.
-- Manual checklist sections 3 and 4 remain open for target-environment signoff evidence.
-
----
-
-## Environment
-
-**Platform:** Windows 10/11, Windows Server 2019
-**.NET Version:** .NET 8
-**PowerShell Target:** 5.1
-**Database:** SQLite
-**Git Branch:** release/v1.1-rc1
-
----
+None.
 
 ## Session Continuity
 
-**Last session:** 2026-02-09T08:39:00Z
-**Stopped at:** Brought up temporary self-hosted runners, executed `vm-smoke-matrix.yml` successfully for commit `0b0f5ed`, and refreshed go/no-go evidence references.
-**Resume file:** None
-
----
-
-## Last Updated
-
-**Date:** February 9, 2026
-**Updated By:** OpenCode Executor
-**Reason:** Closed automation-side workflow blockers; remaining work is manual release checklist signoff
+Last session: 2026-02-22
+Stopped at: Completed phase 14 discuss/research output
+Resume file: .planning/phases/14-test-coverage-expansion/14-RESEARCH.md

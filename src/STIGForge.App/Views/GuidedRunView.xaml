@@ -111,6 +111,37 @@
                 </StackPanel>
               </Border>
 
+              <!-- Review Queue Step (shown when controls are flagged for review) -->
+              <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="12" Margin="0,0,0,8" Background="{StaticResource SurfaceBrush}"
+                      Visibility="{Binding ReviewQueueSummary, Converter={StaticResource NullOrEmptyToCollapsed}}"
+                      AutomationProperties.Name="Review queue panel">
+                <StackPanel>
+                  <TextBlock Text="3b) Controls Requiring Review" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,4"/>
+                  <TextBlock Text="{Binding ReviewQueueSummary}" Foreground="{StaticResource TextMutedBrush}" Margin="0,0,0,8"/>
+                  <ItemsControl ItemsSource="{Binding ReviewQueueItems}" AutomationProperties.Name="Review queue items">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <Border Margin="0,1,0,0" Padding="6,3" Background="{StaticResource SurfaceMutedBrush}"
+                                BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                          <Grid>
+                            <Grid.ColumnDefinitions>
+                              <ColumnDefinition Width="80"/>
+                              <ColumnDefinition Width="120"/>
+                              <ColumnDefinition Width="*"/>
+                              <ColumnDefinition Width="200"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="{Binding VulnId}" FontSize="11" FontFamily="Consolas" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock Grid.Column="1" Text="{Binding RuleId}" FontSize="11" FontFamily="Consolas" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock Grid.Column="2" Text="{Binding Title}" FontSize="11" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock Grid.Column="3" Text="{Binding ReviewReason}" FontSize="11" Foreground="{StaticResource TextMutedBrush}" TextTrimming="CharacterEllipsis"/>
+                          </Grid>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </Border>
+
               <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="12" Margin="0,0,0,8" Background="{StaticResource SurfaceBrush}">
                 <StackPanel>
                   <TextBlock Text="4) Run Orchestration" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,8"/>
@@ -264,8 +295,57 @@
                 <TextBlock Text="{Binding OrchLog}" FontFamily="Consolas" FontSize="11" TextWrapping="Wrap"
                            AutomationProperties.Name="Orchestration log output"/>
               </Border>
+
+              <!-- Mission Timeline Panel -->
+              <Border BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" Padding="12" Margin="0,8,0,0" Background="{StaticResource SurfaceBrush}"
+                      AutomationProperties.Name="Mission timeline panel">
+                <StackPanel>
+                  <TextBlock Text="Mission Timeline" FontSize="14" FontWeight="SemiBold" Margin="0,0,0,6"/>
+                  <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
+                    <TextBlock Text="Run ID: " Foreground="{StaticResource TextMutedBrush}" FontSize="11"/>
+                    <TextBlock Text="{Binding TimelineRunId}" Foreground="{StaticResource TextMutedBrush}" FontSize="11" FontFamily="Consolas"/>
+                    <TextBlock Text="  Status: " Margin="12,0,0,0" Foreground="{StaticResource TextMutedBrush}" FontSize="11"/>
+                    <TextBlock Text="{Binding TimelineRunStatus}" Foreground="{StaticResource TextMutedBrush}" FontSize="11"/>
+                  </StackPanel>
+                  <TextBlock Text="{Binding TimelineNextAction}" Foreground="{StaticResource TextMutedBrush}" TextWrapping="Wrap" Margin="0,0,0,6"
+                             AutomationProperties.Name="Timeline next action"/>
+
+                  <!-- Empty state -->
+                  <TextBlock Text="{Binding TimelineEmptyMessage}"
+                             Visibility="{Binding TimelineEmptyMessage, Converter={StaticResource NullOrEmptyToCollapsed}}"
+                             Foreground="{StaticResource TextMutedBrush}" FontStyle="Italic" Margin="0,4,0,0"/>
+
+                  <!-- Timeline event list -->
+                  <ItemsControl ItemsSource="{Binding TimelineEvents}"
+                                AutomationProperties.Name="Timeline events list">
+                    <ItemsControl.ItemTemplate>
+                      <DataTemplate>
+                        <Border Margin="0,1,0,0" Padding="6,3" Background="{StaticResource SurfaceMutedBrush}"
+                                BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,0,0,1">
+                          <Grid>
+                            <Grid.ColumnDefinitions>
+                              <ColumnDefinition Width="32"/>
+                              <ColumnDefinition Width="70"/>
+                              <ColumnDefinition Width="*"/>
+                              <ColumnDefinition Width="80"/>
+                              <ColumnDefinition Width="70"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="{Binding Seq}" FontSize="11" Foreground="{StaticResource TextMutedBrush}" FontFamily="Consolas"/>
+                            <TextBlock Grid.Column="1" Text="{Binding Phase}" FontSize="11" Foreground="{StaticResource TextMutedBrush}"/>
+                            <TextBlock Grid.Column="2" Text="{Binding StepName}" FontSize="11" FontFamily="Consolas" TextTrimming="CharacterEllipsis"/>
+                            <TextBlock Grid.Column="3" Text="{Binding Status}" FontSize="11"
+                                       Foreground="{StaticResource TextMutedBrush}"/>
+                            <TextBlock Grid.Column="4" Text="{Binding OccurredAt}" FontSize="11" Foreground="{StaticResource TextMutedBrush}" FontFamily="Consolas"/>
+                          </Grid>
+                        </Border>
+                      </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                  </ItemsControl>
+                </StackPanel>
+              </Border>
+
             </StackPanel>
           </ScrollViewer>
         </Grid>
-      
+
 </UserControl>

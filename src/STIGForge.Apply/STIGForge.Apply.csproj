@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\STIGForge.Core\STIGForge.Core.csproj" />
     <ProjectReference Include="..\STIGForge.Infrastructure\STIGForge.Infrastructure.csproj" />
+    <ProjectReference Include="..\STIGForge.Evidence\STIGForge.Evidence.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -12,11 +13,15 @@
   </ItemGroup>
 
   <PropertyGroup>
-    <TargetFrameworks>net48;net8.0</TargetFrameworks>
+    <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <!-- STIGForge.Apply is Windows-only (Registry, DSC, secedit, auditpol) -->
     <NoWarn>$(NoWarn);CA1416</NoWarn>
   </PropertyGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="STIGForge.UnitTests" />
+  </ItemGroup>
 
 </Project>

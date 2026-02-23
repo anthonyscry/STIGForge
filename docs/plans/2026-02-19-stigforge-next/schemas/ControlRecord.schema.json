@@ -1,0 +1,139 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://stigforge.local/schemas/control-record.schema.json",
+  "title": "ControlRecord",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "control_id",
+    "external_ids",
+    "title",
+    "severity",
+    "check_text",
+    "fix_text",
+    "automation",
+    "applicability",
+    "manual",
+    "revision",
+    "provenance"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$"
+    },
+    "control_id": { "type": "string" },
+    "external_ids": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rule_id"],
+      "properties": {
+        "vuln_id": { "type": ["string", "null"] },
+        "rule_id": { "type": "string" },
+        "srg_id": { "type": ["string", "null"] },
+        "benchmark_id": { "type": ["string", "null"] }
+      }
+    },
+    "title": { "type": "string" },
+    "severity": {
+      "type": "string",
+      "enum": ["low", "medium", "high", "critical"]
+    },
+    "discussion": { "type": "string" },
+    "check_text": { "type": "string" },
+    "fix_text": { "type": "string" },
+    "automation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["automation_sources"],
+      "properties": {
+        "automation_sources": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["SCAP", "EVALUATE_STIG", "POWERSTIG", "GPO", "SCRIPT", "NONE"]
+          },
+          "uniqueItems": true
+        },
+        "scap_refs": { "type": "array", "items": { "type": "string" } },
+        "evaluate_stig_ref": { "type": ["string", "null"] },
+        "powerstig_ref": { "type": ["string", "null"] },
+        "gpo_refs": { "type": "array", "items": { "type": "string" } },
+        "script_refs": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "applicability": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["os_targets", "role_tags", "classification_scope", "confidence"],
+      "properties": {
+        "os_targets": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["win11", "server2019", "server2022", "unknown"]
+          },
+          "uniqueItems": true
+        },
+        "role_tags": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["workstation", "member_server", "domain_controller", "lab_vm", "unknown"]
+          },
+          "uniqueItems": true
+        },
+        "classification_scope": {
+          "type": "string",
+          "enum": ["classified_only", "unclassified_only", "both", "unknown"]
+        },
+        "confidence": {
+          "type": "string",
+          "enum": ["high", "medium", "low"]
+        }
+      }
+    },
+    "manual": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["is_manual", "allowed_statuses"],
+      "properties": {
+        "is_manual": { "type": "boolean" },
+        "wizard_prompt": { "type": ["string", "null"] },
+        "allowed_statuses": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": ["Pass", "Fail", "NotApplicable"]
+          },
+          "uniqueItems": true
+        },
+        "evidence_recipe_ids": {
+          "type": "array",
+          "items": { "type": "string" }
+        }
+      }
+    },
+    "revision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["pack_id", "release_label"],
+      "properties": {
+        "pack_id": { "type": "string" },
+        "release_label": { "type": "string" },
+        "release_date_utc": { "type": ["string", "null"], "format": "date-time" }
+      }
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["source_artifact", "parser_version", "import_run_id"],
+      "properties": {
+        "source_artifact": { "type": "string" },
+        "parser_version": { "type": "string" },
+        "import_run_id": { "type": "string" }
+      }
+    }
+  }
+}
