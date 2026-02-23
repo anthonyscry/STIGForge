@@ -10,10 +10,12 @@ public sealed class ImportInboxScanner
 {
   private static readonly Regex DisaVersionRegex = new(@"V\s*(\d+)\s*R\s*(\d+)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
   private readonly IHashingService _hash;
+  private readonly CanonicalChecklistProjector _canonicalChecklistProjector;
 
-  public ImportInboxScanner(IHashingService hash)
+  public ImportInboxScanner(IHashingService hash, CanonicalChecklistProjector? canonicalChecklistProjector = null)
   {
     _hash = hash;
+    _canonicalChecklistProjector = canonicalChecklistProjector ?? new CanonicalChecklistProjector();
   }
 
   public async Task<ImportInboxScanResult> ScanAsync(string inboxFolder, CancellationToken ct)
@@ -24,7 +26,12 @@ public sealed class ImportInboxScanner
     if (string.IsNullOrWhiteSpace(inboxFolder) || !Directory.Exists(inboxFolder))
     {
       warnings.Add("Import folder not found: " + inboxFolder);
-      return new ImportInboxScanResult { Candidates = candidates, Warnings = warnings };
+      return new ImportInboxScanResult
+      {
+        Candidates = candidates,
+        Warnings = warnings,
+        CanonicalChecklist = Array.Empty<STIGForge.Core.Models.LocalWorkflowChecklistItem>()
+      };
     }
 
     var zips = EnumerateZipFiles(inboxFolder, warnings, ct);
@@ -47,10 +54,13 @@ public sealed class ImportInboxScanner
       }
     }
 
+    var canonicalChecklist = _canonicalChecklistProjector.Project(candidates, warnings);
+
     return new ImportInboxScanResult
     {
       Candidates = candidates,
-      Warnings = warnings
+      Warnings = warnings,
+      CanonicalChecklist = canonicalChecklist
     };
   }
 
