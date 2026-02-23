@@ -9,11 +9,11 @@ Requirements for Operational Maturity milestone. Each maps to roadmap phases.
 
 ### Testing
 
-- [ ] **TEST-01**: Test suite runs reliably without flaky failures (fix BuildHost_UsesConfiguredPathBuilderForSerilogLogDirectory)
+- [x] **TEST-01**: Test suite runs reliably without flaky failures (fix BuildHost_UsesConfiguredPathBuilderForSerilogLogDirectory)
 - [ ] **TEST-02**: 80% line coverage on critical assemblies (Build, Apply, Verify, Infrastructure)
 - [ ] **TEST-03**: Branch coverage reporting available in CI pipeline
 - [ ] **TEST-04**: Coverage gates enforced in CI (block PRs that drop below threshold)
-- [ ] **TEST-05**: Tests categorized by speed (unit vs integration) for pipeline efficiency
+- [x] **TEST-05**: Tests categorized by speed (unit vs integration) for pipeline efficiency
 - [ ] **TEST-06**: Mutation testing validates test quality (not just coverage numbers)
 
 ### Observability
@@ -77,11 +77,11 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| TEST-01 | Phase 11 | Pending |
+| TEST-01 | Phase 11 | Complete |
 | TEST-02 | Phase 14 | Pending |
 | TEST-03 | Phase 14 | Pending |
 | TEST-04 | Phase 14 | Pending |
-| TEST-05 | Phase 11 | Pending |
+| TEST-05 | Phase 11 | Complete |
 | TEST-06 | Phase 14 | Pending |
 | OBSV-01 | Phase 11 | Complete |
 | OBSV-02 | Phase 12 | Pending |
