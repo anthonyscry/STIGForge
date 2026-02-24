@@ -538,6 +538,16 @@ public partial class WorkflowViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private void ShowHelp()
+    {
+        MessageBox.Show(
+            "Open the Settings menu to configure paths and export formats, then run Import, Scan, Harden, and Verify in order or use Auto Workflow.",
+            "Help",
+            MessageBoxButton.OK,
+            MessageBoxImage.Information);
+    }
+
+    [RelayCommand]
     private void RestartWorkflow()
     {
         CurrentStep = WorkflowStep.Setup;

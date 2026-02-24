@@ -15,9 +15,9 @@
         <DockPanel Grid.Row="0" Margin="0,0,0,20" LastChildFill="False">
             <TextBlock Text="STIGForge" FontSize="28" FontWeight="SemiBold" VerticalAlignment="Center" DockPanel.Dock="Left"/>
             <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
-                <Button Content="?" Width="30" Height="30" Margin="0,0,8,0" ToolTip="Help"/>
-                <Button Content="i" Width="30" Height="30" Margin="0,0,8,0" ToolTip="About" Command="{Binding ShowAboutCommand}"/>
-                <Button Width="30" Height="30" ToolTip="Settings" Command="{Binding ShowSettingsCommand}">
+                <Button Content="?" Width="30" Height="30" Margin="0,0,8,0" ToolTip="Help" Command="{Binding ShowHelpCommand}" AutomationProperties.Name="Help"/>
+                <Button Content="i" Width="30" Height="30" Margin="0,0,8,0" ToolTip="About" Command="{Binding ShowAboutCommand}" AutomationProperties.Name="About"/>
+                <Button Width="30" Height="30" ToolTip="Settings" Command="{Binding ShowSettingsCommand}" AutomationProperties.Name="Settings">
                     <TextBlock FontFamily="Segoe MDL2 Assets" Text="&#xE713;" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                 </Button>
             </StackPanel>

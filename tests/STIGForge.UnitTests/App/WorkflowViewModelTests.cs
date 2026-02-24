@@ -86,4 +86,20 @@ public class WorkflowViewModelTests
         var vm = new WorkflowViewModel();
         Assert.NotNull(vm.SaveSettingsCommand);
     }
+
+    [Fact]
+    public void ShowSettingsCommand_IsGenerated()
+    {
+        var vm = new WorkflowViewModel();
+        Assert.NotNull(vm.ShowSettingsCommand);
+        Assert.True(vm.ShowSettingsCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public void ShowHelpCommand_IsGenerated()
+    {
+        var vm = new WorkflowViewModel();
+        Assert.NotNull(vm.ShowHelpCommand);
+        Assert.True(vm.ShowHelpCommand.CanExecute(null));
+    }
 }
