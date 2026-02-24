@@ -10,9 +10,9 @@ internal static class LocalWorkflowCommands
   public static void Register(RootCommand rootCmd, Func<IHost> buildHost)
   {
     var cmd = new Command("workflow-local", "Run local setup-import-scan workflow and emit mission.json");
-    var importRootOpt = new Option<string>("--import-root", () => Path.GetFullPath(".\\.stigforge\\import"), "Import root containing local content");
-    var toolRootOpt = new Option<string>("--tool-root", () => Path.GetFullPath(".\\.stigforge\\tools\\Evaluate-STIG\\Evaluate-STIG"), "Root folder containing Evaluate-STIG.ps1");
-    var outputRootOpt = new Option<string>("--output-root", () => Path.GetFullPath(".\\.stigforge\\local-workflow"), "Output root for mission artifacts");
+    var importRootOpt = new Option<string>("--import-root", () => Path.GetFullPath(Path.Combine(".stigforge", "import")), "Import root containing local content");
+    var toolRootOpt = new Option<string>("--tool-root", () => Path.GetFullPath(Path.Combine(".stigforge", "tools", "Evaluate-STIG", "Evaluate-STIG")), "Root folder containing Evaluate-STIG.ps1");
+    var outputRootOpt = new Option<string>("--output-root", () => Path.GetFullPath(Path.Combine(".stigforge", "local-workflow")), "Output root for mission artifacts");
 
     cmd.AddOption(importRootOpt);
     cmd.AddOption(toolRootOpt);

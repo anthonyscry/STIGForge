@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.CommandLine;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -9,6 +10,55 @@ namespace STIGForge.UnitTests.Cli;
 
 public sealed class LocalWorkflowCommandsTests
 {
+  [Fact]
+  public async Task WorkflowLocal_WhenRootsOmitted_UsesCommandDefaults()
+  {
+    var commandsType = Assembly.Load("STIGForge.Cli")
+      .GetType("STIGForge.Cli.Commands.LocalWorkflowCommands", throwOnError: true)!;
+    var registerMethod = commandsType.GetMethod("Register", BindingFlags.Public | BindingFlags.Static)!;
+
+    var service = new Mock<ILocalWorkflowService>();
+    LocalWorkflowRequest? capturedRequest = null;
+    service
+      .Setup(s => s.RunAsync(It.IsAny<LocalWorkflowRequest>(), It.IsAny<CancellationToken>()))
+      .Callback<LocalWorkflowRequest, CancellationToken>((request, _) => capturedRequest = request)
+      .ReturnsAsync(new LocalWorkflowResult());
+
+    using var host = Host.CreateDefaultBuilder()
+      .ConfigureServices(services => services.AddSingleton(service.Object))
+      .Build();
+
+    var root = new RootCommand();
+    registerMethod.Invoke(null, new object?[] { root, (Func<IHost>)(() => host) });
+
+    var originalOut = Console.Out;
+    using var writer = new StringWriter();
+    Console.SetOut(writer);
+
+    try
+    {
+      var exitCode = await root.InvokeAsync("workflow-local");
+
+      exitCode.Should().Be(0);
+      capturedRequest.Should().NotBeNull();
+
+      var expectedImportRoot = Path.GetFullPath(Path.Combine(".stigforge", "import"));
+      var expectedToolRoot = Path.GetFullPath(Path.Combine(".stigforge", "tools", "Evaluate-STIG", "Evaluate-STIG"));
+      var expectedOutputRoot = Path.GetFullPath(Path.Combine(".stigforge", "local-workflow"));
+      var expectedMissionPath = Path.Combine(expectedOutputRoot, "mission.json");
+
+      capturedRequest!.ImportRoot.Should().Be(expectedImportRoot);
+      capturedRequest.ToolRoot.Should().Be(expectedToolRoot);
+      capturedRequest.OutputRoot.Should().Be(expectedOutputRoot);
+      writer.ToString().Should().Contain(expectedMissionPath);
+      service.Verify(s => s.RunAsync(It.IsAny<LocalWorkflowRequest>(), It.IsAny<CancellationToken>()), Times.Once);
+    }
+    finally
+    {
+      Console.SetOut(originalOut);
+    }
+  }
+
   [Fact]
   public async Task ExecuteLocalWorkflowAsync_RunsServiceAndPrintsMissionPath()
   {
