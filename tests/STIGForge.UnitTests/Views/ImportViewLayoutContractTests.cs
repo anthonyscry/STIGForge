@@ -113,6 +113,15 @@ public sealed class ImportViewLayoutContractTests
     }
   }
 
+  [Fact]
+  public void ImportView_CodeBehindSurfacesMissionJsonPathBindingProperty()
+  {
+    var codeBehind = LoadImportViewCodeBehind();
+
+    Assert.Contains("MissionJsonPathProperty", codeBehind, StringComparison.Ordinal);
+    Assert.Contains("MainViewModel.MissionJsonPath", codeBehind, StringComparison.Ordinal);
+  }
+
   private static string LoadImportViewXaml()
   {
     var current = new DirectoryInfo(AppContext.BaseDirectory);
@@ -126,5 +135,20 @@ public sealed class ImportViewLayoutContractTests
     Assert.True(File.Exists(importViewPath), $"Expected ImportView XAML at '{importViewPath}'.");
 
     return File.ReadAllText(importViewPath);
+  }
+
+  private static string LoadImportViewCodeBehind()
+  {
+    var current = new DirectoryInfo(AppContext.BaseDirectory);
+
+    while (current is not null && !File.Exists(Path.Combine(current.FullName, "STIGForge.sln")))
+      current = current.Parent;
+
+    Assert.True(current is not null, "Could not locate repository root containing STIGForge.sln.");
+
+    var importViewCodeBehindPath = Path.Combine(current!.FullName, "src", "STIGForge.App", "Views", "ImportView.xaml.cs");
+    Assert.True(File.Exists(importViewCodeBehindPath), $"Expected ImportView code-behind at '{importViewCodeBehindPath}'.");
+
+    return File.ReadAllText(importViewCodeBehindPath);
   }
 }
