@@ -1,3 +1,4 @@
+using System.IO;
 using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
@@ -61,6 +62,24 @@ public partial class WorkflowViewModel : ObservableObject
     [ObservableProperty]
     private int _progressMax = 100;
 
+    [ObservableProperty]
+    private int _importedItemsCount;
+
+    [ObservableProperty]
+    private List<string> _importedItems = new();
+
+    [ObservableProperty]
+    private int _baselineFindingsCount;
+
+    [ObservableProperty]
+    private int _appliedFixesCount;
+
+    [ObservableProperty]
+    private int _verifyFindingsCount;
+
+    [ObservableProperty]
+    private int _fixedCount;
+
     public bool CanGoBack => CurrentStep > WorkflowStep.Setup && CurrentStep < WorkflowStep.Done;
 
     public bool CanGoNext => CurrentStep switch
@@ -86,7 +105,80 @@ public partial class WorkflowViewModel : ObservableObject
             SaveSettings();
 
         if (CurrentStep < WorkflowStep.Done)
+        {
             CurrentStep = CurrentStep + 1;
+
+            // Auto-run the step action when entering a new step (except Setup and Done)
+            if (CurrentStep != WorkflowStep.Setup && CurrentStep != WorkflowStep.Done)
+                await RunCurrentStepAsync();
+        }
+    }
+
+    public async Task RunCurrentStepAsync()
+    {
+        IsBusy = true;
+        StatusText = "Starting...";
+        try
+        {
+            switch (CurrentStep)
+            {
+                case WorkflowStep.Import:
+                    await RunImportAsync();
+                    break;
+                case WorkflowStep.Scan:
+                    await RunScanAsync();
+                    break;
+                case WorkflowStep.Harden:
+                    await RunHardenAsync();
+                    break;
+                case WorkflowStep.Verify:
+                    await RunVerifyAsync();
+                    break;
+            }
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
+    private async Task RunImportAsync()
+    {
+        StatusText = "Scanning import folder...";
+        // TODO: Wire to actual import service
+        await Task.Delay(1000); // Placeholder
+        ImportedItemsCount = 0;
+        StatusText = $"Found {ImportedItemsCount} content packs";
+    }
+
+    private async Task RunScanAsync()
+    {
+        StatusText = "Running Evaluate-STIG baseline scan...";
+        // TODO: Wire to actual verify service
+        await Task.Delay(1000); // Placeholder
+        BaselineFindingsCount = 0;
+        StatusText = $"Baseline scan complete: {BaselineFindingsCount} findings";
+    }
+
+    private async Task RunHardenAsync()
+    {
+        StatusText = "Applying hardening configurations...";
+        // TODO: Wire to actual apply service
+        await Task.Delay(1000); // Placeholder
+        AppliedFixesCount = 0;
+        StatusText = $"Hardening complete: {AppliedFixesCount} fixes applied";
+    }
+
+    private async Task RunVerifyAsync()
+    {
+        StatusText = "Running verification scan...";
+        // TODO: Wire to actual verify service
+        await Task.Delay(1000); // Placeholder
+        VerifyFindingsCount = 0;
+        FixedCount = BaselineFindingsCount - VerifyFindingsCount;
+        if (FixedCount < 0) FixedCount = 0;
+        MissionJsonPath = Path.Combine(OutputFolderPath, "mission.json");
+        StatusText = $"Verification complete: {VerifyFindingsCount} remaining ({FixedCount} fixed)";
     }
 
     private void LoadSettings()
