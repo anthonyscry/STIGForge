@@ -21,13 +21,13 @@ jobs:
       - name: Compatibility contract tests
         shell: pwsh
         run: |
-          dotnet test .\tests\STIGForge.UnitTests\STIGForge.UnitTests.csproj --configuration Release --framework net8.0 --filter "FullyQualifiedName~ContentPackImporterTests" --collect:"XPlat Code Coverage" --results-directory .\.artifacts\coverage\ci\unit
+          dotnet test .\tests\STIGForge.UnitTests\STIGForge.UnitTests.csproj --configuration Release --framework net8.0-windows --filter "FullyQualifiedName~ContentPackImporterTests" --collect:"XPlat Code Coverage" --results-directory .\.artifacts\coverage\ci\unit
           dotnet test .\tests\STIGForge.IntegrationTests\STIGForge.IntegrationTests.csproj --configuration Release --framework net8.0 --filter "FullyQualifiedName~RoundTrip" --collect:"XPlat Code Coverage" --results-directory .\.artifacts\coverage\ci\integration
 
       - name: Upgrade/rebase parity contracts
         shell: pwsh
         run: |
-          dotnet test .\tests\STIGForge.UnitTests\STIGForge.UnitTests.csproj --configuration Release --framework net8.0 --filter "FullyQualifiedName~BaselineDiffServiceTests|FullyQualifiedName~OverlayRebaseServiceTests|FullyQualifiedName~BundleMissionSummaryServiceTests" --collect:"XPlat Code Coverage" --results-directory .\.artifacts\coverage\ci\unit
+          dotnet test .\tests\STIGForge.UnitTests\STIGForge.UnitTests.csproj --configuration Release --framework net8.0-windows --filter "FullyQualifiedName~BaselineDiffServiceTests|FullyQualifiedName~OverlayRebaseServiceTests|FullyQualifiedName~BundleMissionSummaryServiceTests|FullyQualifiedName~STIGForge.UnitTests.Build" --collect:"XPlat Code Coverage" --results-directory .\.artifacts\coverage\ci\unit
           dotnet test .\tests\STIGForge.IntegrationTests\STIGForge.IntegrationTests.csproj --configuration Release --framework net8.0 --filter "FullyQualifiedName~CliCommandTests.DiffPacks|FullyQualifiedName~CliCommandTests.RebaseOverlay" --collect:"XPlat Code Coverage" --results-directory .\.artifacts\coverage\ci\integration
 
       - name: Build coverage report and gate
