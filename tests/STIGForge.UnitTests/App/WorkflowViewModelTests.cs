@@ -41,6 +41,23 @@ public class WorkflowViewModelTests
     }
 
     [Fact]
+    public void RestartWorkflow_ResetsStepStates()
+    {
+        var vm = new WorkflowViewModel();
+        vm.ImportState = StepState.Complete;
+        vm.ScanState = StepState.Complete;
+        vm.HardenState = StepState.Error;
+        vm.VerifyState = StepState.Running;
+
+        vm.RestartWorkflowCommand.Execute(null);
+
+        Assert.Equal(StepState.Ready, vm.ImportState);
+        Assert.Equal(StepState.Locked, vm.ScanState);
+        Assert.Equal(StepState.Locked, vm.HardenState);
+        Assert.Equal(StepState.Locked, vm.VerifyState);
+    }
+
+    [Fact]
     public void ExportFormats_DefaultToExpected()
     {
         var vm = new WorkflowViewModel();

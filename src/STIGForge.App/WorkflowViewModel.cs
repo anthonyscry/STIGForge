@@ -551,6 +551,14 @@ public partial class WorkflowViewModel : ObservableObject
     private void RestartWorkflow()
     {
         CurrentStep = WorkflowStep.Setup;
+        ImportState = StepState.Ready;
+        ScanState = StepState.Locked;
+        HardenState = StepState.Locked;
+        VerifyState = StepState.Locked;
+        ImportError = string.Empty;
+        ScanError = string.Empty;
+        HardenError = string.Empty;
+        VerifyError = string.Empty;
         BaselineFindingsCount = 0;
         VerifyFindingsCount = 0;
         FixedCount = 0;
