@@ -15,7 +15,7 @@ internal static class VerifyCommands
     RegisterVerifyEvaluateStig(rootCmd, buildHost);
     RegisterVerifyScap(rootCmd, buildHost);
     RegisterCoverageOverlap(rootCmd);
-    RegisterExportEmass(rootCmd, buildHost);
+    // NOTE: export-emass moved to ExportCommands.cs to avoid duplicate registration
   }
 
   private static void RegisterVerifyEvaluateStig(RootCommand rootCmd, Func<IHost> buildHost)
