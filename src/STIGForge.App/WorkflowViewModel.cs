@@ -326,6 +326,7 @@ public partial class WorkflowViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanRunImport))]
     private async Task RunImportStepAsync()
     {
+        IsBusy = true;
         ImportState = StepState.Running;
         ImportError = string.Empty;
         try
@@ -339,12 +340,16 @@ public partial class WorkflowViewModel : ObservableObject
             ImportState = StepState.Error;
             ImportError = ex.Message;
         }
-        NotifyStepCommandsCanExecuteChanged();
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     [RelayCommand(CanExecute = nameof(CanRunScan))]
     private async Task RunScanStepAsync()
     {
+        IsBusy = true;
         ScanState = StepState.Running;
         ScanError = string.Empty;
         try
@@ -358,12 +363,16 @@ public partial class WorkflowViewModel : ObservableObject
             ScanState = StepState.Error;
             ScanError = ex.Message;
         }
-        NotifyStepCommandsCanExecuteChanged();
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     [RelayCommand(CanExecute = nameof(CanRunHarden))]
     private async Task RunHardenStepAsync()
     {
+        IsBusy = true;
         HardenState = StepState.Running;
         HardenError = string.Empty;
         try
@@ -377,12 +386,16 @@ public partial class WorkflowViewModel : ObservableObject
             HardenState = StepState.Error;
             HardenError = ex.Message;
         }
-        NotifyStepCommandsCanExecuteChanged();
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     [RelayCommand(CanExecute = nameof(CanRunVerify))]
     private async Task RunVerifyStepAsync()
     {
+        IsBusy = true;
         VerifyState = StepState.Running;
         VerifyError = string.Empty;
         try
@@ -395,15 +408,10 @@ public partial class WorkflowViewModel : ObservableObject
             VerifyState = StepState.Error;
             VerifyError = ex.Message;
         }
-        NotifyStepCommandsCanExecuteChanged();
-    }
-
-    private void NotifyStepCommandsCanExecuteChanged()
-    {
-        RunImportStepCommand.NotifyCanExecuteChanged();
-        RunScanStepCommand.NotifyCanExecuteChanged();
-        RunHardenStepCommand.NotifyCanExecuteChanged();
-        RunVerifyStepCommand.NotifyCanExecuteChanged();
+        finally
+        {
+            IsBusy = false;
+        }
     }
 
     private void LoadSettings()
