@@ -1,20 +1,26 @@
 using System.Text.Json;
-using System.Xml;
-using System.Xml.Linq;
+using STIGForge.Content.Import;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
+using STIGForge.Infrastructure.Workflow;
 
 namespace STIGForge.Verify;
 
 public sealed class LocalWorkflowService : ILocalWorkflowService
 {
+  private readonly ImportInboxScanner _importInboxScanner;
+  private readonly LocalSetupValidator _localSetupValidator;
   private readonly IVerificationWorkflowService _verificationWorkflowService;
   private readonly ScannerEvidenceMapper _scannerEvidenceMapper;
 
   public LocalWorkflowService(
+    ImportInboxScanner importInboxScanner,
+    LocalSetupValidator localSetupValidator,
     IVerificationWorkflowService verificationWorkflowService,
     ScannerEvidenceMapper scannerEvidenceMapper)
   {
+    _importInboxScanner = importInboxScanner;
+    _localSetupValidator = localSetupValidator;
     _verificationWorkflowService = verificationWorkflowService;
     _scannerEvidenceMapper = scannerEvidenceMapper;
   }
@@ -30,13 +36,19 @@ public sealed class LocalWorkflowService : ILocalWorkflowService
     if (string.IsNullOrWhiteSpace(request.ImportRoot))
       throw new ArgumentException("ImportRoot is required.", nameof(request));
 
+    if (string.IsNullOrWhiteSpace(request.ToolRoot))
+      throw new ArgumentException("ToolRoot is required.", nameof(request));
+
     ct.ThrowIfCancellationRequested();
 
     Directory.CreateDirectory(request.OutputRoot);
 
     var diagnostics = new List<string>();
+    var resolvedToolRoot = _localSetupValidator.ValidateRequiredTools(request.ToolRoot);
 
-    var canonicalChecklist = BuildCanonicalChecklist(request.ImportRoot, diagnostics, ct);
+    var importResult = await _importInboxScanner.ScanWithCanonicalChecklistAsync(request.ImportRoot, ct).ConfigureAwait(false);
+    diagnostics.AddRange(importResult.Warnings);
+    var canonicalChecklist = importResult.CanonicalChecklist.ToList();
 
     if (canonicalChecklist.Count == 0)
       throw new InvalidOperationException("Import stage did not produce canonical checklist items.");
@@ -44,7 +56,12 @@ public sealed class LocalWorkflowService : ILocalWorkflowService
     var verificationResult = await _verificationWorkflowService.RunAsync(new VerificationWorkflowRequest
     {
       OutputRoot = request.OutputRoot,
-      ConsolidatedToolLabel = "Evaluate-STIG"
+      ConsolidatedToolLabel = "Evaluate-STIG",
+      EvaluateStig = new EvaluateStigWorkflowOptions
+      {
+        Enabled = true,
+        ToolRoot = resolvedToolRoot
+      }
     }, ct).ConfigureAwait(false);
 
     diagnostics.AddRange(verificationResult.Diagnostics);
@@ -88,109 +105,6 @@ public sealed class LocalWorkflowService : ILocalWorkflowService
     {
       diagnostics.Add("Failed to read consolidated scanner report: " + ex.Message);
       return Array.Empty<ControlResult>();
-    }
-  }
-
-  private static IReadOnlyList<LocalWorkflowChecklistItem> BuildCanonicalChecklist(string importRoot, ICollection<string> diagnostics, CancellationToken ct)
-  {
-    if (!Directory.Exists(importRoot))
-    {
-      diagnostics.Add("Import folder not found: " + importRoot);
-      return Array.Empty<LocalWorkflowChecklistItem>();
-    }
-
-    var canonical = new List<LocalWorkflowChecklistItem>();
-    var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-    var zips = Directory.GetFiles(importRoot, "*.zip", SearchOption.AllDirectories)
-      .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
-      .ToList();
-
-    foreach (var zipPath in zips)
-    {
-      ct.ThrowIfCancellationRequested();
-
-      try
-      {
-        using var archive = System.IO.Compression.ZipFile.OpenRead(zipPath);
-        foreach (var entry in archive.Entries.OrderBy(e => e.FullName, StringComparer.OrdinalIgnoreCase))
-        {
-          if (!entry.FullName.EndsWith(".xml", StringComparison.OrdinalIgnoreCase))
-            continue;
-
-          ProjectChecklistEntry(entry, canonical, seen);
-        }
-      }
-      catch (Exception ex)
-      {
-        diagnostics.Add(Path.GetFileName(zipPath) + ": canonical projection failed (" + ex.Message + ")");
-      }
-    }
-
-    return canonical
-      .OrderBy(i => i.StigId, StringComparer.OrdinalIgnoreCase)
-      .ThenBy(i => i.RuleId, StringComparer.OrdinalIgnoreCase)
-      .ToList();
-  }
-
-  private static void ProjectChecklistEntry(
-    System.IO.Compression.ZipArchiveEntry entry,
-    ICollection<LocalWorkflowChecklistItem> canonical,
-    ISet<string> seen)
-  {
-    var benchmark = ReadBenchmarkRoot(entry);
-    if (benchmark == null)
-      return;
-
-    var stigId = benchmark.Attribute("id")?.Value?.Trim() ?? string.Empty;
-    if (string.IsNullOrWhiteSpace(stigId))
-      return;
-
-    foreach (var rule in benchmark.Descendants().Where(e => string.Equals(e.Name.LocalName, "Rule", StringComparison.OrdinalIgnoreCase)))
-    {
-      var ruleId = rule.Attribute("id")?.Value?.Trim() ?? string.Empty;
-      if (string.IsNullOrWhiteSpace(ruleId))
-        continue;
-
-      var key = stigId + "|" + ruleId;
-      if (!seen.Add(key))
-        continue;
-
-      canonical.Add(new LocalWorkflowChecklistItem
-      {
-        StigId = stigId,
-        RuleId = ruleId
-      });
-    }
-  }
-
-  private static XElement? ReadBenchmarkRoot(System.IO.Compression.ZipArchiveEntry entry)
-  {
-    try
-    {
-      using var stream = entry.Open();
-      var settings = new XmlReaderSettings
-      {
-        DtdProcessing = DtdProcessing.Prohibit,
-        IgnoreWhitespace = true,
-        IgnoreComments = true,
-        XmlResolver = null
-      };
-
-      using var reader = XmlReader.Create(stream, settings);
-      var document = XDocument.Load(reader, LoadOptions.None);
-      if (document.Root == null)
-        return null;
-
-      if (string.Equals(document.Root.Name.LocalName, "Benchmark", StringComparison.OrdinalIgnoreCase))
-        return document.Root;
-
-      return document.Root
-        .Descendants()
-        .FirstOrDefault(e => string.Equals(e.Name.LocalName, "Benchmark", StringComparison.OrdinalIgnoreCase));
-    }
-    catch
-    {
-      return null;
     }
   }
 

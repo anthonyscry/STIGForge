@@ -169,6 +169,8 @@ public sealed class LocalWorkflowRequest
   public string OutputRoot { get; set; } = string.Empty;
 
   public string ImportRoot { get; set; } = string.Empty;
+
+  public string ToolRoot { get; set; } = string.Empty;
 }
 
 public sealed class LocalWorkflowResult
