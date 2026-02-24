@@ -115,3 +115,18 @@ Next phases extend the same normalized model:
 - Harden: PowerSTIG DSC + local GPO + applicable ADMX processing.
 - Verify: post-hardening Evaluate-STIG + SCC ingestion and consolidated evidence mapping.
 - Export: single checklist outputs (for example CKL) derived from normalized mission data.
+
+## Implemented v1 Code-Path Alignment (Task 7)
+
+Current implementation behavior is aligned to this design as follows:
+
+- CLI entry point is `workflow-local` and writes `mission.json` to `<output-root>/mission.json`.
+- CLI defaults resolve to:
+  - `--import-root` -> `.stigforge/import`
+  - `--tool-root` -> `.stigforge/tools/Evaluate-STIG/Evaluate-STIG`
+  - `--output-root` -> `.stigforge/local-workflow`
+- Setup stage enforces strict required-tool gating before scan execution:
+  - required script: `Evaluate-STIG.ps1`
+  - missing/invalid tool root throws an `InvalidOperationException` and stops pipeline progression.
+- Import stage remains authoritative for canonical checklist and hard-fails when checklist output is empty.
+- Scan mapping retains unmapped findings as warning diagnostics and keeps pipeline successful; unmapped entries are persisted in mission output under `unmapped`.

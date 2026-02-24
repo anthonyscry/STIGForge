@@ -145,6 +145,24 @@ powershell -ExecutionPolicy Bypass -File .\tools\release\Invoke-SecurityGate.ps1
 powershell -ExecutionPolicy Bypass -File .\tools\release\Invoke-PackageBuild.ps1 -Configuration Release -Runtime win-x64 -OutputRoot .\.artifacts\release-package\local
 ```
 
+## Local workflow usage (`workflow-local`)
+
+Run the v1 local mission path (`Setup -> Import -> Scan`) and emit `mission.json`:
+
+```powershell
+dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- workflow-local --import-root .\.stigforge\import --tool-root .\.stigforge\tools\Evaluate-STIG\Evaluate-STIG --output-root .\.stigforge\local-workflow
+```
+
+Defaults when options are omitted:
+- `--import-root`: `.stigforge/import`
+- `--tool-root`: `.stigforge/tools/Evaluate-STIG/Evaluate-STIG`
+- `--output-root`: `.stigforge/local-workflow`
+
+Behavior notes:
+- Strict setup gate: command fails immediately when required Evaluate-STIG path is missing or does not contain `Evaluate-STIG.ps1`.
+- Import gate: command fails if import scanning does not produce canonical checklist items.
+- Unmapped scanner findings are warnings, not hard failures; workflow still writes `mission.json` and records unmapped entries under `unmapped`.
+
 ## Ship readiness gate
 Run the automated release gate (build + tests + artifact manifest/checksums):
 
