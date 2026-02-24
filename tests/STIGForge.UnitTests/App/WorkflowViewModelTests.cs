@@ -39,4 +39,13 @@ public class WorkflowViewModelTests
         Assert.Equal(StepState.Locked, vm.HardenState);
         Assert.Equal(StepState.Locked, vm.VerifyState);
     }
+
+    [Fact]
+    public void ExportFormats_DefaultToExpected()
+    {
+        var vm = new WorkflowViewModel();
+        Assert.True(vm.ExportCkl);
+        Assert.False(vm.ExportCsv);
+        Assert.False(vm.ExportXccdf);
+    }
 }

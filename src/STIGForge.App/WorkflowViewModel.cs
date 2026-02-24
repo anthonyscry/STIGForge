@@ -125,6 +125,15 @@ public partial class WorkflowViewModel : ObservableObject
     [ObservableProperty]
     private string _verifyError = string.Empty;
 
+    [ObservableProperty]
+    private bool _exportCkl = true;
+
+    [ObservableProperty]
+    private bool _exportCsv;
+
+    [ObservableProperty]
+    private bool _exportXccdf;
+
     public bool CanGoBack => CurrentStep > WorkflowStep.Setup && CurrentStep < WorkflowStep.Done;
 
     public bool CanGoNext => CurrentStep switch
@@ -313,6 +322,9 @@ public partial class WorkflowViewModel : ObservableObject
         SccToolPath = settings.SccToolPath;
         OutputFolderPath = settings.OutputFolderPath;
         MachineTarget = settings.MachineTarget;
+        ExportCkl = settings.ExportCkl;
+        ExportCsv = settings.ExportCsv;
+        ExportXccdf = settings.ExportXccdf;
     }
 
     private void SaveSettings()
@@ -323,7 +335,10 @@ public partial class WorkflowViewModel : ObservableObject
             EvaluateStigToolPath = EvaluateStigToolPath,
             SccToolPath = SccToolPath,
             OutputFolderPath = OutputFolderPath,
-            MachineTarget = MachineTarget
+            MachineTarget = MachineTarget,
+            ExportCkl = ExportCkl,
+            ExportCsv = ExportCsv,
+            ExportXccdf = ExportXccdf
         });
     }
 
