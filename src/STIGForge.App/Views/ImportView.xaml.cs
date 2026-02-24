@@ -10,7 +10,6 @@ public partial class ImportView : UserControl
     private string _lastSortColumn = "";
     private ListSortDirection _lastSortDirection = ListSortDirection.Ascending;
     private MainViewModel? _boundViewModel;
-    private bool _isLoaded;
 
     public static readonly DependencyProperty MissionJsonPathProperty = DependencyProperty.Register(
         nameof(MissionJsonPath),
@@ -34,24 +33,18 @@ public partial class ImportView : UserControl
 
     private void OnLoaded(object sender, RoutedEventArgs e)
     {
-        _isLoaded = true;
         BindToViewModel(DataContext as MainViewModel);
         UpdateMissionJsonPathBindingSurface();
     }
 
     private void OnUnloaded(object sender, RoutedEventArgs e)
     {
-        _isLoaded = false;
         UnbindFromViewModel();
     }
 
     private void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
-        if (_isLoaded)
-            BindToViewModel(e.NewValue as MainViewModel);
-        else
-            _boundViewModel = e.NewValue as MainViewModel;
-
+        BindToViewModel(e.NewValue as MainViewModel);
         UpdateMissionJsonPathBindingSurface();
     }
 
