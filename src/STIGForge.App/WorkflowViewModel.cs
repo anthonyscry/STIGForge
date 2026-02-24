@@ -1,5 +1,7 @@
+using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using STIGForge.App.Views;
 
 namespace STIGForge.App;
 
@@ -116,5 +118,18 @@ public partial class WorkflowViewModel : ObservableObject
     {
         if (!string.IsNullOrWhiteSpace(OutputFolderPath) && System.IO.Directory.Exists(OutputFolderPath))
             System.Diagnostics.Process.Start("explorer.exe", OutputFolderPath);
+    }
+
+    [RelayCommand]
+    private void ShowAbout()
+    {
+        var dataRoot = System.IO.Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
+            "STIGForge");
+        var dialog = new AboutDialog(dataRoot, 0, 0, 0)
+        {
+            Owner = Application.Current.MainWindow
+        };
+        dialog.ShowDialog();
     }
 }
