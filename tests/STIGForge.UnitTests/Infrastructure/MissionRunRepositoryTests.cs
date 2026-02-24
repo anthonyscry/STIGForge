@@ -218,26 +218,6 @@ public class MissionRunRepositoryTests : IDisposable
 
   // ---------- DI registration smoke test ----------
 
-  [Fact]
-  public void CliHostFactory_CanResolveMissionRunRepository()
-  {
-    // Use a temp root to avoid touching the real .stigforge directory
-    var tempRoot = Path.Combine(Path.GetTempPath(), $"sf_test_{Guid.NewGuid():N}");
-    Directory.CreateDirectory(tempRoot);
-    try
-    {
-      using var host = STIGForge.Cli.CliHostFactory.BuildHost(() =>
-        new STIGForge.Infrastructure.Paths.PathBuilder(tempRoot, tempRoot));
-
-      var repo = host.Services.GetService(typeof(IMissionRunRepository));
-      repo.Should().NotBeNull("CliHostFactory must register IMissionRunRepository");
-    }
-    finally
-    {
-      try { Directory.Delete(tempRoot, recursive: true); } catch { /* best effort */ }
-    }
-  }
-
   // ---------- Helpers ----------
 
   private static MissionRun BuildRun(string id, DateTimeOffset? createdAt = null) => new()

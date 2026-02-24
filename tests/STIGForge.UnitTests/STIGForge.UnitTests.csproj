@@ -46,7 +46,6 @@
     <ProjectReference Include="..\..\src\STIGForge.Export\STIGForge.Export.csproj" />
     <ProjectReference Include="..\..\src\STIGForge.Build\STIGForge.Build.csproj" />
     <ProjectReference Include="..\..\src\STIGForge.Evidence\STIGForge.Evidence.csproj" />
-    <ProjectReference Include="..\..\src\STIGForge.Cli\STIGForge.Cli.csproj" />
     <ProjectReference Include="..\..\src\STIGForge.App\STIGForge.App.csproj" />
   </ItemGroup>
 
