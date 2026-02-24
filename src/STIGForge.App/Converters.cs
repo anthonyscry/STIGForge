@@ -100,11 +100,18 @@ public sealed class StepFontWeightConverter : IValueConverter
 /// </summary>
 public sealed class StepStateToBorderBrushConverter : IValueConverter
 {
-  private static readonly SolidColorBrush BlueBrush = new(Color.FromRgb(59, 130, 246));    // Ready
-  private static readonly SolidColorBrush AmberBrush = new(Color.FromRgb(245, 158, 11));   // Running
-  private static readonly SolidColorBrush GreenBrush = new(Color.FromRgb(34, 197, 94));    // Complete
-  private static readonly SolidColorBrush GrayBrush = new(Color.FromRgb(107, 114, 128));   // Locked
-  private static readonly SolidColorBrush RedBrush = new(Color.FromRgb(239, 68, 68));      // Error
+  private static readonly SolidColorBrush BlueBrush = CreateFrozenBrush(Color.FromRgb(59, 130, 246));   // Ready
+  private static readonly SolidColorBrush AmberBrush = CreateFrozenBrush(Color.FromRgb(245, 158, 11));  // Running
+  private static readonly SolidColorBrush GreenBrush = CreateFrozenBrush(Color.FromRgb(34, 197, 94));   // Complete
+  private static readonly SolidColorBrush GrayBrush = CreateFrozenBrush(Color.FromRgb(107, 114, 128));  // Locked
+  private static readonly SolidColorBrush RedBrush = CreateFrozenBrush(Color.FromRgb(239, 68, 68));     // Error
+
+  private static SolidColorBrush CreateFrozenBrush(Color color)
+  {
+    var brush = new SolidColorBrush(color);
+    brush.Freeze();
+    return brush;
+  }
 
   public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
   {

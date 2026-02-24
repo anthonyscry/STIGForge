@@ -21,4 +21,36 @@ public class ConverterTests
         var expected = (Color)ColorConverter.ConvertFromString(expectedHex);
         Assert.Equal(expected, result.Color);
     }
+
+    [Fact]
+    public void StepStateToBorderBrushConverter_ReturnsGrayForNullInput()
+    {
+        var converter = new StepStateToBorderBrushConverter();
+        var result = converter.Convert(null, typeof(Brush), null, CultureInfo.InvariantCulture) as SolidColorBrush;
+
+        Assert.NotNull(result);
+        var expected = (Color)ColorConverter.ConvertFromString("#6B7280");
+        Assert.Equal(expected, result.Color);
+    }
+
+    [Fact]
+    public void StepStateToBorderBrushConverter_ReturnsGrayForNonStepStateInput()
+    {
+        var converter = new StepStateToBorderBrushConverter();
+        var result = converter.Convert("invalid", typeof(Brush), null, CultureInfo.InvariantCulture) as SolidColorBrush;
+
+        Assert.NotNull(result);
+        var expected = (Color)ColorConverter.ConvertFromString("#6B7280");
+        Assert.Equal(expected, result.Color);
+    }
+
+    [Fact]
+    public void StepStateToBorderBrushConverter_ReturnsFrozenBrushes()
+    {
+        var converter = new StepStateToBorderBrushConverter();
+        var result = converter.Convert(StepState.Ready, typeof(Brush), null, CultureInfo.InvariantCulture) as SolidColorBrush;
+
+        Assert.NotNull(result);
+        Assert.True(result.IsFrozen);
+    }
 }
