@@ -84,7 +84,7 @@ public sealed class BundleOrchestrator
     }
 
     // Start a mission run and emit timeline events if a repository is wired
-    var runId = Guid.NewGuid().ToString("19D");
+    var runId = Guid.NewGuid().ToString("D");
     var run = new MissionRun
     {
       RunId = runId,
@@ -389,7 +389,7 @@ public sealed class BundleOrchestrator
     {
       await _missionRunRepository.AppendEventAsync(new MissionTimelineEvent
       {
-        EventId = Guid.NewGuid().ToString("19D"),
+        EventId = Guid.NewGuid().ToString("D"),
         RunId = runId,
         Seq = seq,
         Phase = phase,

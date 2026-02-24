@@ -63,6 +63,35 @@ public sealed class CoverageMergeScriptTests
     File.Exists(outputPath.Path).Should().BeFalse();
   }
 
+  [Fact]
+  public async Task InvokeCoverageMerge_WhenPackageStatsMissing_FallsBackToLineCoverageCounts()
+  {
+    var repositoryRoot = FindRepositoryRoot();
+    var scriptPath = Path.Combine(repositoryRoot, "tools", "release", "Invoke-CoverageMerge.ps1");
+    await using var sourceDirectory = await CreateFallbackCoverageFileAsync();
+    await using var outputPath = new TemporaryFile(Path.Combine(Path.GetTempPath(), $"coverage-merge-fallback-{Guid.NewGuid():N}.xml"));
+
+    var result = await ExecuteCoverageMergeAsync(scriptPath, sourceDirectory.Path, outputPath.Path);
+
+    result.ExitCode.Should().Be(0, "Script output: {0}", result.Output);
+    result.Output.Should().Contain("Wrote merged coverage report");
+    File.Exists(outputPath.Path).Should().BeTrue();
+
+    var mergedDocument = XDocument.Load(outputPath.Path);
+    mergedDocument.Root!.Name.LocalName.Should().Be("coverage");
+    mergedDocument.Root.Attribute("lines-covered")!.Value.Should().Be("2");
+    mergedDocument.Root.Attribute("lines-valid")!.Value.Should().Be("4");
+    mergedDocument.Root.Attribute("branches-covered")!.Value.Should().Be("1");
+    mergedDocument.Root.Attribute("branches-valid")!.Value.Should().Be("3");
+
+    var package = mergedDocument.Root.Element("packages")!.Element("package")!;
+    package.Attribute("name")!.Value.Should().Be("Fallback.Assembly");
+    package.Attribute("lines-covered")!.Value.Should().Be("2");
+    package.Attribute("lines-valid")!.Value.Should().Be("4");
+    package.Attribute("branches-covered")!.Value.Should().Be("1");
+    package.Attribute("branches-valid")!.Value.Should().Be("3");
+  }
+
   private static async Task<TemporaryDirectory> CreateFixtureCoverageDirectoryAsync()
   {
     var root = new TemporaryDirectory();
@@ -93,6 +122,37 @@ public sealed class CoverageMergeScriptTests
 
     await File.WriteAllTextAsync(firstFilePath, firstXml, Encoding.UTF8);
     await File.WriteAllTextAsync(nestedFilePath, secondXml, Encoding.UTF8);
+
+    return root;
+  }
+
+  private static async Task<TemporaryDirectory> CreateFallbackCoverageFileAsync()
+  {
+    var root = new TemporaryDirectory();
+
+    var fallbackFilePath = Path.Combine(root.Path, "coverage.cobertura.xml");
+
+    var fallbackXml = """
+      <?xml version="1.0" encoding="utf-8"?>
+      <coverage lines-covered="2" lines-valid="4" branches-covered="1" branches-valid="3" timestamp="1735689600" version="1.9">
+        <packages>
+          <package name="Fallback.Assembly" line-rate="0.5" branch-rate="0.3333" complexity="6">
+            <classes>
+              <class name="Fallback.Assembly.Operations" filename="Fallback.cs">
+                <lines>
+                  <line number="10" hits="1" />
+                  <line number="11" hits="0" />
+                  <line number="12" hits="1" branch="True" condition-coverage="50% (1/2)" />
+                  <line number="13" hits="0" branch="True" condition-coverage="0% (0/1)" />
+                </lines>
+              </class>
+            </classes>
+          </package>
+        </packages>
+      </coverage>
+      """.Trim();
+
+    await File.WriteAllTextAsync(fallbackFilePath, fallbackXml, Encoding.UTF8);
 
     return root;
   }
