@@ -12,6 +12,10 @@
       <local:BoolToReadyVerdictConverter x:Key="BoolToReadyVerdict" />
       <local:BoolToReadyColorConverter x:Key="BoolToReadyColor" />
       <converters:StepFontWeightConverter x:Key="StepFontWeightConverter" />
+      <local:StepStateToBorderBrushConverter x:Key="StepStateToBorderBrush" />
+      <local:StepStateToRunningVisibilityConverter x:Key="StepStateToRunningVisibility" />
+      <local:StepStateToCompleteVisibilityConverter x:Key="StepStateToCompleteVisibility" />
+      <local:StepStateToErrorVisibilityConverter x:Key="StepStateToErrorVisibility" />
 
       <!-- ═══════════ TEXT ═══════════ -->
       <Style TargetType="TextBlock">
