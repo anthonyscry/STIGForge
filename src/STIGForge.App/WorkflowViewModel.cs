@@ -17,6 +17,11 @@ public enum WorkflowStep
 
 public partial class WorkflowViewModel : ObservableObject
 {
+    public WorkflowViewModel()
+    {
+        LoadSettings();
+    }
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanGoBack))]
     [NotifyPropertyChangedFor(nameof(CanGoNext))]
@@ -77,8 +82,33 @@ public partial class WorkflowViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanGoNext))]
     private async Task GoNextAsync()
     {
+        if (CurrentStep == WorkflowStep.Setup)
+            SaveSettings();
+
         if (CurrentStep < WorkflowStep.Done)
             CurrentStep = CurrentStep + 1;
+    }
+
+    private void LoadSettings()
+    {
+        var settings = WorkflowSettings.Load();
+        ImportFolderPath = settings.ImportFolderPath;
+        EvaluateStigToolPath = settings.EvaluateStigToolPath;
+        SccToolPath = settings.SccToolPath;
+        OutputFolderPath = settings.OutputFolderPath;
+        MachineTarget = settings.MachineTarget;
+    }
+
+    private void SaveSettings()
+    {
+        WorkflowSettings.Save(new WorkflowSettings
+        {
+            ImportFolderPath = ImportFolderPath,
+            EvaluateStigToolPath = EvaluateStigToolPath,
+            SccToolPath = SccToolPath,
+            OutputFolderPath = OutputFolderPath,
+            MachineTarget = MachineTarget
+        });
     }
 
     [RelayCommand]
