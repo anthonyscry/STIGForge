@@ -215,7 +215,7 @@ public partial class WorkflowViewModel : ObservableObject
         }
     }
 
-    private async Task RunImportAsync()
+    private async Task<bool> RunImportAsync()
     {
         StatusText = "Scanning import folder...";
 
@@ -223,7 +223,7 @@ public partial class WorkflowViewModel : ObservableObject
         {
             StatusText = "Import scanner not configured or no import folder";
             ImportedItemsCount = 0;
-            return;
+            return false;
         }
 
         try
@@ -232,15 +232,17 @@ public partial class WorkflowViewModel : ObservableObject
             ImportedItems = result.Candidates.Select(c => c.FileName).Distinct().ToList();
             ImportedItemsCount = ImportedItems.Count;
             StatusText = $"Found {ImportedItemsCount} content packs";
+            return true;
         }
         catch (Exception ex)
         {
             StatusText = $"Import failed: {ex.Message}";
             ImportedItemsCount = 0;
+            return false;
         }
     }
 
-    private async Task RunScanAsync()
+    private async Task<bool> RunScanAsync()
     {
         StatusText = "Running Evaluate-STIG baseline scan...";
 
@@ -248,7 +250,7 @@ public partial class WorkflowViewModel : ObservableObject
         {
             StatusText = "Verification service not configured";
             BaselineFindingsCount = 0;
-            return;
+            return false;
         }
 
         try
@@ -269,11 +271,13 @@ public partial class WorkflowViewModel : ObservableObject
 
             BaselineFindingsCount = result.ConsolidatedResultCount;
             StatusText = $"Baseline scan complete: {BaselineFindingsCount} findings";
+            return true;
         }
         catch (Exception ex)
         {
             StatusText = $"Scan failed: {ex.Message}";
             BaselineFindingsCount = 0;
+            return false;
         }
     }
 
@@ -291,7 +295,7 @@ public partial class WorkflowViewModel : ObservableObject
         StatusText = "Hardening step placeholder (ApplyRunner not wired)";
     }
 
-    private async Task RunVerifyAsync()
+    private async Task<bool> RunVerifyAsync()
     {
         StatusText = "Running verification scan (Evaluate-STIG + SCC)...";
 
@@ -299,7 +303,7 @@ public partial class WorkflowViewModel : ObservableObject
         {
             StatusText = "Verification service not configured";
             VerifyFindingsCount = 0;
-            return;
+            return false;
         }
 
         try
@@ -325,11 +329,13 @@ public partial class WorkflowViewModel : ObservableObject
 
             MissionJsonPath = Path.Combine(OutputFolderPath, "mission.json");
             StatusText = $"Verification complete: {VerifyFindingsCount} remaining ({FixedCount} fixed)";
+            return true;
         }
         catch (Exception ex)
         {
             StatusText = $"Verification failed: {ex.Message}";
             VerifyFindingsCount = 0;
+            return false;
         }
     }
 
@@ -341,14 +347,17 @@ public partial class WorkflowViewModel : ObservableObject
         ImportError = string.Empty;
         try
         {
-            await RunImportAsync();
-            ImportState = StepState.Complete;
-            if (ScanState == StepState.Locked) ScanState = StepState.Ready;
-        }
-        catch (Exception ex)
-        {
-            ImportState = StepState.Error;
-            ImportError = ex.Message;
+            var success = await RunImportAsync();
+            if (success)
+            {
+                ImportState = StepState.Complete;
+                if (ScanState == StepState.Locked) ScanState = StepState.Ready;
+            }
+            else
+            {
+                ImportState = StepState.Error;
+                ImportError = StatusText;
+            }
         }
         finally
         {
@@ -364,14 +373,17 @@ public partial class WorkflowViewModel : ObservableObject
         ScanError = string.Empty;
         try
         {
-            await RunScanAsync();
-            ScanState = StepState.Complete;
-            if (HardenState == StepState.Locked) HardenState = StepState.Ready;
-        }
-        catch (Exception ex)
-        {
-            ScanState = StepState.Error;
-            ScanError = ex.Message;
+            var success = await RunScanAsync();
+            if (success)
+            {
+                ScanState = StepState.Complete;
+                if (HardenState == StepState.Locked) HardenState = StepState.Ready;
+            }
+            else
+            {
+                ScanState = StepState.Error;
+                ScanError = StatusText;
+            }
         }
         finally
         {
@@ -410,13 +422,16 @@ public partial class WorkflowViewModel : ObservableObject
         VerifyError = string.Empty;
         try
         {
-            await RunVerifyAsync();
-            VerifyState = StepState.Complete;
-        }
-        catch (Exception ex)
-        {
-            VerifyState = StepState.Error;
-            VerifyError = ex.Message;
+            var success = await RunVerifyAsync();
+            if (success)
+            {
+                VerifyState = StepState.Complete;
+            }
+            else
+            {
+                VerifyState = StepState.Error;
+                VerifyError = StatusText;
+            }
         }
         finally
         {

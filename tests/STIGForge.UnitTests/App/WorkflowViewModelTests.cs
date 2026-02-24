@@ -1,4 +1,6 @@
 using STIGForge.App;
+using STIGForge.Content.Import;
+using STIGForge.Core.Abstractions;
 
 namespace STIGForge.UnitTests.App;
 
@@ -118,5 +120,114 @@ public class WorkflowViewModelTests
         var vm = new WorkflowViewModel();
         Assert.NotNull(vm.ShowHelpCommand);
         Assert.True(vm.ShowHelpCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public async Task RunImportStepCommand_WhenPreconditionsMissing_SetsErrorState()
+    {
+        var vm = new WorkflowViewModel
+        {
+            ImportFolderPath = @"C:\missing\import"
+        };
+
+        await vm.RunImportStepCommand.ExecuteAsync(null);
+
+        Assert.Equal(StepState.Error, vm.ImportState);
+        Assert.Equal("Import scanner not configured or no import folder", vm.ImportError);
+    }
+
+    [Fact]
+    public async Task RunScanStepCommand_WhenServiceThrows_SetsErrorAndKeepsHardenLocked()
+    {
+        var vm = new WorkflowViewModel(
+            importScanner: null,
+            verifyService: new ThrowingVerificationWorkflowService("scan exploded"))
+        {
+            ScanState = StepState.Ready,
+            HardenState = StepState.Locked,
+            OutputFolderPath = @"C:\output",
+            EvaluateStigToolPath = @"C:\tools\Evaluate-STIG"
+        };
+
+        await vm.RunScanStepCommand.ExecuteAsync(null);
+
+        Assert.Equal(StepState.Error, vm.ScanState);
+        Assert.Equal("Scan failed: scan exploded", vm.ScanError);
+        Assert.Equal(StepState.Locked, vm.HardenState);
+    }
+
+    [Fact]
+    public async Task RunAutoWorkflowCommand_WhenScanFails_StopsBeforeHardenAndVerify()
+    {
+        var importFolder = Directory.CreateTempSubdirectory().FullName;
+        var vm = new WorkflowViewModel(
+            importScanner: new ImportInboxScanner(new FixedHashingService()),
+            verifyService: new ThrowingVerificationWorkflowService("scan exploded"))
+        {
+            ImportFolderPath = importFolder,
+            OutputFolderPath = @"C:\output",
+            EvaluateStigToolPath = @"C:\tools\Evaluate-STIG"
+        };
+
+        try
+        {
+            await vm.RunAutoWorkflowCommand.ExecuteAsync(null);
+
+            Assert.Equal(StepState.Complete, vm.ImportState);
+            Assert.Equal(StepState.Error, vm.ScanState);
+            Assert.Equal(StepState.Locked, vm.HardenState);
+            Assert.Equal(StepState.Locked, vm.VerifyState);
+            Assert.Equal("Scan failed: scan exploded", vm.ScanError);
+        }
+        finally
+        {
+            Directory.Delete(importFolder, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task RunVerifyStepCommand_WhenServiceThrows_SetsErrorState()
+    {
+        var vm = new WorkflowViewModel(
+            importScanner: null,
+            verifyService: new ThrowingVerificationWorkflowService("verify exploded"))
+        {
+            VerifyState = StepState.Ready,
+            OutputFolderPath = @"C:\output",
+            EvaluateStigToolPath = @"C:\tools\Evaluate-STIG"
+        };
+
+        await vm.RunVerifyStepCommand.ExecuteAsync(null);
+
+        Assert.Equal(StepState.Error, vm.VerifyState);
+        Assert.Equal("Verification failed: verify exploded", vm.VerifyError);
+    }
+
+    private sealed class ThrowingVerificationWorkflowService : IVerificationWorkflowService
+    {
+        private readonly string _message;
+
+        public ThrowingVerificationWorkflowService(string message)
+        {
+            _message = message;
+        }
+
+        public Task<VerificationWorkflowResult> RunAsync(VerificationWorkflowRequest request, CancellationToken ct)
+        {
+            throw new InvalidOperationException(_message);
+        }
+    }
+
+    private sealed class FixedHashingService : IHashingService
+    {
+        public Task<string> Sha256FileAsync(string path, CancellationToken ct)
+        {
+            return Task.FromResult("00");
+        }
+
+        public Task<string> Sha256TextAsync(string content, CancellationToken ct)
+        {
+            return Task.FromResult("00");
+        }
     }
 }
