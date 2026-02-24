@@ -198,6 +198,58 @@ public sealed class LocalWorkflowServiceTests : IDisposable
   }
 
   [Fact]
+  public async Task RunAsync_WithUnexecutedEvaluateStigRunFailure_ThrowsInvalidOperationException()
+  {
+    var importRoot = Path.Combine(_tempRoot, "import-exec-failure");
+    var outputRoot = Path.Combine(_tempRoot, "output-exec-failure");
+    Directory.CreateDirectory(importRoot);
+    Directory.CreateDirectory(outputRoot);
+    await WriteImportZipAsync(importRoot, "SV-3500r1_rule");
+
+    var consolidatedPath = Path.Combine(outputRoot, "consolidated-results.json");
+    VerifyReportWriter.WriteJson(consolidatedPath, new VerifyReport
+    {
+      Tool = "Evaluate-STIG",
+      OutputRoot = outputRoot,
+      Results =
+      [
+        new ControlResult { RuleId = "SV-3500r1_rule", Tool = "Evaluate-STIG", SourceFile = "source.ckl" }
+      ]
+    });
+
+    var verifyService = new FakeVerificationWorkflowService(new VerificationWorkflowResult
+    {
+      ConsolidatedJsonPath = consolidatedPath,
+      ToolRuns =
+      [
+        new VerificationToolRunResult
+        {
+          Tool = "Evaluate-STIG",
+          Executed = false,
+          ExitCode = -1,
+          Error = "PowerShell invocation failed"
+        }
+      ]
+    });
+
+    var service = new LocalWorkflowService(
+      new ImportInboxScanner(new TestHashingService()),
+      new LocalSetupValidator(new TestPathBuilder(_tempRoot)),
+      verifyService,
+      new ScannerEvidenceMapper());
+
+    Func<Task> act = async () => await service.RunAsync(new LocalWorkflowRequest
+    {
+      ImportRoot = importRoot,
+      OutputRoot = outputRoot,
+      ToolRoot = CreateValidToolRoot("exec-failure")
+    }, CancellationToken.None);
+
+    await act.Should().ThrowAsync<InvalidOperationException>()
+      .WithMessage("*Evaluate-STIG*did not execute*PowerShell invocation failed*");
+  }
+
+  [Fact]
   public async Task RunAsync_WithMissingConsolidatedJson_ThrowsInvalidOperationException()
   {
     var importRoot = Path.Combine(_tempRoot, "import-missing-report");

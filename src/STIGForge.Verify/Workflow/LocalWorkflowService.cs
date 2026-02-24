@@ -103,6 +103,20 @@ public sealed class LocalWorkflowService : ILocalWorkflowService
 
   private static void EnsureScanStageSucceeded(VerificationWorkflowResult verificationResult)
   {
+    var executionFailure = verificationResult.ToolRuns
+      .FirstOrDefault(run =>
+        string.Equals(run.Tool, "Evaluate-STIG", StringComparison.OrdinalIgnoreCase)
+        && !run.Executed
+        && (run.ExitCode < 0 || !string.IsNullOrWhiteSpace(run.Error)));
+    if (executionFailure is not null)
+      throw new InvalidOperationException(
+        "Scan stage failed: "
+        + executionFailure.Tool
+        + " did not execute successfully. "
+        + (string.IsNullOrWhiteSpace(executionFailure.Error)
+          ? "Exit code " + executionFailure.ExitCode + "."
+          : executionFailure.Error));
+
     var failedToolRun = verificationResult.ToolRuns
       .FirstOrDefault(run => run.Executed && run.ExitCode != 0);
     if (failedToolRun is null)
