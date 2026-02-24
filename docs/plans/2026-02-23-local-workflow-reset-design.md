@@ -49,7 +49,7 @@ Evaluate-STIG (v1) and SCC (future Verify phase) are ingested as scanner evidenc
 ### Drift and Mapping
 
 - If scanner content references older/newer revisions than imported content, retain scanner evidence and tag as `version_mismatch`.
-- If scanner evidence cannot be mapped, retain it in `unmapped` and emit high-visibility warnings.
+- If scanner evidence cannot be mapped, retain it in `Unmapped` and emit high-visibility warnings.
 - Unmapped evidence does not fail the pipeline in v1.
 
 ## Stage Contracts
@@ -79,7 +79,7 @@ Evaluate-STIG (v1) and SCC (future Verify phase) are ingested as scanner evidenc
 
 - Canonical checklist derived from Import
 - Per-item merged scanner evidence
-- `unmapped` evidence collection
+- `Unmapped` evidence collection
 - Diagnostics (tool versions, mapping statistics, warnings, drift markers)
 - Stage run metadata (timestamps, stage status, artifact paths)
 
@@ -90,7 +90,7 @@ No CKL export is required in v1. CKL generation will be added in later phases fr
 - Setup required-path validation failure: hard fail.
 - Import failure to build canonical checklist: hard fail.
 - Scan execution failure: fail stage with diagnostics and partial artifact references.
-- Unmapped scanner evidence: warning, not failure.
+- Unmapped scanner evidence: warning, not workflow failure by itself.
 
 ## Testing Strategy
 
@@ -129,4 +129,16 @@ Current implementation behavior is aligned to this design as follows:
   - required script: `Evaluate-STIG.ps1`
   - missing/invalid tool root throws an `InvalidOperationException` and stops pipeline progression.
 - Import stage remains authoritative for canonical checklist and hard-fails when checklist output is empty.
-- Scan mapping retains unmapped findings as warning diagnostics and keeps pipeline successful; unmapped entries are persisted in mission output under `unmapped`.
+- Scan mapping retains unmapped findings as warning diagnostics and keeps pipeline successful; unmapped entries are persisted in mission output under `Unmapped`.
+
+## Task 7 Verification Evidence
+
+Verification commands and outcomes captured during Task 7 implementation:
+
+- `dotnet test tests/STIGForge.UnitTests/STIGForge.UnitTests.csproj`
+  - Blocked at runtime on this Linux host: missing `Microsoft.WindowsDesktop.App` version `8.0.0`.
+  - Key output: `No frameworks were found.` and `Test Run Aborted.`
+- Fallback compile evidence: `dotnet build tests/STIGForge.UnitTests/STIGForge.UnitTests.csproj`
+  - `Build succeeded.` (`0 Warning(s)`, `0 Error(s)`).
+- `dotnet test tests/STIGForge.IntegrationTests/STIGForge.IntegrationTests.csproj --filter "FullyQualifiedName~CliCommandTests|FullyQualifiedName~VerifyCommandFlowTests"`
+  - Passed: `Failed: 0, Passed: 14, Skipped: 0, Total: 14`.

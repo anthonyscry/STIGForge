@@ -161,7 +161,7 @@ Defaults when options are omitted:
 Behavior notes:
 - Strict setup gate: command fails immediately when required Evaluate-STIG path is missing or does not contain `Evaluate-STIG.ps1`.
 - Import gate: command fails if import scanning does not produce canonical checklist items.
-- Unmapped scanner findings are warnings, not hard failures; workflow still writes `mission.json` and records unmapped entries under `unmapped`.
+- Unmapped scanner findings are warnings, not hard failures by themselves; workflow still writes `mission.json` and records unmapped entries under `Unmapped`.
 
 ## Ship readiness gate
 Run the automated release gate (build + tests + artifact manifest/checksums):
