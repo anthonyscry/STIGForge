@@ -1,0 +1,9 @@
+{
+  "minimumLineCoveragePercent": 15,
+  "criticalAssemblies": [
+    "STIGForge.Build",
+    "STIGForge.Apply",
+    "STIGForge.Verify",
+    "STIGForge.Infrastructure"
+  ]
+}

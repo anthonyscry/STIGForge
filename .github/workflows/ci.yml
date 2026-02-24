@@ -56,7 +56,7 @@ jobs:
             '-ExecutionPolicy', 'Bypass',
             '-File', '.\tools\release\Invoke-CoverageGate.ps1',
             '-CoverageReportPath', '.\.artifacts\coverage\ci\coverage.cobertura.xml',
-            '-PolicyPath', '.\tools\release\coverage-gate-policy.json'
+            '-PolicyPath', '.\tools\release\coverage-gate-policy-ci.json'
           )
           powershell @gateArgs
 
