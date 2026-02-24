@@ -350,9 +350,14 @@ public partial class MainViewModel
     return Path.Combine(_paths.GetAppDataRoot(), "import");
   }
 
+  private string ResolveWorkflowLocalOutputRoot()
+  {
+    return Path.Combine(_paths.GetAppDataRoot(), "local-workflow");
+  }
+
   private string ResolveWorkflowLocalMissionJsonPath()
   {
-    return Path.Combine(ResolveWorkflowLocalImportRoot(), "mission.json");
+    return Path.Combine(ResolveWorkflowLocalOutputRoot(), "mission.json");
   }
 
   private void ApplyWorkflowLocalImportDefaults()

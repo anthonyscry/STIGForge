@@ -64,20 +64,34 @@ public sealed class LocalWorkflowService : ILocalWorkflowService
       }
     }, ct).ConfigureAwait(false);
 
+    EnsureScanStageSucceeded(verificationResult);
+
     diagnostics.AddRange(verificationResult.Diagnostics);
 
-    var findings = LoadScannerFindings(verificationResult.ConsolidatedJsonPath, diagnostics);
+    var findings = LoadScannerFindings(verificationResult.ConsolidatedJsonPath);
     var mapResult = _scannerEvidenceMapper.Map(canonicalChecklist, findings);
     diagnostics.AddRange(mapResult.Diagnostics);
+
+    var missionPath = Path.Combine(request.OutputRoot, "mission.json");
 
     var mission = new LocalWorkflowMission
     {
       CanonicalChecklist = canonicalChecklist,
       ScannerEvidence = mapResult.ScannerEvidence.ToList(),
-      Unmapped = mapResult.Unmapped.ToList()
+      Unmapped = mapResult.Unmapped.ToList(),
+      Diagnostics = diagnostics,
+      StageMetadata = new LocalWorkflowStageMetadata
+      {
+        MissionJsonPath = missionPath,
+        ConsolidatedJsonPath = verificationResult.ConsolidatedJsonPath,
+        ConsolidatedCsvPath = verificationResult.ConsolidatedCsvPath,
+        CoverageSummaryJsonPath = verificationResult.CoverageSummaryJsonPath,
+        CoverageSummaryCsvPath = verificationResult.CoverageSummaryCsvPath,
+        StartedAt = verificationResult.StartedAt,
+        FinishedAt = verificationResult.FinishedAt
+      }
     };
 
-    var missionPath = Path.Combine(request.OutputRoot, "mission.json");
     await WriteMissionAsync(missionPath, mission, ct).ConfigureAwait(false);
 
     return new LocalWorkflowResult
@@ -87,14 +101,26 @@ public sealed class LocalWorkflowService : ILocalWorkflowService
     };
   }
 
-  private static IReadOnlyList<ControlResult> LoadScannerFindings(string? consolidatedJsonPath, ICollection<string> diagnostics)
+  private static void EnsureScanStageSucceeded(VerificationWorkflowResult verificationResult)
+  {
+    var failedToolRun = verificationResult.ToolRuns
+      .FirstOrDefault(run => run.Executed && run.ExitCode != 0);
+    if (failedToolRun is null)
+      return;
+
+    throw new InvalidOperationException(
+      "Scan stage failed: "
+      + failedToolRun.Tool
+      + " exited with code "
+      + failedToolRun.ExitCode
+      + ".");
+  }
+
+  private static IReadOnlyList<ControlResult> LoadScannerFindings(string? consolidatedJsonPath)
   {
     var path = consolidatedJsonPath?.Trim() ?? string.Empty;
     if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
-    {
-      diagnostics.Add("Scan stage did not produce consolidated-results.json; continuing with empty scanner findings.");
-      return Array.Empty<ControlResult>();
-    }
+      throw new InvalidOperationException("Scan stage did not produce readable consolidated-results.json at: " + path);
 
     try
     {
@@ -103,8 +129,7 @@ public sealed class LocalWorkflowService : ILocalWorkflowService
     }
     catch (Exception ex)
     {
-      diagnostics.Add("Failed to read consolidated scanner report: " + ex.Message);
-      return Array.Empty<ControlResult>();
+      throw new InvalidOperationException("Failed to read consolidated scanner report: " + ex.Message, ex);
     }
   }
 

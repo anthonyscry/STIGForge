@@ -615,7 +615,6 @@ public partial class MainViewModel
     }
 
     File.WriteAllLines(textPath, lines);
-    MissionJsonPath = jsonPath;
     LastOutputPath = jsonPath;
   }
 

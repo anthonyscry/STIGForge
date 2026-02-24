@@ -6,7 +6,7 @@ namespace STIGForge.UnitTests.Core;
 public sealed class LocalWorkflowMissionContractTests
 {
   [Fact]
-  public void Mission_Defaults_IncludeCanonicalChecklistScannerEvidenceAndUnmappedCollections()
+  public void Mission_Defaults_IncludeCanonicalChecklistScannerEvidenceUnmappedAndMetadataCollections()
   {
     var mission = new LocalWorkflowMission();
 
@@ -16,6 +16,10 @@ public sealed class LocalWorkflowMissionContractTests
     Assert.Empty(mission.ScannerEvidence);
     Assert.NotNull(mission.Unmapped);
     Assert.Empty(mission.Unmapped);
+    Assert.NotNull(mission.Diagnostics);
+    Assert.Empty(mission.Diagnostics);
+    Assert.NotNull(mission.StageMetadata);
+    Assert.Equal(string.Empty, mission.StageMetadata.MissionJsonPath);
   }
 
   [Fact]
@@ -27,5 +31,7 @@ public sealed class LocalWorkflowMissionContractTests
     Assert.NotNull(result.Mission.CanonicalChecklist);
     Assert.NotNull(result.Mission.ScannerEvidence);
     Assert.NotNull(result.Mission.Unmapped);
+    Assert.NotNull(result.Mission.Diagnostics);
+    Assert.NotNull(result.Mission.StageMetadata);
   }
 }

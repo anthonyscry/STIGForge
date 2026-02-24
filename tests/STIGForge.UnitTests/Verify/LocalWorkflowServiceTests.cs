@@ -49,7 +49,29 @@ public sealed class LocalWorkflowServiceTests : IDisposable
       }
     });
 
-    var verifyService = new FakeVerificationWorkflowService(consolidatedPath);
+    var scanStartedAt = DateTimeOffset.Parse("2026-02-23T12:00:00Z");
+    var scanFinishedAt = DateTimeOffset.Parse("2026-02-23T12:05:00Z");
+    var verifyService = new FakeVerificationWorkflowService(new VerificationWorkflowResult
+    {
+      StartedAt = scanStartedAt,
+      FinishedAt = scanFinishedAt,
+      ConsolidatedJsonPath = consolidatedPath,
+      ConsolidatedCsvPath = Path.Combine(outputRoot, "consolidated-results.csv"),
+      CoverageSummaryJsonPath = Path.Combine(outputRoot, "coverage-summary.json"),
+      CoverageSummaryCsvPath = Path.Combine(outputRoot, "coverage-summary.csv"),
+      ToolRuns =
+      [
+        new VerificationToolRunResult
+        {
+          Tool = "Evaluate-STIG",
+          Executed = true,
+          ExitCode = 0,
+          StartedAt = scanStartedAt,
+          FinishedAt = scanFinishedAt
+        }
+      ],
+      Diagnostics = new[] { "scan-diagnostic" }
+    });
     var scanner = new ImportInboxScanner(new TestHashingService());
     var service = new LocalWorkflowService(
       scanner,
@@ -81,6 +103,12 @@ public sealed class LocalWorkflowServiceTests : IDisposable
     var mission = JsonSerializer.Deserialize<LocalWorkflowMission>(await File.ReadAllTextAsync(missionPath));
     mission.Should().NotBeNull();
     mission!.CanonicalChecklist.Should().ContainSingle(i => i.RuleId == "SV-1000r1_rule");
+    mission.Diagnostics.Should().Contain(d => d.Contains("Unmapped scanner finding", StringComparison.Ordinal));
+    mission.Diagnostics.Should().Contain("scan-diagnostic");
+    mission.StageMetadata.MissionJsonPath.Should().Be(missionPath);
+    mission.StageMetadata.ConsolidatedJsonPath.Should().Be(consolidatedPath);
+    mission.StageMetadata.StartedAt.Should().Be(scanStartedAt);
+    mission.StageMetadata.FinishedAt.Should().Be(scanFinishedAt);
 
     var scanResult = await scanner.ScanWithCanonicalChecklistAsync(importRoot, CancellationToken.None);
     result.Mission.CanonicalChecklist.Select(c => c.RuleId)
@@ -97,7 +125,10 @@ public sealed class LocalWorkflowServiceTests : IDisposable
     Directory.CreateDirectory(outputRoot);
     await WriteImportZipAsync(importRoot, "SV-2000r1_rule");
 
-    var verifyService = new FakeVerificationWorkflowService(Path.Combine(outputRoot, "consolidated-results.json"));
+    var verifyService = new FakeVerificationWorkflowService(new VerificationWorkflowResult
+    {
+      ConsolidatedJsonPath = Path.Combine(outputRoot, "consolidated-results.json")
+    });
     var service = new LocalWorkflowService(
       new ImportInboxScanner(new TestHashingService()),
       new LocalSetupValidator(new TestPathBuilder(_tempRoot)),
@@ -115,6 +146,141 @@ public sealed class LocalWorkflowServiceTests : IDisposable
     verifyService.LastRequest.Should().BeNull();
   }
 
+  [Fact]
+  public async Task RunAsync_WithNonZeroEvaluateStigExitCode_ThrowsInvalidOperationException()
+  {
+    var importRoot = Path.Combine(_tempRoot, "import-nonzero");
+    var outputRoot = Path.Combine(_tempRoot, "output-nonzero");
+    Directory.CreateDirectory(importRoot);
+    Directory.CreateDirectory(outputRoot);
+    await WriteImportZipAsync(importRoot, "SV-3000r1_rule");
+
+    var consolidatedPath = Path.Combine(outputRoot, "consolidated-results.json");
+    VerifyReportWriter.WriteJson(consolidatedPath, new VerifyReport
+    {
+      Tool = "Evaluate-STIG",
+      OutputRoot = outputRoot,
+      Results =
+      [
+        new ControlResult { RuleId = "SV-3000r1_rule", Tool = "Evaluate-STIG", SourceFile = "source.ckl" }
+      ]
+    });
+
+    var verifyService = new FakeVerificationWorkflowService(new VerificationWorkflowResult
+    {
+      ConsolidatedJsonPath = consolidatedPath,
+      ToolRuns =
+      [
+        new VerificationToolRunResult
+        {
+          Tool = "Evaluate-STIG",
+          Executed = true,
+          ExitCode = 5
+        }
+      ]
+    });
+
+    var service = new LocalWorkflowService(
+      new ImportInboxScanner(new TestHashingService()),
+      new LocalSetupValidator(new TestPathBuilder(_tempRoot)),
+      verifyService,
+      new ScannerEvidenceMapper());
+
+    Func<Task> act = async () => await service.RunAsync(new LocalWorkflowRequest
+    {
+      ImportRoot = importRoot,
+      OutputRoot = outputRoot,
+      ToolRoot = CreateValidToolRoot("nonzero")
+    }, CancellationToken.None);
+
+    await act.Should().ThrowAsync<InvalidOperationException>()
+      .WithMessage("*Evaluate-STIG*exit code*5*");
+  }
+
+  [Fact]
+  public async Task RunAsync_WithMissingConsolidatedJson_ThrowsInvalidOperationException()
+  {
+    var importRoot = Path.Combine(_tempRoot, "import-missing-report");
+    var outputRoot = Path.Combine(_tempRoot, "output-missing-report");
+    Directory.CreateDirectory(importRoot);
+    Directory.CreateDirectory(outputRoot);
+    await WriteImportZipAsync(importRoot, "SV-4000r1_rule");
+
+    var missingPath = Path.Combine(outputRoot, "consolidated-results.json");
+    var verifyService = new FakeVerificationWorkflowService(new VerificationWorkflowResult
+    {
+      ConsolidatedJsonPath = missingPath,
+      ToolRuns =
+      [
+        new VerificationToolRunResult
+        {
+          Tool = "Evaluate-STIG",
+          Executed = true,
+          ExitCode = 0
+        }
+      ]
+    });
+
+    var service = new LocalWorkflowService(
+      new ImportInboxScanner(new TestHashingService()),
+      new LocalSetupValidator(new TestPathBuilder(_tempRoot)),
+      verifyService,
+      new ScannerEvidenceMapper());
+
+    Func<Task> act = async () => await service.RunAsync(new LocalWorkflowRequest
+    {
+      ImportRoot = importRoot,
+      OutputRoot = outputRoot,
+      ToolRoot = CreateValidToolRoot("missing-report")
+    }, CancellationToken.None);
+
+    await act.Should().ThrowAsync<InvalidOperationException>()
+      .WithMessage("*consolidated-results.json*");
+  }
+
+  [Fact]
+  public async Task RunAsync_WithUnreadableConsolidatedJson_ThrowsInvalidOperationException()
+  {
+    var importRoot = Path.Combine(_tempRoot, "import-bad-report");
+    var outputRoot = Path.Combine(_tempRoot, "output-bad-report");
+    Directory.CreateDirectory(importRoot);
+    Directory.CreateDirectory(outputRoot);
+    await WriteImportZipAsync(importRoot, "SV-5000r1_rule");
+
+    var consolidatedPath = Path.Combine(outputRoot, "consolidated-results.json");
+    await File.WriteAllTextAsync(consolidatedPath, "{ bad json");
+
+    var verifyService = new FakeVerificationWorkflowService(new VerificationWorkflowResult
+    {
+      ConsolidatedJsonPath = consolidatedPath,
+      ToolRuns =
+      [
+        new VerificationToolRunResult
+        {
+          Tool = "Evaluate-STIG",
+          Executed = true,
+          ExitCode = 0
+        }
+      ]
+    });
+
+    var service = new LocalWorkflowService(
+      new ImportInboxScanner(new TestHashingService()),
+      new LocalSetupValidator(new TestPathBuilder(_tempRoot)),
+      verifyService,
+      new ScannerEvidenceMapper());
+
+    Func<Task> act = async () => await service.RunAsync(new LocalWorkflowRequest
+    {
+      ImportRoot = importRoot,
+      OutputRoot = outputRoot,
+      ToolRoot = CreateValidToolRoot("bad-report")
+    }, CancellationToken.None);
+
+    await act.Should().ThrowAsync<InvalidOperationException>()
+      .WithMessage("*Failed to read consolidated scanner report*");
+  }
+
   private static async Task WriteImportZipAsync(string importRoot, string ruleId)
   {
     var zipPath = Path.Combine(importRoot, "benchmark.zip");
@@ -130,11 +296,11 @@ public sealed class LocalWorkflowServiceTests : IDisposable
 
   private sealed class FakeVerificationWorkflowService : IVerificationWorkflowService
   {
-    private readonly string _consolidatedJsonPath;
+    private readonly VerificationWorkflowResult _result;
 
-    public FakeVerificationWorkflowService(string consolidatedJsonPath)
+    public FakeVerificationWorkflowService(VerificationWorkflowResult result)
     {
-      _consolidatedJsonPath = consolidatedJsonPath;
+      _result = result;
     }
 
     public VerificationWorkflowRequest? LastRequest { get; private set; }
@@ -142,11 +308,7 @@ public sealed class LocalWorkflowServiceTests : IDisposable
     public Task<VerificationWorkflowResult> RunAsync(VerificationWorkflowRequest request, CancellationToken ct)
     {
       LastRequest = request;
-      return Task.FromResult(new VerificationWorkflowResult
-      {
-        ConsolidatedJsonPath = _consolidatedJsonPath,
-        Diagnostics = new[] { "scan-diagnostic" }
-      });
+      return Task.FromResult(_result);
     }
   }
 
