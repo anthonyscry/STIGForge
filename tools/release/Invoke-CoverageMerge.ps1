@@ -19,6 +19,25 @@ function Resolve-FromRepositoryRoot {
   return [IO.Path]::GetFullPath((Join-Path $RepositoryRoot $Candidate))
 }
 
+function Get-IntAttributeOrNull {
+  param(
+    [Parameter(Mandatory = $true)]$Element,
+    [Parameter(Mandatory = $true)][string]$AttributeName
+  )
+
+  $rawValue = [string]$Element.GetAttribute($AttributeName)
+  if ([string]::IsNullOrWhiteSpace($rawValue)) {
+    return $null
+  }
+
+  $parsed = 0
+  if (-not [int]::TryParse($rawValue, [ref]$parsed)) {
+    throw "Cobertura attribute '$AttributeName' must be an integer, found '$rawValue'."
+  }
+
+  return $parsed
+}
+
 function Get-IntAttribute {
   param(
     [Parameter(Mandatory = $true)]$Element,
@@ -36,6 +55,67 @@ function Get-IntAttribute {
   }
 
   return $parsed
+}
+
+function Get-PackageLineMetrics {
+  param(
+    [Parameter(Mandatory = $true)]$PackageElement
+  )
+
+  $lineNodes = @($PackageElement.SelectNodes(".//line"))
+  if ($lineNodes.Count -eq 0) {
+    return [ordered]@{
+      linesCovered = 0
+      linesValid = 0
+      branchesCovered = 0
+      branchesValid = 0
+    }
+  }
+
+  $linesCovered = 0
+  $linesValid = 0
+  $branchesCovered = 0
+  $branchesValid = 0
+
+  foreach ($lineNode in $lineNodes) {
+    $lineHitsRaw = [string]$lineNode.GetAttribute("hits")
+    if ([string]::IsNullOrWhiteSpace($lineHitsRaw)) {
+      continue
+    }
+
+    $lineHits = 0
+    if (-not [int]::TryParse($lineHitsRaw, [ref]$lineHits)) {
+      continue
+    }
+
+    $linesValid += 1
+    if ($lineHits -gt 0) {
+      $linesCovered += 1
+    }
+
+    if ($lineNode.GetAttribute("branch").Equals("true", [StringComparison]::OrdinalIgnoreCase)) {
+      $conditionCoverage = [string]$lineNode.GetAttribute("condition-coverage")
+      if ([string]::IsNullOrWhiteSpace($conditionCoverage)) {
+        continue
+      }
+
+      if ($conditionCoverage -match '^\s*\d+(?:\.\d+)?%\s*\(\s*(\d+)\s*/\s*(\d+)\s*\)\s*$') {
+        $coveredBranches = [int]$matches[1]
+        $validBranches = [int]$matches[2]
+        if ($validBranches -gt 0) {
+          $branchesCovered += $coveredBranches
+          $branchesValid += $validBranches
+        }
+      }
+    }
+  }
+
+  return [ordered]@{
+    linesCovered = $linesCovered
+    linesValid = $linesValid
+    branchesCovered = $branchesCovered
+    branchesValid = $branchesValid
+  }
 }
 
 function Write-Utf8NoBom {
@@ -113,10 +193,18 @@ try {
         throw "Coverage package entry is missing 'name' in $($coverageFile.FullName)"
       }
 
-      $linesCovered = Get-IntAttribute -Element $package -AttributeName "lines-covered"
-      $linesValid = Get-IntAttribute -Element $package -AttributeName "lines-valid"
-      $branchesCovered = Get-IntAttribute -Element $package -AttributeName "branches-covered"
-      $branchesValid = Get-IntAttribute -Element $package -AttributeName "branches-valid"
+      $linesCovered = Get-IntAttributeOrNull -Element $package -AttributeName "lines-covered"
+      $linesValid = Get-IntAttributeOrNull -Element $package -AttributeName "lines-valid"
+      $branchesCovered = Get-IntAttributeOrNull -Element $package -AttributeName "branches-covered"
+      $branchesValid = Get-IntAttributeOrNull -Element $package -AttributeName "branches-valid"
+
+      if ($null -in @($linesCovered, $linesValid, $branchesCovered, $branchesValid)) {
+        $metrics = Get-PackageLineMetrics -PackageElement $package
+        $linesCovered = $metrics.linesCovered
+        $linesValid = $metrics.linesValid
+        $branchesCovered = $metrics.branchesCovered
+        $branchesValid = $metrics.branchesValid
+      }
 
       if (-not $mergedPackages.ContainsKey($packageName)) {
         $mergedPackages[$packageName] = [ordered]@{

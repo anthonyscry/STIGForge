@@ -53,21 +53,26 @@ public sealed class CoverageReportScriptTests
     var packages = document.RootElement.GetProperty("packages");
     packages.GetArrayLength().Should().Be(2);
 
-    packages[0].GetProperty("name").GetString().Should().Be("Critical.Assembly");
-    packages[0].GetProperty("linesCovered").GetInt32().Should().Be(40);
-    packages[0].GetProperty("linesValid").GetInt32().Should().Be(50);
-    packages[0].GetProperty("lineCoveragePercent").GetDouble().Should().Be(80.0);
-    packages[0].GetProperty("branchesCovered").GetInt32().Should().Be(20);
-    packages[0].GetProperty("branchesValid").GetInt32().Should().Be(30);
-    packages[0].GetProperty("branchCoveragePercent").GetDouble().Should().Be(66.67);
+    var orderedPackages = packages
+      .EnumerateArray()
+      .OrderBy(p => p.GetProperty("name").GetString(), StringComparer.OrdinalIgnoreCase)
+      .ToArray();
 
-    packages[1].GetProperty("name").GetString().Should().Be("NonCritical.Assembly");
-    packages[1].GetProperty("linesCovered").GetInt32().Should().Be(35);
-    packages[1].GetProperty("linesValid").GetInt32().Should().Be(50);
-    packages[1].GetProperty("lineCoveragePercent").GetDouble().Should().Be(70.0);
-    packages[1].GetProperty("branchesCovered").GetInt32().Should().Be(10);
-    packages[1].GetProperty("branchesValid").GetInt32().Should().Be(20);
-    packages[1].GetProperty("branchCoveragePercent").GetDouble().Should().Be(50.0);
+    orderedPackages[0].GetProperty("name").GetString().Should().Be("Critical.Assembly");
+    orderedPackages[0].GetProperty("linesCovered").GetInt32().Should().Be(40);
+    orderedPackages[0].GetProperty("linesValid").GetInt32().Should().Be(50);
+    orderedPackages[0].GetProperty("lineCoveragePercent").GetDouble().Should().Be(80.0);
+    orderedPackages[0].GetProperty("branchesCovered").GetInt32().Should().Be(20);
+    orderedPackages[0].GetProperty("branchesValid").GetInt32().Should().Be(30);
+    orderedPackages[0].GetProperty("branchCoveragePercent").GetDouble().Should().Be(66.67);
+
+    orderedPackages[1].GetProperty("name").GetString().Should().Be("NonCritical.Assembly");
+    orderedPackages[1].GetProperty("linesCovered").GetInt32().Should().Be(35);
+    orderedPackages[1].GetProperty("linesValid").GetInt32().Should().Be(50);
+    orderedPackages[1].GetProperty("lineCoveragePercent").GetDouble().Should().Be(70.0);
+    orderedPackages[1].GetProperty("branchesCovered").GetInt32().Should().Be(10);
+    orderedPackages[1].GetProperty("branchesValid").GetInt32().Should().Be(20);
+    orderedPackages[1].GetProperty("branchCoveragePercent").GetDouble().Should().Be(50.0);
 
     var reportMarkdownPath = Path.Combine(outputDirectory.Path, "coverage-report.md");
     var markdown = await File.ReadAllTextAsync(reportMarkdownPath);
