@@ -345,4 +345,19 @@ public partial class WorkflowViewModel : ObservableObject
         };
         dialog.ShowDialog();
     }
+
+    [RelayCommand]
+    private void RestartWorkflow()
+    {
+        CurrentStep = WorkflowStep.Setup;
+        BaselineFindingsCount = 0;
+        VerifyFindingsCount = 0;
+        FixedCount = 0;
+        AppliedFixesCount = 0;
+        ImportedItemsCount = 0;
+        ImportedItems = new List<string>();
+        MissionJsonPath = string.Empty;
+        StatusText = string.Empty;
+        ProgressValue = 0;
+    }
 }

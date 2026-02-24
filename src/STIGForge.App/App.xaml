@@ -620,9 +620,44 @@
         <StackPanel MaxWidth="600">
           <TextBlock Text="Step 6: Done" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,20"/>
           <TextBlock Text="Workflow completed!" FontSize="18" Foreground="Green" Margin="0,0,0,20"/>
+
+          <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="16" Margin="0,0,0,20">
+            <StackPanel>
+              <TextBlock Text="Summary" FontWeight="SemiBold" Margin="0,0,0,10"/>
+              <Grid>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="200"/>
+                  <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid.RowDefinitions>
+                  <RowDefinition/>
+                  <RowDefinition/>
+                  <RowDefinition/>
+                  <RowDefinition/>
+                </Grid.RowDefinitions>
+
+                <TextBlock Grid.Row="0" Grid.Column="0" Text="Baseline Findings:"/>
+                <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding BaselineFindingsCount}" FontWeight="SemiBold"/>
+
+                <TextBlock Grid.Row="1" Grid.Column="0" Text="Fixed:"/>
+                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding FixedCount}" FontWeight="SemiBold" Foreground="Green"/>
+
+                <TextBlock Grid.Row="2" Grid.Column="0" Text="Remaining Findings:"/>
+                <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding VerifyFindingsCount}" FontWeight="SemiBold"/>
+
+                <TextBlock Grid.Row="3" Grid.Column="0" Text="Content Packs Imported:"/>
+                <TextBlock Grid.Row="3" Grid.Column="1" Text="{Binding ImportedItemsCount}" FontWeight="SemiBold"/>
+              </Grid>
+            </StackPanel>
+          </Border>
+
           <TextBlock Text="Mission JSON:" FontWeight="SemiBold"/>
           <TextBox Text="{Binding MissionJsonPath, Mode=OneWay}" IsReadOnly="True" Margin="0,4,0,16"/>
-          <Button Content="Open Output Folder" Width="150" Height="36" Command="{Binding OpenOutputFolderCommand}"/>
+
+          <StackPanel Orientation="Horizontal">
+            <Button Content="Open Output Folder" Width="150" Height="36" Margin="0,0,10,0" Command="{Binding OpenOutputFolderCommand}"/>
+            <Button Content="Start New Workflow" Width="150" Height="36" Command="{Binding RestartWorkflowCommand}"/>
+          </StackPanel>
         </StackPanel>
       </DataTemplate>
 
