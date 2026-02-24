@@ -93,3 +93,34 @@ public sealed class StepFontWeightConverter : IValueConverter
     throw new NotSupportedException();
   }
 }
+
+/// <summary>
+/// Converts StepState to a border brush color for dashboard step panels.
+/// Ready=Blue, Running=Amber, Complete=Green, Locked=Gray, Error=Red
+/// </summary>
+public sealed class StepStateToBorderBrushConverter : IValueConverter
+{
+  private static readonly SolidColorBrush BlueBrush = new(Color.FromRgb(59, 130, 246));    // Ready
+  private static readonly SolidColorBrush AmberBrush = new(Color.FromRgb(245, 158, 11));   // Running
+  private static readonly SolidColorBrush GreenBrush = new(Color.FromRgb(34, 197, 94));    // Complete
+  private static readonly SolidColorBrush GrayBrush = new(Color.FromRgb(107, 114, 128));   // Locked
+  private static readonly SolidColorBrush RedBrush = new(Color.FromRgb(239, 68, 68));      // Error
+
+  public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+  {
+    return value switch
+    {
+      StepState.Ready => BlueBrush,
+      StepState.Running => AmberBrush,
+      StepState.Complete => GreenBrush,
+      StepState.Locked => GrayBrush,
+      StepState.Error => RedBrush,
+      _ => GrayBrush
+    };
+  }
+
+  public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+  {
+    throw new NotSupportedException();
+  }
+}
