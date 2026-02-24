@@ -29,4 +29,14 @@ public class WorkflowViewModelTests
         };
         Assert.True(vm.CanGoNext);
     }
+
+    [Fact]
+    public void InitialStepStates_ImportReady_OthersLocked()
+    {
+        var vm = new WorkflowViewModel();
+        Assert.Equal(StepState.Ready, vm.ImportState);
+        Assert.Equal(StepState.Locked, vm.ScanState);
+        Assert.Equal(StepState.Locked, vm.HardenState);
+        Assert.Equal(StepState.Locked, vm.VerifyState);
+    }
 }

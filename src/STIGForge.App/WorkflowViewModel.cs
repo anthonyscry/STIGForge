@@ -18,6 +18,15 @@ public enum WorkflowStep
     Done
 }
 
+public enum StepState
+{
+    Locked,
+    Ready,
+    Running,
+    Complete,
+    Error
+}
+
 public partial class WorkflowViewModel : ObservableObject
 {
     private readonly ImportInboxScanner? _importScanner;
@@ -91,6 +100,30 @@ public partial class WorkflowViewModel : ObservableObject
 
     [ObservableProperty]
     private int _fixedCount;
+
+    [ObservableProperty]
+    private StepState _importState = StepState.Ready;
+
+    [ObservableProperty]
+    private StepState _scanState = StepState.Locked;
+
+    [ObservableProperty]
+    private StepState _hardenState = StepState.Locked;
+
+    [ObservableProperty]
+    private StepState _verifyState = StepState.Locked;
+
+    [ObservableProperty]
+    private string _importError = string.Empty;
+
+    [ObservableProperty]
+    private string _scanError = string.Empty;
+
+    [ObservableProperty]
+    private string _hardenError = string.Empty;
+
+    [ObservableProperty]
+    private string _verifyError = string.Empty;
 
     public bool CanGoBack => CurrentStep > WorkflowStep.Setup && CurrentStep < WorkflowStep.Done;
 
