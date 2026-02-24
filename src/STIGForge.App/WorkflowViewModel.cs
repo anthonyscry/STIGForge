@@ -3,6 +3,8 @@ using System.Windows;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using STIGForge.App.Views;
+using STIGForge.Content.Import;
+using STIGForge.Core.Abstractions;
 
 namespace STIGForge.App;
 
@@ -18,8 +20,18 @@ public enum WorkflowStep
 
 public partial class WorkflowViewModel : ObservableObject
 {
-    public WorkflowViewModel()
+    private readonly ImportInboxScanner? _importScanner;
+    private readonly IVerificationWorkflowService? _verifyService;
+    // TODO: Wire ApplyRunner when DI infrastructure is available
+    // ApplyRunner has many dependencies (SnapshotService, LcmService, RebootCoordinator, etc.)
+    // that require proper DI container setup
+
+    public WorkflowViewModel(
+        ImportInboxScanner? importScanner = null,
+        IVerificationWorkflowService? verifyService = null)
     {
+        _importScanner = importScanner;
+        _verifyService = verifyService;
         LoadSettings();
     }
 
@@ -145,40 +157,119 @@ public partial class WorkflowViewModel : ObservableObject
     private async Task RunImportAsync()
     {
         StatusText = "Scanning import folder...";
-        // TODO: Wire to actual import service
-        await Task.Delay(1000); // Placeholder
-        ImportedItemsCount = 0;
-        StatusText = $"Found {ImportedItemsCount} content packs";
+
+        if (_importScanner == null || string.IsNullOrWhiteSpace(ImportFolderPath))
+        {
+            StatusText = "Import scanner not configured or no import folder";
+            ImportedItemsCount = 0;
+            return;
+        }
+
+        try
+        {
+            var result = await _importScanner.ScanAsync(ImportFolderPath, CancellationToken.None);
+            ImportedItems = result.Candidates.Select(c => c.FileName).Distinct().ToList();
+            ImportedItemsCount = ImportedItems.Count;
+            StatusText = $"Found {ImportedItemsCount} content packs";
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"Import failed: {ex.Message}";
+            ImportedItemsCount = 0;
+        }
     }
 
     private async Task RunScanAsync()
     {
         StatusText = "Running Evaluate-STIG baseline scan...";
-        // TODO: Wire to actual verify service
-        await Task.Delay(1000); // Placeholder
-        BaselineFindingsCount = 0;
-        StatusText = $"Baseline scan complete: {BaselineFindingsCount} findings";
+
+        if (_verifyService == null)
+        {
+            StatusText = "Verification service not configured";
+            BaselineFindingsCount = 0;
+            return;
+        }
+
+        try
+        {
+            var result = await _verifyService.RunAsync(new VerificationWorkflowRequest
+            {
+                OutputRoot = OutputFolderPath,
+                EvaluateStig = new EvaluateStigWorkflowOptions
+                {
+                    Enabled = true,
+                    ToolRoot = EvaluateStigToolPath
+                },
+                Scap = new ScapWorkflowOptions
+                {
+                    Enabled = false
+                }
+            }, CancellationToken.None);
+
+            BaselineFindingsCount = result.ConsolidatedResultCount;
+            StatusText = $"Baseline scan complete: {BaselineFindingsCount} findings";
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"Scan failed: {ex.Message}";
+            BaselineFindingsCount = 0;
+        }
     }
 
     private async Task RunHardenAsync()
     {
         StatusText = "Applying hardening configurations...";
-        // TODO: Wire to actual apply service
-        await Task.Delay(1000); // Placeholder
+
+        // TODO: Wire ApplyRunner when DI infrastructure is available
+        // ApplyRunner requires: ILogger<ApplyRunner>, SnapshotService, RollbackScriptGenerator,
+        // LcmService, RebootCoordinator, and optional IAuditTrailService, EvidenceCollector,
+        // LgpoRunner, PreflightRunner dependencies.
+        // For now, this remains a placeholder until proper DI wiring is implemented.
+        await Task.Delay(500);
         AppliedFixesCount = 0;
-        StatusText = $"Hardening complete: {AppliedFixesCount} fixes applied";
+        StatusText = "Hardening step placeholder (ApplyRunner not wired)";
     }
 
     private async Task RunVerifyAsync()
     {
-        StatusText = "Running verification scan...";
-        // TODO: Wire to actual verify service
-        await Task.Delay(1000); // Placeholder
-        VerifyFindingsCount = 0;
-        FixedCount = BaselineFindingsCount - VerifyFindingsCount;
-        if (FixedCount < 0) FixedCount = 0;
-        MissionJsonPath = Path.Combine(OutputFolderPath, "mission.json");
-        StatusText = $"Verification complete: {VerifyFindingsCount} remaining ({FixedCount} fixed)";
+        StatusText = "Running verification scan (Evaluate-STIG + SCC)...";
+
+        if (_verifyService == null)
+        {
+            StatusText = "Verification service not configured";
+            VerifyFindingsCount = 0;
+            return;
+        }
+
+        try
+        {
+            var result = await _verifyService.RunAsync(new VerificationWorkflowRequest
+            {
+                OutputRoot = OutputFolderPath,
+                EvaluateStig = new EvaluateStigWorkflowOptions
+                {
+                    Enabled = true,
+                    ToolRoot = EvaluateStigToolPath
+                },
+                Scap = new ScapWorkflowOptions
+                {
+                    Enabled = !string.IsNullOrWhiteSpace(SccToolPath),
+                    CommandPath = SccToolPath
+                }
+            }, CancellationToken.None);
+
+            VerifyFindingsCount = result.ConsolidatedResultCount;
+            FixedCount = BaselineFindingsCount - VerifyFindingsCount;
+            if (FixedCount < 0) FixedCount = 0;
+
+            MissionJsonPath = Path.Combine(OutputFolderPath, "mission.json");
+            StatusText = $"Verification complete: {VerifyFindingsCount} remaining ({FixedCount} fixed)";
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"Verification failed: {ex.Message}";
+            VerifyFindingsCount = 0;
+        }
     }
 
     private void LoadSettings()

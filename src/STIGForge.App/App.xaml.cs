@@ -114,6 +114,7 @@ public partial class App : Application
           services.AddSingleton<IOverlayRepository>(sp => new SqliteJsonOverlayRepository(sp.GetRequiredService<string>()));
           services.AddSingleton<IMissionRunRepository>(sp => new MissionRunRepository(sp.GetRequiredService<string>()));
 
+          services.AddSingleton<ImportInboxScanner>();
           services.AddSingleton<ContentPackImporter>();
           services.AddSingleton<STIGForge.Core.Services.OverlayConflictDetector>();
           services.AddSingleton<OverlayMergeService>();
