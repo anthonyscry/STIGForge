@@ -8,6 +8,11 @@ using STIGForge.Apply;
 using STIGForge.Verify;
 using STIGForge.Build;
 using STIGForge.Infrastructure.Telemetry;
+using STIGForge.Core.Services;
+using STIGForge.Apply.Dsc;
+using STIGForge.Apply.Reboot;
+using STIGForge.Apply.Snapshot;
+using Microsoft.Extensions.Logging.Abstractions;
 
 namespace STIGForge.UnitTests.Build;
 
@@ -20,10 +25,7 @@ namespace STIGForge.UnitTests.Build;
 public sealed class BundleOrchestratorControlOverrideTests : IDisposable
 {
   private readonly string _tempRoot;
-  private Mock<BundleBuilder> _mockBuilder = null!;
-  private Mock<ApplyRunner> _mockApply = null!;
   private Mock<IVerificationWorkflowService> _mockVerification = null!;
-  private Mock<VerificationArtifactAggregationService> _mockArtifactAggregation = null!;
 
   public BundleOrchestratorControlOverrideTests()
   {
@@ -54,7 +56,7 @@ public sealed class BundleOrchestratorControlOverrideTests : IDisposable
     {
       new
       {
-        key = "RULE:SV-12345",
+        key = "RULE:SV-12345r1_rule",
         overlayId = "overlay1",
         overlayName = "NA Overlay",
         overlayOrder = 0,
@@ -74,34 +76,34 @@ public sealed class BundleOrchestratorControlOverrideTests : IDisposable
     // Create pack_controls.json with test controls
     var controls = new[]
     {
-      new
+      new ControlRecord
       {
-        externalIds = new
+        ExternalIds = new ExternalIds
         {
-          ruleId = "SV-12345",
-          vulnId = "V-12345",
-          benchmarkId = "TEST-1.0"
+          RuleId = "SV-12345r1_rule",
+          VulnId = "V-12345",
+          BenchmarkId = "TEST-1.0"
         },
-        title = "NA Rule",
-        applicability = new
+        Title = "NA Rule",
+        Applicability = new Applicability
         {
-          classificationScope = "Unknown",
-          confidence = "High"
+          ClassificationScope = ScopeTag.Unknown,
+          Confidence = Confidence.High
         }
       },
-      new
+      new ControlRecord
       {
-        externalIds = new
+        ExternalIds = new ExternalIds
         {
-          ruleId = "SV-67890",
-          vulnId = "V-67890",
-          benchmarkId = "TEST-1.0"
+          RuleId = "SV-67890r1_rule",
+          VulnId = "V-67890",
+          BenchmarkId = "TEST-1.0"
         },
-        title = "Pass Rule",
-        applicability = new
+        Title = "Pass Rule",
+        Applicability = new Applicability
         {
-          classificationScope = "Unknown",
-          confidence = "High"
+          ClassificationScope = ScopeTag.Unknown,
+          Confidence = Confidence.High
         }
       }
     };
@@ -113,23 +115,14 @@ public sealed class BundleOrchestratorControlOverrideTests : IDisposable
     File.WriteAllText(Path.Combine(manifestDir, "overlays.json"), "[]", Encoding.UTF8);
 
     // Setup mocks
-    _mockBuilder = new Mock<BundleBuilder>(MockBehavior.Strict, null!, null!, null!, null!, null!, null!);
-    _mockApply = new Mock<ApplyRunner>(MockBehavior.Strict, null!, null!, null!, null!, null!, null!);
+    var applyRunner = CreateNoOpApplyRunner();
     _mockVerification = new Mock<IVerificationWorkflowService>(MockBehavior.Strict);
-    _mockArtifactAggregation = new Mock<VerificationArtifactAggregationService>(MockBehavior.Strict);
-
-    _mockApply.Setup(x => x.RunAsync(It.IsAny<ApplyRequest>(), It.IsAny<CancellationToken>()))
-      .ReturnsAsync(new ApplyResult
-      {
-        LogPath = "/test/apply.log",
-        Steps = Array.Empty<ApplyStepOutcome>()
-      });
 
     var orchestrator = new BundleOrchestrator(
-      _mockBuilder.Object,
-      _mockApply.Object,
+      CreateBundleBuilder(),
+      applyRunner,
       _mockVerification.Object,
-      _mockArtifactAggregation.Object,
+      new VerificationArtifactAggregationService(),
       new MissionTracingService(),
       new PerformanceInstrumenter()
     );
@@ -145,10 +138,8 @@ public sealed class BundleOrchestratorControlOverrideTests : IDisposable
 
     // Assert - The NA control should be filtered
     // We verify this by checking the mock was called with PowerStigDataGeneratedPath set
-    _mockApply.Verify(x => x.RunAsync(
-      It.Is<ApplyRequest>(r => r.PowerStigDataGeneratedPath != null),
-      It.IsAny<CancellationToken>()
-    ), Times.Once);
+    applyRunner.Requests.Should().HaveCount(1);
+    applyRunner.Requests[0].PowerStigDataGeneratedPath.Should().NotBeNullOrWhiteSpace();
   }
 
   [Fact]
@@ -183,10 +174,10 @@ public sealed class BundleOrchestratorControlOverrideTests : IDisposable
 
     // Act - Use reflection to call private method
     var orchestrator = new BundleOrchestrator(
-      Mock.Of<BundleBuilder>(),
-      Mock.Of<ApplyRunner>(),
+      CreateBundleBuilder(),
+      CreateNoOpApplyRunner(),
       Mock.Of<IVerificationWorkflowService>(),
-      Mock.Of<VerificationArtifactAggregationService>(),
+      new VerificationArtifactAggregationService(),
       new MissionTracingService(),
       new PerformanceInstrumenter()
     );
@@ -210,10 +201,10 @@ public sealed class BundleOrchestratorControlOverrideTests : IDisposable
 
     // Act - File doesn't exist
     var orchestrator = new BundleOrchestrator(
-      Mock.Of<BundleBuilder>(),
-      Mock.Of<ApplyRunner>(),
+      CreateBundleBuilder(),
+      CreateNoOpApplyRunner(),
       Mock.Of<IVerificationWorkflowService>(),
-      Mock.Of<VerificationArtifactAggregationService>(),
+      new VerificationArtifactAggregationService(),
       new MissionTracingService(),
       new PerformanceInstrumenter()
     );
@@ -312,5 +303,55 @@ public sealed class BundleOrchestratorControlOverrideTests : IDisposable
 
     // Assert
     result.Should().BeFalse();
+  }
+
+  private static BundleBuilder CreateBundleBuilder()
+  {
+    var path = new Mock<IPathBuilder>();
+    var hash = new Mock<IHashingService>();
+    var scope = new Mock<IClassificationScopeService>();
+
+    path.Setup(x => x.GetBundleRoot(It.IsAny<string>())).Returns<string>(id => Path.Combine(Path.GetTempPath(), id));
+    hash.Setup(x => x.Sha256FileAsync(It.IsAny<string>(), It.IsAny<CancellationToken>())).ReturnsAsync("abc123");
+    scope.Setup(x => x.Compile(It.IsAny<Profile>(), It.IsAny<IReadOnlyList<ControlRecord>>()))
+      .Returns(new CompiledControls(new List<CompiledControl>(), new List<CompiledControl>()));
+
+    return new BundleBuilder(
+      path.Object,
+      hash.Object,
+      scope.Object,
+      new ReleaseAgeGate(new SystemClock()),
+      new OverlayConflictDetector(),
+      new OverlayMergeService());
+  }
+
+  private static TestApplyRunner CreateNoOpApplyRunner()
+  {
+    return new TestApplyRunner();
+  }
+
+  private sealed class TestApplyRunner : ApplyRunner
+  {
+    public List<ApplyRequest> Requests { get; } = new();
+
+    public TestApplyRunner()
+      : base(
+        NullLogger<ApplyRunner>.Instance,
+        new SnapshotService(NullLogger<SnapshotService>.Instance, new Mock<IProcessRunner>().Object),
+        new RollbackScriptGenerator(NullLogger<RollbackScriptGenerator>.Instance),
+        new LcmService(NullLogger<LcmService>.Instance),
+        new RebootCoordinator(NullLogger<RebootCoordinator>.Instance, _ => true))
+    {
+    }
+
+    public override Task<ApplyResult> RunAsync(ApplyRequest request, CancellationToken ct)
+    {
+      Requests.Add(request);
+      return Task.FromResult(new ApplyResult
+      {
+        LogPath = "/test/apply.log",
+        Steps = Array.Empty<ApplyStepOutcome>()
+      });
+    }
   }
 }

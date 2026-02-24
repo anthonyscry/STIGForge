@@ -21,8 +21,6 @@ public sealed class BundleBuilderOverlayMergeTests : IDisposable
   private Mock<IPathBuilder> _mockPath = null!;
   private Mock<IHashingService> _mockHash = null!;
   private Mock<IClassificationScopeService> _mockScope = null!;
-  private Mock<ReleaseAgeGate> _mockReleaseGate = null!;
-  private Mock<OverlayConflictDetector> _mockConflictDetector = null!;
 
   public BundleBuilderOverlayMergeTests()
   {
@@ -231,22 +229,18 @@ public sealed class BundleBuilderOverlayMergeTests : IDisposable
     _mockPath = new Mock<IPathBuilder>();
     _mockHash = new Mock<IHashingService>();
     _mockScope = new Mock<IClassificationScopeService>();
-    _mockReleaseGate = new Mock<ReleaseAgeGate>(MockBehavior.Strict, null!, null!);
-    _mockConflictDetector = new Mock<OverlayConflictDetector>();
-
     _mockPath.Setup(x => x.GetBundleRoot(It.IsAny<string>())).Returns<string>(id => $"/test/bundles/{id}");
     _mockHash.Setup(x => x.Sha256FileAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
       .ReturnsAsync("abc123");
-    _mockReleaseGate.Setup(x => x.ShouldAutoApply(It.IsAny<Profile>(), It.IsAny<ContentPack>())).Returns(true);
-    _mockConflictDetector.Setup(x => x.DetectConflicts(It.IsAny<IReadOnlyList<Overlay>>()))
-      .Returns(new OverlayConflictReport());
+    var releaseGate = new ReleaseAgeGate(new SystemClock());
+    var conflictDetector = new OverlayConflictDetector();
 
     return new BundleBuilder(
       _mockPath.Object,
       _mockHash.Object,
       _mockScope.Object,
-      _mockReleaseGate.Object,
-      _mockConflictDetector.Object,
+      releaseGate,
+      conflictDetector,
       new OverlayMergeService()
     );
   }
@@ -256,6 +250,7 @@ public sealed class BundleBuilderOverlayMergeTests : IDisposable
     return new BundleBuildRequest
     {
       BundleId = "test-bundle",
+      ForceAutoApply = true,
       Pack = new ContentPack
       {
         PackId = "pack-1",

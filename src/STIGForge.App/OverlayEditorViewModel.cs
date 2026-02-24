@@ -61,16 +61,17 @@ public partial class OverlayEditorViewModel : ObservableObject
 
     // Create selectable rule items with deterministic sorting
     var rules = allControls
-      .Where(c => !string.IsNullOrWhiteSpace(c.ExternalIds.RuleId) || !string.IsNullOrWhiteSpace(c.ExternalIds.VulnId))
+      .Where(c => c.ExternalIds != null && (!string.IsNullOrWhiteSpace(c.ExternalIds.RuleId) || !string.IsNullOrWhiteSpace(c.ExternalIds.VulnId)))
       .Select(c => new SelectableRuleItem
       {
-        RuleId = c.ExternalIds.RuleId ?? "",
-        VulnId = c.ExternalIds.VulnId ?? "",
+        RuleId = c.ExternalIds?.RuleId ?? "",
+        VulnId = c.ExternalIds?.VulnId ?? "",
         Title = c.Title,
         Severity = c.Severity,
         PackId = c.SourcePackId
       })
-      .OrderBy(r => r.RuleId, StringComparer.OrdinalIgnoreCase)
+      .OrderBy(r => string.IsNullOrWhiteSpace(r.RuleId) ? 1 : 0)
+      .ThenBy(r => r.RuleId, StringComparer.OrdinalIgnoreCase)
       .ThenBy(r => r.VulnId, StringComparer.OrdinalIgnoreCase)
       .ToList();
 
@@ -84,7 +85,7 @@ public partial class OverlayEditorViewModel : ObservableObject
   {
     if (string.IsNullOrWhiteSpace(PowerStigRuleId)) return;
 
-    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+    InvokeOnUiThread(() =>
     {
       PowerStigOverrides.Add(new PowerStigOverride
       {
@@ -116,7 +117,7 @@ public partial class OverlayEditorViewModel : ObservableObject
       return;
     }
 
-    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+    InvokeOnUiThread(() =>
     {
       ControlOverrides.Add(new ControlOverride
       {
@@ -141,7 +142,7 @@ public partial class OverlayEditorViewModel : ObservableObject
   {
     if (item == null) return;
 
-    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+    InvokeOnUiThread(() =>
     {
       ControlOverrides.Remove(item);
     });
@@ -162,7 +163,7 @@ public partial class OverlayEditorViewModel : ObservableObject
     if (ofd.ShowDialog() != true) return;
 
     var rows = ReadPowerStigCsv(ofd.FileName);
-    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+    InvokeOnUiThread(() =>
     {
       foreach (var r in rows)
         PowerStigOverrides.Add(r);
@@ -255,6 +256,24 @@ public partial class OverlayEditorViewModel : ObservableObject
     }
     list.Add(sb.ToString());
     return list.ToArray();
+  }
+
+  private static void InvokeOnUiThread(Action action)
+  {
+    var dispatcher = System.Windows.Application.Current?.Dispatcher;
+    if (dispatcher == null)
+    {
+      action();
+      return;
+    }
+
+    if (dispatcher.CheckAccess())
+    {
+      action();
+      return;
+    }
+
+    dispatcher.Invoke(action);
   }
 }
 

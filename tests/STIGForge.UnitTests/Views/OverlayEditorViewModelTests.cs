@@ -54,8 +54,8 @@ public sealed class OverlayEditorViewModelTests
     Assert.Equal(5, vm.AvailableRules.Count);
 
     // Verify case-insensitive sorting by RuleId, then VulnId
-    Assert.Equal("sv-100002", vm.AvailableRules[0].RuleId);
-    Assert.Equal("SV-100001", vm.AvailableRules[1].RuleId);
+    Assert.Equal("SV-100001", vm.AvailableRules[0].RuleId);
+    Assert.Equal("sv-100002", vm.AvailableRules[1].RuleId);
     Assert.Equal("SV-100003", vm.AvailableRules[2].RuleId);
     Assert.Equal("SV-100005", vm.AvailableRules[3].RuleId);
     Assert.Equal("V-100004", vm.AvailableRules[4].VulnId);
