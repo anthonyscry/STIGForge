@@ -521,6 +521,59 @@
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
       </Style>
 
+      <!-- ═══════════ SETUP STEP TEMPLATE ═══════════ -->
+      <DataTemplate x:Key="SetupStepTemplate">
+        <StackPanel MaxWidth="600">
+          <TextBlock Text="Step 1: Setup" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,20"/>
+          <TextBlock Text="Configure paths for the workflow. Paths will be auto-detected where possible." 
+                     Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,20"/>
+
+          <TextBlock Text="Import Folder" FontWeight="SemiBold" Margin="0,0,0,4"/>
+          <Grid Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*"/>
+              <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBox Text="{Binding ImportFolderPath, UpdateSourceTrigger=PropertyChanged}" Height="32" VerticalContentAlignment="Center"/>
+            <Button Grid.Column="1" Content="Browse..." Width="80" Height="32" Margin="8,0,0,0" Command="{Binding BrowseImportFolderCommand}"/>
+          </Grid>
+
+          <TextBlock Text="Evaluate-STIG Tool Path" FontWeight="SemiBold" Margin="0,0,0,4"/>
+          <Grid Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*"/>
+              <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBox Text="{Binding EvaluateStigToolPath, UpdateSourceTrigger=PropertyChanged}" Height="32" VerticalContentAlignment="Center"/>
+            <Button Grid.Column="1" Content="Browse..." Width="80" Height="32" Margin="8,0,0,0" Command="{Binding BrowseEvaluateStigCommand}"/>
+          </Grid>
+
+          <TextBlock Text="SCC Tool Path (Optional)" FontWeight="SemiBold" Margin="0,0,0,4"/>
+          <Grid Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*"/>
+              <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBox Text="{Binding SccToolPath, UpdateSourceTrigger=PropertyChanged}" Height="32" VerticalContentAlignment="Center"/>
+            <Button Grid.Column="1" Content="Browse..." Width="80" Height="32" Margin="8,0,0,0" Command="{Binding BrowseSccCommand}"/>
+          </Grid>
+
+          <TextBlock Text="Output Folder" FontWeight="SemiBold" Margin="0,0,0,4"/>
+          <Grid Margin="0,0,0,16">
+            <Grid.ColumnDefinitions>
+              <ColumnDefinition Width="*"/>
+              <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBox Text="{Binding OutputFolderPath, UpdateSourceTrigger=PropertyChanged}" Height="32" VerticalContentAlignment="Center"/>
+            <Button Grid.Column="1" Content="Browse..." Width="80" Height="32" Margin="8,0,0,0" Command="{Binding BrowseOutputFolderCommand}"/>
+          </Grid>
+
+          <TextBlock Text="Machine Target" FontWeight="SemiBold" Margin="0,0,0,4"/>
+          <TextBox Text="{Binding MachineTarget, UpdateSourceTrigger=PropertyChanged}" Height="32" Width="300" HorizontalAlignment="Left" VerticalContentAlignment="Center"/>
+          <TextBlock Text="Use 'localhost' for local machine or enter a remote hostname" Foreground="{DynamicResource TextMutedBrush}" Margin="0,4,0,0"/>
+        </StackPanel>
+      </DataTemplate>
+
     </ResourceDictionary>
   </Application.Resources>
 </Application>

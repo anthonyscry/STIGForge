@@ -75,4 +75,36 @@ public partial class WorkflowViewModel : ObservableObject
         if (CurrentStep < WorkflowStep.Done)
             CurrentStep = CurrentStep + 1;
     }
+
+    [RelayCommand]
+    private void BrowseImportFolder()
+    {
+        var dialog = new Microsoft.Win32.OpenFolderDialog { Title = "Select Import Folder" };
+        if (dialog.ShowDialog() == true)
+            ImportFolderPath = dialog.FolderName;
+    }
+
+    [RelayCommand]
+    private void BrowseEvaluateStig()
+    {
+        var dialog = new Microsoft.Win32.OpenFolderDialog { Title = "Select Evaluate-STIG Folder" };
+        if (dialog.ShowDialog() == true)
+            EvaluateStigToolPath = dialog.FolderName;
+    }
+
+    [RelayCommand]
+    private void BrowseScc()
+    {
+        var dialog = new Microsoft.Win32.OpenFolderDialog { Title = "Select SCC Folder" };
+        if (dialog.ShowDialog() == true)
+            SccToolPath = dialog.FolderName;
+    }
+
+    [RelayCommand]
+    private void BrowseOutputFolder()
+    {
+        var dialog = new Microsoft.Win32.OpenFolderDialog { Title = "Select Output Folder" };
+        if (dialog.ShowDialog() == true)
+            OutputFolderPath = dialog.FolderName;
+    }
 }
