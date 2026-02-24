@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Windows;
 using System.Windows.Media;
 using STIGForge.App;
 
@@ -52,5 +53,47 @@ public class ConverterTests
 
         Assert.NotNull(result);
         Assert.True(result.IsFrozen);
+    }
+
+    [Theory]
+    [InlineData(StepState.Ready, Visibility.Collapsed)]
+    [InlineData(StepState.Running, Visibility.Visible)]
+    [InlineData(StepState.Complete, Visibility.Collapsed)]
+    [InlineData(StepState.Locked, Visibility.Collapsed)]
+    [InlineData(StepState.Error, Visibility.Collapsed)]
+    public void StepStateToRunningVisibilityConverter_ReturnsCorrect(StepState state, Visibility expected)
+    {
+        var converter = new StepStateToRunningVisibilityConverter();
+        var result = converter.Convert(state, typeof(Visibility), null, CultureInfo.InvariantCulture);
+
+        Assert.Equal(expected, result);
+    }
+
+    [Theory]
+    [InlineData(StepState.Ready, Visibility.Collapsed)]
+    [InlineData(StepState.Running, Visibility.Collapsed)]
+    [InlineData(StepState.Complete, Visibility.Visible)]
+    [InlineData(StepState.Locked, Visibility.Collapsed)]
+    [InlineData(StepState.Error, Visibility.Collapsed)]
+    public void StepStateToCompleteVisibilityConverter_ReturnsCorrect(StepState state, Visibility expected)
+    {
+        var converter = new StepStateToCompleteVisibilityConverter();
+        var result = converter.Convert(state, typeof(Visibility), null, CultureInfo.InvariantCulture);
+
+        Assert.Equal(expected, result);
+    }
+
+    [Theory]
+    [InlineData(StepState.Ready, Visibility.Collapsed)]
+    [InlineData(StepState.Running, Visibility.Collapsed)]
+    [InlineData(StepState.Complete, Visibility.Collapsed)]
+    [InlineData(StepState.Locked, Visibility.Collapsed)]
+    [InlineData(StepState.Error, Visibility.Visible)]
+    public void StepStateToErrorVisibilityConverter_ReturnsCorrect(StepState state, Visibility expected)
+    {
+        var converter = new StepStateToErrorVisibilityConverter();
+        var result = converter.Convert(state, typeof(Visibility), null, CultureInfo.InvariantCulture);
+
+        Assert.Equal(expected, result);
     }
 }

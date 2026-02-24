@@ -131,3 +131,51 @@ public sealed class StepStateToBorderBrushConverter : IValueConverter
     throw new NotSupportedException();
   }
 }
+
+/// <summary>
+/// Converts StepState to Visibility for the running indicator.
+/// </summary>
+public sealed class StepStateToRunningVisibilityConverter : IValueConverter
+{
+  public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+  {
+    return value is StepState.Running ? Visibility.Visible : Visibility.Collapsed;
+  }
+
+  public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+  {
+    throw new NotSupportedException();
+  }
+}
+
+/// <summary>
+/// Converts StepState to Visibility for the complete indicator.
+/// </summary>
+public sealed class StepStateToCompleteVisibilityConverter : IValueConverter
+{
+  public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+  {
+    return value is StepState.Complete ? Visibility.Visible : Visibility.Collapsed;
+  }
+
+  public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+  {
+    throw new NotSupportedException();
+  }
+}
+
+/// <summary>
+/// Converts StepState to Visibility for the error indicator.
+/// </summary>
+public sealed class StepStateToErrorVisibilityConverter : IValueConverter
+{
+  public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+  {
+    return value is StepState.Error ? Visibility.Visible : Visibility.Collapsed;
+  }
+
+  public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+  {
+    throw new NotSupportedException();
+  }
+}
