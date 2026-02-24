@@ -11,6 +11,9 @@ public class WorkflowSettings
     public string SccToolPath { get; set; } = string.Empty;
     public string OutputFolderPath { get; set; } = string.Empty;
     public string MachineTarget { get; set; } = "localhost";
+    public bool ExportCkl { get; set; } = true;
+    public bool ExportCsv { get; set; }
+    public bool ExportXccdf { get; set; }
 
     private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
