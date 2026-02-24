@@ -91,7 +91,7 @@ public class ExportDeterminismTests
       var result = validator.ValidatePackage(tempDir);
 
       // Should warn about missing packageHash but not error
-      Assert.True(result.Warnings.Any(w => w.Contains("packageHash")));
+      Assert.Contains(result.Warnings, w => w.Contains("packageHash"));
     }
     finally
     {
@@ -136,7 +136,7 @@ public class ExportDeterminismTests
       var result = validator.ValidatePackage(tempDir);
 
       Assert.False(result.Metrics.PackageHashValid);
-      Assert.True(result.Errors.Any(e => e.Contains("Package hash mismatch")));
+      Assert.Contains(result.Errors, e => e.Contains("Package hash mismatch"));
     }
     finally
     {

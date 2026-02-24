@@ -73,9 +73,10 @@ public class AnswerImpactTests
 
     diff.AssessAnswerImpact(answerFile);
 
-    diff.ModifiedControls[0].AnswerImpact.Should().NotBeNull();
-    diff.ModifiedControls[0].AnswerImpact!.Validity.Should().Be(AnswerValidity.Valid);
-    diff.ModifiedControls[0].AnswerImpact.Reason.Should().Contain("unchanged");
+    var impact = diff.ModifiedControls[0].AnswerImpact;
+    impact.Should().NotBeNull();
+    impact!.Validity.Should().Be(AnswerValidity.Valid);
+    impact.Reason!.Should().Contain("unchanged");
   }
 
   [Fact]
@@ -114,9 +115,10 @@ public class AnswerImpactTests
 
     diff.AssessAnswerImpact(answerFile);
 
-    diff.ModifiedControls[0].AnswerImpact.Should().NotBeNull();
-    diff.ModifiedControls[0].AnswerImpact!.Validity.Should().Be(AnswerValidity.Uncertain);
-    diff.ModifiedControls[0].AnswerImpact.Reason.Should().Contain("review");
+    var impact = diff.ModifiedControls[0].AnswerImpact;
+    impact.Should().NotBeNull();
+    impact!.Validity.Should().Be(AnswerValidity.Uncertain);
+    impact.Reason!.Should().Contain("review");
   }
 
   [Fact]
@@ -156,9 +158,10 @@ public class AnswerImpactTests
 
     diff.AssessAnswerImpact(answerFile);
 
-    diff.ModifiedControls[0].AnswerImpact.Should().NotBeNull();
-    diff.ModifiedControls[0].AnswerImpact!.Validity.Should().Be(AnswerValidity.Invalid);
-    diff.ModifiedControls[0].AnswerImpact.Reason.Should().Contain("invalid");
+    var impact = diff.ModifiedControls[0].AnswerImpact;
+    impact.Should().NotBeNull();
+    impact!.Validity.Should().Be(AnswerValidity.Invalid);
+    impact.Reason!.Should().Contain("invalid");
   }
 
   [Fact]
