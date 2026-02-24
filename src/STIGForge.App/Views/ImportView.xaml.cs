@@ -10,6 +10,7 @@ public partial class ImportView : UserControl
     private string _lastSortColumn = "";
     private ListSortDirection _lastSortDirection = ListSortDirection.Ascending;
     private MainViewModel? _boundViewModel;
+    private bool _isLoaded;
 
     public static readonly DependencyProperty MissionJsonPathProperty = DependencyProperty.Register(
         nameof(MissionJsonPath),
@@ -26,19 +27,53 @@ public partial class ImportView : UserControl
     public ImportView()
     {
         InitializeComponent();
+        Loaded += OnLoaded;
+        Unloaded += OnUnloaded;
         DataContextChanged += OnDataContextChanged;
+    }
+
+    private void OnLoaded(object sender, RoutedEventArgs e)
+    {
+        _isLoaded = true;
+        BindToViewModel(DataContext as MainViewModel);
+        UpdateMissionJsonPathBindingSurface();
+    }
+
+    private void OnUnloaded(object sender, RoutedEventArgs e)
+    {
+        _isLoaded = false;
+        UnbindFromViewModel();
     }
 
     private void OnDataContextChanged(object sender, DependencyPropertyChangedEventArgs e)
     {
-        if (_boundViewModel != null)
-            _boundViewModel.PropertyChanged -= OnViewModelPropertyChanged;
-
-        _boundViewModel = e.NewValue as MainViewModel;
-        if (_boundViewModel != null)
-            _boundViewModel.PropertyChanged += OnViewModelPropertyChanged;
+        if (_isLoaded)
+            BindToViewModel(e.NewValue as MainViewModel);
+        else
+            _boundViewModel = e.NewValue as MainViewModel;
 
         UpdateMissionJsonPathBindingSurface();
+    }
+
+    private void BindToViewModel(MainViewModel? viewModel)
+    {
+        if (ReferenceEquals(_boundViewModel, viewModel))
+            return;
+
+        UnbindFromViewModel();
+        _boundViewModel = viewModel;
+        if (_boundViewModel != null)
+            _boundViewModel.PropertyChanged += OnViewModelPropertyChanged;
+    }
+
+    private void UnbindFromViewModel()
+    {
+        var current = _boundViewModel;
+        if (current == null)
+            return;
+
+        current.PropertyChanged -= OnViewModelPropertyChanged;
+        _boundViewModel = null;
     }
 
     private void OnViewModelPropertyChanged(object? sender, PropertyChangedEventArgs e)

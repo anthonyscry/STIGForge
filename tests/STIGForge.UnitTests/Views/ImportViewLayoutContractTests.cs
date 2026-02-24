@@ -1,4 +1,7 @@
 using System.Xml.Linq;
+using System.Reflection;
+using System.Windows;
+using STIGForge.App.Views;
 
 namespace STIGForge.UnitTests.Views;
 
@@ -114,12 +117,48 @@ public sealed class ImportViewLayoutContractTests
   }
 
   [Fact]
-  public void ImportView_CodeBehindSurfacesMissionJsonPathBindingProperty()
+  public void ImportView_DefinesMissionJsonDependencyPropertyContract()
   {
-    var codeBehind = LoadImportViewCodeBehind();
+    var type = typeof(ImportView);
+    var field = type.GetField("MissionJsonPathProperty", BindingFlags.Public | BindingFlags.Static);
+    Assert.NotNull(field);
+    Assert.Equal(typeof(DependencyProperty), field!.FieldType);
 
-    Assert.Contains("MissionJsonPathProperty", codeBehind, StringComparison.Ordinal);
-    Assert.Contains("MainViewModel.MissionJsonPath", codeBehind, StringComparison.Ordinal);
+    var dp = field.GetValue(null) as DependencyProperty;
+    Assert.NotNull(dp);
+    Assert.Equal("MissionJsonPath", dp!.Name);
+    Assert.Equal(typeof(string), dp.PropertyType);
+    Assert.Equal(typeof(ImportView), dp.OwnerType);
+
+    var property = type.GetProperty("MissionJsonPath", BindingFlags.Public | BindingFlags.Instance);
+    Assert.NotNull(property);
+    Assert.Equal(typeof(string), property!.PropertyType);
+    Assert.NotNull(property.GetMethod);
+    Assert.NotNull(property.SetMethod);
+    Assert.False(property.SetMethod!.IsPublic);
+  }
+
+  [Fact]
+  public void ImportView_ContainsLifecycleHooksForMissionPathBindingSync()
+  {
+    var type = typeof(ImportView);
+
+    var onLoaded = type.GetMethod("OnLoaded", BindingFlags.NonPublic | BindingFlags.Instance);
+    Assert.NotNull(onLoaded);
+    Assert.Equal(typeof(void), onLoaded!.ReturnType);
+
+    var onUnloaded = type.GetMethod("OnUnloaded", BindingFlags.NonPublic | BindingFlags.Instance);
+    Assert.NotNull(onUnloaded);
+    Assert.Equal(typeof(void), onUnloaded!.ReturnType);
+
+    var onDataContextChanged = type.GetMethod("OnDataContextChanged", BindingFlags.NonPublic | BindingFlags.Instance);
+    Assert.NotNull(onDataContextChanged);
+
+    var onViewModelPropertyChanged = type.GetMethod("OnViewModelPropertyChanged", BindingFlags.NonPublic | BindingFlags.Instance);
+    Assert.NotNull(onViewModelPropertyChanged);
+
+    var updateSurface = type.GetMethod("UpdateMissionJsonPathBindingSurface", BindingFlags.NonPublic | BindingFlags.Instance);
+    Assert.NotNull(updateSurface);
   }
 
   private static string LoadImportViewXaml()
@@ -137,18 +176,4 @@ public sealed class ImportViewLayoutContractTests
     return File.ReadAllText(importViewPath);
   }
 
-  private static string LoadImportViewCodeBehind()
-  {
-    var current = new DirectoryInfo(AppContext.BaseDirectory);
-
-    while (current is not null && !File.Exists(Path.Combine(current.FullName, "STIGForge.sln")))
-      current = current.Parent;
-
-    Assert.True(current is not null, "Could not locate repository root containing STIGForge.sln.");
-
-    var importViewCodeBehindPath = Path.Combine(current!.FullName, "src", "STIGForge.App", "Views", "ImportView.xaml.cs");
-    Assert.True(File.Exists(importViewCodeBehindPath), $"Expected ImportView code-behind at '{importViewCodeBehindPath}'.");
-
-    return File.ReadAllText(importViewCodeBehindPath);
-  }
 }
