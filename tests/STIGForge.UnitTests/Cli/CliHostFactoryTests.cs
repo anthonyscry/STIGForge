@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using STIGForge.Cli;
 using STIGForge.Content.Import;
 using STIGForge.Core.Abstractions;
+using System.Diagnostics;
 using Xunit;
 using static STIGForge.UnitTests.TestCategories;
 
@@ -29,12 +30,10 @@ public sealed class CliHostFactoryTests : IAsyncLifetime
     {
       await _host.StopAsync();
       _host.Dispose();
-      // Allow file handles to release before deleting directory
-      await Task.Delay(50);
+      _host = null;
     }
 
-    if (Directory.Exists(_tempRoot))
-      Directory.Delete(_tempRoot, true);
+    await DeleteDirectoryWithRetriesAsync(_tempRoot);
   }
 
   [Fact]
@@ -82,24 +81,89 @@ public sealed class CliHostFactoryTests : IAsyncLifetime
   [Trait("Category", Integration)]
   public async Task BuildHost_LogContainsCorrelationId()
   {
+    const string testMessage = "Test log message with correlation";
     _host = CliHostFactory.BuildHost(() => new TestPathBuilder(_tempRoot));
 
     await _host.StartAsync();
 
     // Create a scope that logs something
     var logger = _host.Services.GetRequiredService<ILogger<CliHostFactoryTests>>();
-    logger.LogInformation("Test log message with correlation");
+    using (var activity = new Activity("cli-host-test-correlation"))
+    {
+      activity.Start();
+      logger.LogInformation(testMessage);
+    }
 
     await _host.StopAsync();
+    _host.Dispose();
+    _host = null;
 
     var logsRoot = Path.Combine(_tempRoot, "logs");
-    var logFiles = Directory.GetFiles(logsRoot, "stigforge-cli*.log", SearchOption.TopDirectoryOnly);
-    logFiles.Should().NotBeEmpty();
-
-    var logContent = await File.ReadAllTextAsync(logFiles[0]);
+    var logContent = await WaitForLogContentAsync(logsRoot, "stigforge-cli*.log", testMessage, TimeSpan.FromSeconds(3));
+    logContent.Should().NotBeNullOrWhiteSpace();
     // Log should contain either TraceId (if Activity started) or CorrelationId
     // Both are 32-char hex strings (GUID without dashes)
     logContent.Should().MatchRegex(@"\[[a-f0-9]{32}\]", "log should contain correlation ID");
+  }
+
+  private static async Task<string> ReadAllTextSharedAsync(string path)
+  {
+    await using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+    using var reader = new StreamReader(stream);
+    return await reader.ReadToEndAsync();
+  }
+
+  private static async Task<string?> WaitForLogContentAsync(string root, string pattern, string marker, TimeSpan timeout)
+  {
+    var deadline = DateTime.UtcNow + timeout;
+    while (DateTime.UtcNow < deadline)
+    {
+      if (Directory.Exists(root))
+      {
+        var files = Directory.GetFiles(root, pattern, SearchOption.TopDirectoryOnly);
+        foreach (var file in files)
+        {
+          var content = await ReadAllTextSharedAsync(file);
+          if (content.Contains(marker, StringComparison.Ordinal))
+            return content;
+        }
+      }
+
+      await Task.Delay(50);
+    }
+
+    return null;
+  }
+
+  private static async Task DeleteDirectoryWithRetriesAsync(string path)
+  {
+    if (!Directory.Exists(path))
+      return;
+
+    for (var attempt = 0; attempt < 10; attempt++)
+    {
+      try
+      {
+        Directory.Delete(path, true);
+        return;
+      }
+      catch (IOException) when (attempt < 9)
+      {
+        await Task.Delay(100);
+      }
+      catch (UnauthorizedAccessException) when (attempt < 9)
+      {
+        await Task.Delay(100);
+      }
+      catch (IOException)
+      {
+        return;
+      }
+      catch (UnauthorizedAccessException)
+      {
+        return;
+      }
+    }
   }
 
   private sealed class TestPathBuilder : IPathBuilder

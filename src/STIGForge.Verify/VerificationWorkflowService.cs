@@ -187,11 +187,16 @@ public sealed class VerificationWorkflowService : IVerificationWorkflowService
   {
     return new VerificationWorkflowArtifacts
     {
-      ConsolidatedJsonPath = Path.Combine(outputRoot, VerificationWorkflowDefaults.ConsolidatedJsonFile),
+      ConsolidatedJsonPath = BuildConsolidatedJsonPath(outputRoot),
       ConsolidatedCsvPath = Path.Combine(outputRoot, VerificationWorkflowDefaults.ConsolidatedCsvFile),
       CoverageSummaryJsonPath = Path.Combine(outputRoot, VerificationWorkflowDefaults.CoverageSummaryJsonFile),
       CoverageSummaryCsvPath = Path.Combine(outputRoot, VerificationWorkflowDefaults.CoverageSummaryCsvFile)
     };
+  }
+
+  public static string BuildConsolidatedJsonPath(string outputRoot)
+  {
+    return Path.Combine(outputRoot, VerificationWorkflowDefaults.ConsolidatedJsonFile);
   }
 
   private static string ResolveConsolidatedToolLabel(VerificationWorkflowRequest request, IReadOnlyList<VerificationToolRunResult> runs)

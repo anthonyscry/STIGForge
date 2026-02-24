@@ -116,6 +116,7 @@ public partial class App : Application
 
           services.AddSingleton<ContentPackImporter>();
           services.AddSingleton<STIGForge.Core.Services.OverlayConflictDetector>();
+          services.AddSingleton<OverlayMergeService>();
           services.AddSingleton<BundleBuilder>();
           services.AddSingleton<SnapshotService>();
           services.AddSingleton<RollbackScriptGenerator>();

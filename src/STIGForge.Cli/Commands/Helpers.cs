@@ -4,6 +4,19 @@ namespace STIGForge.Cli.Commands;
 
 internal static class Helpers
 {
+  public static string ResolveAbsolutePath(string path)
+  {
+    if (string.IsNullOrWhiteSpace(path))
+      return Path.GetFullPath(".");
+
+    return Path.GetFullPath(path);
+  }
+
+  public static string ResolveMissionPath(string outputRoot)
+  {
+    return Path.Combine(ResolveAbsolutePath(outputRoot), "mission.json");
+  }
+
   public static string ResolveReportPath(string path)
   {
     if (File.Exists(path)) return path;

@@ -13,6 +13,7 @@ using STIGForge.Infrastructure.Paths;
 using STIGForge.Infrastructure.Storage;
 using STIGForge.Infrastructure.System;
 using STIGForge.Infrastructure.Telemetry;
+using STIGForge.Infrastructure.Workflow;
 using STIGForge.Verify;
 
 namespace STIGForge.Cli;
@@ -67,6 +68,7 @@ public static class CliHostFactory
     services.AddSingleton<IClassificationScopeService, ClassificationScopeService>();
     services.AddSingleton<ReleaseAgeGate>();
     services.AddSingleton<IPathBuilder>(_ => pathBuilderFactory());
+    services.AddSingleton<LocalSetupValidator>();
     services.AddSingleton<IHashingService, Sha256HashingService>();
 
     services.AddSingleton(sp =>
@@ -88,6 +90,7 @@ public static class CliHostFactory
     services.AddSingleton<IMissionRunRepository>(sp => new MissionRunRepository(sp.GetRequiredService<string>()));
     services.AddSingleton<ContentPackImporter>();
     services.AddSingleton<STIGForge.Core.Services.OverlayConflictDetector>();
+    services.AddSingleton<OverlayMergeService>();
     services.AddSingleton<BundleBuilder>();
     services.AddSingleton<SnapshotService>();
     services.AddSingleton<RollbackScriptGenerator>();
@@ -96,7 +99,10 @@ public static class CliHostFactory
     services.AddSingleton<STIGForge.Apply.ApplyRunner>();
     services.AddSingleton<EvaluateStigRunner>();
     services.AddSingleton<ScapRunner>();
+    services.AddSingleton<ImportInboxScanner>();
+    services.AddSingleton<ScannerEvidenceMapper>();
     services.AddSingleton<IVerificationWorkflowService, VerificationWorkflowService>();
+    services.AddSingleton<ILocalWorkflowService, LocalWorkflowService>();
     services.AddSingleton<VerificationArtifactAggregationService>();
     services.AddSingleton<MissionTracingService>();
     services.AddSingleton<PerformanceInstrumenter>();

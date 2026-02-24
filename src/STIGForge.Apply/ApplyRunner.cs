@@ -11,7 +11,7 @@ using Microsoft.Extensions.Logging;
 
  namespace STIGForge.Apply;
 
-public sealed class ApplyRunner
+public class ApplyRunner
 {
     private const string PowerStigStepName = "powerstig_compile";
     private const string ScriptStepName = "apply_script";
@@ -50,7 +50,7 @@ public sealed class ApplyRunner
        _preflightRunner = preflightRunner;
     }
 
-   public async Task<ApplyResult> RunAsync(ApplyRequest request, CancellationToken ct)
+   public virtual async Task<ApplyResult> RunAsync(ApplyRequest request, CancellationToken ct)
   {
     if (string.IsNullOrWhiteSpace(request.BundleRoot))
       throw new ArgumentException("BundleRoot is required.");

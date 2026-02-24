@@ -345,6 +345,30 @@ public partial class MainViewModel
       PoamSystemName = machineName;
   }
 
+  private string ResolveWorkflowLocalImportRoot()
+  {
+    return Path.Combine(_paths.GetAppDataRoot(), "import");
+  }
+
+  private string ResolveWorkflowLocalOutputRoot()
+  {
+    return Path.Combine(_paths.GetAppDataRoot(), "local-workflow");
+  }
+
+  private string ResolveWorkflowLocalMissionJsonPath()
+  {
+    return Path.Combine(ResolveWorkflowLocalOutputRoot(), "mission.json");
+  }
+
+  private void ApplyWorkflowLocalImportDefaults()
+  {
+    if (string.IsNullOrWhiteSpace(ScanImportFolderPath))
+      ScanImportFolderPath = ResolveWorkflowLocalImportRoot();
+
+    if (string.IsNullOrWhiteSpace(MissionJsonPath))
+      MissionJsonPath = ResolveWorkflowLocalMissionJsonPath();
+  }
+
   private void SaveFleetInventory()
   {
     try

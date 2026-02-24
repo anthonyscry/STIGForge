@@ -21,14 +21,62 @@ jobs:
       - name: Compatibility contract tests
         shell: pwsh
         run: |
-          dotnet test .\tests\STIGForge.UnitTests\STIGForge.UnitTests.csproj --configuration Release --framework net8.0 --filter "FullyQualifiedName~ContentPackImporterTests"
-          dotnet test .\tests\STIGForge.IntegrationTests\STIGForge.IntegrationTests.csproj --configuration Release --framework net8.0 --filter "FullyQualifiedName~RoundTrip"
+          dotnet test .\tests\STIGForge.UnitTests\STIGForge.UnitTests.csproj --configuration Release --framework net8.0 --filter "FullyQualifiedName~ContentPackImporterTests" --collect:"XPlat Code Coverage" --results-directory .\.artifacts\coverage\ci\unit
+          dotnet test .\tests\STIGForge.IntegrationTests\STIGForge.IntegrationTests.csproj --configuration Release --framework net8.0 --filter "FullyQualifiedName~RoundTrip" --collect:"XPlat Code Coverage" --results-directory .\.artifacts\coverage\ci\integration
 
       - name: Upgrade/rebase parity contracts
         shell: pwsh
         run: |
-          dotnet test .\tests\STIGForge.UnitTests\STIGForge.UnitTests.csproj --configuration Release --framework net8.0 --filter "FullyQualifiedName~BaselineDiffServiceTests|FullyQualifiedName~OverlayRebaseServiceTests|FullyQualifiedName~BundleMissionSummaryServiceTests"
-          dotnet test .\tests\STIGForge.IntegrationTests\STIGForge.IntegrationTests.csproj --configuration Release --framework net8.0 --filter "FullyQualifiedName~CliCommandTests.DiffPacks|FullyQualifiedName~CliCommandTests.RebaseOverlay"
+          dotnet test .\tests\STIGForge.UnitTests\STIGForge.UnitTests.csproj --configuration Release --framework net8.0 --filter "FullyQualifiedName~BaselineDiffServiceTests|FullyQualifiedName~OverlayRebaseServiceTests|FullyQualifiedName~BundleMissionSummaryServiceTests" --collect:"XPlat Code Coverage" --results-directory .\.artifacts\coverage\ci\unit
+          dotnet test .\tests\STIGForge.IntegrationTests\STIGForge.IntegrationTests.csproj --configuration Release --framework net8.0 --filter "FullyQualifiedName~CliCommandTests.DiffPacks|FullyQualifiedName~CliCommandTests.RebaseOverlay" --collect:"XPlat Code Coverage" --results-directory .\.artifacts\coverage\ci\integration
+
+      - name: Build coverage report and gate
+        shell: pwsh
+        run: |
+          $mergeArgs = @(
+            '-NoProfile',
+            '-ExecutionPolicy', 'Bypass',
+            '-File', '.\tools\release\Invoke-CoverageMerge.ps1',
+            '-SourceDirectory', '.\.artifacts\coverage\ci',
+            '-OutputPath', '.\.artifacts\coverage\ci\coverage.cobertura.xml'
+          )
+          powershell @mergeArgs
+
+          $reportArgs = @(
+            '-NoProfile',
+            '-ExecutionPolicy', 'Bypass',
+            '-File', '.\tools\release\Invoke-CoverageReport.ps1',
+            '-CoverageReportPath', '.\.artifacts\coverage\ci\coverage.cobertura.xml',
+            '-OutputDirectory', '.\.artifacts\coverage\ci\report'
+          )
+          powershell @reportArgs
+
+          $gateArgs = @(
+            '-NoProfile',
+            '-ExecutionPolicy', 'Bypass',
+            '-File', '.\tools\release\Invoke-CoverageGate.ps1',
+            '-CoverageReportPath', '.\.artifacts\coverage\ci\coverage.cobertura.xml',
+            '-PolicyPath', '.\tools\release\coverage-gate-policy.json'
+          )
+          powershell @gateArgs
+
+      - name: Report mutation policy
+        shell: pwsh
+        run: |
+          $resultPath = '.\.artifacts\mutation\current-result.json'
+          if (-not (Test-Path -LiteralPath $resultPath)) {
+            Write-Host "[mutation-policy] Skipping mutation policy: result file missing at $resultPath"
+          }
+          else {
+            $mutationArgs = @(
+              '-NoProfile',
+              '-ExecutionPolicy', 'Bypass',
+              '-File', '.\tools\release\Invoke-MutationPolicy.ps1',
+              '-CurrentResultPath', $resultPath,
+              '-PolicyPath', '.\tools\release\mutation-policy.json'
+            )
+            powershell @mutationArgs
+          }
 
       - name: Run release gate
         shell: pwsh
@@ -207,6 +255,14 @@ jobs:
         with:
           name: release-gate-${{ github.run_id }}
           path: ./.artifacts/release-gate/latest
+          if-no-files-found: warn
+
+      - name: Upload coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-ci-${{ github.run_id }}
+          path: ./.artifacts/coverage/ci
           if-no-files-found: warn
 
       - name: Upload stability-budget artifacts

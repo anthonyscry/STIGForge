@@ -1,3 +1,4 @@
+using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
@@ -17,10 +18,17 @@ namespace STIGForge.App;
 public partial class MainViewModel
 {
   public List<ContentPack> SelectedMissionPacks { get; } = new();
+  [ObservableProperty] private string missionJsonPath = "";
   private readonly Dictionary<string, string> _formatCache = new(StringComparer.OrdinalIgnoreCase);
   private readonly Dictionary<string, HashSet<string>> _benchmarkIdCache = new(StringComparer.OrdinalIgnoreCase);
   private readonly CanonicalScapSelector _canonicalScapSelector = new();
   private readonly Dictionary<string, string> _canonicalScapByStigId = new(StringComparer.OrdinalIgnoreCase);
+
+  partial void OnScanImportFolderPathChanged(string value)
+  {
+    if (string.IsNullOrWhiteSpace(MissionJsonPath))
+      MissionJsonPath = ResolveWorkflowLocalMissionJsonPath();
+  }
 
   [RelayCommand]
   private async Task ScanImportFolderAsync()
@@ -30,6 +38,8 @@ public partial class MainViewModel
 
   private async Task RunImportScanAsync(bool autoMode)
   {
+    ApplyWorkflowLocalImportDefaults();
+
     if (Interlocked.CompareExchange(ref _importScanInFlight, 1, 0) != 0)
       return;
 
@@ -67,7 +77,7 @@ public partial class MainViewModel
       AppendImportActivityLog((autoMode ? "AUTO" : "MANUAL") + " scan started");
 
       var scanner = new ImportInboxScanner(new Sha256HashingService());
-      var scan = await Task.Run(() => scanner.ScanAsync(importFolder, _cts.Token), _cts.Token);
+      var scan = await Task.Run(() => scanner.ScanWithCanonicalChecklistAsync(importFolder, _cts.Token), _cts.Token);
 
       if (scan.Candidates.Count == 0)
       {
@@ -425,7 +435,7 @@ public partial class MainViewModel
 
   private string ResolveScanImportFolderPath()
   {
-    return _paths.GetImportRoot();
+    return ResolveWorkflowLocalImportRoot();
   }
 
   [RelayCommand]

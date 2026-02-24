@@ -3,6 +3,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using STIGForge.Core.Abstractions;
+using STIGForge.Infrastructure.Workflow;
 using STIGForge.Verify;
 
 namespace STIGForge.Cli.Commands;
@@ -14,7 +15,7 @@ internal static class VerifyCommands
     RegisterVerifyEvaluateStig(rootCmd, buildHost);
     RegisterVerifyScap(rootCmd, buildHost);
     RegisterCoverageOverlap(rootCmd);
-    RegisterExportEmass(rootCmd, buildHost);
+    // NOTE: export-emass moved to ExportCommands.cs to avoid duplicate registration
   }
 
   private static void RegisterVerifyEvaluateStig(RootCommand rootCmd, Func<IHost> buildHost)
@@ -34,6 +35,7 @@ internal static class VerifyCommands
       var workflowResult = await RunWorkflowAsync(
         buildHost,
         outputRoot,
+        services => services.GetRequiredService<LocalSetupValidator>().ValidateRequiredTools(toolRoot),
         request =>
         {
           request.ConsolidatedToolLabel = "Evaluate-STIG";
@@ -82,6 +84,7 @@ internal static class VerifyCommands
       var workflowResult = await RunWorkflowAsync(
         buildHost,
         outputRoot,
+        null,
         request =>
         {
           request.ConsolidatedToolLabel = string.IsNullOrWhiteSpace(toolName) ? "SCAP" : toolName;
@@ -224,10 +227,15 @@ internal static class VerifyCommands
     rootCmd.AddCommand(cmd);
   }
 
-  private static async Task<VerificationWorkflowResult> RunWorkflowAsync(Func<IHost> buildHost, string? outputRoot, Action<VerificationWorkflowRequest> configure)
+  private static async Task<VerificationWorkflowResult> RunWorkflowAsync(
+    Func<IHost> buildHost,
+    string? outputRoot,
+    Action<IServiceProvider>? preflight,
+    Action<VerificationWorkflowRequest> configure)
   {
     using var host = buildHost();
     await host.StartAsync();
+    preflight?.Invoke(host.Services);
 
     var useRequestedRoot = !string.IsNullOrWhiteSpace(outputRoot) && Directory.Exists(outputRoot);
     var tempRoot = string.Empty;
