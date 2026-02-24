@@ -40,6 +40,9 @@ public partial class WorkflowViewModel : ObservableObject
     private string _machineTarget = "localhost";
 
     [ObservableProperty]
+    private string _missionJsonPath = string.Empty;
+
+    [ObservableProperty]
     private bool _isBusy;
 
     [ObservableProperty]
@@ -106,5 +109,12 @@ public partial class WorkflowViewModel : ObservableObject
         var dialog = new Microsoft.Win32.OpenFolderDialog { Title = "Select Output Folder" };
         if (dialog.ShowDialog() == true)
             OutputFolderPath = dialog.FolderName;
+    }
+
+    [RelayCommand]
+    private void OpenOutputFolder()
+    {
+        if (!string.IsNullOrWhiteSpace(OutputFolderPath) && System.IO.Directory.Exists(OutputFolderPath))
+            System.Diagnostics.Process.Start("explorer.exe", OutputFolderPath);
     }
 }

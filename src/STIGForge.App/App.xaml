@@ -1,4 +1,4 @@
-<Application x:Class="STIGForge.App.App" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:STIGForge.App" ShutdownMode="OnMainWindowClose">
+<Application x:Class="STIGForge.App.App" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:STIGForge.App" xmlns:converters="clr-namespace:STIGForge.App" ShutdownMode="OnMainWindowClose">
   <Application.Resources>
     <ResourceDictionary>
       <ResourceDictionary.MergedDictionaries>
@@ -11,6 +11,7 @@
       <local:BoolToPassFailConverter x:Key="BoolToPassFail" />
       <local:BoolToReadyVerdictConverter x:Key="BoolToReadyVerdict" />
       <local:BoolToReadyColorConverter x:Key="BoolToReadyColor" />
+      <converters:StepFontWeightConverter x:Key="StepFontWeightConverter" />
 
       <!-- ═══════════ TEXT ═══════════ -->
       <Style TargetType="TextBlock">
@@ -571,6 +572,57 @@
           <TextBlock Text="Machine Target" FontWeight="SemiBold" Margin="0,0,0,4"/>
           <TextBox Text="{Binding MachineTarget, UpdateSourceTrigger=PropertyChanged}" Height="32" Width="300" HorizontalAlignment="Left" VerticalContentAlignment="Center"/>
           <TextBlock Text="Use 'localhost' for local machine or enter a remote hostname" Foreground="{DynamicResource TextMutedBrush}" Margin="0,4,0,0"/>
+        </StackPanel>
+      </DataTemplate>
+
+      <!-- ═══════════ IMPORT STEP TEMPLATE ═══════════ -->
+      <DataTemplate x:Key="ImportStepTemplate">
+        <StackPanel MaxWidth="600">
+          <TextBlock Text="Step 2: Import" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,20"/>
+          <TextBlock Text="Importing STIG content from the import folder..." Margin="0,0,0,20"/>
+          <ProgressBar Height="20" IsIndeterminate="{Binding IsBusy}" Value="{Binding ProgressValue}" Maximum="{Binding ProgressMax}"/>
+          <TextBlock Text="{Binding StatusText}" Margin="0,10,0,0"/>
+        </StackPanel>
+      </DataTemplate>
+
+      <!-- ═══════════ SCAN STEP TEMPLATE ═══════════ -->
+      <DataTemplate x:Key="ScanStepTemplate">
+        <StackPanel MaxWidth="600">
+          <TextBlock Text="Step 3: Scan" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,20"/>
+          <TextBlock Text="Running Evaluate-STIG to establish baseline findings..." Margin="0,0,0,20"/>
+          <ProgressBar Height="20" IsIndeterminate="{Binding IsBusy}" Value="{Binding ProgressValue}" Maximum="{Binding ProgressMax}"/>
+          <TextBlock Text="{Binding StatusText}" Margin="0,10,0,0"/>
+        </StackPanel>
+      </DataTemplate>
+
+      <!-- ═══════════ HARDEN STEP TEMPLATE ═══════════ -->
+      <DataTemplate x:Key="HardenStepTemplate">
+        <StackPanel MaxWidth="600">
+          <TextBlock Text="Step 4: Harden" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,20"/>
+          <TextBlock Text="Applying PowerSTIG/DSC configurations, GPO settings, and ADMX templates..." Margin="0,0,0,20"/>
+          <ProgressBar Height="20" IsIndeterminate="{Binding IsBusy}" Value="{Binding ProgressValue}" Maximum="{Binding ProgressMax}"/>
+          <TextBlock Text="{Binding StatusText}" Margin="0,10,0,0"/>
+        </StackPanel>
+      </DataTemplate>
+
+      <!-- ═══════════ VERIFY STEP TEMPLATE ═══════════ -->
+      <DataTemplate x:Key="VerifyStepTemplate">
+        <StackPanel MaxWidth="600">
+          <TextBlock Text="Step 5: Verify" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,20"/>
+          <TextBlock Text="Re-running Evaluate-STIG and SCC to verify hardening results..." Margin="0,0,0,20"/>
+          <ProgressBar Height="20" IsIndeterminate="{Binding IsBusy}" Value="{Binding ProgressValue}" Maximum="{Binding ProgressMax}"/>
+          <TextBlock Text="{Binding StatusText}" Margin="0,10,0,0"/>
+        </StackPanel>
+      </DataTemplate>
+
+      <!-- ═══════════ DONE STEP TEMPLATE ═══════════ -->
+      <DataTemplate x:Key="DoneStepTemplate">
+        <StackPanel MaxWidth="600">
+          <TextBlock Text="Step 6: Done" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,20"/>
+          <TextBlock Text="Workflow completed!" FontSize="18" Foreground="Green" Margin="0,0,0,20"/>
+          <TextBlock Text="Mission JSON:" FontWeight="SemiBold"/>
+          <TextBox Text="{Binding MissionJsonPath, Mode=OneWay}" IsReadOnly="True" Margin="0,4,0,16"/>
+          <Button Content="Open Output Folder" Width="150" Height="36" Command="{Binding OpenOutputFolderCommand}"/>
         </StackPanel>
       </DataTemplate>
 

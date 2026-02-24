@@ -71,3 +71,25 @@ public sealed class BoolToReadyColorConverter : IValueConverter
     throw new NotSupportedException();
   }
 }
+
+/// <summary>
+/// Converts the current WorkflowStep to FontWeight: Bold if it matches the step parameter, Normal otherwise.
+/// Used for highlighting the current step in the step indicator.
+/// </summary>
+public sealed class StepFontWeightConverter : IValueConverter
+{
+  public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
+  {
+    if (value is WorkflowStep current && parameter is string stepName)
+    {
+      if (Enum.TryParse<WorkflowStep>(stepName, out var step))
+        return current == step ? FontWeights.Bold : FontWeights.Normal;
+    }
+    return FontWeights.Normal;
+  }
+
+  public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
+  {
+    throw new NotSupportedException();
+  }
+}
