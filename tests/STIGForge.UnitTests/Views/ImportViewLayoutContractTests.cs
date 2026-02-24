@@ -4,6 +4,7 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using STIGForge.App;
 using STIGForge.App.Views;
+using STIGForge.UnitTests.Helpers;
 
 namespace STIGForge.UnitTests.Views;
 
@@ -145,15 +146,15 @@ public sealed class ImportViewLayoutContractTests
   {
     var type = typeof(ImportView);
 
-    var onLoaded = type.GetMethod("OnLoaded", BindingFlags.NonPublic | BindingFlags.Instance);
+    var onLoaded = type.GetMethod("OnLoaded", BindingFlags.NonPublic | BindingFlags.Instance, null, new[] { typeof(object), typeof(RoutedEventArgs) }, null);
     Assert.NotNull(onLoaded);
     Assert.Equal(typeof(void), onLoaded!.ReturnType);
 
-    var onUnloaded = type.GetMethod("OnUnloaded", BindingFlags.NonPublic | BindingFlags.Instance);
+    var onUnloaded = type.GetMethod("OnUnloaded", BindingFlags.NonPublic | BindingFlags.Instance, null, new[] { typeof(object), typeof(RoutedEventArgs) }, null);
     Assert.NotNull(onUnloaded);
     Assert.Equal(typeof(void), onUnloaded!.ReturnType);
 
-    var onDataContextChanged = type.GetMethod("OnDataContextChanged", BindingFlags.NonPublic | BindingFlags.Instance);
+    var onDataContextChanged = type.GetMethod("OnDataContextChanged", BindingFlags.NonPublic | BindingFlags.Instance | BindingFlags.DeclaredOnly);
     Assert.NotNull(onDataContextChanged);
 
     var onViewModelPropertyChanged = type.GetMethod("OnViewModelPropertyChanged", BindingFlags.NonPublic | BindingFlags.Instance);
@@ -166,23 +167,26 @@ public sealed class ImportViewLayoutContractTests
   [Fact]
   public void ImportView_MissionPathSyncs_WhenDataContextSetBeforeLoaded()
   {
-    var view = new ImportView();
-    var vm = (MainViewModel)RuntimeHelpers.GetUninitializedObject(typeof(MainViewModel));
+    StaThreadRunner.Run(() =>
+    {
+      var view = new ImportView();
+      var vm = (MainViewModel)RuntimeHelpers.GetUninitializedObject(typeof(MainViewModel));
 
-    var onLoaded = typeof(ImportView).GetMethod("OnLoaded", BindingFlags.NonPublic | BindingFlags.Instance);
-    var onUnloaded = typeof(ImportView).GetMethod("OnUnloaded", BindingFlags.NonPublic | BindingFlags.Instance);
-    Assert.NotNull(onLoaded);
-    Assert.NotNull(onUnloaded);
+      var onLoaded = typeof(ImportView).GetMethod("OnLoaded", BindingFlags.NonPublic | BindingFlags.Instance, null, new[] { typeof(object), typeof(RoutedEventArgs) }, null);
+      var onUnloaded = typeof(ImportView).GetMethod("OnUnloaded", BindingFlags.NonPublic | BindingFlags.Instance, null, new[] { typeof(object), typeof(RoutedEventArgs) }, null);
+      Assert.NotNull(onLoaded);
+      Assert.NotNull(onUnloaded);
 
-    view.DataContext = vm;
-    onLoaded!.Invoke(view, new object[] { view, new RoutedEventArgs(FrameworkElement.LoadedEvent) });
+      view.DataContext = vm;
+      onLoaded!.Invoke(view, new object[] { view, new RoutedEventArgs(FrameworkElement.LoadedEvent) });
 
-    const string missionPath = @"C:\temp\mission.json";
-    vm.MissionJsonPath = missionPath;
+      const string missionPath = @"C:\temp\mission.json";
+      vm.MissionJsonPath = missionPath;
 
-    Assert.Equal(missionPath, view.MissionJsonPath);
+      Assert.Equal(missionPath, view.MissionJsonPath);
 
-    onUnloaded!.Invoke(view, new object[] { view, new RoutedEventArgs(FrameworkElement.UnloadedEvent) });
+      onUnloaded!.Invoke(view, new object[] { view, new RoutedEventArgs(FrameworkElement.UnloadedEvent) });
+    });
   }
 
   private static string LoadImportViewXaml()
