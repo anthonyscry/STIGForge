@@ -194,7 +194,7 @@ public sealed class LocalWorkflowServiceTests : IDisposable
     }, CancellationToken.None);
 
     await act.Should().ThrowAsync<InvalidOperationException>()
-      .WithMessage("*Evaluate-STIG*exit code*5*");
+      .WithMessage("*Evaluate-STIG*exited with code*5*");
   }
 
   [Fact]
