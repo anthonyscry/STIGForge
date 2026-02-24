@@ -1,0 +1,159 @@
+<UserControl x:Class="STIGForge.App.Views.DashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Margin="0,0,0,8">
+            <DockPanel Margin="0,0,0,16">
+                <TextBlock Text="Workflow Dashboard" FontSize="22" FontWeight="SemiBold" VerticalAlignment="Center" />
+                <Button Content="Run Auto Workflow"
+                        DockPanel.Dock="Right"
+                        Height="34"
+                        Padding="14,4"
+                        Command="{Binding RunAutoWorkflowCommand}" />
+            </DockPanel>
+
+            <UniformGrid Rows="1" Columns="4" Margin="0,0,0,16">
+                <Border Margin="0,0,8,0"
+                        BorderThickness="2"
+                        Padding="12"
+                        BorderBrush="{Binding ImportState, Converter={StaticResource StepStateToBorderBrush}}">
+                    <StackPanel>
+                        <TextBlock Text="Import" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8" />
+                        <Button Content="Run"
+                                Width="72"
+                                Height="30"
+                                Margin="0,0,0,8"
+                                HorizontalAlignment="Left"
+                                Command="{Binding RunImportStepCommand}" />
+
+                        <ProgressBar Height="10"
+                                     IsIndeterminate="True"
+                                     Visibility="{Binding ImportState, Converter={StaticResource StepStateToRunningVisibility}}" />
+
+                        <TextBlock Text="&#x2713; Complete"
+                                   Margin="0,6,0,0"
+                                   Foreground="{DynamicResource AccentBrush}"
+                                   Visibility="{Binding ImportState, Converter={StaticResource StepStateToCompleteVisibility}}" />
+
+                        <StackPanel Orientation="Horizontal"
+                                    Margin="0,6,0,0"
+                                    Visibility="{Binding ImportState, Converter={StaticResource StepStateToErrorVisibility}}">
+                            <TextBlock Text="&#x2717;" Foreground="IndianRed" FontWeight="SemiBold" Margin="0,0,6,0" />
+                            <TextBlock Text="{Binding ImportError}" Foreground="IndianRed" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Margin="0,0,8,0"
+                        BorderThickness="2"
+                        Padding="12"
+                        BorderBrush="{Binding ScanState, Converter={StaticResource StepStateToBorderBrush}}">
+                    <StackPanel>
+                        <TextBlock Text="Scan" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8" />
+                        <Button Content="Run"
+                                Width="72"
+                                Height="30"
+                                Margin="0,0,0,8"
+                                HorizontalAlignment="Left"
+                                Command="{Binding RunScanStepCommand}" />
+
+                        <ProgressBar Height="10"
+                                     IsIndeterminate="True"
+                                     Visibility="{Binding ScanState, Converter={StaticResource StepStateToRunningVisibility}}" />
+
+                        <TextBlock Text="&#x2713; Complete"
+                                   Margin="0,6,0,0"
+                                   Foreground="{DynamicResource AccentBrush}"
+                                   Visibility="{Binding ScanState, Converter={StaticResource StepStateToCompleteVisibility}}" />
+
+                        <StackPanel Orientation="Horizontal"
+                                    Margin="0,6,0,0"
+                                    Visibility="{Binding ScanState, Converter={StaticResource StepStateToErrorVisibility}}">
+                            <TextBlock Text="&#x2717;" Foreground="IndianRed" FontWeight="SemiBold" Margin="0,0,6,0" />
+                            <TextBlock Text="{Binding ScanError}" Foreground="IndianRed" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border Margin="0,0,8,0"
+                        BorderThickness="2"
+                        Padding="12"
+                        BorderBrush="{Binding HardenState, Converter={StaticResource StepStateToBorderBrush}}">
+                    <StackPanel>
+                        <TextBlock Text="Harden" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8" />
+                        <Button Content="Run"
+                                Width="72"
+                                Height="30"
+                                Margin="0,0,0,8"
+                                HorizontalAlignment="Left"
+                                Command="{Binding RunHardenStepCommand}" />
+
+                        <ProgressBar Height="10"
+                                     IsIndeterminate="True"
+                                     Visibility="{Binding HardenState, Converter={StaticResource StepStateToRunningVisibility}}" />
+
+                        <TextBlock Text="&#x2713; Complete"
+                                   Margin="0,6,0,0"
+                                   Foreground="{DynamicResource AccentBrush}"
+                                   Visibility="{Binding HardenState, Converter={StaticResource StepStateToCompleteVisibility}}" />
+
+                        <StackPanel Orientation="Horizontal"
+                                    Margin="0,6,0,0"
+                                    Visibility="{Binding HardenState, Converter={StaticResource StepStateToErrorVisibility}}">
+                            <TextBlock Text="&#x2717;" Foreground="IndianRed" FontWeight="SemiBold" Margin="0,0,6,0" />
+                            <TextBlock Text="{Binding HardenError}" Foreground="IndianRed" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <Border BorderThickness="2"
+                        Padding="12"
+                        BorderBrush="{Binding VerifyState, Converter={StaticResource StepStateToBorderBrush}}">
+                    <StackPanel>
+                        <TextBlock Text="Verify" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8" />
+                        <Button Content="Run"
+                                Width="72"
+                                Height="30"
+                                Margin="0,0,0,8"
+                                HorizontalAlignment="Left"
+                                Command="{Binding RunVerifyStepCommand}" />
+
+                        <ProgressBar Height="10"
+                                     IsIndeterminate="True"
+                                     Visibility="{Binding VerifyState, Converter={StaticResource StepStateToRunningVisibility}}" />
+
+                        <TextBlock Text="&#x2713; Complete"
+                                   Margin="0,6,0,0"
+                                   Foreground="{DynamicResource AccentBrush}"
+                                   Visibility="{Binding VerifyState, Converter={StaticResource StepStateToCompleteVisibility}}" />
+
+                        <StackPanel Orientation="Horizontal"
+                                    Margin="0,6,0,0"
+                                    Visibility="{Binding VerifyState, Converter={StaticResource StepStateToErrorVisibility}}">
+                            <TextBlock Text="&#x2717;" Foreground="IndianRed" FontWeight="SemiBold" Margin="0,0,6,0" />
+                            <TextBlock Text="{Binding VerifyError}" Foreground="IndianRed" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+            </UniformGrid>
+
+            <Border Padding="12">
+                <StackPanel>
+                    <TextBlock Text="Results" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,10" />
+
+                    <TextBlock Text="Mission JSON" FontWeight="SemiBold" Margin="0,0,0,4" />
+                    <TextBox Text="{Binding MissionJsonPath}" IsReadOnly="True" Margin="0,0,0,10" />
+
+                    <TextBlock Text="Output Folder" FontWeight="SemiBold" Margin="0,0,0,4" />
+                    <TextBox Text="{Binding OutputFolderPath}" IsReadOnly="True" Margin="0,0,0,10" />
+
+                    <Button Content="Open Output Folder"
+                            Width="170"
+                            Height="34"
+                            HorizontalAlignment="Left"
+                            Command="{Binding OpenOutputFolderCommand}" />
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>
