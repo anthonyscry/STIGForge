@@ -98,7 +98,9 @@ public static class CliHostFactory
     services.AddSingleton<STIGForge.Apply.ApplyRunner>();
     services.AddSingleton<EvaluateStigRunner>();
     services.AddSingleton<ScapRunner>();
+    services.AddSingleton<ScannerEvidenceMapper>();
     services.AddSingleton<IVerificationWorkflowService, VerificationWorkflowService>();
+    services.AddSingleton<ILocalWorkflowService, LocalWorkflowService>();
     services.AddSingleton<VerificationArtifactAggregationService>();
     services.AddSingleton<MissionTracingService>();
     services.AddSingleton<PerformanceInstrumenter>();
