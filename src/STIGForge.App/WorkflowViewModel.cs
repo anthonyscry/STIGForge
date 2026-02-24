@@ -473,6 +473,19 @@ public partial class WorkflowViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private void ShowSettings()
+    {
+        var settingsWindow = new Views.SettingsWindow
+        {
+            DataContext = this,
+            Owner = Application.Current.MainWindow
+        };
+
+        if (settingsWindow.ShowDialog() != true)
+            LoadSettings();
+    }
+
+    [RelayCommand]
     private void BrowseImportFolder()
     {
         var dialog = new Microsoft.Win32.OpenFolderDialog { Title = "Select Import Folder" };
