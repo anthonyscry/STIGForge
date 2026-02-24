@@ -20,9 +20,12 @@ public partial class SettingsWindow : Window
     if (DataContext is WorkflowViewModel vm && vm.SaveSettingsCommand.CanExecute(null))
     {
       vm.SaveSettingsCommand.Execute(null);
+      DialogResult = true;
+      Close();
+      return;
     }
 
-    DialogResult = true;
+    DialogResult = false;
     Close();
   }
 }
