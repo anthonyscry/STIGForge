@@ -456,6 +456,7 @@ public partial class WorkflowViewModel : ObservableObject
         ExportXccdf = settings.ExportXccdf;
     }
 
+    [RelayCommand]
     private void SaveSettings()
     {
         WorkflowSettings.Save(new WorkflowSettings

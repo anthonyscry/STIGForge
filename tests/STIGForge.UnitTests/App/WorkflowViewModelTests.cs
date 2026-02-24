@@ -79,4 +79,11 @@ public class WorkflowViewModelTests
         vm.ImportState = StepState.Running;
         Assert.False(vm.RunAutoWorkflowCommand.CanExecute(null));
     }
+
+    [Fact]
+    public void SaveSettingsCommand_Exists()
+    {
+        var vm = new WorkflowViewModel();
+        Assert.NotNull(vm.SaveSettingsCommand);
+    }
 }
