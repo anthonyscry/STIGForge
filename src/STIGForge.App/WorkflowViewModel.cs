@@ -103,18 +103,22 @@ public partial class WorkflowViewModel : ObservableObject
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(RunImportStepCommand))]
+    [NotifyCanExecuteChangedFor(nameof(RunAutoWorkflowCommand))]
     private StepState _importState = StepState.Ready;
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(RunScanStepCommand))]
+    [NotifyCanExecuteChangedFor(nameof(RunAutoWorkflowCommand))]
     private StepState _scanState = StepState.Locked;
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(RunHardenStepCommand))]
+    [NotifyCanExecuteChangedFor(nameof(RunAutoWorkflowCommand))]
     private StepState _hardenState = StepState.Locked;
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(RunVerifyStepCommand))]
+    [NotifyCanExecuteChangedFor(nameof(RunAutoWorkflowCommand))]
     private StepState _verifyState = StepState.Locked;
 
     [ObservableProperty]
@@ -144,6 +148,12 @@ public partial class WorkflowViewModel : ObservableObject
     public bool CanRunScan => ScanState == StepState.Ready || ScanState == StepState.Complete || ScanState == StepState.Error;
     public bool CanRunHarden => HardenState == StepState.Ready || HardenState == StepState.Complete || HardenState == StepState.Error;
     public bool CanRunVerify => VerifyState == StepState.Ready || VerifyState == StepState.Complete || VerifyState == StepState.Error;
+
+    public bool CanRunAutoWorkflow => 
+        ImportState != StepState.Running && 
+        ScanState != StepState.Running && 
+        HardenState != StepState.Running && 
+        VerifyState != StepState.Running;
 
     public bool CanGoNext => CurrentStep switch
     {
@@ -412,6 +422,25 @@ public partial class WorkflowViewModel : ObservableObject
         {
             IsBusy = false;
         }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanRunAutoWorkflow))]
+    private async Task RunAutoWorkflowAsync()
+    {
+        // Run Import
+        await RunImportStepAsync();
+        if (ImportState == StepState.Error) return;
+        
+        // Run Scan
+        await RunScanStepAsync();
+        if (ScanState == StepState.Error) return;
+        
+        // Run Harden
+        await RunHardenStepAsync();
+        if (HardenState == StepState.Error) return;
+        
+        // Run Verify
+        await RunVerifyStepAsync();
     }
 
     private void LoadSettings()

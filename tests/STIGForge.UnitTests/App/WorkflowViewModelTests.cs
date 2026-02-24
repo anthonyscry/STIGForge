@@ -64,4 +64,19 @@ public class WorkflowViewModelTests
         vm.ScanState = StepState.Locked;
         Assert.False(vm.RunScanStepCommand.CanExecute(null));
     }
+
+    [Fact]
+    public void CanRunAutoWorkflow_WhenNoStepRunning_IsTrue()
+    {
+        var vm = new WorkflowViewModel();
+        Assert.True(vm.RunAutoWorkflowCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public void CanRunAutoWorkflow_WhenStepRunning_IsFalse()
+    {
+        var vm = new WorkflowViewModel();
+        vm.ImportState = StepState.Running;
+        Assert.False(vm.RunAutoWorkflowCommand.CanExecute(null));
+    }
 }
