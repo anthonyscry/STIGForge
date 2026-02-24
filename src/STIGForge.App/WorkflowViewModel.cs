@@ -102,15 +102,19 @@ public partial class WorkflowViewModel : ObservableObject
     private int _fixedCount;
 
     [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(RunImportStepCommand))]
     private StepState _importState = StepState.Ready;
 
     [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(RunScanStepCommand))]
     private StepState _scanState = StepState.Locked;
 
     [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(RunHardenStepCommand))]
     private StepState _hardenState = StepState.Locked;
 
     [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(RunVerifyStepCommand))]
     private StepState _verifyState = StepState.Locked;
 
     [ObservableProperty]
@@ -135,6 +139,11 @@ public partial class WorkflowViewModel : ObservableObject
     private bool _exportXccdf;
 
     public bool CanGoBack => CurrentStep > WorkflowStep.Setup && CurrentStep < WorkflowStep.Done;
+
+    public bool CanRunImport => ImportState == StepState.Ready || ImportState == StepState.Complete || ImportState == StepState.Error;
+    public bool CanRunScan => ScanState == StepState.Ready || ScanState == StepState.Complete || ScanState == StepState.Error;
+    public bool CanRunHarden => HardenState == StepState.Ready || HardenState == StepState.Complete || HardenState == StepState.Error;
+    public bool CanRunVerify => VerifyState == StepState.Ready || VerifyState == StepState.Complete || VerifyState == StepState.Error;
 
     public bool CanGoNext => CurrentStep switch
     {
@@ -312,6 +321,89 @@ public partial class WorkflowViewModel : ObservableObject
             StatusText = $"Verification failed: {ex.Message}";
             VerifyFindingsCount = 0;
         }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanRunImport))]
+    private async Task RunImportStepAsync()
+    {
+        ImportState = StepState.Running;
+        ImportError = string.Empty;
+        try
+        {
+            await RunImportAsync();
+            ImportState = StepState.Complete;
+            if (ScanState == StepState.Locked) ScanState = StepState.Ready;
+        }
+        catch (Exception ex)
+        {
+            ImportState = StepState.Error;
+            ImportError = ex.Message;
+        }
+        NotifyStepCommandsCanExecuteChanged();
+    }
+
+    [RelayCommand(CanExecute = nameof(CanRunScan))]
+    private async Task RunScanStepAsync()
+    {
+        ScanState = StepState.Running;
+        ScanError = string.Empty;
+        try
+        {
+            await RunScanAsync();
+            ScanState = StepState.Complete;
+            if (HardenState == StepState.Locked) HardenState = StepState.Ready;
+        }
+        catch (Exception ex)
+        {
+            ScanState = StepState.Error;
+            ScanError = ex.Message;
+        }
+        NotifyStepCommandsCanExecuteChanged();
+    }
+
+    [RelayCommand(CanExecute = nameof(CanRunHarden))]
+    private async Task RunHardenStepAsync()
+    {
+        HardenState = StepState.Running;
+        HardenError = string.Empty;
+        try
+        {
+            await RunHardenAsync();
+            HardenState = StepState.Complete;
+            if (VerifyState == StepState.Locked) VerifyState = StepState.Ready;
+        }
+        catch (Exception ex)
+        {
+            HardenState = StepState.Error;
+            HardenError = ex.Message;
+        }
+        NotifyStepCommandsCanExecuteChanged();
+    }
+
+    [RelayCommand(CanExecute = nameof(CanRunVerify))]
+    private async Task RunVerifyStepAsync()
+    {
+        VerifyState = StepState.Running;
+        VerifyError = string.Empty;
+        try
+        {
+            await RunVerifyAsync();
+            VerifyState = StepState.Complete;
+        }
+        catch (Exception ex)
+        {
+            VerifyState = StepState.Error;
+            VerifyError = ex.Message;
+        }
+        NotifyStepCommandsCanExecuteChanged();
+    }
+
+    private void NotifyStepCommandsCanExecuteChanged()
+    {
+        RunImportStepCommand.NotifyCanExecuteChanged();
+        RunScanStepCommand.NotifyCanExecuteChanged();
+        RunHardenStepCommand.NotifyCanExecuteChanged();
+        RunVerifyStepCommand.NotifyCanExecuteChanged();
     }
 
     private void LoadSettings()

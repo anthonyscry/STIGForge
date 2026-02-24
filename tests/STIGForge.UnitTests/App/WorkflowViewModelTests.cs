@@ -48,4 +48,20 @@ public class WorkflowViewModelTests
         Assert.False(vm.ExportCsv);
         Assert.False(vm.ExportXccdf);
     }
+
+    [Fact]
+    public void CanRunImport_WhenImportReady_IsTrue()
+    {
+        var vm = new WorkflowViewModel();
+        vm.ImportState = StepState.Ready;
+        Assert.True(vm.RunImportStepCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public void CanRunScan_WhenScanLocked_IsFalse()
+    {
+        var vm = new WorkflowViewModel();
+        vm.ScanState = StepState.Locked;
+        Assert.False(vm.RunScanStepCommand.CanExecute(null));
+    }
 }
