@@ -135,6 +135,15 @@ public partial class WorkflowViewModel : ObservableObject
     private string _evaluateStigToolPath = string.Empty;
 
     [ObservableProperty]
+    private string _evaluateAfPath = string.Empty;
+
+    [ObservableProperty]
+    private string _evaluateSelectStig = string.Empty;
+
+    [ObservableProperty]
+    private string _evaluateAdditionalArgs = string.Empty;
+
+    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanGoNext))]
     private string _sccToolPath = string.Empty;
 
@@ -144,6 +153,9 @@ public partial class WorkflowViewModel : ObservableObject
 
     [ObservableProperty]
     private string _machineTarget = "localhost";
+
+    [ObservableProperty]
+    private bool _requireElevationForScan = true;
 
     [ObservableProperty]
     private string _missionJsonPath = string.Empty;
@@ -799,9 +811,13 @@ public partial class WorkflowViewModel : ObservableObject
         var settings = WorkflowSettings.Load();
         ImportFolderPath = settings.ImportFolderPath;
         EvaluateStigToolPath = settings.EvaluateStigToolPath;
+        EvaluateAfPath = settings.EvaluateAfPath;
+        EvaluateSelectStig = settings.EvaluateSelectStig;
+        EvaluateAdditionalArgs = settings.EvaluateAdditionalArgs;
         SccToolPath = settings.SccToolPath;
         OutputFolderPath = settings.OutputFolderPath;
         MachineTarget = settings.MachineTarget;
+        RequireElevationForScan = settings.RequireElevationForScan;
         ExportCkl = settings.ExportCkl;
         ExportCsv = settings.ExportCsv;
         ExportXccdf = settings.ExportXccdf;
@@ -814,9 +830,13 @@ public partial class WorkflowViewModel : ObservableObject
         {
             ImportFolderPath = ImportFolderPath,
             EvaluateStigToolPath = EvaluateStigToolPath,
+            EvaluateAfPath = EvaluateAfPath,
+            EvaluateSelectStig = EvaluateSelectStig,
+            EvaluateAdditionalArgs = EvaluateAdditionalArgs,
             SccToolPath = SccToolPath,
             OutputFolderPath = OutputFolderPath,
             MachineTarget = MachineTarget,
+            RequireElevationForScan = RequireElevationForScan,
             ExportCkl = ExportCkl,
             ExportCsv = ExportCsv,
             ExportXccdf = ExportXccdf
