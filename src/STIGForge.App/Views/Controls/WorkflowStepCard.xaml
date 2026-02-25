@@ -4,37 +4,53 @@
              d:DesignHeight="240" d:DesignWidth="250"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-             mc:Ignorable="d"
-             Margin="0,0,8,8"
-             MinWidth="220"
-             MaxWidth="300">
+              mc:Ignorable="d"
+              Margin="0,0,8,8"
+              MinWidth="220"
+              HorizontalAlignment="Stretch">
     <UserControl.Resources>
         <Style x:Key="WorkflowStepCardBorderStyle"
                TargetType="Border"
-               BasedOn="{DynamicResource WorkflowCardBorderStyle}">
+               BasedOn="{StaticResource WorkflowCardBorderStyle}">
             <Setter Property="BorderBrush"
                     Value="{Binding StepState, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource StepStateToBorderBrush}}" />
         </Style>
     </UserControl.Resources>
 
      <Border Style="{DynamicResource WorkflowStepCardBorderStyle}"
-             BorderThickness="2"
-             Padding="12"
-             CornerRadius="8">
+              BorderThickness="2"
+              Padding="12"
+              MinHeight="170"
+              Background="{DynamicResource SurfaceMutedBrush}"
+              CornerRadius="8">
         <StackPanel>
             <TextBlock Text="{Binding StepName, RelativeSource={RelativeSource AncestorType=UserControl}}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8" />
 
-            <Button Content="{Binding RunButtonLabel, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                    Width="86"
-                    Height="34"
-                    Margin="0,0,0,8"
-                    HorizontalAlignment="Left"
-                    TabIndex="{Binding RunButtonTabIndex, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                    Style="{DynamicResource WorkflowDashboardButtonStyle}"
-                    Command="{Binding RunCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                    ToolTip="{Binding RunButtonToolTip, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                    AutomationProperties.Name="{Binding RunButtonAutomationName, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                    AutomationProperties.HelpText="{Binding RunButtonToolTip, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+            <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
+                <Button Content="{Binding RunButtonLabel, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        Width="104"
+                        Height="34"
+                        Margin="0,0,8,0"
+                        HorizontalAlignment="Left"
+                        TabIndex="{Binding RunButtonTabIndex, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        Style="{DynamicResource WorkflowDashboardButtonStyle}"
+                        Command="{Binding RunCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        ToolTip="{Binding RunButtonToolTip, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        AutomationProperties.Name="{Binding RunButtonAutomationName, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        AutomationProperties.HelpText="{Binding RunButtonToolTip, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+
+                <Button Content="{Binding SecondaryButtonLabel, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        Width="106"
+                        Height="34"
+                        HorizontalAlignment="Left"
+                        TabIndex="{Binding SecondaryButtonTabIndex, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        Visibility="{Binding SecondaryButtonLabel, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource NullOrEmptyToCollapsed}}"
+                        Style="{DynamicResource WorkflowDashboardButtonStyle}"
+                        Command="{Binding SecondaryCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        ToolTip="{Binding SecondaryButtonToolTip, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        AutomationProperties.Name="{Binding SecondaryButtonAutomationName, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        AutomationProperties.HelpText="{Binding SecondaryButtonToolTip, RelativeSource={RelativeSource AncestorType=UserControl}}" />
+            </StackPanel>
 
             <ProgressBar Height="10"
                          IsIndeterminate="True"

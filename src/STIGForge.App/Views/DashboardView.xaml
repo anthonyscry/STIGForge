@@ -6,23 +6,37 @@
         <StackPanel Margin="0,0,0,8">
             <DockPanel Margin="0,0,0,16">
                 <TextBlock Text="Workflow Dashboard" FontSize="22" FontWeight="SemiBold" VerticalAlignment="Center" />
-                <Button Content="Run Auto Workflow (Ctrl+R)"
-                        DockPanel.Dock="Right"
-                        Height="34"
-                        Padding="14,4"
-                        TabIndex="0"
-                        Style="{DynamicResource WorkflowDashboardButtonStyle}"
+                <Button Content="Run Auto (Ctrl+R)"
+                         DockPanel.Dock="Right"
+                         Width="170"
+                         Height="34"
+                         Padding="14,4"
+                         TabIndex="0"
+                         Style="{DynamicResource WorkflowDashboardButtonStyle}"
                         Command="{Binding RunAutoWorkflowCommand}"
                         AutomationProperties.Name="Run auto workflow"
                         ToolTip="Run all workflow steps in order (Ctrl+R)" />
             </DockPanel>
 
-            <TextBlock Text="Shortcuts: Ctrl+R auto workflow, Alt+I/S/H/V for step actions, Ctrl+O open output, Ctrl+N restart"
+            <TextBlock Text="Shortcuts: Ctrl+R run all, Alt+I/S/H/V run steps, Alt+K skip harden, Ctrl+O open output, Ctrl+N restart"
                        Margin="0,0,0,12"
                        FontSize="11"
-                       FontStyle="Italic" />
+                       Foreground="{DynamicResource TextMutedBrush}" />
 
-            <WrapPanel Margin="0,0,0,16" ItemWidth="220">
+            <Border Margin="0,0,0,12"
+                    Padding="10"
+                    Background="{DynamicResource SurfaceMutedBrush}"
+                    Visibility="{Binding StatusText, Converter={StaticResource NullOrEmptyToCollapsed}}">
+                <StackPanel>
+                    <TextBlock Text="{Binding StatusText}" TextWrapping="Wrap" />
+                    <ProgressBar Height="8"
+                                 Margin="0,8,0,0"
+                                 IsIndeterminate="True"
+                                 Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}" />
+                </StackPanel>
+            </Border>
+
+            <UniformGrid Rows="2" Columns="2" Margin="0,0,0,16">
                 <controls:WorkflowStepCard StepName="Import"
                                           StepState="{Binding ImportState}"
                                           ErrorMessage="{Binding ImportError}"
@@ -55,6 +69,11 @@
                                           RunButtonTabIndex="30"
                                           RunButtonAutomationName="Run Harden step"
                                           RunButtonToolTip="Run Harden step (Alt+H)"
+                                          SecondaryCommand="{Binding SkipHardenStepCommand}"
+                                          SecondaryButtonLabel="Skip Harden"
+                                          SecondaryButtonTabIndex="32"
+                                          SecondaryButtonAutomationName="Skip Harden step"
+                                          SecondaryButtonToolTip="Skip harden and continue to verify (Alt+K)"
                                           RecoveryButtonTabIndex="31"
                                           RecoveryButtonAutomationName="Retry Harden step"
                                           RecoveryButtonToolTip="Retry Harden step (Alt+H)" />
@@ -70,7 +89,7 @@
                                           RecoveryButtonTabIndex="41"
                                           RecoveryButtonAutomationName="Retry Verify step"
                                           RecoveryButtonToolTip="Retry Verify step (Alt+V)" />
-            </WrapPanel>
+            </UniformGrid>
 
             <Border Padding="12">
                 <StackPanel>

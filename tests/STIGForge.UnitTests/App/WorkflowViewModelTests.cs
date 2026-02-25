@@ -1,7 +1,9 @@
 using STIGForge.App;
 using STIGForge.Content.Import;
 using STIGForge.Core.Abstractions;
+using STIGForge.Core.Models;
 using STIGForge.Apply;
+using System.Text.Json;
 
 namespace STIGForge.UnitTests.App;
 
@@ -121,6 +123,77 @@ public class WorkflowViewModelTests
         var vm = new WorkflowViewModel();
         Assert.NotNull(vm.ShowHelpCommand);
         Assert.True(vm.ShowHelpCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public void AutoScanSetupPathsCommand_WhenScanRootHasKnownFolders_PopulatesEmptyPathsFromRootOnly()
+    {
+        var scanRoot = Directory.CreateTempSubdirectory();
+
+        try
+        {
+            var importPath = Path.Combine(scanRoot.FullName, "import");
+            var evaluatePath = Path.Combine(scanRoot.FullName, "tools", "Evaluate-STIG");
+            var sccPath = Path.Combine(scanRoot.FullName, "tools", "SCC");
+
+            Directory.CreateDirectory(importPath);
+            Directory.CreateDirectory(evaluatePath);
+            Directory.CreateDirectory(sccPath);
+
+            var vm = new WorkflowViewModel(autoScanRootResolver: () => scanRoot.FullName)
+            {
+                ImportFolderPath = string.Empty,
+                EvaluateStigToolPath = string.Empty,
+                SccToolPath = string.Empty,
+                OutputFolderPath = string.Empty
+            };
+
+            vm.AutoScanSetupPathsCommand.Execute(null);
+
+            var expectedOutputPath = Path.Combine(scanRoot.FullName, ".stigforge", "scans");
+            Assert.Equal(importPath, vm.ImportFolderPath);
+            Assert.Equal(evaluatePath, vm.EvaluateStigToolPath);
+            Assert.Equal(sccPath, vm.SccToolPath);
+            Assert.Equal(expectedOutputPath, vm.OutputFolderPath);
+            Assert.True(Directory.Exists(expectedOutputPath));
+        }
+        finally
+        {
+            scanRoot.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public void AutoScanSetupPathsCommand_WhenPathsAlreadyConfigured_DoesNotOverwriteValues()
+    {
+        var scanRoot = Directory.CreateTempSubdirectory();
+
+        try
+        {
+            Directory.CreateDirectory(Path.Combine(scanRoot.FullName, "import"));
+            Directory.CreateDirectory(Path.Combine(scanRoot.FullName, "tools", "Evaluate-STIG"));
+            Directory.CreateDirectory(Path.Combine(scanRoot.FullName, "tools", "SCC"));
+
+            var vm = new WorkflowViewModel(autoScanRootResolver: () => scanRoot.FullName)
+            {
+                ImportFolderPath = @"C:\preconfigured\import",
+                EvaluateStigToolPath = @"C:\preconfigured\evaluate",
+                SccToolPath = @"C:\preconfigured\scc",
+                OutputFolderPath = @"C:\preconfigured\output"
+            };
+
+            vm.AutoScanSetupPathsCommand.Execute(null);
+
+            Assert.Equal(@"C:\preconfigured\import", vm.ImportFolderPath);
+            Assert.Equal(@"C:\preconfigured\evaluate", vm.EvaluateStigToolPath);
+            Assert.Equal(@"C:\preconfigured\scc", vm.SccToolPath);
+            Assert.Equal(@"C:\preconfigured\output", vm.OutputFolderPath);
+            Assert.Equal("Auto scan did not find new setup paths", vm.StatusText);
+        }
+        finally
+        {
+            scanRoot.Delete(recursive: true);
+        }
     }
 
     [Fact]
@@ -392,6 +465,35 @@ public class WorkflowViewModelTests
     }
 
     [Fact]
+    public void SkipHardenStepCommand_WhenHardenLocked_IsNotExecutable()
+    {
+        var vm = new WorkflowViewModel
+        {
+            HardenState = StepState.Locked
+        };
+
+        Assert.False(vm.SkipHardenStepCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public void SkipHardenStepCommand_WhenHardenReady_SetsCompleteAndUnlocksVerify()
+    {
+        var vm = new WorkflowViewModel
+        {
+            HardenState = StepState.Ready,
+            VerifyState = StepState.Locked,
+            HardenError = "previous failure"
+        };
+
+        vm.SkipHardenStepCommand.Execute(null);
+
+        Assert.Equal(StepState.Complete, vm.HardenState);
+        Assert.Equal(StepState.Ready, vm.VerifyState);
+        Assert.Equal(string.Empty, vm.HardenError);
+        Assert.Equal("Hardening skipped by operator", vm.StatusText);
+    }
+
+    [Fact]
     public async Task RunVerifyStepCommand_WhenServiceThrows_SetsErrorState()
     {
         var vm = new WorkflowViewModel(
@@ -407,6 +509,65 @@ public class WorkflowViewModelTests
 
         Assert.Equal(StepState.Error, vm.VerifyState);
         Assert.Equal("Verification failed: verify exploded", vm.VerifyError);
+    }
+
+    [Fact]
+    public async Task RunVerifyStepCommand_WhenSuccessful_WritesMissionJson()
+    {
+        var outputFolder = Directory.CreateTempSubdirectory().FullName;
+        var consolidatedJson = Path.Combine(outputFolder, "consolidated-results.json");
+        var consolidatedCsv = Path.Combine(outputFolder, "consolidated-results.csv");
+        var coverageJson = Path.Combine(outputFolder, "coverage_summary.json");
+        var coverageCsv = Path.Combine(outputFolder, "coverage_summary.csv");
+
+        var startedAt = DateTimeOffset.UtcNow.AddMinutes(-1);
+        var finishedAt = DateTimeOffset.UtcNow;
+
+        var verifyService = new TrackingVerificationWorkflowService(new VerificationWorkflowResult
+        {
+            StartedAt = startedAt,
+            FinishedAt = finishedAt,
+            ConsolidatedJsonPath = consolidatedJson,
+            ConsolidatedCsvPath = consolidatedCsv,
+            CoverageSummaryJsonPath = coverageJson,
+            CoverageSummaryCsvPath = coverageCsv,
+            ConsolidatedResultCount = 3,
+            Diagnostics = new[] { "verify-diagnostic" }
+        });
+
+        var vm = new WorkflowViewModel(
+            importScanner: null,
+            verifyService: verifyService)
+        {
+            VerifyState = StepState.Ready,
+            OutputFolderPath = outputFolder,
+            EvaluateStigToolPath = @"C:\tools\Evaluate-STIG"
+        };
+
+        try
+        {
+            await vm.RunVerifyStepCommand.ExecuteAsync(null);
+
+            var missionPath = Path.Combine(outputFolder, "mission.json");
+            Assert.True(File.Exists(missionPath));
+
+            var missionJson = await File.ReadAllTextAsync(missionPath);
+            var mission = JsonSerializer.Deserialize<LocalWorkflowMission>(missionJson);
+
+            Assert.NotNull(mission);
+            Assert.Equal(missionPath, mission!.StageMetadata.MissionJsonPath);
+            Assert.Equal(consolidatedJson, mission.StageMetadata.ConsolidatedJsonPath);
+            Assert.Equal(consolidatedCsv, mission.StageMetadata.ConsolidatedCsvPath);
+            Assert.Equal(coverageJson, mission.StageMetadata.CoverageSummaryJsonPath);
+            Assert.Equal(coverageCsv, mission.StageMetadata.CoverageSummaryCsvPath);
+            Assert.Equal(startedAt, mission.StageMetadata.StartedAt);
+            Assert.Equal(finishedAt, mission.StageMetadata.FinishedAt);
+            Assert.Contains("verify-diagnostic", mission.Diagnostics);
+        }
+        finally
+        {
+            Directory.Delete(outputFolder, recursive: true);
+        }
     }
 
     private sealed class ThrowingVerificationWorkflowService : IVerificationWorkflowService

@@ -68,6 +68,40 @@ public partial class WorkflowStepCard : UserControl
             typeof(WorkflowStepCard),
             new PropertyMetadata(string.Empty));
 
+    public static readonly DependencyProperty SecondaryCommandProperty =
+        DependencyProperty.Register(
+            nameof(SecondaryCommand),
+            typeof(ICommand),
+            typeof(WorkflowStepCard));
+
+    public static readonly DependencyProperty SecondaryButtonLabelProperty =
+        DependencyProperty.Register(
+            nameof(SecondaryButtonLabel),
+            typeof(string),
+            typeof(WorkflowStepCard),
+            new PropertyMetadata(string.Empty));
+
+    public static readonly DependencyProperty SecondaryButtonAutomationNameProperty =
+        DependencyProperty.Register(
+            nameof(SecondaryButtonAutomationName),
+            typeof(string),
+            typeof(WorkflowStepCard),
+            new PropertyMetadata(string.Empty));
+
+    public static readonly DependencyProperty SecondaryButtonToolTipProperty =
+        DependencyProperty.Register(
+            nameof(SecondaryButtonToolTip),
+            typeof(string),
+            typeof(WorkflowStepCard),
+            new PropertyMetadata(string.Empty));
+
+    public static readonly DependencyProperty SecondaryButtonTabIndexProperty =
+        DependencyProperty.Register(
+            nameof(SecondaryButtonTabIndex),
+            typeof(int),
+            typeof(WorkflowStepCard),
+            new PropertyMetadata(0));
+
     public static readonly DependencyProperty RunButtonTabIndexProperty =
         DependencyProperty.Register(
             nameof(RunButtonTabIndex),
@@ -151,5 +185,35 @@ public partial class WorkflowStepCard : UserControl
     {
         get => (int)GetValue(RecoveryButtonTabIndexProperty);
         set => SetValue(RecoveryButtonTabIndexProperty, value);
+    }
+
+    public ICommand SecondaryCommand
+    {
+        get => (ICommand)GetValue(SecondaryCommandProperty);
+        set => SetValue(SecondaryCommandProperty, value);
+    }
+
+    public string SecondaryButtonLabel
+    {
+        get => (string)GetValue(SecondaryButtonLabelProperty);
+        set => SetValue(SecondaryButtonLabelProperty, value);
+    }
+
+    public string SecondaryButtonAutomationName
+    {
+        get => (string)GetValue(SecondaryButtonAutomationNameProperty);
+        set => SetValue(SecondaryButtonAutomationNameProperty, value);
+    }
+
+    public string SecondaryButtonToolTip
+    {
+        get => (string)GetValue(SecondaryButtonToolTipProperty);
+        set => SetValue(SecondaryButtonToolTipProperty, value);
+    }
+
+    public int SecondaryButtonTabIndex
+    {
+        get => (int)GetValue(SecondaryButtonTabIndexProperty);
+        set => SetValue(SecondaryButtonTabIndexProperty, value);
     }
 }

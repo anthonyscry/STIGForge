@@ -1,4 +1,5 @@
 using System.IO;
+using System.Text.Json;
 using System.Windows;
 using STIGForge.Apply;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -6,6 +7,7 @@ using CommunityToolkit.Mvvm.Input;
 using STIGForge.App.Views;
 using STIGForge.Content.Import;
 using STIGForge.Core.Abstractions;
+using STIGForge.Core.Models;
 
 namespace STIGForge.App;
 
@@ -33,15 +35,18 @@ public partial class WorkflowViewModel : ObservableObject
     private readonly ImportInboxScanner? _importScanner;
     private readonly IVerificationWorkflowService? _verifyService;
     private readonly Func<ApplyRequest, CancellationToken, Task<ApplyResult>>? _runApply;
+    private readonly Func<string?> _autoScanRootResolver;
 
     public WorkflowViewModel(
         ImportInboxScanner? importScanner = null,
         IVerificationWorkflowService? verifyService = null,
-        Func<ApplyRequest, CancellationToken, Task<ApplyResult>>? runApply = null)
+        Func<ApplyRequest, CancellationToken, Task<ApplyResult>>? runApply = null,
+        Func<string?>? autoScanRootResolver = null)
     {
         _importScanner = importScanner;
         _verifyService = verifyService;
         _runApply = runApply;
+        _autoScanRootResolver = autoScanRootResolver ?? ResolveAutoScanRoot;
         LoadSettings();
     }
 
@@ -114,6 +119,7 @@ public partial class WorkflowViewModel : ObservableObject
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(RunHardenStepCommand))]
+    [NotifyCanExecuteChangedFor(nameof(SkipHardenStepCommand))]
     [NotifyCanExecuteChangedFor(nameof(RunAutoWorkflowCommand))]
     private StepState _hardenState = StepState.Locked;
 
@@ -148,6 +154,7 @@ public partial class WorkflowViewModel : ObservableObject
     public bool CanRunImport => ImportState == StepState.Ready || ImportState == StepState.Complete || ImportState == StepState.Error;
     public bool CanRunScan => ScanState == StepState.Ready || ScanState == StepState.Complete || ScanState == StepState.Error;
     public bool CanRunHarden => HardenState == StepState.Ready || HardenState == StepState.Complete || HardenState == StepState.Error;
+    public bool CanSkipHarden => HardenState == StepState.Ready || HardenState == StepState.Error;
     public bool CanRunVerify => VerifyState == StepState.Ready || VerifyState == StepState.Complete || VerifyState == StepState.Error;
 
     public bool CanRunAutoWorkflow => 
@@ -256,7 +263,7 @@ public partial class WorkflowViewModel : ObservableObject
 
         try
         {
-            var result = await _verifyService.RunAsync(new VerificationWorkflowRequest
+            var request = new VerificationWorkflowRequest
             {
                 OutputRoot = OutputFolderPath,
                 EvaluateStig = new EvaluateStigWorkflowOptions
@@ -268,7 +275,11 @@ public partial class WorkflowViewModel : ObservableObject
                 {
                     Enabled = false
                 }
-            }, CancellationToken.None);
+            };
+
+            var result = await Task.Run(
+                () => _verifyService.RunAsync(request, CancellationToken.None),
+                CancellationToken.None);
 
             BaselineFindingsCount = result.ConsolidatedResultCount;
             StatusText = $"Baseline scan complete: {BaselineFindingsCount} findings";
@@ -351,7 +362,7 @@ public partial class WorkflowViewModel : ObservableObject
 
         try
         {
-            var result = await _verifyService.RunAsync(new VerificationWorkflowRequest
+            var request = new VerificationWorkflowRequest
             {
                 OutputRoot = OutputFolderPath,
                 EvaluateStig = new EvaluateStigWorkflowOptions
@@ -364,13 +375,17 @@ public partial class WorkflowViewModel : ObservableObject
                     Enabled = !string.IsNullOrWhiteSpace(SccToolPath),
                     CommandPath = SccToolPath
                 }
-            }, CancellationToken.None);
+            };
+
+            var result = await Task.Run(
+                () => _verifyService.RunAsync(request, CancellationToken.None),
+                CancellationToken.None);
 
             VerifyFindingsCount = result.ConsolidatedResultCount;
             FixedCount = BaselineFindingsCount - VerifyFindingsCount;
             if (FixedCount < 0) FixedCount = 0;
 
-            MissionJsonPath = Path.Combine(OutputFolderPath, "mission.json");
+            await WriteMissionJsonAsync(result, CancellationToken.None);
             StatusText = $"Verification complete: {VerifyFindingsCount} remaining ({FixedCount} fixed)";
             return true;
         }
@@ -380,6 +395,38 @@ public partial class WorkflowViewModel : ObservableObject
             VerifyFindingsCount = 0;
             return false;
         }
+    }
+
+    private async Task WriteMissionJsonAsync(VerificationWorkflowResult result, CancellationToken ct)
+    {
+        if (string.IsNullOrWhiteSpace(OutputFolderPath))
+            throw new InvalidOperationException("Output folder is required to write mission.json");
+
+        Directory.CreateDirectory(OutputFolderPath);
+
+        var missionPath = Path.Combine(OutputFolderPath, "mission.json");
+        var mission = new LocalWorkflowMission
+        {
+            Diagnostics = result.Diagnostics ?? Array.Empty<string>(),
+            StageMetadata = new LocalWorkflowStageMetadata
+            {
+                MissionJsonPath = missionPath,
+                ConsolidatedJsonPath = result.ConsolidatedJsonPath,
+                ConsolidatedCsvPath = result.ConsolidatedCsvPath,
+                CoverageSummaryJsonPath = result.CoverageSummaryJsonPath,
+                CoverageSummaryCsvPath = result.CoverageSummaryCsvPath,
+                StartedAt = result.StartedAt,
+                FinishedAt = result.FinishedAt
+            }
+        };
+
+        var json = JsonSerializer.Serialize(mission, new JsonSerializerOptions
+        {
+            WriteIndented = true
+        });
+
+        await File.WriteAllTextAsync(missionPath, json, ct).ConfigureAwait(false);
+        MissionJsonPath = missionPath;
     }
 
     [RelayCommand(CanExecute = nameof(CanRunImport))]
@@ -463,6 +510,18 @@ public partial class WorkflowViewModel : ObservableObject
         {
             IsBusy = false;
         }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanSkipHarden))]
+    private void SkipHardenStep()
+    {
+        HardenState = StepState.Complete;
+        HardenError = string.Empty;
+        AppliedFixesCount = 0;
+        StatusText = "Hardening skipped by operator";
+
+        if (VerifyState == StepState.Locked)
+            VerifyState = StepState.Ready;
     }
 
     [RelayCommand(CanExecute = nameof(CanRunVerify))]
@@ -552,6 +611,111 @@ public partial class WorkflowViewModel : ObservableObject
     }
 
     [RelayCommand]
+    private void AutoScanSetupPaths()
+    {
+        var detected = new List<string>();
+        var scanRoot = _autoScanRootResolver();
+
+        if (string.IsNullOrWhiteSpace(scanRoot))
+        {
+            StatusText = "Auto scan did not find new setup paths";
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(ImportFolderPath))
+        {
+            var importCandidate = Path.Combine(scanRoot, "import");
+            if (Directory.Exists(importCandidate))
+            {
+                ImportFolderPath = importCandidate;
+                detected.Add("Import folder");
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(EvaluateStigToolPath))
+        {
+            var evaluateCandidate = FindFirstExistingDirectory(GetEvaluateStigCandidates(scanRoot));
+            if (!string.IsNullOrWhiteSpace(evaluateCandidate))
+            {
+                EvaluateStigToolPath = evaluateCandidate;
+                detected.Add("Evaluate-STIG path");
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(SccToolPath))
+        {
+            var sccCandidate = FindFirstExistingDirectory(GetSccCandidates(scanRoot));
+            if (!string.IsNullOrWhiteSpace(sccCandidate))
+            {
+                SccToolPath = sccCandidate;
+                detected.Add("SCC path");
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(OutputFolderPath))
+        {
+            var outputCandidate = Path.Combine(scanRoot, ".stigforge", "scans");
+            Directory.CreateDirectory(outputCandidate);
+            OutputFolderPath = outputCandidate;
+            detected.Add("Output folder");
+        }
+
+        StatusText = detected.Count > 0
+            ? "Auto-detected setup paths: " + string.Join(", ", detected)
+            : "Auto scan did not find new setup paths";
+    }
+
+    private static string? ResolveAutoScanRoot()
+    {
+        var workspaceRoot = FindWorkspaceRoot();
+        if (!string.IsNullOrWhiteSpace(workspaceRoot))
+            return workspaceRoot;
+
+        if (Directory.Exists(AppContext.BaseDirectory))
+            return AppContext.BaseDirectory;
+
+        return null;
+    }
+
+    private static string? FindWorkspaceRoot()
+    {
+        var current = new DirectoryInfo(AppContext.BaseDirectory);
+
+        while (current != null)
+        {
+            if (File.Exists(Path.Combine(current.FullName, "STIGForge.sln")))
+                return current.FullName;
+
+            current = current.Parent;
+        }
+
+        return null;
+    }
+
+    private static string? FindFirstExistingDirectory(IEnumerable<string> candidates)
+    {
+        foreach (var candidate in candidates)
+        {
+            if (!string.IsNullOrWhiteSpace(candidate) && Directory.Exists(candidate))
+                return candidate;
+        }
+
+        return null;
+    }
+
+    private static IEnumerable<string> GetEvaluateStigCandidates(string scanRoot)
+    {
+        yield return Path.Combine(scanRoot, "tools", "Evaluate-STIG");
+        yield return Path.Combine(scanRoot, "Evaluate-STIG");
+    }
+
+    private static IEnumerable<string> GetSccCandidates(string scanRoot)
+    {
+        yield return Path.Combine(scanRoot, "tools", "SCC");
+        yield return Path.Combine(scanRoot, "SCC");
+    }
+
+    [RelayCommand]
     private void BrowseImportFolder()
     {
         var dialog = new Microsoft.Win32.OpenFolderDialog { Title = "Select Import Folder" };
@@ -607,7 +771,7 @@ public partial class WorkflowViewModel : ObservableObject
     private void ShowHelp()
     {
         MessageBox.Show(
-            "Open the Settings menu to configure paths and export formats, then run Import, Scan, Harden, and Verify in order or use Auto Workflow.",
+            "Open Settings to configure paths (or use Auto Scan Setup Paths), then run Import, Scan, Harden, and Verify in order or use Auto Workflow. You can also skip Harden when needed.",
             "Help",
             MessageBoxButton.OK,
             MessageBoxImage.Information);
