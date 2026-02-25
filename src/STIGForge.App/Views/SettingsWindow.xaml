@@ -90,6 +90,21 @@
           </Grid>
         </GroupBox>
 
+        <GroupBox Header="Evaluate-STIG Advanced" Margin="0,0,0,16" Padding="12">
+          <StackPanel>
+            <TextBlock Text="Answer Files Path (AFPath)" FontWeight="SemiBold" Margin="0,0,0,4"/>
+            <TextBox Text="{Binding EvaluateAfPath, UpdateSourceTrigger=PropertyChanged}" Height="32" VerticalContentAlignment="Center" Margin="0,0,0,10"/>
+
+            <TextBlock Text="Select STIG(s)" FontWeight="SemiBold" Margin="0,0,0,4"/>
+            <TextBox Text="{Binding EvaluateSelectStig, UpdateSourceTrigger=PropertyChanged}" Height="32" VerticalContentAlignment="Center" Margin="0,0,0,10"/>
+
+            <TextBlock Text="Additional Arguments" FontWeight="SemiBold" Margin="0,0,0,4"/>
+            <TextBox Text="{Binding EvaluateAdditionalArgs, UpdateSourceTrigger=PropertyChanged}" Height="32" VerticalContentAlignment="Center" Margin="0,0,0,10"/>
+
+            <CheckBox Content="Require Administrator mode for Scan/Verify" IsChecked="{Binding RequireElevationForScan}"/>
+          </StackPanel>
+        </GroupBox>
+
         <GroupBox Header="Export Formats" Padding="12">
           <StackPanel>
             <CheckBox Content="CKL" IsChecked="{Binding ExportCkl}" Margin="0,0,0,8"/>
