@@ -120,6 +120,11 @@ STIGForge parses CKL results and generates consolidated-results.json.
 
 **WPF**: Use the **Verify** tab to configure tool paths and click **Run Verify**.
 
+For Dashboard **Scan** and **Verify** workflow runs:
+- Start STIGForge as Administrator before running **Scan** or **Verify**.
+- Confirm the Evaluate-STIG path resolves to `Evaluate-STIG.ps1`.
+- Use advanced settings (`AFPath`, `SelectSTIG`, and additional args) when the default command needs customization.
+
 ### 6. Handle Manual Controls
 
 Some STIG controls require manual review. STIGForge tracks these separately:
