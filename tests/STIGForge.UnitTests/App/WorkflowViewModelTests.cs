@@ -309,6 +309,46 @@ public class WorkflowViewModelTests
     }
 
     [Fact]
+    public async Task RunScanStepCommand_WhenAdvancedEvaluateOptionsConfigured_AppendsThemAndKeepsCoreArgs()
+    {
+        var evaluateTool = Directory.CreateTempSubdirectory().FullName;
+        var outputFolder = Directory.CreateTempSubdirectory().FullName;
+        CreateEvaluateStigScript(evaluateTool);
+        var verifyService = new TrackingVerificationWorkflowService(new VerificationWorkflowResult
+        {
+            ConsolidatedResultCount = 3
+        });
+
+        try
+        {
+            var vm = new WorkflowViewModel(importScanner: null, verifyService: verifyService, isElevatedResolver: () => true)
+            {
+                ScanState = StepState.Ready,
+                ImportedItemsCount = 1,
+                OutputFolderPath = outputFolder,
+                EvaluateStigToolPath = evaluateTool,
+                EvaluateAfPath = @"C:\Evaluate-STIG\AnswerFiles",
+                EvaluateSelectStig = "Win11,Chrome",
+                EvaluateAdditionalArgs = "-AllowDeprecated"
+            };
+
+            await vm.RunScanStepCommand.ExecuteAsync(null);
+
+            var args = verifyService.LastRequest!.EvaluateStig.Arguments;
+            Assert.Contains("-AFPath", args, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("-SelectSTIG", args, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("-AllowDeprecated", args, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("-Output CKL", args, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("-OutputPath", args, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            Directory.Delete(evaluateTool, recursive: true);
+            Directory.Delete(outputFolder, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task RunScanStepCommand_WhenServiceThrows_SetsErrorAndKeepsHardenLocked()
     {
         var evaluateTool = Directory.CreateTempSubdirectory().FullName;
@@ -1140,9 +1180,12 @@ public class WorkflowViewModelTests
 
         public int CallCount { get; private set; }
 
+        public VerificationWorkflowRequest? LastRequest { get; private set; }
+
         public Task<VerificationWorkflowResult> RunAsync(VerificationWorkflowRequest request, CancellationToken ct)
         {
             CallCount++;
+            LastRequest = request;
             return Task.FromResult(_result);
         }
     }

@@ -121,6 +121,34 @@ public partial class WorkflowViewModel : ObservableObject
         return $"{operationName} complete: 0 findings";
     }
 
+    private string BuildEvaluateStigArguments(string outputRoot)
+    {
+        var parts = new List<string>();
+
+        if (!string.IsNullOrWhiteSpace(EvaluateAfPath))
+            parts.Add("-AFPath " + QuoteCommandLineArgument(EvaluateAfPath.Trim()));
+
+        if (!string.IsNullOrWhiteSpace(EvaluateSelectStig))
+            parts.Add("-SelectSTIG " + QuoteCommandLineArgument(EvaluateSelectStig.Trim()));
+
+        if (!string.IsNullOrWhiteSpace(EvaluateAdditionalArgs))
+            parts.Add(EvaluateAdditionalArgs.Trim());
+
+        parts.Add("-Output CKL");
+        parts.Add("-OutputPath " + QuoteCommandLineArgument(outputRoot));
+
+        var target = MachineTarget?.Trim() ?? string.Empty;
+        if (!string.IsNullOrWhiteSpace(target) && !string.Equals(target, "localhost", StringComparison.OrdinalIgnoreCase))
+            parts.Add("-ComputerName " + QuoteCommandLineArgument(target));
+
+        return string.Join(" ", parts);
+    }
+
+    private static string QuoteCommandLineArgument(string value)
+    {
+        return "\"" + value.Replace("\"", "\\\"") + "\"";
+    }
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanGoBack))]
     [NotifyPropertyChangedFor(nameof(CanGoNext))]
@@ -429,7 +457,8 @@ public partial class WorkflowViewModel : ObservableObject
                 EvaluateStig = new EvaluateStigWorkflowOptions
                 {
                     Enabled = true,
-                    ToolRoot = resolvedEvaluateToolPath
+                    ToolRoot = resolvedEvaluateToolPath,
+                    Arguments = BuildEvaluateStigArguments(OutputFolderPath)
                 },
                 Scap = new ScapWorkflowOptions
                 {
@@ -578,7 +607,8 @@ public partial class WorkflowViewModel : ObservableObject
                 EvaluateStig = new EvaluateStigWorkflowOptions
                 {
                     Enabled = true,
-                    ToolRoot = resolvedEvaluateToolPath
+                    ToolRoot = resolvedEvaluateToolPath,
+                    Arguments = BuildEvaluateStigArguments(OutputFolderPath)
                 },
                 Scap = new ScapWorkflowOptions
                 {
