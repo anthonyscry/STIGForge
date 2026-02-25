@@ -999,6 +999,59 @@ public class WorkflowViewModelTests
         }
     }
 
+    [Fact]
+    public async Task RunVerifyStepCommand_WritesMissionWithToolRunDiagnostics()
+    {
+        var outputFolder = Directory.CreateTempSubdirectory().FullName;
+        var evaluateTool = Directory.CreateTempSubdirectory().FullName;
+        CreateEvaluateStigScript(evaluateTool);
+
+        var verifyService = new TrackingVerificationWorkflowService(new VerificationWorkflowResult
+        {
+            ConsolidatedResultCount = 1,
+            Diagnostics = new[] { "verify-diagnostic" },
+            ToolRuns =
+            [
+                new VerificationToolRunResult
+                {
+                    Tool = "Evaluate-STIG",
+                    Executed = true,
+                    ExitCode = 5,
+                    Error = "Access denied"
+                }
+            ]
+        });
+
+        var vm = new WorkflowViewModel(
+            importScanner: null,
+            verifyService: verifyService,
+            isElevatedResolver: () => true)
+        {
+            VerifyState = StepState.Ready,
+            OutputFolderPath = outputFolder,
+            EvaluateStigToolPath = evaluateTool
+        };
+
+        try
+        {
+            await vm.RunVerifyStepCommand.ExecuteAsync(null);
+
+            var missionPath = Path.Combine(outputFolder, "mission.json");
+            var missionJson = await File.ReadAllTextAsync(missionPath);
+            var mission = JsonSerializer.Deserialize<LocalWorkflowMission>(missionJson);
+
+            Assert.NotNull(mission);
+            Assert.Contains("verify-diagnostic", mission!.Diagnostics);
+            Assert.Contains(mission.Diagnostics, d => d.Contains("Evaluate-STIG", StringComparison.OrdinalIgnoreCase)
+                && d.Contains("ExitCode=5", StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            Directory.Delete(evaluateTool, recursive: true);
+            Directory.Delete(outputFolder, recursive: true);
+        }
+    }
+
     private static void CreateMinimalStigZip(string folder, string fileName)
     {
         var zipPath = Path.Combine(folder, fileName);

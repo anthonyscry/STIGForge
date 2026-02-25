@@ -612,7 +612,7 @@ public partial class WorkflowViewModel : ObservableObject
         var missionPath = Path.Combine(OutputFolderPath, "mission.json");
         var mission = new LocalWorkflowMission
         {
-            Diagnostics = result.Diagnostics ?? Array.Empty<string>(),
+            Diagnostics = BuildMissionDiagnostics(result),
             StageMetadata = new LocalWorkflowStageMetadata
             {
                 MissionJsonPath = missionPath,
@@ -632,6 +632,27 @@ public partial class WorkflowViewModel : ObservableObject
 
         await File.WriteAllTextAsync(missionPath, json, ct).ConfigureAwait(false);
         MissionJsonPath = missionPath;
+    }
+
+    private static IReadOnlyList<string> BuildMissionDiagnostics(VerificationWorkflowResult result)
+    {
+        var diagnostics = (result.Diagnostics ?? Array.Empty<string>())
+            .Where(d => !string.IsNullOrWhiteSpace(d))
+            .ToList();
+
+        var toolRuns = result.ToolRuns ?? Array.Empty<VerificationToolRunResult>();
+        foreach (var run in toolRuns)
+        {
+            var tool = string.IsNullOrWhiteSpace(run.Tool) ? "unknown" : run.Tool;
+            var line = $"ToolRun {tool}: Executed={run.Executed}; ExitCode={run.ExitCode}";
+
+            if (!string.IsNullOrWhiteSpace(run.Error))
+                line += $"; Error={run.Error}";
+
+            diagnostics.Add(line);
+        }
+
+        return diagnostics;
     }
 
     [RelayCommand(CanExecute = nameof(CanRunImport))]
