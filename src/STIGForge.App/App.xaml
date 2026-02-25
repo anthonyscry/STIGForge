@@ -68,6 +68,39 @@
         </Setter>
       </Style>
 
+      <Style x:Key="WorkflowDashboardButtonStyle" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Style.Triggers>
+          <Trigger Property="IsKeyboardFocused" Value="True">
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+            <Setter Property="BorderThickness" Value="2" />
+            <Setter Property="Background" Value="{DynamicResource ButtonHoverBrush}" />
+          </Trigger>
+
+          <Trigger Property="IsFocused" Value="True">
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+            <Setter Property="BorderThickness" Value="2" />
+            <Setter Property="Background" Value="{DynamicResource ButtonHoverBrush}" />
+          </Trigger>
+        </Style.Triggers>
+      </Style>
+
+      <Style x:Key="WorkflowCardBorderStyle" TargetType="Border">
+        <Setter Property="BorderThickness" Value="2" />
+        <Style.Triggers>
+          <Trigger Property="IsMouseOver" Value="True">
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+            <Setter Property="BorderThickness" Value="3" />
+          </Trigger>
+
+          <Trigger Property="IsKeyboardFocusWithin" Value="True">
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+            <Setter Property="BorderThickness" Value="3" />
+            <Setter Property="Background" Value="{DynamicResource SurfaceMutedBrush}" />
+          </Trigger>
+        </Style.Triggers>
+      </Style>
+
       <!-- ═══════════ TEXTBOX ═══════════ -->
       <Style TargetType="TextBox">
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
@@ -623,7 +656,7 @@
       <DataTemplate x:Key="DoneStepTemplate">
         <StackPanel MaxWidth="600">
           <TextBlock Text="Step 6: Done" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,20"/>
-          <TextBlock Text="Workflow completed!" FontSize="18" Foreground="Green" Margin="0,0,0,20"/>
+          <TextBlock Text="Workflow completed!" FontSize="18" Foreground="{DynamicResource SuccessBrush}" Margin="0,0,0,20"/>
 
           <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="16" Margin="0,0,0,20">
             <StackPanel>
@@ -644,7 +677,7 @@
                 <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding BaselineFindingsCount}" FontWeight="SemiBold"/>
 
                 <TextBlock Grid.Row="1" Grid.Column="0" Text="Fixed:"/>
-                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding FixedCount}" FontWeight="SemiBold" Foreground="Green"/>
+                <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding FixedCount}" FontWeight="SemiBold" Foreground="{DynamicResource SuccessBrush}"/>
 
                 <TextBlock Grid.Row="2" Grid.Column="0" Text="Remaining Findings:"/>
                 <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding VerifyFindingsCount}" FontWeight="SemiBold"/>
@@ -656,11 +689,11 @@
           </Border>
 
           <TextBlock Text="Mission JSON:" FontWeight="SemiBold"/>
-          <TextBox Text="{Binding MissionJsonPath, Mode=OneWay}" IsReadOnly="True" Margin="0,4,0,16"/>
+          <TextBox Text="{Binding MissionJsonPath, Mode=OneWay}" IsReadOnly="True" IsTabStop="False" Margin="0,4,0,16"/>
 
           <StackPanel Orientation="Horizontal">
-            <Button Content="Open Output Folder" Width="150" Height="36" Margin="0,0,10,0" Command="{Binding OpenOutputFolderCommand}"/>
-            <Button Content="Start New Workflow" Width="150" Height="36" Command="{Binding RestartWorkflowCommand}"/>
+            <Button Content="Open Output Folder" Width="150" Height="36" Margin="0,0,10,0" TabIndex="90" Style="{DynamicResource WorkflowDashboardButtonStyle}" Command="{Binding OpenOutputFolderCommand}"/>
+            <Button Content="Start New Workflow" Width="150" Height="36" TabIndex="91" Style="{DynamicResource WorkflowDashboardButtonStyle}" Command="{Binding RestartWorkflowCommand}"/>
           </StackPanel>
         </StackPanel>
       </DataTemplate>

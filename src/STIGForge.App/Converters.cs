@@ -62,13 +62,30 @@ public sealed class BoolToReadyColorConverter : IValueConverter
   public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
   {
     return value is true
-      ? new SolidColorBrush(Color.FromRgb(34, 197, 94))   // Green
-      : new SolidColorBrush(Color.FromRgb(239, 68, 68));   // Red
+      ? ConverterBrushes.ResolveThemeBrush("SuccessBrush", Color.FromRgb(34, 197, 94))
+      : ConverterBrushes.ResolveThemeBrush("DangerBrush", Color.FromRgb(239, 68, 68));
   }
 
   public object ConvertBack(object? value, Type targetType, object? parameter, CultureInfo culture)
   {
     throw new NotSupportedException();
+  }
+}
+
+internal static class ConverterBrushes
+{
+  public static SolidColorBrush ResolveThemeBrush(string key, Color fallback)
+  {
+    return Application.Current?.Resources[key] is SolidColorBrush brush
+      ? brush
+      : CreateFrozenBrush(fallback);
+  }
+
+  private static SolidColorBrush CreateFrozenBrush(Color color)
+  {
+    var brush = new SolidColorBrush(color);
+    brush.Freeze();
+    return brush;
   }
 }
 
@@ -100,29 +117,16 @@ public sealed class StepFontWeightConverter : IValueConverter
 /// </summary>
 public sealed class StepStateToBorderBrushConverter : IValueConverter
 {
-  private static readonly SolidColorBrush BlueBrush = CreateFrozenBrush(Color.FromRgb(59, 130, 246));   // Ready
-  private static readonly SolidColorBrush AmberBrush = CreateFrozenBrush(Color.FromRgb(245, 158, 11));  // Running
-  private static readonly SolidColorBrush GreenBrush = CreateFrozenBrush(Color.FromRgb(34, 197, 94));   // Complete
-  private static readonly SolidColorBrush GrayBrush = CreateFrozenBrush(Color.FromRgb(107, 114, 128));  // Locked
-  private static readonly SolidColorBrush RedBrush = CreateFrozenBrush(Color.FromRgb(239, 68, 68));     // Error
-
-  private static SolidColorBrush CreateFrozenBrush(Color color)
-  {
-    var brush = new SolidColorBrush(color);
-    brush.Freeze();
-    return brush;
-  }
-
   public object Convert(object? value, Type targetType, object? parameter, CultureInfo culture)
   {
     return value switch
     {
-      StepState.Ready => BlueBrush,
-      StepState.Running => AmberBrush,
-      StepState.Complete => GreenBrush,
-      StepState.Locked => GrayBrush,
-      StepState.Error => RedBrush,
-      _ => GrayBrush
+      StepState.Ready => ConverterBrushes.ResolveThemeBrush("WorkflowStepReadyBrush", Color.FromRgb(59, 130, 246)),
+      StepState.Running => ConverterBrushes.ResolveThemeBrush("WorkflowStepRunningBrush", Color.FromRgb(245, 158, 11)),
+      StepState.Complete => ConverterBrushes.ResolveThemeBrush("WorkflowStepCompleteBrush", Color.FromRgb(34, 197, 94)),
+      StepState.Locked => ConverterBrushes.ResolveThemeBrush("WorkflowStepLockedBrush", Color.FromRgb(107, 114, 128)),
+      StepState.Error => ConverterBrushes.ResolveThemeBrush("WorkflowStepErrorBrush", Color.FromRgb(239, 68, 68)),
+      _ => ConverterBrushes.ResolveThemeBrush("WorkflowStepLockedBrush", Color.FromRgb(107, 114, 128))
     };
   }
 

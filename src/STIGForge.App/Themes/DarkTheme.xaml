@@ -12,6 +12,11 @@
   <SolidColorBrush x:Key="SuccessBrush" Color="#34D399"/>
   <SolidColorBrush x:Key="WarningBrush" Color="#F59E0B"/>
   <SolidColorBrush x:Key="DangerBrush" Color="#EF4444"/>
+  <SolidColorBrush x:Key="WorkflowStepReadyBrush" Color="#4DA3FF"/>
+  <SolidColorBrush x:Key="WorkflowStepRunningBrush" Color="#F59E0B"/>
+  <SolidColorBrush x:Key="WorkflowStepCompleteBrush" Color="#34D399"/>
+  <SolidColorBrush x:Key="WorkflowStepLockedBrush" Color="#6B7280"/>
+  <SolidColorBrush x:Key="WorkflowStepErrorBrush" Color="#EF4444"/>
 
   <!-- Button -->
   <SolidColorBrush x:Key="ButtonBackgroundBrush" Color="#2A2E37"/>

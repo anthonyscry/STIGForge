@@ -5,6 +5,16 @@
         Title="STIGForge" Height="600" Width="900" MinHeight="500" MinWidth="800"
         WindowStartupLocation="CenterScreen"
         Background="{DynamicResource WindowBackgroundBrush}">
+    <Window.InputBindings>
+        <KeyBinding Key="R" Modifiers="Ctrl" Command="{Binding RunAutoWorkflowCommand}" />
+        <KeyBinding Key="F1" Command="{Binding ShowHelpCommand}" />
+        <KeyBinding Key="I" Modifiers="Alt" Command="{Binding RunImportStepCommand}" />
+        <KeyBinding Key="S" Modifiers="Alt" Command="{Binding RunScanStepCommand}" />
+        <KeyBinding Key="H" Modifiers="Alt" Command="{Binding RunHardenStepCommand}" />
+        <KeyBinding Key="V" Modifiers="Alt" Command="{Binding RunVerifyStepCommand}" />
+        <KeyBinding Key="O" Modifiers="Ctrl" Command="{Binding OpenOutputFolderCommand}" />
+        <KeyBinding Key="N" Modifiers="Ctrl" Command="{Binding RestartWorkflowCommand}" />
+    </Window.InputBindings>
     <Grid Margin="20">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
@@ -15,9 +25,9 @@
         <DockPanel Grid.Row="0" Margin="0,0,0,20" LastChildFill="False">
             <TextBlock Text="STIGForge" FontSize="28" FontWeight="SemiBold" VerticalAlignment="Center" DockPanel.Dock="Left"/>
             <StackPanel Orientation="Horizontal" DockPanel.Dock="Right">
-                <Button Content="?" Width="36" Height="36" Margin="0,0,8,0" ToolTip="Help" FontSize="16" FontWeight="Bold" Command="{Binding ShowHelpCommand}" AutomationProperties.Name="Help"/>
-                <Button Content="i" Width="36" Height="36" Margin="0,0,8,0" ToolTip="About" FontSize="16" FontWeight="Bold" FontStyle="Italic" Command="{Binding ShowAboutCommand}" AutomationProperties.Name="About"/>
-                <Button Content="&#x2699;" Width="36" Height="36" ToolTip="Settings" FontSize="18" Command="{Binding ShowSettingsCommand}" AutomationProperties.Name="Settings"/>
+                <Button Content="?" Width="36" Height="36" Margin="0,0,8,0" TabIndex="900" ToolTip="Help (F1)" FontSize="16" FontWeight="Bold" Command="{Binding ShowHelpCommand}" AutomationProperties.Name="Help"/>
+                <Button Content="i" Width="36" Height="36" Margin="0,0,8,0" TabIndex="901" ToolTip="About" FontSize="16" FontWeight="Bold" FontStyle="Italic" Command="{Binding ShowAboutCommand}" AutomationProperties.Name="About"/>
+                <Button Content="&#x2699;" Width="36" Height="36" TabIndex="902" ToolTip="Settings" FontSize="18" Command="{Binding ShowSettingsCommand}" AutomationProperties.Name="Settings"/>
             </StackPanel>
         </DockPanel>
 

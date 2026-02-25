@@ -1,5 +1,6 @@
 using System.IO;
 using System.Windows;
+using STIGForge.Apply;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using STIGForge.App.Views;
@@ -31,16 +32,16 @@ public partial class WorkflowViewModel : ObservableObject
 {
     private readonly ImportInboxScanner? _importScanner;
     private readonly IVerificationWorkflowService? _verifyService;
-    // TODO: Wire ApplyRunner when DI infrastructure is available
-    // ApplyRunner has many dependencies (SnapshotService, LcmService, RebootCoordinator, etc.)
-    // that require proper DI container setup
+    private readonly Func<ApplyRequest, CancellationToken, Task<ApplyResult>>? _runApply;
 
     public WorkflowViewModel(
         ImportInboxScanner? importScanner = null,
-        IVerificationWorkflowService? verifyService = null)
+        IVerificationWorkflowService? verifyService = null,
+        Func<ApplyRequest, CancellationToken, Task<ApplyResult>>? runApply = null)
     {
         _importScanner = importScanner;
         _verifyService = verifyService;
+        _runApply = runApply;
         LoadSettings();
     }
 
@@ -281,18 +282,60 @@ public partial class WorkflowViewModel : ObservableObject
         }
     }
 
-    private async Task RunHardenAsync()
+    private async Task<bool> RunHardenAsync()
     {
         StatusText = "Applying hardening configurations...";
-
-        // TODO: Wire ApplyRunner when DI infrastructure is available
-        // ApplyRunner requires: ILogger<ApplyRunner>, SnapshotService, RollbackScriptGenerator,
-        // LcmService, RebootCoordinator, and optional IAuditTrailService, EvidenceCollector,
-        // LgpoRunner, PreflightRunner dependencies.
-        // For now, this remains a placeholder until proper DI wiring is implemented.
-        await Task.Delay(500);
         AppliedFixesCount = 0;
-        StatusText = "Hardening step placeholder (ApplyRunner not wired)";
+
+        if (string.IsNullOrWhiteSpace(OutputFolderPath))
+        {
+            StatusText = "Output folder is required for hardening";
+            return false;
+        }
+
+        if (!Directory.Exists(OutputFolderPath))
+        {
+            StatusText = "Hardening cannot run: output folder does not exist";
+            return false;
+        }
+
+        if (_runApply == null)
+        {
+            StatusText = "Apply runner not configured";
+            return false;
+        }
+
+        try
+        {
+            var result = await _runApply(new ApplyRequest
+            {
+                BundleRoot = OutputFolderPath
+            }, CancellationToken.None);
+
+            if (!result.IsMissionComplete)
+            {
+                StatusText = "Hardening did not complete successfully";
+                return false;
+            }
+
+            var blockingFailures = result.BlockingFailures ?? Array.Empty<string>();
+            if (blockingFailures.Count > 0)
+            {
+                StatusText = "Hardening failed: " + string.Join(" | ", blockingFailures);
+                return false;
+            }
+
+            var steps = result.Steps ?? Array.Empty<ApplyStepOutcome>();
+            AppliedFixesCount = steps.Count(s => s.ExitCode == 0);
+
+            StatusText = $"Hardening complete: {AppliedFixesCount} fixes applied";
+            return true;
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"Hardening failed: {ex.Message}";
+            return false;
+        }
     }
 
     private async Task<bool> RunVerifyAsync()
@@ -399,9 +442,17 @@ public partial class WorkflowViewModel : ObservableObject
         HardenError = string.Empty;
         try
         {
-            await RunHardenAsync();
-            HardenState = StepState.Complete;
-            if (VerifyState == StepState.Locked) VerifyState = StepState.Ready;
+            var success = await RunHardenAsync();
+            if (success)
+            {
+                HardenState = StepState.Complete;
+                if (VerifyState == StepState.Locked) VerifyState = StepState.Ready;
+            }
+            else
+            {
+                HardenState = StepState.Error;
+                HardenError = StatusText;
+            }
         }
         catch (Exception ex)
         {

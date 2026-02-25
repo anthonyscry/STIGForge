@@ -21,6 +21,7 @@ dotnet test STIGForge.sln --nologo
 Notes:
 - Some projects target Windows Desktop and do not execute on Linux.
 - If full-suite tests fail on Windows, review integration and unit failures separately.
+- Keyboard focus/tab-order regression checklist: `docs/testing/WpfKeyboardTabSequence.md`.
 
 Common failure buckets (Windows):
 - Bundle orchestrator timeline: `dotnet test tests/STIGForge.UnitTests/STIGForge.UnitTests.csproj --filter FullyQualifiedName~BundleOrchestratorTimelineTests --nologo`
