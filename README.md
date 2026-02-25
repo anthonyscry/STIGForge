@@ -26,15 +26,16 @@ dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- apply-run --bun
 ```
 7) Verify with SCAP tool (CLI):
 ```powershell
-dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- verify-scap --cmd "C:\path\to\scc.exe" --args "-u -s -r -f" --output-root C:\path\to\scap\output --tool "DISA SCAP"
+dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- verify-scap --cmd "C:\path\to\cscc.exe" --args "-u -s -r -f" --output-root C:\path\to\scap\output --tool "DISA SCAP"
 ```
+   Use `cscc.exe` or `cscc-remote.exe` for automation. `scc.exe` is the GUI launcher.
 8) Orchestrate (Apply + Verify):
 ```powershell
-dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- orchestrate --bundle C:\path\to\bundle --powerstig-module C:\path\to\PowerStig --powerstig-data C:\path\to\your.psd1 --evaluate-stig C:\path\to\Evaluate-STIG --evaluate-args "-AnswerFile .\AnswerFile.xml" --scap-cmd "C:\path\to\scc.exe" --scap-args "-u -s -r -f" --scap-label "DISA SCAP"
+dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- orchestrate --bundle C:\path\to\bundle --powerstig-module C:\path\to\PowerStig --powerstig-data C:\path\to\your.psd1 --evaluate-stig C:\path\to\Evaluate-STIG --evaluate-args "-AnswerFile .\AnswerFile.xml" --scap-cmd "C:\path\to\cscc.exe" --scap-args "-u -s -r -f" --scap-label "DISA SCAP"
 ```
 8b) Seamless autopilot mission (optional NIWC enhanced SCAP import + build + apply + verify):
 ```powershell
-dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- mission-autopilot --niwc-source-url https://github.com/niwc-atlantic/scap-content-library --disa-stig-url https://www.cyber.mil/stigs/downloads --powerstig-source-url https://github.com/microsoft/PowerStig --evaluate-stig C:\path\to\Evaluate-STIG --scap-cmd "C:\path\to\scc.exe"
+dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- mission-autopilot --niwc-source-url https://github.com/niwc-atlantic/scap-content-library --disa-stig-url https://www.cyber.mil/stigs/downloads --powerstig-source-url https://github.com/microsoft/PowerStig --evaluate-stig C:\path\to\Evaluate-STIG --scap-cmd "C:\path\to\cscc.exe"
 ```
    Remote source archives downloaded by this command are cached in `.stigforge/airgap-transfer` for air-gap transfer.
 9) eMASS export (CLI):
@@ -124,7 +125,7 @@ dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- fleet-apply --t
 ```
 30) Fleet verify (multi-machine via WinRM):
 ```powershell
-dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- fleet-verify --targets "SRV01,SRV02,SRV03" --scap-cmd "C:\SCC\scc.exe" --json
+dotnet run --project .\src\STIGForge.Cli\STIGForge.Cli.csproj -- fleet-verify --targets "SRV01,SRV02,SRV03" --scap-cmd "C:\SCC\cscc.exe" --json
 ```
 31) Fleet status (check WinRM connectivity):
 ```powershell

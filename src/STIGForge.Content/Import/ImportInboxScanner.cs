@@ -85,7 +85,8 @@ public sealed class ImportInboxScanner
 
       try
       {
-        var files = Directory.GetFiles(current, "*.zip", SearchOption.TopDirectoryOnly)
+        var files = Directory.GetFiles(current, "*", SearchOption.TopDirectoryOnly)
+          .Where(path => path.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
           .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
           .ToList();
         zipFiles.AddRange(files);
@@ -132,25 +133,43 @@ public sealed class ImportInboxScanner
       .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)
       .ToList();
 
-    if (namesLower.Any(n => n.EndsWith("evaluate-stig.ps1", StringComparison.Ordinal)))
+    var hasEvaluateStigScript = namesLower.Any(n => n.EndsWith("evaluate-stig.ps1", StringComparison.Ordinal));
+    var hasNestedEvaluateStigArchive = namesLower.Any(n => n.EndsWith(".zip", StringComparison.Ordinal)
+      && (n.IndexOf("evaluate-stig", StringComparison.Ordinal) >= 0
+      || n.IndexOf("evaluatestig", StringComparison.Ordinal) >= 0));
+
+    if (hasEvaluateStigScript || hasNestedEvaluateStigArchive)
     {
       var candidate = CreateCandidate(zipPath, fileName, sha256, importedFrom, isNiwcEnhanced, contentFileNames);
       candidate.ArtifactKind = ImportArtifactKind.Tool;
       candidate.ToolKind = ToolArtifactKind.EvaluateStig;
       candidate.Confidence = DetectionConfidence.High;
       candidate.ContentKey = "tool:evaluate-stig";
-      candidate.Reasons.Add("Detected Evaluate-STIG.ps1 in archive.");
+      candidate.Reasons.Add(hasEvaluateStigScript
+        ? "Detected Evaluate-STIG.ps1 in archive."
+        : "Detected nested Evaluate-STIG tool archive entry.");
       AddUniqueCandidate(candidates, seen, candidate);
     }
 
-    if (namesLower.Any(n => n.EndsWith("scc.exe", StringComparison.Ordinal)))
+    var hasSccExecutable = namesLower.Any(n => n.EndsWith("cscc.exe", StringComparison.Ordinal)
+      || n.EndsWith("cscc-remote.exe", StringComparison.Ordinal)
+      || n.EndsWith("/cscc", StringComparison.Ordinal)
+      || n.EndsWith("/cscc-remote", StringComparison.Ordinal)
+      || n.EndsWith("scc.exe", StringComparison.Ordinal));
+    var hasNestedSccArchive = namesLower.Any(n => n.EndsWith(".zip", StringComparison.Ordinal)
+      && (n.IndexOf("cscc", StringComparison.Ordinal) >= 0
+      || n.IndexOf("scc", StringComparison.Ordinal) >= 0));
+
+    if (hasSccExecutable || hasNestedSccArchive)
     {
       var candidate = CreateCandidate(zipPath, fileName, sha256, importedFrom, isNiwcEnhanced, contentFileNames);
       candidate.ArtifactKind = ImportArtifactKind.Tool;
       candidate.ToolKind = ToolArtifactKind.Scc;
       candidate.Confidence = DetectionConfidence.High;
       candidate.ContentKey = "tool:scc";
-      candidate.Reasons.Add("Detected scc.exe in archive.");
+      candidate.Reasons.Add(hasSccExecutable
+        ? "Detected SCC executable (cscc/cscc-remote/scc) in archive."
+        : "Detected nested SCC tool archive entry.");
       AddUniqueCandidate(candidates, seen, candidate);
     }
 
@@ -253,7 +272,9 @@ public sealed class ImportInboxScanner
       }
     }
 
-    if (candidates.Count == 0)
+    var hasContentCandidate = candidates.Any(c => c.ArtifactKind != ImportArtifactKind.Tool);
+
+    if (!hasContentCandidate)
     {
       var nestedZipEntries = namesLower
         .Where(n => n.EndsWith(".zip", StringComparison.Ordinal))
