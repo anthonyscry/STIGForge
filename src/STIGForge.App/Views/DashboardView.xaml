@@ -115,7 +115,7 @@
                 </StackPanel>
             </Border>
 
-            <UniformGrid Rows="2" Columns="2" Margin="0,0,0,14">
+            <UniformGrid Rows="2" Columns="2" Margin="0,0,0,14" VerticalAlignment="Top">
                 <controls:WorkflowStepCard StepName="Import"
                                           StepState="{Binding ImportState}"
                                           ErrorMessage="{Binding ImportError}"

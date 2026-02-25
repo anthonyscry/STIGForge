@@ -20,7 +20,7 @@
      <Border Style="{DynamicResource WorkflowStepCardBorderStyle}"
               BorderThickness="1"
               Padding="10"
-              MinHeight="150"
+              MinHeight="85"
               Background="{DynamicResource SurfaceBrush}"
               CornerRadius="12">
         <Border.Effect>
