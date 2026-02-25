@@ -18,13 +18,16 @@
     </UserControl.Resources>
 
      <Border Style="{DynamicResource WorkflowStepCardBorderStyle}"
-              BorderThickness="2"
+              BorderThickness="1"
               Padding="12"
               MinHeight="170"
-              Background="{DynamicResource SurfaceMutedBrush}"
-              CornerRadius="8">
+              Background="{DynamicResource SurfaceBrush}"
+              CornerRadius="12">
+        <Border.Effect>
+            <DropShadowEffect Color="Black" Opacity="0.25" BlurRadius="12" Direction="270" ShadowDepth="4" />
+        </Border.Effect>
         <StackPanel>
-            <TextBlock Text="{Binding StepName, RelativeSource={RelativeSource AncestorType=UserControl}}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8" />
+            <TextBlock Text="{Binding StepName, RelativeSource={RelativeSource AncestorType=UserControl}}" FontSize="18" FontWeight="SemiBold" Margin="0,0,0,12" />
 
             <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
                 <Button Content="{Binding RunButtonLabel, RelativeSource={RelativeSource AncestorType=UserControl}}"
@@ -52,9 +55,18 @@
                         AutomationProperties.HelpText="{Binding SecondaryButtonToolTip, RelativeSource={RelativeSource AncestorType=UserControl}}" />
             </StackPanel>
 
-            <ProgressBar Height="10"
+            <ProgressBar Height="6"
                          IsIndeterminate="True"
-                         Visibility="{Binding StepState, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource StepStateToRunningVisibility}}" />
+                         Foreground="{DynamicResource AccentBrush}"
+                         Background="Transparent"
+                         BorderThickness="0"
+                         Visibility="{Binding StepState, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource StepStateToRunningVisibility}}">
+                <ProgressBar.Resources>
+                    <Style TargetType="Border">
+                        <Setter Property="CornerRadius" Value="3"/>
+                    </Style>
+                </ProgressBar.Resources>
+            </ProgressBar>
 
             <TextBlock Text="&#x2713; Complete"
                        Margin="0,6,0,0"
