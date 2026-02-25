@@ -79,6 +79,39 @@
                             </Style>
                         </ListBox.Style>
                     </ListBox>
+
+                    <TextBlock Margin="0,8,0,0"
+                               Foreground="{DynamicResource WarningBrush}"
+                               Text="{Binding ImportWarningCount, StringFormat=Import Warnings: {0}}">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ImportWarningCount}" Value="0">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+
+                    <ListBox Margin="0,6,0,0"
+                             MinHeight="34"
+                             MaxHeight="84"
+                             Foreground="{DynamicResource WarningBrush}"
+                             ItemsSource="{Binding ImportWarnings}"
+                             ToolTip="Import warnings from scanned files and folders">
+                        <ListBox.Style>
+                            <Style TargetType="ListBox">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ImportWarningCount}" Value="0">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ListBox.Style>
+                    </ListBox>
                 </StackPanel>
             </Border>
 

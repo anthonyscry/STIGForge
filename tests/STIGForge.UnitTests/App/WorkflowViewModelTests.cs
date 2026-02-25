@@ -3,6 +3,7 @@ using STIGForge.Content.Import;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
 using STIGForge.Apply;
+using System.IO.Compression;
 using System.Text.Json;
 
 namespace STIGForge.UnitTests.App;
@@ -228,6 +229,35 @@ public class WorkflowViewModelTests
     }
 
     [Fact]
+    public async Task RunImportStepCommand_WhenScannerReturnsWarnings_StoresWarnings()
+    {
+        var importFolder = Directory.CreateTempSubdirectory().FullName;
+
+        try
+        {
+            File.WriteAllText(Path.Combine(importFolder, "invalid.zip"), "not a zip file");
+
+            var vm = new WorkflowViewModel(
+                importScanner: new ImportInboxScanner(new FixedHashingService()))
+            {
+                ImportFolderPath = importFolder,
+                ImportState = StepState.Ready
+            };
+
+            await vm.RunImportStepCommand.ExecuteAsync(null);
+
+            Assert.Equal(StepState.Complete, vm.ImportState);
+            Assert.Equal(0, vm.ImportedItemsCount);
+            Assert.NotEmpty(vm.ImportWarnings);
+            Assert.True(vm.ImportWarningCount > 0);
+        }
+        finally
+        {
+            Directory.Delete(importFolder, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task RunScanStepCommand_WhenServiceThrows_SetsErrorAndKeepsHardenLocked()
     {
         var evaluateTool = Directory.CreateTempSubdirectory().FullName;
@@ -241,6 +271,7 @@ public class WorkflowViewModelTests
             {
                 ScanState = StepState.Ready,
                 HardenState = StepState.Locked,
+                ImportedItemsCount = 1,
                 OutputFolderPath = outputFolder,
                 EvaluateStigToolPath = evaluateTool
             };
@@ -276,7 +307,7 @@ public class WorkflowViewModelTests
                 EvaluateStigToolPath = evaluateTool
             };
 
-            File.WriteAllText(Path.Combine(importFolder, "test1.zip"), "dummy");
+            CreateMinimalStigZip(importFolder, "test1.zip");
 
             await vm.RunAutoWorkflowCommand.ExecuteAsync(null);
 
@@ -417,7 +448,7 @@ public class WorkflowViewModelTests
                 EvaluateStigToolPath = evaluateTool
             };
 
-            File.WriteAllText(Path.Combine(importFolder, "test1.zip"), "dummy");
+            CreateMinimalStigZip(importFolder, "test1.zip");
 
             await vm.RunAutoWorkflowCommand.ExecuteAsync(null);
 
@@ -562,6 +593,42 @@ public class WorkflowViewModelTests
     }
 
     [Fact]
+    public async Task RunScanStepCommand_WhenImportedLibraryEmpty_SetsErrorAndSkipsVerifyService()
+    {
+        var evaluateTool = Directory.CreateTempSubdirectory().FullName;
+        var outputFolder = Directory.CreateTempSubdirectory().FullName;
+        var verifyService = new TrackingVerificationWorkflowService(new VerificationWorkflowResult
+        {
+            ConsolidatedResultCount = 10
+        });
+
+        try
+        {
+            var vm = new WorkflowViewModel(
+                importScanner: null,
+                verifyService: verifyService)
+            {
+                ScanState = StepState.Ready,
+                HardenState = StepState.Locked,
+                ImportedItemsCount = 0,
+                OutputFolderPath = outputFolder,
+                EvaluateStigToolPath = evaluateTool
+            };
+
+            await vm.RunScanStepCommand.ExecuteAsync(null);
+
+            Assert.Equal(StepState.Error, vm.ScanState);
+            Assert.Equal("No imported content detected. Run Import and confirm items in Imported Library.", vm.ScanError);
+            Assert.Equal(0, verifyService.CallCount);
+        }
+        finally
+        {
+            Directory.Delete(evaluateTool, recursive: true);
+            Directory.Delete(outputFolder, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task RunVerifyStepCommand_WhenSuccessful_WritesMissionJson()
     {
         var outputFolder = Directory.CreateTempSubdirectory().FullName;
@@ -620,6 +687,15 @@ public class WorkflowViewModelTests
             Directory.Delete(evaluateTool, recursive: true);
             Directory.Delete(outputFolder, recursive: true);
         }
+    }
+
+    private static void CreateMinimalStigZip(string folder, string fileName)
+    {
+        var zipPath = Path.Combine(folder, fileName);
+        using var archive = ZipFile.Open(zipPath, ZipArchiveMode.Create);
+        var entry = archive.CreateEntry("sample-xccdf.xml");
+        using var writer = new StreamWriter(entry.Open());
+        writer.Write("<Benchmark xmlns=\"http://checklists.nist.gov/xccdf/1.2\" />");
     }
 
     private sealed class ThrowingVerificationWorkflowService : IVerificationWorkflowService

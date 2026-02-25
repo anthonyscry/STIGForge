@@ -96,6 +96,12 @@ public partial class WorkflowViewModel : ObservableObject
     private List<string> _importedItems = new();
 
     [ObservableProperty]
+    private int _importWarningCount;
+
+    [ObservableProperty]
+    private List<string> _importWarnings = new();
+
+    [ObservableProperty]
     private int _baselineFindingsCount;
 
     [ObservableProperty]
@@ -232,6 +238,8 @@ public partial class WorkflowViewModel : ObservableObject
             StatusText = "Import scanner not configured or no import folder";
             ImportedItems = new List<string>();
             ImportedItemsCount = 0;
+            ImportWarnings = new List<string>();
+            ImportWarningCount = 0;
             return false;
         }
 
@@ -240,7 +248,29 @@ public partial class WorkflowViewModel : ObservableObject
             var result = await _importScanner.ScanAsync(ImportFolderPath, CancellationToken.None);
             ImportedItems = result.Candidates.Select(c => c.FileName).Distinct().ToList();
             ImportedItemsCount = ImportedItems.Count;
-            StatusText = $"Found {ImportedItemsCount} content packs";
+
+            var warnings = (result.Warnings ?? Array.Empty<string>())
+                .Where(w => !string.IsNullOrWhiteSpace(w))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+            ImportWarnings = warnings;
+            ImportWarningCount = warnings.Count;
+
+            if (ImportedItemsCount == 0)
+            {
+                StatusText = ImportWarningCount > 0
+                    ? $"No content packs found ({ImportWarningCount} warning(s))"
+                    : "No content packs found in import folder";
+            }
+            else if (ImportWarningCount > 0)
+            {
+                StatusText = $"Found {ImportedItemsCount} content packs with {ImportWarningCount} warning(s)";
+            }
+            else
+            {
+                StatusText = $"Found {ImportedItemsCount} content packs";
+            }
+
             return true;
         }
         catch (Exception ex)
@@ -248,6 +278,8 @@ public partial class WorkflowViewModel : ObservableObject
             StatusText = $"Import failed: {ex.Message}";
             ImportedItems = new List<string>();
             ImportedItemsCount = 0;
+            ImportWarnings = new List<string> { ex.Message };
+            ImportWarningCount = 1;
             return false;
         }
     }
@@ -259,6 +291,13 @@ public partial class WorkflowViewModel : ObservableObject
         if (_verifyService == null)
         {
             StatusText = "Verification service not configured";
+            BaselineFindingsCount = 0;
+            return false;
+        }
+
+        if (ImportedItemsCount == 0)
+        {
+            StatusText = "No imported content detected. Run Import and confirm items in Imported Library.";
             BaselineFindingsCount = 0;
             return false;
         }
@@ -829,6 +868,8 @@ public partial class WorkflowViewModel : ObservableObject
         AppliedFixesCount = 0;
         ImportedItemsCount = 0;
         ImportedItems = new List<string>();
+        ImportWarningCount = 0;
+        ImportWarnings = new List<string>();
         MissionJsonPath = string.Empty;
         StatusText = string.Empty;
         ProgressValue = 0;
