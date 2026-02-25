@@ -137,7 +137,7 @@
                                           StepState="{Binding ImportState}"
                                           ErrorMessage="{Binding ImportError}"
                                           RunCommand="{Binding RunImportStepCommand}"
-                                          RunButtonLabel="Run Import"
+                                          RunButtonLabel="1  Import"
                                           RunButtonTabIndex="10"
                                           RunButtonAutomationName="Run Import step"
                                           RunButtonToolTip="Run Import step (Alt+I)"
@@ -149,7 +149,7 @@
                                           StepState="{Binding ScanState}"
                                           ErrorMessage="{Binding ScanError}"
                                           RunCommand="{Binding RunScanStepCommand}"
-                                          RunButtonLabel="Run Scan"
+                                          RunButtonLabel="2  Scan"
                                           RunButtonTabIndex="20"
                                           RunButtonAutomationName="Run Scan step"
                                           RunButtonToolTip="Run Scan step (Alt+S)"
@@ -161,7 +161,7 @@
                                           StepState="{Binding HardenState}"
                                           ErrorMessage="{Binding HardenError}"
                                           RunCommand="{Binding RunHardenStepCommand}"
-                                          RunButtonLabel="Run Harden"
+                                          RunButtonLabel="3  Harden"
                                           RunButtonTabIndex="30"
                                           RunButtonAutomationName="Run Harden step"
                                           RunButtonToolTip="Run Harden step (Alt+H)"
@@ -178,7 +178,7 @@
                                           StepState="{Binding VerifyState}"
                                           ErrorMessage="{Binding VerifyError}"
                                           RunCommand="{Binding RunVerifyStepCommand}"
-                                          RunButtonLabel="Run Verify"
+                                          RunButtonLabel="4  Verify"
                                           RunButtonTabIndex="40"
                                           RunButtonAutomationName="Run Verify step"
                                           RunButtonToolTip="Run Verify step (Alt+V)"
@@ -186,6 +186,10 @@
                                           RecoveryButtonAutomationName="Retry Verify step"
                                           RecoveryButtonToolTip="Retry Verify step (Alt+V)" />
             </UniformGrid>
+
+            <TextBlock Margin="0,0,0,14"
+                       Foreground="{DynamicResource TextMutedBrush}"
+                       Text="Scan and Verify require Administrator mode." />
 
             <Border Padding="12">
                 <StackPanel>
