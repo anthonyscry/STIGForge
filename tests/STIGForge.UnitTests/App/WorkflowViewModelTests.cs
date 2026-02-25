@@ -213,38 +213,54 @@ public class WorkflowViewModelTests
     [Fact]
     public async Task RunScanStepCommand_WhenServiceThrows_SetsErrorAndKeepsHardenLocked()
     {
-        var vm = new WorkflowViewModel(
-            importScanner: null,
-            verifyService: new ThrowingVerificationWorkflowService("scan exploded"))
+        var evaluateTool = Directory.CreateTempSubdirectory().FullName;
+        var outputFolder = Directory.CreateTempSubdirectory().FullName;
+
+        try
         {
-            ScanState = StepState.Ready,
-            HardenState = StepState.Locked,
-            OutputFolderPath = @"C:\output",
-            EvaluateStigToolPath = @"C:\tools\Evaluate-STIG"
-        };
+            var vm = new WorkflowViewModel(
+                importScanner: null,
+                verifyService: new ThrowingVerificationWorkflowService("scan exploded"))
+            {
+                ScanState = StepState.Ready,
+                HardenState = StepState.Locked,
+                OutputFolderPath = outputFolder,
+                EvaluateStigToolPath = evaluateTool
+            };
 
-        await vm.RunScanStepCommand.ExecuteAsync(null);
+            await vm.RunScanStepCommand.ExecuteAsync(null);
 
-        Assert.Equal(StepState.Error, vm.ScanState);
-        Assert.Equal("Scan failed: scan exploded", vm.ScanError);
-        Assert.Equal(StepState.Locked, vm.HardenState);
+            Assert.Equal(StepState.Error, vm.ScanState);
+            Assert.Equal("Scan failed: scan exploded", vm.ScanError);
+            Assert.Equal(StepState.Locked, vm.HardenState);
+        }
+        finally
+        {
+            Directory.Delete(evaluateTool, recursive: true);
+            Directory.Delete(outputFolder, recursive: true);
+        }
     }
 
     [Fact]
     public async Task RunAutoWorkflowCommand_WhenScanFails_StopsBeforeHardenAndVerify()
     {
         var importFolder = Directory.CreateTempSubdirectory().FullName;
-        var vm = new WorkflowViewModel(
-            importScanner: new ImportInboxScanner(new FixedHashingService()),
-            verifyService: new ThrowingVerificationWorkflowService("scan exploded"))
-        {
-            ImportFolderPath = importFolder,
-            OutputFolderPath = @"C:\output",
-            EvaluateStigToolPath = @"C:\tools\Evaluate-STIG"
-        };
+        var evaluateTool = Directory.CreateTempSubdirectory().FullName;
+        var outputFolder = Directory.CreateTempSubdirectory().FullName;
 
         try
         {
+            var vm = new WorkflowViewModel(
+                importScanner: new ImportInboxScanner(new FixedHashingService()),
+                verifyService: new ThrowingVerificationWorkflowService("scan exploded"))
+            {
+                ImportFolderPath = importFolder,
+                OutputFolderPath = outputFolder,
+                EvaluateStigToolPath = evaluateTool
+            };
+
+            File.WriteAllText(Path.Combine(importFolder, "test1.zip"), "dummy");
+
             await vm.RunAutoWorkflowCommand.ExecuteAsync(null);
 
             Assert.Equal(StepState.Complete, vm.ImportState);
@@ -256,6 +272,8 @@ public class WorkflowViewModelTests
         finally
         {
             Directory.Delete(importFolder, recursive: true);
+            Directory.Delete(evaluateTool, recursive: true);
+            Directory.Delete(outputFolder, recursive: true);
         }
     }
 
@@ -360,27 +378,30 @@ public class WorkflowViewModelTests
     public async Task RunAutoWorkflowCommand_WhenHardenFails_StopsBeforeVerify()
     {
         var importFolder = Directory.CreateTempSubdirectory().FullName;
+        var evaluateTool = Directory.CreateTempSubdirectory().FullName;
         var outputFolder = Directory.CreateTempSubdirectory().FullName;
         var verifyService = new TrackingVerificationWorkflowService(new VerificationWorkflowResult
         {
             ConsolidatedResultCount = 2
         });
 
-        var vm = new WorkflowViewModel(
-            importScanner: new ImportInboxScanner(new FixedHashingService()),
-            verifyService: verifyService,
-            runApply: (_, __) => Task.FromResult(new ApplyResult
-            {
-                IsMissionComplete = false
-            }))
-        {
-            ImportFolderPath = importFolder,
-            OutputFolderPath = outputFolder,
-            EvaluateStigToolPath = "C:\\tools\\Evaluate-STIG"
-        };
-
         try
         {
+            var vm = new WorkflowViewModel(
+                importScanner: new ImportInboxScanner(new FixedHashingService()),
+                verifyService: verifyService,
+                runApply: (_, __) => Task.FromResult(new ApplyResult
+                {
+                    IsMissionComplete = false
+                }))
+            {
+                ImportFolderPath = importFolder,
+                OutputFolderPath = outputFolder,
+                EvaluateStigToolPath = evaluateTool
+            };
+
+            File.WriteAllText(Path.Combine(importFolder, "test1.zip"), "dummy");
+
             await vm.RunAutoWorkflowCommand.ExecuteAsync(null);
 
             Assert.Equal(StepState.Complete, vm.ImportState);
@@ -393,6 +414,7 @@ public class WorkflowViewModelTests
         finally
         {
             Directory.Delete(importFolder, recursive: true);
+            Directory.Delete(evaluateTool, recursive: true);
             Directory.Delete(outputFolder, recursive: true);
         }
     }
@@ -496,25 +518,37 @@ public class WorkflowViewModelTests
     [Fact]
     public async Task RunVerifyStepCommand_WhenServiceThrows_SetsErrorState()
     {
-        var vm = new WorkflowViewModel(
-            importScanner: null,
-            verifyService: new ThrowingVerificationWorkflowService("verify exploded"))
+        var outputFolder = Directory.CreateTempSubdirectory().FullName;
+        var evaluateTool = Directory.CreateTempSubdirectory().FullName;
+
+        try
         {
-            VerifyState = StepState.Ready,
-            OutputFolderPath = @"C:\output",
-            EvaluateStigToolPath = @"C:\tools\Evaluate-STIG"
-        };
+            var vm = new WorkflowViewModel(
+                importScanner: null,
+                verifyService: new ThrowingVerificationWorkflowService("verify exploded"))
+            {
+                VerifyState = StepState.Ready,
+                OutputFolderPath = outputFolder,
+                EvaluateStigToolPath = evaluateTool
+            };
 
-        await vm.RunVerifyStepCommand.ExecuteAsync(null);
+            await vm.RunVerifyStepCommand.ExecuteAsync(null);
 
-        Assert.Equal(StepState.Error, vm.VerifyState);
-        Assert.Equal("Verification failed: verify exploded", vm.VerifyError);
+            Assert.Equal(StepState.Error, vm.VerifyState);
+            Assert.Equal("Verification failed: verify exploded", vm.VerifyError);
+        }
+        finally
+        {
+            Directory.Delete(evaluateTool, recursive: true);
+            Directory.Delete(outputFolder, recursive: true);
+        }
     }
 
     [Fact]
     public async Task RunVerifyStepCommand_WhenSuccessful_WritesMissionJson()
     {
         var outputFolder = Directory.CreateTempSubdirectory().FullName;
+        var evaluateTool = Directory.CreateTempSubdirectory().FullName;
         var consolidatedJson = Path.Combine(outputFolder, "consolidated-results.json");
         var consolidatedCsv = Path.Combine(outputFolder, "consolidated-results.csv");
         var coverageJson = Path.Combine(outputFolder, "coverage_summary.json");
@@ -541,7 +575,7 @@ public class WorkflowViewModelTests
         {
             VerifyState = StepState.Ready,
             OutputFolderPath = outputFolder,
-            EvaluateStigToolPath = @"C:\tools\Evaluate-STIG"
+            EvaluateStigToolPath = evaluateTool
         };
 
         try
@@ -566,6 +600,7 @@ public class WorkflowViewModelTests
         }
         finally
         {
+            Directory.Delete(evaluateTool, recursive: true);
             Directory.Delete(outputFolder, recursive: true);
         }
     }

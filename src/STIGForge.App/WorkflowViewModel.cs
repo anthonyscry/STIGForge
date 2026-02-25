@@ -261,6 +261,20 @@ public partial class WorkflowViewModel : ObservableObject
             return false;
         }
 
+        if (string.IsNullOrWhiteSpace(EvaluateStigToolPath) || !Directory.Exists(EvaluateStigToolPath))
+        {
+            StatusText = "Evaluate-STIG tool path is not configured or invalid";
+            BaselineFindingsCount = 0;
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(OutputFolderPath) || !Directory.Exists(OutputFolderPath))
+        {
+            StatusText = "Output folder is required for scanning";
+            BaselineFindingsCount = 0;
+            return false;
+        }
+
         try
         {
             var request = new VerificationWorkflowRequest
@@ -356,6 +370,20 @@ public partial class WorkflowViewModel : ObservableObject
         if (_verifyService == null)
         {
             StatusText = "Verification service not configured";
+            VerifyFindingsCount = 0;
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(EvaluateStigToolPath) || !Directory.Exists(EvaluateStigToolPath))
+        {
+            StatusText = "Evaluate-STIG tool path is not configured or invalid";
+            VerifyFindingsCount = 0;
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(OutputFolderPath) || !Directory.Exists(OutputFolderPath))
+        {
+            StatusText = "Output folder is required for scanning";
             VerifyFindingsCount = 0;
             return false;
         }

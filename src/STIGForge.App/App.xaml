@@ -62,6 +62,10 @@
                   <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="{DynamicResource ButtonDisabledBorderBrush}" />
                   <Setter Property="Foreground" Value="{DynamicResource ButtonDisabledFgBrush}" />
                 </Trigger>
+                <Trigger Property="IsKeyboardFocused" Value="True">
+                  <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                  <Setter TargetName="ButtonBorder" Property="BorderThickness" Value="2" />
+                </Trigger>
               </ControlTemplate.Triggers>
             </ControlTemplate>
           </Setter.Value>
@@ -110,6 +114,12 @@
         <Setter Property="Padding" Value="8,4" />
         <Setter Property="CaretBrush" Value="{DynamicResource TextPrimaryBrush}" />
         <Setter Property="SelectionBrush" Value="{DynamicResource AccentSoftBrush}" />
+        <Style.Triggers>
+          <Trigger Property="IsKeyboardFocused" Value="True">
+            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+            <Setter Property="BorderThickness" Value="2" />
+          </Trigger>
+        </Style.Triggers>
       </Style>
 
       <!-- ═══════════ COMBOBOX ═══════════ -->
