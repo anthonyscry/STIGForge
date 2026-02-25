@@ -10,6 +10,8 @@ namespace STIGForge.UnitTests.App;
 
 public class WorkflowViewModelTests
 {
+    private static readonly object SettingsFileLock = new();
+
     [Fact]
     public void InitialStep_IsSetup()
     {
@@ -108,6 +110,51 @@ public class WorkflowViewModelTests
     {
         var vm = new WorkflowViewModel();
         Assert.NotNull(vm.SaveSettingsCommand);
+    }
+
+    [Fact]
+    public void SaveSettingsAndLoadSettings_RoundTrip_AdvancedEvaluateOptions()
+    {
+        lock (SettingsFileLock)
+        {
+            var settingsPath = WorkflowSettings.DefaultPath;
+            var hadOriginal = File.Exists(settingsPath);
+            var originalJson = hadOriginal ? File.ReadAllText(settingsPath) : null;
+
+            try
+            {
+                var vm = new WorkflowViewModel
+                {
+                    EvaluateAfPath = @"C:\test\evaluate\af",
+                    EvaluateSelectStig = "U_MS_Windows_11_STIG",
+                    EvaluateAdditionalArgs = "-ThrottleLimit 4 -SkipSignatureCheck",
+                    RequireElevationForScan = false
+                };
+
+                vm.SaveSettingsCommand.Execute(null);
+
+                var reloaded = new WorkflowViewModel();
+                Assert.Equal(vm.EvaluateAfPath, reloaded.EvaluateAfPath);
+                Assert.Equal(vm.EvaluateSelectStig, reloaded.EvaluateSelectStig);
+                Assert.Equal(vm.EvaluateAdditionalArgs, reloaded.EvaluateAdditionalArgs);
+                Assert.Equal(vm.RequireElevationForScan, reloaded.RequireElevationForScan);
+            }
+            finally
+            {
+                if (hadOriginal)
+                {
+                    var directory = Path.GetDirectoryName(settingsPath);
+                    if (!string.IsNullOrWhiteSpace(directory))
+                        Directory.CreateDirectory(directory);
+
+                    File.WriteAllText(settingsPath, originalJson!);
+                }
+                else if (File.Exists(settingsPath))
+                {
+                    File.Delete(settingsPath);
+                }
+            }
+        }
     }
 
     [Fact]

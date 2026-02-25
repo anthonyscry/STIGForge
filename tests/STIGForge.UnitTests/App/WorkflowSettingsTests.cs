@@ -83,4 +83,31 @@ public class WorkflowSettingsTests
             if (File.Exists(tempPath)) File.Delete(tempPath);
         }
     }
+
+    [Fact]
+    public void Load_LegacySettingsWithoutRequireElevationForScan_DefaultsToTrue()
+    {
+        var tempPath = Path.Combine(Path.GetTempPath(), $"stigforge-test-{Guid.NewGuid()}.json");
+        try
+        {
+            File.WriteAllText(tempPath, """
+            {
+              "ImportFolderPath": "C:\\legacy\\import",
+              "EvaluateStigToolPath": "C:\\legacy\\tool",
+              "OutputFolderPath": "C:\\legacy\\output",
+              "ExportCkl": true,
+              "ExportCsv": false,
+              "ExportXccdf": false
+            }
+            """);
+
+            var loaded = WorkflowSettings.Load(tempPath);
+
+            Assert.True(loaded.RequireElevationForScan);
+        }
+        finally
+        {
+            if (File.Exists(tempPath)) File.Delete(tempPath);
+        }
+    }
 }
