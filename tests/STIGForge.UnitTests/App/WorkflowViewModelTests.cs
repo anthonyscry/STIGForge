@@ -309,10 +309,12 @@ public class WorkflowViewModelTests
     }
 
     [Fact]
-    public async Task RunScanStepCommand_WhenAdvancedEvaluateOptionsConfigured_AppendsThemAndKeepsCoreArgs()
+    public async Task RunScanStepCommand_WhenAdvancedEvaluateOptionsConfigured_PreservesQuotedValuesAndCoreArgs()
     {
         var evaluateTool = Directory.CreateTempSubdirectory().FullName;
-        var outputFolder = Directory.CreateTempSubdirectory().FullName;
+        var outputRoot = Directory.CreateTempSubdirectory().FullName;
+        var outputFolder = Path.Combine(outputRoot, "scan output");
+        Directory.CreateDirectory(outputFolder);
         CreateEvaluateStigScript(evaluateTool);
         var verifyService = new TrackingVerificationWorkflowService(new VerificationWorkflowResult
         {
@@ -327,7 +329,7 @@ public class WorkflowViewModelTests
                 ImportedItemsCount = 1,
                 OutputFolderPath = outputFolder,
                 EvaluateStigToolPath = evaluateTool,
-                EvaluateAfPath = @"C:\Evaluate-STIG\AnswerFiles",
+                EvaluateAfPath = @"C:\Evaluate-STIG\Answer Files",
                 EvaluateSelectStig = "Win11,Chrome",
                 EvaluateAdditionalArgs = "-AllowDeprecated"
             };
@@ -335,16 +337,62 @@ public class WorkflowViewModelTests
             await vm.RunScanStepCommand.ExecuteAsync(null);
 
             var args = verifyService.LastRequest!.EvaluateStig.Arguments;
-            Assert.Contains("-AFPath", args, StringComparison.OrdinalIgnoreCase);
-            Assert.Contains("-SelectSTIG", args, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("-AFPath \"C:\\Evaluate-STIG\\Answer Files\"", args, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("-SelectSTIG \"Win11,Chrome\"", args, StringComparison.OrdinalIgnoreCase);
             Assert.Contains("-AllowDeprecated", args, StringComparison.OrdinalIgnoreCase);
             Assert.Contains("-Output CKL", args, StringComparison.OrdinalIgnoreCase);
-            Assert.Contains("-OutputPath", args, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains($"-OutputPath \"{outputFolder}\"", args, StringComparison.OrdinalIgnoreCase);
         }
         finally
         {
             Directory.Delete(evaluateTool, recursive: true);
-            Directory.Delete(outputFolder, recursive: true);
+            Directory.Delete(outputRoot, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task RunVerifyStepCommand_WhenAdvancedEvaluateOptionsConfigured_PropagatesQuotedArguments()
+    {
+        var outputRoot = Directory.CreateTempSubdirectory().FullName;
+        var outputFolder = Path.Combine(outputRoot, "verify output");
+        Directory.CreateDirectory(outputFolder);
+        var evaluateTool = Directory.CreateTempSubdirectory().FullName;
+        CreateEvaluateStigScript(evaluateTool);
+        var verifyService = new TrackingVerificationWorkflowService(new VerificationWorkflowResult
+        {
+            ConsolidatedResultCount = 1
+        });
+
+        try
+        {
+            var vm = new WorkflowViewModel(
+                importScanner: null,
+                verifyService: verifyService,
+                isElevatedResolver: () => true)
+            {
+                VerifyState = StepState.Ready,
+                OutputFolderPath = outputFolder,
+                EvaluateStigToolPath = evaluateTool,
+                EvaluateAfPath = @"C:\Evaluate-STIG\Answer Files",
+                EvaluateSelectStig = "Win11,Chrome",
+                EvaluateAdditionalArgs = "-AllowDeprecated",
+                MachineTarget = "server01"
+            };
+
+            await vm.RunVerifyStepCommand.ExecuteAsync(null);
+
+            var args = verifyService.LastRequest!.EvaluateStig.Arguments;
+            Assert.Contains("-AFPath \"C:\\Evaluate-STIG\\Answer Files\"", args, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("-SelectSTIG \"Win11,Chrome\"", args, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("-AllowDeprecated", args, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("-Output CKL", args, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains($"-OutputPath \"{outputFolder}\"", args, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("-ComputerName \"server01\"", args, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            Directory.Delete(evaluateTool, recursive: true);
+            Directory.Delete(outputRoot, recursive: true);
         }
     }
 
