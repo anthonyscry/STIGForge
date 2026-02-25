@@ -268,12 +268,14 @@ public partial class WorkflowViewModel : ObservableObject
             return false;
         }
 
-        if (string.IsNullOrWhiteSpace(OutputFolderPath) || !Directory.Exists(OutputFolderPath))
+        if (string.IsNullOrWhiteSpace(OutputFolderPath))
         {
             StatusText = "Output folder is required for scanning";
             BaselineFindingsCount = 0;
             return false;
         }
+
+        Directory.CreateDirectory(OutputFolderPath);
 
         try
         {
@@ -381,12 +383,14 @@ public partial class WorkflowViewModel : ObservableObject
             return false;
         }
 
-        if (string.IsNullOrWhiteSpace(OutputFolderPath) || !Directory.Exists(OutputFolderPath))
+        if (string.IsNullOrWhiteSpace(OutputFolderPath))
         {
             StatusText = "Output folder is required for scanning";
             VerifyFindingsCount = 0;
             return false;
         }
+
+        Directory.CreateDirectory(OutputFolderPath);
 
         try
         {
