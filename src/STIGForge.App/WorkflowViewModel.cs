@@ -230,6 +230,7 @@ public partial class WorkflowViewModel : ObservableObject
         if (_importScanner == null || string.IsNullOrWhiteSpace(ImportFolderPath))
         {
             StatusText = "Import scanner not configured or no import folder";
+            ImportedItems = new List<string>();
             ImportedItemsCount = 0;
             return false;
         }
@@ -245,6 +246,7 @@ public partial class WorkflowViewModel : ObservableObject
         catch (Exception ex)
         {
             StatusText = $"Import failed: {ex.Message}";
+            ImportedItems = new List<string>();
             ImportedItemsCount = 0;
             return false;
         }

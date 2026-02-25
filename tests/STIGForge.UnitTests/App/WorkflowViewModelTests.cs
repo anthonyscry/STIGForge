@@ -211,6 +211,23 @@ public class WorkflowViewModelTests
     }
 
     [Fact]
+    public async Task RunImportStepCommand_WhenPreconditionsMissing_ClearsPreviouslyImportedItems()
+    {
+        var vm = new WorkflowViewModel
+        {
+            ImportFolderPath = @"C:\missing\import",
+            ImportedItems = new List<string> { "old-content.zip" },
+            ImportedItemsCount = 1
+        };
+
+        await vm.RunImportStepCommand.ExecuteAsync(null);
+
+        Assert.Equal(StepState.Error, vm.ImportState);
+        Assert.Empty(vm.ImportedItems);
+        Assert.Equal(0, vm.ImportedItemsCount);
+    }
+
+    [Fact]
     public async Task RunScanStepCommand_WhenServiceThrows_SetsErrorAndKeepsHardenLocked()
     {
         var evaluateTool = Directory.CreateTempSubdirectory().FullName;

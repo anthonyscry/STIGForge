@@ -37,7 +37,52 @@
                 </StackPanel>
             </Border>
 
-            <UniformGrid Rows="2" Columns="2" Margin="0,0,0,16">
+            <Border Margin="0,0,0,12"
+                    Padding="10"
+                    Background="{DynamicResource SurfaceMutedBrush}">
+                <StackPanel>
+                    <DockPanel LastChildFill="False">
+                        <TextBlock Text="Imported Library" FontWeight="SemiBold" VerticalAlignment="Center" />
+                        <TextBlock DockPanel.Dock="Right"
+                                   Foreground="{DynamicResource TextMutedBrush}"
+                                   Text="{Binding ImportedItemsCount, StringFormat=Items: {0}}" />
+                    </DockPanel>
+
+                    <TextBlock Margin="0,6,0,0"
+                               Foreground="{DynamicResource TextMutedBrush}"
+                               Text="No content packs loaded yet. Run Import to scan your library.">
+                        <TextBlock.Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ImportedItemsCount}" Value="0">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </TextBlock.Style>
+                    </TextBlock>
+
+                    <ListBox Margin="0,6,0,0"
+                             MinHeight="62"
+                             MaxHeight="110"
+                             ItemsSource="{Binding ImportedItems}"
+                             ToolTip="Content packs detected during Import step">
+                        <ListBox.Style>
+                            <Style TargetType="ListBox">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding ImportedItemsCount}" Value="0">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </ListBox.Style>
+                    </ListBox>
+                </StackPanel>
+            </Border>
+
+            <UniformGrid Rows="2" Columns="2" Margin="0,0,0,14">
                 <controls:WorkflowStepCard StepName="Import"
                                           StepState="{Binding ImportState}"
                                           ErrorMessage="{Binding ImportError}"
