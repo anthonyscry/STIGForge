@@ -21,6 +21,25 @@ public sealed class ImportInboxScannerTests : IDisposable
   }
 
   [Fact]
+  public async Task ScanAsync_CapturesContentFileNames()
+  {
+    var zipPath = Path.Combine(_tempRoot, "content_files_bundle.zip");
+    using (var archive = ZipFile.Open(zipPath, ZipArchiveMode.Create))
+    {
+      await WriteEntryAsync(archive, "Windows/benchmark-xccdf.xml", CreateMinimalXccdf("xccdf_org.test.content", "V1R1"));
+      await WriteEntryAsync(archive, "docs/readme.txt", "Some text");
+    }
+
+    var scanner = new ImportInboxScanner(new TestHashingService());
+    var result = await scanner.ScanAsync(_tempRoot, CancellationToken.None);
+
+    var candidate = Assert.Single(result.Candidates);
+    Assert.Equal(2, candidate.ContentFileNames.Count);
+    Assert.Contains("benchmark-xccdf.xml", candidate.ContentFileNames);
+    Assert.Contains("readme.txt", candidate.ContentFileNames);
+  }
+
+  [Fact]
   public async Task ScanAsync_ClassifiesStigZip()
   {
     var zipPath = Path.Combine(_tempRoot, "win11_stig_v2r1.zip");

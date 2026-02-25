@@ -108,11 +108,13 @@ Run verification tools against the hardened system:
 
 ```powershell
 # Using DISA SCAP Compliance Checker
-STIGForge.Cli.exe verify-scap --cmd "C:\SCC\scc.exe" --args "-u -s -r -f" --output-root C:\results
+STIGForge.Cli.exe verify-scap --cmd "C:\SCC\cscc.exe" --args "-u -s -r -f" --output-root C:\results
 
 # Using Evaluate-STIG
 STIGForge.Cli.exe verify-evaluate-stig --tool-root "C:\Evaluate-STIG" --args "-AnswerFile .\AnswerFile.xml"
 ```
+
+Use `cscc.exe` or `cscc-remote.exe` for SCAP automation. `scc.exe` opens the interactive GUI.
 
 STIGForge parses CKL results and generates consolidated-results.json.
 
@@ -198,7 +200,7 @@ When DISA releases new STIG content:
 Run the complete Apply -> Verify -> Export pipeline:
 
 ```powershell
-STIGForge.Cli.exe orchestrate --bundle C:\bundles\my-bundle --evaluate-stig "C:\Evaluate-STIG" --scap-cmd "C:\SCC\scc.exe"
+STIGForge.Cli.exe orchestrate --bundle C:\bundles\my-bundle --evaluate-stig "C:\Evaluate-STIG" --scap-cmd "C:\SCC\cscc.exe"
 ```
 
 **WPF**: The **Orchestrate** tab provides a one-click workflow with real-time log output.
@@ -249,7 +251,7 @@ STIGForge.Cli.exe fleet-status --targets "SRV01,SRV02:10.0.0.2,SRV03"
 STIGForge.Cli.exe fleet-apply --targets "SRV01,SRV02,SRV03" --remote-bundle-path "C:\STIGForge\bundle" --mode Safe
 
 # Verify across fleet
-STIGForge.Cli.exe fleet-verify --targets "SRV01,SRV02,SRV03" --scap-cmd "C:\SCC\scc.exe"
+STIGForge.Cli.exe fleet-verify --targets "SRV01,SRV02,SRV03" --scap-cmd "C:\SCC\cscc.exe"
 ```
 
 #### Fleet Credential Management

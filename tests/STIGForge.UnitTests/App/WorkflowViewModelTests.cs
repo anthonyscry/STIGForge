@@ -135,11 +135,15 @@ public class WorkflowViewModelTests
         {
             var importPath = Path.Combine(scanRoot.FullName, "import");
             var evaluatePath = Path.Combine(scanRoot.FullName, "tools", "Evaluate-STIG");
+            var resolvedEvaluatePath = Path.Combine(evaluatePath, "Evaluate-STIG");
             var sccPath = Path.Combine(scanRoot.FullName, "tools", "SCC");
+            var resolvedSccPath = Path.Combine(sccPath, "cscc.exe");
 
             Directory.CreateDirectory(importPath);
-            Directory.CreateDirectory(evaluatePath);
+            Directory.CreateDirectory(resolvedEvaluatePath);
+            File.WriteAllText(Path.Combine(resolvedEvaluatePath, "Evaluate-STIG.ps1"), "# test script");
             Directory.CreateDirectory(sccPath);
+            File.WriteAllText(resolvedSccPath, "stub");
 
             var vm = new WorkflowViewModel(autoScanRootResolver: () => scanRoot.FullName)
             {
@@ -153,8 +157,8 @@ public class WorkflowViewModelTests
 
             var expectedOutputPath = Path.Combine(scanRoot.FullName, ".stigforge", "scans");
             Assert.Equal(importPath, vm.ImportFolderPath);
-            Assert.Equal(evaluatePath, vm.EvaluateStigToolPath);
-            Assert.Equal(sccPath, vm.SccToolPath);
+            Assert.Equal(resolvedEvaluatePath, vm.EvaluateStigToolPath);
+            Assert.Equal(resolvedSccPath, vm.SccToolPath);
             Assert.Equal(expectedOutputPath, vm.OutputFolderPath);
             Assert.True(Directory.Exists(expectedOutputPath));
         }
@@ -217,14 +221,14 @@ public class WorkflowViewModelTests
         var vm = new WorkflowViewModel
         {
             ImportFolderPath = @"C:\missing\import",
-            ImportedItems = new List<string> { "old-content.zip" },
+            ImportedPacks = new System.Collections.ObjectModel.ObservableCollection<ImportedPackViewModel> { new ImportedPackViewModel { PackName = "old-content.zip" } },
             ImportedItemsCount = 1
         };
 
         await vm.RunImportStepCommand.ExecuteAsync(null);
 
         Assert.Equal(StepState.Error, vm.ImportState);
-        Assert.Empty(vm.ImportedItems);
+        Assert.Empty(vm.ImportedPacks);
         Assert.Equal(0, vm.ImportedItemsCount);
     }
 
@@ -262,6 +266,7 @@ public class WorkflowViewModelTests
     {
         var evaluateTool = Directory.CreateTempSubdirectory().FullName;
         var outputFolder = Directory.CreateTempSubdirectory().FullName;
+        CreateEvaluateStigScript(evaluateTool);
 
         try
         {
@@ -295,6 +300,7 @@ public class WorkflowViewModelTests
         var importFolder = Directory.CreateTempSubdirectory().FullName;
         var evaluateTool = Directory.CreateTempSubdirectory().FullName;
         var outputFolder = Directory.CreateTempSubdirectory().FullName;
+        CreateEvaluateStigScript(evaluateTool);
 
         try
         {
@@ -428,6 +434,7 @@ public class WorkflowViewModelTests
         var importFolder = Directory.CreateTempSubdirectory().FullName;
         var evaluateTool = Directory.CreateTempSubdirectory().FullName;
         var outputFolder = Directory.CreateTempSubdirectory().FullName;
+        CreateEvaluateStigScript(evaluateTool);
         var verifyService = new TrackingVerificationWorkflowService(new VerificationWorkflowResult
         {
             ConsolidatedResultCount = 2
@@ -568,6 +575,7 @@ public class WorkflowViewModelTests
     {
         var outputFolder = Directory.CreateTempSubdirectory().FullName;
         var evaluateTool = Directory.CreateTempSubdirectory().FullName;
+        CreateEvaluateStigScript(evaluateTool);
 
         try
         {
@@ -589,6 +597,46 @@ public class WorkflowViewModelTests
         {
             Directory.Delete(evaluateTool, recursive: true);
             Directory.Delete(outputFolder, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task RunVerifyStepCommand_WhenSccGuiBinaryConfigured_SetsErrorAndSkipsVerificationService()
+    {
+        var outputFolder = Directory.CreateTempSubdirectory().FullName;
+        var evaluateTool = Directory.CreateTempSubdirectory().FullName;
+        CreateEvaluateStigScript(evaluateTool);
+        var sccFolder = Directory.CreateTempSubdirectory().FullName;
+        var sccGuiPath = Path.Combine(sccFolder, "scc.exe");
+        File.WriteAllText(sccGuiPath, "stub");
+        var verifyService = new TrackingVerificationWorkflowService(new VerificationWorkflowResult
+        {
+            ConsolidatedResultCount = 5
+        });
+
+        try
+        {
+            var vm = new WorkflowViewModel(
+                importScanner: null,
+                verifyService: verifyService)
+            {
+                VerifyState = StepState.Ready,
+                OutputFolderPath = outputFolder,
+                EvaluateStigToolPath = evaluateTool,
+                SccToolPath = sccGuiPath
+            };
+
+            await vm.RunVerifyStepCommand.ExecuteAsync(null);
+
+            Assert.Equal(StepState.Error, vm.VerifyState);
+            Assert.Contains("scc.exe", vm.VerifyError, StringComparison.OrdinalIgnoreCase);
+            Assert.Equal(0, verifyService.CallCount);
+        }
+        finally
+        {
+            Directory.Delete(evaluateTool, recursive: true);
+            Directory.Delete(outputFolder, recursive: true);
+            Directory.Delete(sccFolder, recursive: true);
         }
     }
 
@@ -633,6 +681,7 @@ public class WorkflowViewModelTests
     {
         var outputFolder = Directory.CreateTempSubdirectory().FullName;
         var evaluateTool = Directory.CreateTempSubdirectory().FullName;
+        CreateEvaluateStigScript(evaluateTool);
         var consolidatedJson = Path.Combine(outputFolder, "consolidated-results.json");
         var consolidatedCsv = Path.Combine(outputFolder, "consolidated-results.csv");
         var coverageJson = Path.Combine(outputFolder, "coverage_summary.json");
@@ -696,6 +745,12 @@ public class WorkflowViewModelTests
         var entry = archive.CreateEntry("sample-xccdf.xml");
         using var writer = new StreamWriter(entry.Open());
         writer.Write("<Benchmark xmlns=\"http://checklists.nist.gov/xccdf/1.2\" />");
+    }
+
+    private static void CreateEvaluateStigScript(string folder)
+    {
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(Path.Combine(folder, "Evaluate-STIG.ps1"), "Write-Host 'ok'");
     }
 
     private sealed class ThrowingVerificationWorkflowService : IVerificationWorkflowService

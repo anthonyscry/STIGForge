@@ -42,6 +42,7 @@ public sealed class ImportInboxCandidate
   public List<string> Reasons { get; set; } = new();
   public ImportProvenance ImportedFrom { get; set; } = ImportProvenance.Unknown;
   public bool IsNiwcEnhanced { get; set; }
+  public List<string> ContentFileNames { get; set; } = new();
 }
 
 public sealed class ImportInboxScanResult

@@ -85,7 +85,8 @@ public sealed class ImportInboxScanner
 
       try
       {
-        var files = Directory.GetFiles(current, "*.zip", SearchOption.TopDirectoryOnly)
+        var files = Directory.GetFiles(current, "*", SearchOption.TopDirectoryOnly)
+          .Where(path => path.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
           .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
           .ToList();
         zipFiles.AddRange(files);
@@ -126,32 +127,55 @@ public sealed class ImportInboxScanner
     var namesLower = names.Select(n => n.ToLowerInvariant()).ToList();
     var importedFrom = DetectProvenance(zipPath, namesLower);
     var isNiwcEnhanced = DetectNiwcEnhanced(zipPath, namesLower);
+    var contentFileNames = archive.Entries
+      .Select(e => Path.GetFileName(e.FullName))
+      .Where(n => !string.IsNullOrEmpty(n))
+      .OrderBy(n => n, StringComparer.OrdinalIgnoreCase)
+      .ToList();
 
-    if (namesLower.Any(n => n.EndsWith("evaluate-stig.ps1", StringComparison.Ordinal)))
+    var hasEvaluateStigScript = namesLower.Any(n => n.EndsWith("evaluate-stig.ps1", StringComparison.Ordinal));
+    var hasNestedEvaluateStigArchive = namesLower.Any(n => n.EndsWith(".zip", StringComparison.Ordinal)
+      && (n.IndexOf("evaluate-stig", StringComparison.Ordinal) >= 0
+      || n.IndexOf("evaluatestig", StringComparison.Ordinal) >= 0));
+
+    if (hasEvaluateStigScript || hasNestedEvaluateStigArchive)
     {
-      var candidate = CreateCandidate(zipPath, fileName, sha256, importedFrom, isNiwcEnhanced);
+      var candidate = CreateCandidate(zipPath, fileName, sha256, importedFrom, isNiwcEnhanced, contentFileNames);
       candidate.ArtifactKind = ImportArtifactKind.Tool;
       candidate.ToolKind = ToolArtifactKind.EvaluateStig;
       candidate.Confidence = DetectionConfidence.High;
       candidate.ContentKey = "tool:evaluate-stig";
-      candidate.Reasons.Add("Detected Evaluate-STIG.ps1 in archive.");
+      candidate.Reasons.Add(hasEvaluateStigScript
+        ? "Detected Evaluate-STIG.ps1 in archive."
+        : "Detected nested Evaluate-STIG tool archive entry.");
       AddUniqueCandidate(candidates, seen, candidate);
     }
 
-    if (namesLower.Any(n => n.EndsWith("scc.exe", StringComparison.Ordinal)))
+    var hasSccExecutable = namesLower.Any(n => n.EndsWith("cscc.exe", StringComparison.Ordinal)
+      || n.EndsWith("cscc-remote.exe", StringComparison.Ordinal)
+      || n.EndsWith("/cscc", StringComparison.Ordinal)
+      || n.EndsWith("/cscc-remote", StringComparison.Ordinal)
+      || n.EndsWith("scc.exe", StringComparison.Ordinal));
+    var hasNestedSccArchive = namesLower.Any(n => n.EndsWith(".zip", StringComparison.Ordinal)
+      && (n.IndexOf("cscc", StringComparison.Ordinal) >= 0
+      || n.IndexOf("scc", StringComparison.Ordinal) >= 0));
+
+    if (hasSccExecutable || hasNestedSccArchive)
     {
-      var candidate = CreateCandidate(zipPath, fileName, sha256, importedFrom, isNiwcEnhanced);
+      var candidate = CreateCandidate(zipPath, fileName, sha256, importedFrom, isNiwcEnhanced, contentFileNames);
       candidate.ArtifactKind = ImportArtifactKind.Tool;
       candidate.ToolKind = ToolArtifactKind.Scc;
       candidate.Confidence = DetectionConfidence.High;
       candidate.ContentKey = "tool:scc";
-      candidate.Reasons.Add("Detected scc.exe in archive.");
+      candidate.Reasons.Add(hasSccExecutable
+        ? "Detected SCC executable (cscc/cscc-remote/scc) in archive."
+        : "Detected nested SCC tool archive entry.");
       AddUniqueCandidate(candidates, seen, candidate);
     }
 
     if (namesLower.Any(n => n.EndsWith("powerstig.psd1", StringComparison.Ordinal) || n.EndsWith("powerstig.psm1", StringComparison.Ordinal)))
     {
-      var candidate = CreateCandidate(zipPath, fileName, sha256, importedFrom, isNiwcEnhanced);
+      var candidate = CreateCandidate(zipPath, fileName, sha256, importedFrom, isNiwcEnhanced, contentFileNames);
       candidate.ArtifactKind = ImportArtifactKind.Tool;
       candidate.ToolKind = ToolArtifactKind.PowerStig;
       candidate.Confidence = DetectionConfidence.High;
@@ -201,7 +225,7 @@ public sealed class ImportInboxScanner
 
     if (hasGpo)
     {
-      var candidate = CreateCandidate(zipPath, fileName, sha256, importedFrom, isNiwcEnhanced);
+      var candidate = CreateCandidate(zipPath, fileName, sha256, importedFrom, isNiwcEnhanced, contentFileNames);
       candidate.ArtifactKind = ImportArtifactKind.Gpo;
       candidate.Confidence = DetectionConfidence.High;
       candidate.ContentKey = "gpo:" + Path.GetFileNameWithoutExtension(zipPath).ToLowerInvariant();
@@ -214,7 +238,7 @@ public sealed class ImportInboxScanner
 
     if (hasAdmx)
     {
-      var candidate = CreateCandidate(zipPath, fileName, sha256, importedFrom, isNiwcEnhanced);
+      var candidate = CreateCandidate(zipPath, fileName, sha256, importedFrom, isNiwcEnhanced, contentFileNames);
       candidate.ArtifactKind = ImportArtifactKind.Admx;
       candidate.Confidence = DetectionConfidence.High;
       candidate.ContentKey = BuildAdmxContentKey(archive, zipPath);
@@ -227,7 +251,7 @@ public sealed class ImportInboxScanner
       foreach (var benchmarkEntry in benchmarkEntries)
       {
         var hasRelatedOval = HasRelatedOval(benchmarkEntry, namesLower);
-        var candidate = CreateCandidate(zipPath, fileName, sha256, importedFrom, isNiwcEnhanced);
+        var candidate = CreateCandidate(zipPath, fileName, sha256, importedFrom, isNiwcEnhanced, contentFileNames);
         candidate.ArtifactKind = hasRelatedOval ? ImportArtifactKind.Scap : ImportArtifactKind.Stig;
         candidate.Confidence = DetectionConfidence.High;
         PopulateXccdfIdentity(candidate, benchmarkEntry, hasRelatedOval ? "scap" : "stig");
@@ -239,7 +263,7 @@ public sealed class ImportInboxScanner
 
       foreach (var dataStreamEntry in scapDataStreamEntries)
       {
-        var candidate = CreateCandidate(zipPath, fileName, sha256, importedFrom, isNiwcEnhanced);
+        var candidate = CreateCandidate(zipPath, fileName, sha256, importedFrom, isNiwcEnhanced, contentFileNames);
         candidate.ArtifactKind = ImportArtifactKind.Scap;
         candidate.Confidence = DetectionConfidence.High;
         PopulateXccdfIdentity(candidate, dataStreamEntry, "scap");
@@ -248,7 +272,9 @@ public sealed class ImportInboxScanner
       }
     }
 
-    if (candidates.Count == 0)
+    var hasContentCandidate = candidates.Any(c => c.ArtifactKind != ImportArtifactKind.Tool);
+
+    if (!hasContentCandidate)
     {
       var nestedZipEntries = namesLower
         .Where(n => n.EndsWith(".zip", StringComparison.Ordinal))
@@ -263,7 +289,7 @@ public sealed class ImportInboxScanner
 
         if (hasNestedScap || hasNestedStig)
         {
-          var candidate = CreateCandidate(zipPath, fileName, sha256, importedFrom, isNiwcEnhanced);
+          var candidate = CreateCandidate(zipPath, fileName, sha256, importedFrom, isNiwcEnhanced, contentFileNames);
           candidate.ArtifactKind = hasNestedScap ? ImportArtifactKind.Scap : ImportArtifactKind.Stig;
           candidate.Confidence = DetectionConfidence.Medium;
           candidate.ContentKey = (hasNestedScap ? "scap:" : "stig:") + Path.GetFileNameWithoutExtension(zipPath).ToLowerInvariant();
@@ -275,7 +301,7 @@ public sealed class ImportInboxScanner
 
     if (candidates.Count == 0)
     {
-      var candidate = CreateCandidate(zipPath, fileName, sha256, importedFrom, isNiwcEnhanced);
+      var candidate = CreateCandidate(zipPath, fileName, sha256, importedFrom, isNiwcEnhanced, contentFileNames);
       candidate.ArtifactKind = ImportArtifactKind.Unknown;
       candidate.Confidence = DetectionConfidence.Low;
       candidate.ContentKey = "unknown:" + Path.GetFileNameWithoutExtension(zipPath).ToLowerInvariant();
@@ -389,7 +415,7 @@ public sealed class ImportInboxScanner
     }
   }
 
-  private static ImportInboxCandidate CreateCandidate(string zipPath, string fileName, string sha256, ImportProvenance importedFrom, bool isNiwcEnhanced)
+  private static ImportInboxCandidate CreateCandidate(string zipPath, string fileName, string sha256, ImportProvenance importedFrom, bool isNiwcEnhanced, List<string> contentFileNames)
   {
     return new ImportInboxCandidate
     {
@@ -397,7 +423,8 @@ public sealed class ImportInboxScanner
       FileName = fileName,
       Sha256 = sha256,
       ImportedFrom = importedFrom,
-      IsNiwcEnhanced = isNiwcEnhanced
+      IsNiwcEnhanced = isNiwcEnhanced,
+      ContentFileNames = contentFileNames
     };
   }
 

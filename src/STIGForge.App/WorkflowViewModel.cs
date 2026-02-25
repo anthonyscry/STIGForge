@@ -8,8 +8,16 @@ using STIGForge.App.Views;
 using STIGForge.Content.Import;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
+using System.Collections.ObjectModel;
 
 namespace STIGForge.App;
+
+public class ImportedPackViewModel
+{
+    public string PackName { get; set; } = string.Empty;
+    public List<string> Files { get; set; } = new();
+    public bool HasFiles => Files.Count > 0;
+}
 
 public enum WorkflowStep
 {
@@ -93,7 +101,7 @@ public partial class WorkflowViewModel : ObservableObject
     private int _importedItemsCount;
 
     [ObservableProperty]
-    private List<string> _importedItems = new();
+    private ObservableCollection<ImportedPackViewModel> _importedPacks = new();
 
     [ObservableProperty]
     private int _importWarningCount;
@@ -236,7 +244,7 @@ public partial class WorkflowViewModel : ObservableObject
         if (_importScanner == null || string.IsNullOrWhiteSpace(ImportFolderPath))
         {
             StatusText = "Import scanner not configured or no import folder";
-            ImportedItems = new List<string>();
+            ImportedPacks = new ObservableCollection<ImportedPackViewModel>();
             ImportedItemsCount = 0;
             ImportWarnings = new List<string>();
             ImportWarningCount = 0;
@@ -246,8 +254,17 @@ public partial class WorkflowViewModel : ObservableObject
         try
         {
             var result = await _importScanner.ScanAsync(ImportFolderPath, CancellationToken.None);
-            ImportedItems = result.Candidates.Select(c => c.FileName).Distinct().ToList();
-            ImportedItemsCount = ImportedItems.Count;
+            
+            var packs = result.Candidates
+                .GroupBy(c => c.FileName)
+                .Select(g => new ImportedPackViewModel
+                {
+                    PackName = g.Key,
+                    Files = g.SelectMany(c => c.ContentFileNames).Distinct().OrderBy(f => f).ToList()
+                }).ToList();
+
+            ImportedPacks = new ObservableCollection<ImportedPackViewModel>(packs);
+            ImportedItemsCount = ImportedPacks.Count;
 
             var warnings = (result.Warnings ?? Array.Empty<string>())
                 .Where(w => !string.IsNullOrWhiteSpace(w))
@@ -276,7 +293,7 @@ public partial class WorkflowViewModel : ObservableObject
         catch (Exception ex)
         {
             StatusText = $"Import failed: {ex.Message}";
-            ImportedItems = new List<string>();
+            ImportedPacks = new ObservableCollection<ImportedPackViewModel>();
             ImportedItemsCount = 0;
             ImportWarnings = new List<string> { ex.Message };
             ImportWarningCount = 1;
@@ -302,12 +319,16 @@ public partial class WorkflowViewModel : ObservableObject
             return false;
         }
 
-        if (string.IsNullOrWhiteSpace(EvaluateStigToolPath) || !Directory.Exists(EvaluateStigToolPath))
+        var resolvedEvaluateToolPath = ResolveEvaluateStigToolRoot(EvaluateStigToolPath);
+        if (string.IsNullOrWhiteSpace(resolvedEvaluateToolPath))
         {
             StatusText = "Evaluate-STIG tool path is not configured or invalid";
             BaselineFindingsCount = 0;
             return false;
         }
+
+        if (!string.Equals(resolvedEvaluateToolPath, EvaluateStigToolPath, StringComparison.OrdinalIgnoreCase))
+            EvaluateStigToolPath = resolvedEvaluateToolPath;
 
         if (string.IsNullOrWhiteSpace(OutputFolderPath))
         {
@@ -326,7 +347,7 @@ public partial class WorkflowViewModel : ObservableObject
                 EvaluateStig = new EvaluateStigWorkflowOptions
                 {
                     Enabled = true,
-                    ToolRoot = EvaluateStigToolPath
+                    ToolRoot = resolvedEvaluateToolPath
                 },
                 Scap = new ScapWorkflowOptions
                 {
@@ -417,11 +438,32 @@ public partial class WorkflowViewModel : ObservableObject
             return false;
         }
 
-        if (string.IsNullOrWhiteSpace(EvaluateStigToolPath) || !Directory.Exists(EvaluateStigToolPath))
+        var resolvedEvaluateToolPath = ResolveEvaluateStigToolRoot(EvaluateStigToolPath);
+        if (string.IsNullOrWhiteSpace(resolvedEvaluateToolPath))
         {
             StatusText = "Evaluate-STIG tool path is not configured or invalid";
             VerifyFindingsCount = 0;
             return false;
+        }
+
+        if (!string.Equals(resolvedEvaluateToolPath, EvaluateStigToolPath, StringComparison.OrdinalIgnoreCase))
+            EvaluateStigToolPath = resolvedEvaluateToolPath;
+
+        var sccWasConfigured = !string.IsNullOrWhiteSpace(SccToolPath);
+        var resolvedSccCommandPath = ResolveSccCommandPath(SccToolPath);
+        if (sccWasConfigured && string.IsNullOrWhiteSpace(resolvedSccCommandPath))
+        {
+            StatusText = LooksLikeUnsupportedSccGuiPath(SccToolPath)
+                ? "SCC GUI executable (scc.exe) is not supported for automation. Use cscc.exe or cscc-remote.exe."
+                : "SCC tool path is configured but no cscc.exe or cscc-remote.exe executable was found";
+            VerifyFindingsCount = 0;
+            return false;
+        }
+
+        if (!string.IsNullOrWhiteSpace(resolvedSccCommandPath)
+            && !string.Equals(resolvedSccCommandPath, SccToolPath, StringComparison.OrdinalIgnoreCase))
+        {
+            SccToolPath = resolvedSccCommandPath;
         }
 
         if (string.IsNullOrWhiteSpace(OutputFolderPath))
@@ -441,12 +483,12 @@ public partial class WorkflowViewModel : ObservableObject
                 EvaluateStig = new EvaluateStigWorkflowOptions
                 {
                     Enabled = true,
-                    ToolRoot = EvaluateStigToolPath
+                    ToolRoot = resolvedEvaluateToolPath
                 },
                 Scap = new ScapWorkflowOptions
                 {
-                    Enabled = !string.IsNullOrWhiteSpace(SccToolPath),
-                    CommandPath = SccToolPath
+                    Enabled = !string.IsNullOrWhiteSpace(resolvedSccCommandPath),
+                    CommandPath = resolvedSccCommandPath ?? string.Empty
                 }
             };
 
@@ -707,7 +749,7 @@ public partial class WorkflowViewModel : ObservableObject
 
         if (string.IsNullOrWhiteSpace(EvaluateStigToolPath))
         {
-            var evaluateCandidate = FindFirstExistingDirectory(GetEvaluateStigCandidates(scanRoot));
+            var evaluateCandidate = FindFirstResolvedPath(GetEvaluateStigCandidates(scanRoot), ResolveEvaluateStigToolRoot);
             if (!string.IsNullOrWhiteSpace(evaluateCandidate))
             {
                 EvaluateStigToolPath = evaluateCandidate;
@@ -717,7 +759,7 @@ public partial class WorkflowViewModel : ObservableObject
 
         if (string.IsNullOrWhiteSpace(SccToolPath))
         {
-            var sccCandidate = FindFirstExistingDirectory(GetSccCandidates(scanRoot));
+            var sccCandidate = FindFirstResolvedPath(GetSccCandidates(scanRoot), ResolveSccCommandPath);
             if (!string.IsNullOrWhiteSpace(sccCandidate))
             {
                 SccToolPath = sccCandidate;
@@ -765,12 +807,16 @@ public partial class WorkflowViewModel : ObservableObject
         return null;
     }
 
-    private static string? FindFirstExistingDirectory(IEnumerable<string> candidates)
+    private static string? FindFirstResolvedPath(IEnumerable<string> candidates, Func<string, string?> resolver)
     {
         foreach (var candidate in candidates)
         {
-            if (!string.IsNullOrWhiteSpace(candidate) && Directory.Exists(candidate))
-                return candidate;
+            if (string.IsNullOrWhiteSpace(candidate))
+                continue;
+
+            var resolved = resolver(candidate);
+            if (!string.IsNullOrWhiteSpace(resolved))
+                return resolved;
         }
 
         return null;
@@ -778,14 +824,162 @@ public partial class WorkflowViewModel : ObservableObject
 
     private static IEnumerable<string> GetEvaluateStigCandidates(string scanRoot)
     {
+        yield return Path.Combine(scanRoot, "tools", "Evaluate-STIG", "Evaluate-STIG");
         yield return Path.Combine(scanRoot, "tools", "Evaluate-STIG");
+        yield return Path.Combine(scanRoot, "Evaluate-STIG", "Evaluate-STIG");
         yield return Path.Combine(scanRoot, "Evaluate-STIG");
     }
 
     private static IEnumerable<string> GetSccCandidates(string scanRoot)
     {
+        yield return Path.Combine(scanRoot, "tools", "SCC", "cscc.exe");
+        yield return Path.Combine(scanRoot, "tools", "SCC", "cscc-remote.exe");
         yield return Path.Combine(scanRoot, "tools", "SCC");
+        yield return Path.Combine(scanRoot, "SCC", "cscc.exe");
+        yield return Path.Combine(scanRoot, "SCC", "cscc-remote.exe");
         yield return Path.Combine(scanRoot, "SCC");
+    }
+
+    private static string? ResolveEvaluateStigToolRoot(string? candidate)
+    {
+        var path = candidate?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(path))
+            return null;
+
+        if (File.Exists(path))
+        {
+            if (string.Equals(Path.GetFileName(path), "Evaluate-STIG.ps1", StringComparison.OrdinalIgnoreCase))
+                return Path.GetDirectoryName(path);
+
+            return null;
+        }
+
+        if (!Directory.Exists(path))
+            return null;
+
+        var directScript = Path.Combine(path, "Evaluate-STIG.ps1");
+        if (File.Exists(directScript))
+            return path;
+
+        try
+        {
+            var match = Directory.EnumerateFiles(path, "Evaluate-STIG.ps1", SearchOption.AllDirectories)
+                .OrderBy(CountPathSeparators)
+                .ThenBy(static p => p.Length)
+                .FirstOrDefault();
+            if (!string.IsNullOrWhiteSpace(match))
+                return Path.GetDirectoryName(match);
+        }
+        catch (UnauthorizedAccessException)
+        {
+        }
+        catch (IOException)
+        {
+        }
+
+        return null;
+    }
+
+    private static string? ResolveSccCommandPath(string? candidate)
+    {
+        var path = candidate?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(path))
+            return null;
+
+        if (File.Exists(path))
+        {
+            var fileName = Path.GetFileName(path);
+            return IsSupportedSccCliFileName(fileName)
+                ? Path.GetFullPath(path)
+                : null;
+        }
+
+        if (!Directory.Exists(path))
+            return null;
+
+        foreach (var fileName in SupportedSccCliFileNames)
+        {
+            var directCandidate = Path.Combine(path, fileName);
+            if (File.Exists(directCandidate))
+                return directCandidate;
+        }
+
+        try
+        {
+            var match = Directory.EnumerateFiles(path, "*.exe", SearchOption.AllDirectories)
+                .Where(static p =>
+                {
+                    var fileName = Path.GetFileName(p);
+                    return IsSupportedSccCliFileName(fileName);
+                })
+                .OrderBy(CountPathSeparators)
+                .ThenBy(static p => p.Length)
+                .FirstOrDefault();
+
+            if (!string.IsNullOrWhiteSpace(match))
+                return match;
+        }
+        catch (UnauthorizedAccessException)
+        {
+        }
+        catch (IOException)
+        {
+        }
+
+        return null;
+    }
+
+    private static readonly string[] SupportedSccCliFileNames =
+    [
+        "cscc.exe",
+        "cscc-remote.exe",
+        "cscc",
+        "cscc-remote"
+    ];
+
+    private static bool IsSupportedSccCliFileName(string? fileName)
+    {
+        if (string.IsNullOrWhiteSpace(fileName))
+            return false;
+
+        return SupportedSccCliFileNames.Any(name => string.Equals(fileName, name, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool LooksLikeUnsupportedSccGuiPath(string? candidate)
+    {
+        var path = candidate?.Trim() ?? string.Empty;
+        if (string.IsNullOrWhiteSpace(path))
+            return false;
+
+        if (File.Exists(path))
+            return string.Equals(Path.GetFileName(path), "scc.exe", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(Path.GetFileName(path), "scc", StringComparison.OrdinalIgnoreCase);
+
+        if (!Directory.Exists(path))
+            return false;
+
+        try
+        {
+            return Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories)
+                .Any(p => string.Equals(Path.GetFileName(p), "scc.exe", StringComparison.OrdinalIgnoreCase)
+                    || string.Equals(Path.GetFileName(p), "scc", StringComparison.OrdinalIgnoreCase));
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return false;
+        }
+        catch (IOException)
+        {
+            return false;
+        }
+    }
+
+    private static int CountPathSeparators(string path)
+    {
+        if (string.IsNullOrEmpty(path))
+            return int.MaxValue;
+
+        return path.Count(ch => ch == Path.DirectorySeparatorChar || ch == Path.AltDirectorySeparatorChar);
     }
 
     [RelayCommand]
@@ -807,9 +1001,15 @@ public partial class WorkflowViewModel : ObservableObject
     [RelayCommand]
     private void BrowseScc()
     {
-        var dialog = new Microsoft.Win32.OpenFolderDialog { Title = "Select SCC Folder" };
+        var dialog = new Microsoft.Win32.OpenFileDialog
+        {
+            Title = "Select SCC Executable",
+            Filter = "Executable files (*.exe)|*.exe|All files (*.*)|*.*",
+            CheckFileExists = true,
+            Multiselect = false
+        };
         if (dialog.ShowDialog() == true)
-            SccToolPath = dialog.FolderName;
+            SccToolPath = dialog.FileName;
     }
 
     [RelayCommand]
@@ -867,7 +1067,7 @@ public partial class WorkflowViewModel : ObservableObject
         FixedCount = 0;
         AppliedFixesCount = 0;
         ImportedItemsCount = 0;
-        ImportedItems = new List<string>();
+        ImportedPacks = new ObservableCollection<ImportedPackViewModel>();
         ImportWarningCount = 0;
         ImportWarnings = new List<string>();
         MissionJsonPath = string.Empty;

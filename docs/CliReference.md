@@ -86,7 +86,7 @@ orchestrate --bundle <path> [options]
 | `--powerstig-verbose` | No | Verbose PowerSTIG compile |
 | `--evaluate-stig` | No | Evaluate-STIG root |
 | `--evaluate-args` | No | Evaluate-STIG arguments |
-| `--scap-cmd` | No | SCAP/SCC command path |
+| `--scap-cmd` | No | SCAP command path (use `cscc.exe` or `cscc-remote.exe`) |
 | `--scap-args` | No | SCAP arguments |
 | `--scap-label` | No | Label for SCAP tool |
 
@@ -128,7 +128,7 @@ Remote downloads are automatically cached under `.stigforge/airgap-transfer` so 
 | `--powerstig-verbose` | No | Verbose PowerSTIG compile |
 | `--evaluate-stig` | No | Evaluate-STIG root |
 | `--evaluate-args` | No | Evaluate-STIG arguments |
-| `--scap-cmd` | No | SCC/SCAP executable path |
+| `--scap-cmd` | No | SCAP executable path (use `cscc.exe` or `cscc-remote.exe`) |
 | `--scap-args` | No | SCC/SCAP arguments (default: `-u -s -r -f`) |
 | `--scap-label` | No | SCAP label (default: `DISA SCAP`) |
 | `--skip-snapshot` | No | Skip snapshot generation (requires break-glass flags) |
@@ -184,7 +184,7 @@ verify-scap --cmd <path> [--args <args>] [--workdir <path>] [--output-root <path
 
 | Option | Required | Description |
 |--------|----------|-------------|
-| `--cmd` | Yes | Path to SCAP/SCC executable |
+| `--cmd` | Yes | Path to SCAP executable (`cscc.exe` or `cscc-remote.exe`) |
 | `--args` | No | Arguments passed to SCAP tool |
 | `--workdir` | No | Working directory |
 | `--output-root` | No | Folder to scan for generated CKL files |
@@ -439,7 +439,7 @@ schedule-verify --name <name> --bundle <path> [options]
 | `--days` | No | Days of week for WEEKLY (e.g., MON,WED,FRI) |
 | `--interval` | No | Interval in days for DAILY (default: 1) |
 | `--verify-type` | No | scap, evaluate-stig, orchestrate (default: orchestrate) |
-| `--scap-cmd` | No | SCAP/SCC executable path |
+| `--scap-cmd` | No | SCAP executable path (`cscc.exe` or `cscc-remote.exe`) |
 | `--scap-args` | No | SCAP arguments |
 | `--evaluate-stig-root` | No | Evaluate-STIG root folder |
 | `--evaluate-stig-args` | No | Evaluate-STIG arguments |
@@ -493,7 +493,7 @@ fleet-verify --targets <list> [options]
 | `--targets` | Yes | Comma-separated target list |
 | `--remote-cli-path` | No | Remote CLI path |
 | `--remote-bundle-path` | No | Remote bundle path |
-| `--scap-cmd` | No | SCAP/SCC executable on remote |
+| `--scap-cmd` | No | SCAP executable on remote (`cscc.exe` or `cscc-remote.exe`) |
 | `--scap-args` | No | SCAP arguments |
 | `--evaluate-stig-root` | No | Evaluate-STIG root on remote |
 | `--concurrency` | No | Max concurrent (default: 5) |
