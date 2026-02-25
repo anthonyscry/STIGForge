@@ -1,4 +1,5 @@
 using System.IO;
+using System.Security.Principal;
 using System.Text.Json;
 using System.Windows;
 using STIGForge.Apply;
@@ -44,18 +45,43 @@ public partial class WorkflowViewModel : ObservableObject
     private readonly IVerificationWorkflowService? _verifyService;
     private readonly Func<ApplyRequest, CancellationToken, Task<ApplyResult>>? _runApply;
     private readonly Func<string?> _autoScanRootResolver;
+    private readonly Func<bool> _isElevatedResolver;
 
     public WorkflowViewModel(
         ImportInboxScanner? importScanner = null,
         IVerificationWorkflowService? verifyService = null,
         Func<ApplyRequest, CancellationToken, Task<ApplyResult>>? runApply = null,
-        Func<string?>? autoScanRootResolver = null)
+        Func<string?>? autoScanRootResolver = null,
+        Func<bool>? isElevatedResolver = null)
     {
         _importScanner = importScanner;
         _verifyService = verifyService;
         _runApply = runApply;
         _autoScanRootResolver = autoScanRootResolver ?? ResolveAutoScanRoot;
+        _isElevatedResolver = isElevatedResolver ?? IsCurrentProcessElevated;
         LoadSettings();
+    }
+
+    private static bool IsCurrentProcessElevated()
+    {
+        if (!OperatingSystem.IsWindows())
+            return true;
+
+        using var identity = WindowsIdentity.GetCurrent();
+        var principal = new WindowsPrincipal(identity);
+        return principal.IsInRole(WindowsBuiltInRole.Administrator);
+    }
+
+    private bool EnsureAdminPreflight(out string message)
+    {
+        if (_isElevatedResolver())
+        {
+            message = string.Empty;
+            return true;
+        }
+
+        message = "Scan and Verify require Administrator mode. Close STIGForge and relaunch it as administrator.";
+        return false;
     }
 
     [ObservableProperty]
@@ -319,6 +345,13 @@ public partial class WorkflowViewModel : ObservableObject
             return false;
         }
 
+        if (!EnsureAdminPreflight(out var adminMessage))
+        {
+            StatusText = adminMessage;
+            BaselineFindingsCount = 0;
+            return false;
+        }
+
         var resolvedEvaluateToolPath = ResolveEvaluateStigToolRoot(EvaluateStigToolPath);
         if (string.IsNullOrWhiteSpace(resolvedEvaluateToolPath))
         {
@@ -434,6 +467,13 @@ public partial class WorkflowViewModel : ObservableObject
         if (_verifyService == null)
         {
             StatusText = "Verification service not configured";
+            VerifyFindingsCount = 0;
+            return false;
+        }
+
+        if (!EnsureAdminPreflight(out var adminMessage))
+        {
+            StatusText = adminMessage;
             VerifyFindingsCount = 0;
             return false;
         }
