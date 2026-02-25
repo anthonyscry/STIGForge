@@ -8,7 +8,7 @@ STIGForge is an offline-first Windows STIG hardening platform that automates the
 
 - Windows 10/11 or Windows Server 2019/2022
 - .NET 8 SDK (for development/CLI)
-- Administrator privileges (for Apply and Schedule operations)
+- Administrator privileges (required for Dashboard Scan/Verify, Apply, and scheduled runs)
 
 ## Getting Started
 
@@ -123,7 +123,8 @@ STIGForge parses CKL results and generates consolidated-results.json.
 For Dashboard **Scan** and **Verify** workflow runs:
 - Start STIGForge as Administrator before running **Scan** or **Verify**.
 - Confirm the Evaluate-STIG path resolves to `Evaluate-STIG.ps1`.
-- Use advanced settings (`AFPath`, `SelectSTIG`, and additional args) when the default command needs customization.
+- Configure advanced settings in **Settings -> Evaluate-STIG Advanced** when the default command needs customization.
+- Minimal example: set `AFPath` to `C:\Evaluate-STIG\AnswerFile.xml` and `SelectSTIG` to `U_MS_Windows_11_V1R4_STIG`, then run **Verify**.
 
 ### 6. Handle Manual Controls
 
