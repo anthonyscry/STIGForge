@@ -721,6 +721,96 @@ public class WorkflowViewModelTests
     }
 
     [Fact]
+    public async Task RunScanStepCommand_WhenEvaluateExitCodeIsFive_ShowsElevationSpecificGuidance()
+    {
+        var evaluateTool = Directory.CreateTempSubdirectory().FullName;
+        var outputFolder = Directory.CreateTempSubdirectory().FullName;
+        CreateEvaluateStigScript(evaluateTool);
+
+        var verifyService = new TrackingVerificationWorkflowService(new VerificationWorkflowResult
+        {
+            ConsolidatedResultCount = 0,
+            ToolRuns =
+            [
+                new VerificationToolRunResult
+                {
+                    Tool = "Evaluate-STIG",
+                    Executed = true,
+                    ExitCode = 5,
+                    Error = "You must run this from an elevated PowerShell session"
+                }
+            ]
+        });
+
+        try
+        {
+            var vm = new WorkflowViewModel(
+                importScanner: null,
+                verifyService: verifyService,
+                runApply: null,
+                autoScanRootResolver: null,
+                isElevatedResolver: () => true)
+            {
+                ScanState = StepState.Ready,
+                ImportedItemsCount = 1,
+                OutputFolderPath = outputFolder,
+                EvaluateStigToolPath = evaluateTool
+            };
+
+            await vm.RunScanStepCommand.ExecuteAsync(null);
+
+            Assert.Equal(StepState.Error, vm.ScanState);
+            Assert.Contains("administrator", vm.ScanError, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("exit code 5", vm.ScanError, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            Directory.Delete(evaluateTool, recursive: true);
+            Directory.Delete(outputFolder, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task RunScanStepCommand_WhenNoCklDiagnosticPresent_UsesNoCklProducedClassification()
+    {
+        var evaluateTool = Directory.CreateTempSubdirectory().FullName;
+        var outputFolder = Directory.CreateTempSubdirectory().FullName;
+        CreateEvaluateStigScript(evaluateTool);
+
+        var verifyService = new TrackingVerificationWorkflowService(new VerificationWorkflowResult
+        {
+            ConsolidatedResultCount = 0,
+            Diagnostics = ["No CKL results were found under output root."]
+        });
+
+        try
+        {
+            var vm = new WorkflowViewModel(
+                importScanner: null,
+                verifyService: verifyService,
+                runApply: null,
+                autoScanRootResolver: null,
+                isElevatedResolver: () => true)
+            {
+                ScanState = StepState.Ready,
+                ImportedItemsCount = 1,
+                OutputFolderPath = outputFolder,
+                EvaluateStigToolPath = evaluateTool
+            };
+
+            await vm.RunScanStepCommand.ExecuteAsync(null);
+
+            Assert.Equal(StepState.Error, vm.ScanState);
+            Assert.Contains("no ckl", vm.ScanError, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            Directory.Delete(evaluateTool, recursive: true);
+            Directory.Delete(outputFolder, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task RunVerifyStepCommand_WhenProcessNotElevated_BlocksWithAdminGuidance()
     {
         var outputFolder = Directory.CreateTempSubdirectory().FullName;

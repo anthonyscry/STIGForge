@@ -84,6 +84,43 @@ public partial class WorkflowViewModel : ObservableObject
         return false;
     }
 
+    private static VerificationToolRunResult? FindEvaluateRun(VerificationWorkflowResult result)
+    {
+        return result.ToolRuns?.FirstOrDefault(run =>
+            string.Equals(run.Tool, "Evaluate-STIG", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool HasNoCklDiagnostic(VerificationWorkflowResult result)
+    {
+        var diagnostics = result.Diagnostics ?? Array.Empty<string>();
+        return diagnostics.Any(diagnostic =>
+            diagnostic.Contains("No CKL results", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool IsZeroFindingsFailure(VerificationWorkflowResult result)
+    {
+        var evaluateRun = FindEvaluateRun(result);
+        if (evaluateRun is { Executed: true } && evaluateRun.ExitCode != 0)
+            return true;
+
+        return HasNoCklDiagnostic(result);
+    }
+
+    private static string BuildZeroFindingsMessage(string operationName, VerificationWorkflowResult result)
+    {
+        var evaluateRun = FindEvaluateRun(result);
+        if (evaluateRun is { Executed: true, ExitCode: 5 })
+            return $"{operationName} did not complete: Evaluate-STIG exit code 5 (administrator mode required).";
+
+        if (evaluateRun is { Executed: true } && evaluateRun.ExitCode != 0)
+            return $"{operationName} did not complete: Evaluate-STIG exit code {evaluateRun.ExitCode}.";
+
+        if (HasNoCklDiagnostic(result))
+            return $"{operationName} produced no CKL output. Confirm Evaluate-STIG output path and selected STIG scope.";
+
+        return $"{operationName} complete: 0 findings";
+    }
+
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanGoBack))]
     [NotifyPropertyChangedFor(nameof(CanGoNext))]
@@ -393,6 +430,12 @@ public partial class WorkflowViewModel : ObservableObject
                 CancellationToken.None);
 
             BaselineFindingsCount = result.ConsolidatedResultCount;
+            if (BaselineFindingsCount == 0)
+            {
+                StatusText = BuildZeroFindingsMessage("Baseline scan", result);
+                return !IsZeroFindingsFailure(result);
+            }
+
             StatusText = $"Baseline scan complete: {BaselineFindingsCount} findings";
             return true;
         }
@@ -541,6 +584,13 @@ public partial class WorkflowViewModel : ObservableObject
             if (FixedCount < 0) FixedCount = 0;
 
             await WriteMissionJsonAsync(result, CancellationToken.None);
+
+            if (VerifyFindingsCount == 0)
+            {
+                StatusText = BuildZeroFindingsMessage("Verification scan", result);
+                return !IsZeroFindingsFailure(result);
+            }
+
             StatusText = $"Verification complete: {VerifyFindingsCount} remaining ({FixedCount} fixed)";
             return true;
         }
