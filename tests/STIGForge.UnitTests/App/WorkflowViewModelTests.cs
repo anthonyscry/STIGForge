@@ -217,14 +217,14 @@ public class WorkflowViewModelTests
         var vm = new WorkflowViewModel
         {
             ImportFolderPath = @"C:\missing\import",
-            ImportedItems = new List<string> { "old-content.zip" },
+            ImportedPacks = new System.Collections.ObjectModel.ObservableCollection<ImportedPackViewModel> { new ImportedPackViewModel { PackName = "old-content.zip" } },
             ImportedItemsCount = 1
         };
 
         await vm.RunImportStepCommand.ExecuteAsync(null);
 
         Assert.Equal(StepState.Error, vm.ImportState);
-        Assert.Empty(vm.ImportedItems);
+        Assert.Empty(vm.ImportedPacks);
         Assert.Equal(0, vm.ImportedItemsCount);
     }
 

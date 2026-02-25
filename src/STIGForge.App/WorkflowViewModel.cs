@@ -8,8 +8,16 @@ using STIGForge.App.Views;
 using STIGForge.Content.Import;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
+using System.Collections.ObjectModel;
 
 namespace STIGForge.App;
+
+public class ImportedPackViewModel
+{
+    public string PackName { get; set; } = string.Empty;
+    public List<string> Files { get; set; } = new();
+    public bool HasFiles => Files.Count > 0;
+}
 
 public enum WorkflowStep
 {
@@ -93,7 +101,7 @@ public partial class WorkflowViewModel : ObservableObject
     private int _importedItemsCount;
 
     [ObservableProperty]
-    private List<string> _importedItems = new();
+    private ObservableCollection<ImportedPackViewModel> _importedPacks = new();
 
     [ObservableProperty]
     private int _importWarningCount;
@@ -236,7 +244,7 @@ public partial class WorkflowViewModel : ObservableObject
         if (_importScanner == null || string.IsNullOrWhiteSpace(ImportFolderPath))
         {
             StatusText = "Import scanner not configured or no import folder";
-            ImportedItems = new List<string>();
+            ImportedPacks = new ObservableCollection<ImportedPackViewModel>();
             ImportedItemsCount = 0;
             ImportWarnings = new List<string>();
             ImportWarningCount = 0;
@@ -246,8 +254,17 @@ public partial class WorkflowViewModel : ObservableObject
         try
         {
             var result = await _importScanner.ScanAsync(ImportFolderPath, CancellationToken.None);
-            ImportedItems = result.Candidates.Select(c => c.FileName).Distinct().ToList();
-            ImportedItemsCount = ImportedItems.Count;
+            
+            var packs = result.Candidates
+                .GroupBy(c => c.FileName)
+                .Select(g => new ImportedPackViewModel
+                {
+                    PackName = g.Key,
+                    Files = g.SelectMany(c => c.ContentFileNames).Distinct().OrderBy(f => f).ToList()
+                }).ToList();
+
+            ImportedPacks = new ObservableCollection<ImportedPackViewModel>(packs);
+            ImportedItemsCount = ImportedPacks.Count;
 
             var warnings = (result.Warnings ?? Array.Empty<string>())
                 .Where(w => !string.IsNullOrWhiteSpace(w))
@@ -276,7 +293,7 @@ public partial class WorkflowViewModel : ObservableObject
         catch (Exception ex)
         {
             StatusText = $"Import failed: {ex.Message}";
-            ImportedItems = new List<string>();
+            ImportedPacks = new ObservableCollection<ImportedPackViewModel>();
             ImportedItemsCount = 0;
             ImportWarnings = new List<string> { ex.Message };
             ImportWarningCount = 1;
@@ -867,7 +884,7 @@ public partial class WorkflowViewModel : ObservableObject
         FixedCount = 0;
         AppliedFixesCount = 0;
         ImportedItemsCount = 0;
-        ImportedItems = new List<string>();
+        ImportedPacks = new ObservableCollection<ImportedPackViewModel>();
         ImportWarningCount = 0;
         ImportWarnings = new List<string>();
         MissionJsonPath = string.Empty;

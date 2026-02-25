@@ -398,6 +398,14 @@
         </Setter>
       </Style>
 
+      <!-- ═══════════ TREEVIEW ═══════════ -->
+      <Style TargetType="TreeView">
+        <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+      </Style>
+
       <!-- ═══════════ SCROLLBAR ═══════════ -->
       <Style x:Key="ScrollBarThumb" TargetType="Thumb">
         <Setter Property="SnapsToDevicePixels" Value="True"/>
