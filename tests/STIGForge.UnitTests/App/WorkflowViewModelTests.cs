@@ -24,6 +24,7 @@ public class WorkflowViewModelTests
     {
         var vm = new WorkflowViewModel();
         Assert.Null(vm.CurrentFailureCard);
+        Assert.Equal(string.Empty, vm.FailureCardLiveRegionHint);
     }
 
     [Fact]
@@ -400,6 +401,10 @@ public class WorkflowViewModelTests
             Assert.Equal(WorkflowRootCauseCode.NoCklOutput, vm.CurrentFailureCard!.RootCauseCode);
             Assert.Contains("output", vm.CurrentFailureCard.NextStep, StringComparison.OrdinalIgnoreCase);
             Assert.Contains("ckl", vm.CurrentFailureCard.NextStep, StringComparison.OrdinalIgnoreCase);
+            Assert.True(vm.CurrentFailureCard.ShowOpenOutputFolderAction);
+            Assert.True(vm.CurrentFailureCard.ShowRetryScanAction);
+            Assert.False(vm.CurrentFailureCard.ShowRetryVerifyAction);
+            Assert.Contains("Recovery guidance updated", vm.FailureCardLiveRegionHint, StringComparison.OrdinalIgnoreCase);
         }
         finally
         {
@@ -437,6 +442,9 @@ public class WorkflowViewModelTests
             Assert.Equal(WorkflowRootCauseCode.EvaluatePathInvalid, vm.CurrentFailureCard!.RootCauseCode);
             Assert.Contains("path", vm.CurrentFailureCard.NextStep, StringComparison.OrdinalIgnoreCase);
             Assert.Contains("settings", vm.CurrentFailureCard.NextStep, StringComparison.OrdinalIgnoreCase);
+            Assert.True(vm.CurrentFailureCard.ShowOpenSettingsAction);
+            Assert.True(vm.CurrentFailureCard.ShowRetryScanAction);
+            Assert.False(vm.CurrentFailureCard.ShowRetryVerifyAction);
         }
         finally
         {
@@ -1480,6 +1488,8 @@ public class WorkflowViewModelTests
             Assert.Equal(WorkflowRootCauseCode.ElevationRequired, vm.CurrentFailureCard!.RootCauseCode);
             Assert.Contains("administrator", vm.CurrentFailureCard.NextStep, StringComparison.OrdinalIgnoreCase);
             Assert.Contains("rerun", vm.CurrentFailureCard.NextStep, StringComparison.OrdinalIgnoreCase);
+            Assert.False(vm.CurrentFailureCard.ShowRetryScanAction);
+            Assert.True(vm.CurrentFailureCard.ShowRetryVerifyAction);
         }
         finally
         {

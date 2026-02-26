@@ -56,6 +56,10 @@ public sealed class WorkflowFailureCard
     public string WhatHappened { get; init; } = string.Empty;
     public string NextStep { get; init; } = string.Empty;
     public string Confidence { get; init; } = "Medium";
+    public bool ShowOpenSettingsAction { get; init; }
+    public bool ShowRetryScanAction { get; init; }
+    public bool ShowRetryVerifyAction { get; init; }
+    public bool ShowOpenOutputFolderAction { get; init; }
 }
 
 public partial class WorkflowViewModel : ObservableObject
@@ -150,14 +154,22 @@ public partial class WorkflowViewModel : ObservableObject
         WorkflowRootCauseCode rootCauseCode,
         string title,
         string whatHappened,
-        string nextStep)
+        string nextStep,
+        bool showOpenSettingsAction = false,
+        bool showRetryScanAction = false,
+        bool showRetryVerifyAction = false,
+        bool showOpenOutputFolderAction = false)
     {
         return new WorkflowFailureCard
         {
             RootCauseCode = rootCauseCode,
             Title = title,
             WhatHappened = whatHappened,
-            NextStep = nextStep
+            NextStep = nextStep,
+            ShowOpenSettingsAction = showOpenSettingsAction,
+            ShowRetryScanAction = showRetryScanAction,
+            ShowRetryVerifyAction = showRetryVerifyAction,
+            ShowOpenOutputFolderAction = showOpenOutputFolderAction
         };
     }
 
@@ -170,7 +182,8 @@ public partial class WorkflowViewModel : ObservableObject
                 WorkflowRootCauseCode.ElevationRequired,
                 "Administrator privileges required",
                 "Evaluate-STIG exited with code 5 during baseline scan.",
-                "Relaunch STIGForge as administrator and rerun Scan.");
+                "Relaunch STIGForge as administrator and rerun Scan.",
+                showRetryScanAction: true);
         }
 
         if (HasNoCklDiagnostic(result))
@@ -179,7 +192,10 @@ public partial class WorkflowViewModel : ObservableObject
                 WorkflowRootCauseCode.NoCklOutput,
                 "No CKL output detected",
                 "Scan completed without producing CKL results in the output folder.",
-                "Verify CKL output path and STIG scope in Settings, then rerun Scan.");
+                "Verify CKL output path and STIG scope in Settings, then rerun Scan.",
+                showOpenSettingsAction: true,
+                showRetryScanAction: true,
+                showOpenOutputFolderAction: true);
         }
 
         if (evaluateRun is { Executed: true } && evaluateRun.ExitCode != 0)
@@ -188,14 +204,18 @@ public partial class WorkflowViewModel : ObservableObject
                 WorkflowRootCauseCode.ToolExitNonZero,
                 "Evaluate-STIG exited with an error",
                 $"Evaluate-STIG returned exit code {evaluateRun.ExitCode} during baseline scan.",
-                "Review diagnostics in mission output and rerun Scan after correcting the issue.");
+                "Review diagnostics in mission output and rerun Scan after correcting the issue.",
+                showRetryScanAction: true,
+                showOpenOutputFolderAction: true);
         }
 
         return CreateFailureCard(
             WorkflowRootCauseCode.UnknownFailure,
             "Scan could not be completed",
             "Baseline scan returned zero findings but did not provide a known failure signature.",
-            "Review diagnostics in mission output, adjust settings, and rerun Scan.");
+            "Review diagnostics in mission output, adjust settings, and rerun Scan.",
+            showRetryScanAction: true,
+            showOpenOutputFolderAction: true);
     }
 
     private static WorkflowFailureCard BuildVerifyFailureCard(VerificationWorkflowResult result)
@@ -207,7 +227,8 @@ public partial class WorkflowViewModel : ObservableObject
                 WorkflowRootCauseCode.ElevationRequired,
                 "Administrator privileges required",
                 "Evaluate-STIG exited with code 5 during verification scan.",
-                "Relaunch STIGForge as administrator and rerun Verify.");
+                "Relaunch STIGForge as administrator and rerun Verify.",
+                showRetryVerifyAction: true);
         }
 
         if (HasNoCklDiagnostic(result))
@@ -216,7 +237,10 @@ public partial class WorkflowViewModel : ObservableObject
                 WorkflowRootCauseCode.NoCklOutput,
                 "No CKL output detected",
                 "Verification completed without producing CKL results in the output folder.",
-                "Verify CKL output path and STIG scope in Settings, then rerun Verify.");
+                "Verify CKL output path and STIG scope in Settings, then rerun Verify.",
+                showOpenSettingsAction: true,
+                showRetryVerifyAction: true,
+                showOpenOutputFolderAction: true);
         }
 
         if (evaluateRun is { Executed: true } && evaluateRun.ExitCode != 0)
@@ -225,14 +249,18 @@ public partial class WorkflowViewModel : ObservableObject
                 WorkflowRootCauseCode.ToolExitNonZero,
                 "Evaluate-STIG exited with an error",
                 $"Evaluate-STIG returned exit code {evaluateRun.ExitCode} during verification scan.",
-                "Review diagnostics in mission output and rerun Verify after correcting the issue.");
+                "Review diagnostics in mission output and rerun Verify after correcting the issue.",
+                showRetryVerifyAction: true,
+                showOpenOutputFolderAction: true);
         }
 
         return CreateFailureCard(
             WorkflowRootCauseCode.UnknownFailure,
             "Verification could not be completed",
             "Verification returned zero findings but did not provide a known failure signature.",
-            "Review diagnostics in mission output, adjust settings, and rerun Verify.");
+            "Review diagnostics in mission output, adjust settings, and rerun Verify.",
+            showRetryVerifyAction: true,
+            showOpenOutputFolderAction: true);
     }
 
     private static WorkflowFailureCard CreateEvaluatePathInvalidCard()
@@ -241,7 +269,9 @@ public partial class WorkflowViewModel : ObservableObject
             WorkflowRootCauseCode.EvaluatePathInvalid,
             "Evaluate-STIG path is invalid",
             "The configured Evaluate-STIG location does not contain a usable Evaluate-STIG.ps1 script.",
-            "Open Settings, correct the Evaluate-STIG path, save, and rerun Scan.");
+            "Open Settings, correct the Evaluate-STIG path, save, and rerun Scan.",
+            showOpenSettingsAction: true,
+            showRetryScanAction: true);
     }
 
     private static WorkflowFailureCard CreateVerifyEvaluatePathInvalidCard()
@@ -250,7 +280,9 @@ public partial class WorkflowViewModel : ObservableObject
             WorkflowRootCauseCode.EvaluatePathInvalid,
             "Evaluate-STIG path is invalid",
             "The configured Evaluate-STIG location does not contain a usable Evaluate-STIG.ps1 script.",
-            "Open Settings, correct the Evaluate-STIG path, save, and rerun Verify.");
+            "Open Settings, correct the Evaluate-STIG path, save, and rerun Verify.",
+            showOpenSettingsAction: true,
+            showRetryVerifyAction: true);
     }
 
     private static WorkflowFailureCard CreateElevationRequiredCard(string whatHappened)
@@ -259,7 +291,8 @@ public partial class WorkflowViewModel : ObservableObject
             WorkflowRootCauseCode.ElevationRequired,
             "Administrator privileges required",
             whatHappened,
-            "Relaunch STIGForge as administrator and rerun Scan.");
+            "Relaunch STIGForge as administrator and rerun Scan.",
+            showRetryScanAction: true);
     }
 
     private static WorkflowFailureCard CreateVerifyElevationRequiredCard(string whatHappened)
@@ -268,7 +301,8 @@ public partial class WorkflowViewModel : ObservableObject
             WorkflowRootCauseCode.ElevationRequired,
             "Administrator privileges required",
             whatHappened,
-            "Relaunch STIGForge as administrator and rerun Verify.");
+            "Relaunch STIGForge as administrator and rerun Verify.",
+            showRetryVerifyAction: true);
     }
 
     private static WorkflowFailureCard CreateVerifyUnknownFailureCard(string whatHappened)
@@ -277,7 +311,9 @@ public partial class WorkflowViewModel : ObservableObject
             WorkflowRootCauseCode.UnknownFailure,
             "Verification could not be completed",
             whatHappened,
-            "Review diagnostics in mission output and rerun Verify.");
+            "Review diagnostics in mission output and rerun Verify.",
+            showRetryVerifyAction: true,
+            showOpenOutputFolderAction: true);
     }
 
     private string BuildEvaluateStigArguments(string outputRoot)
@@ -426,7 +462,12 @@ public partial class WorkflowViewModel : ObservableObject
     private bool _exportXccdf;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(FailureCardLiveRegionHint))]
     private WorkflowFailureCard? _currentFailureCard;
+
+    public string FailureCardLiveRegionHint => CurrentFailureCard is null
+        ? string.Empty
+        : $"Recovery guidance updated. {CurrentFailureCard.Title}. {CurrentFailureCard.WhatHappened} Next step: {CurrentFailureCard.NextStep}";
 
     public bool CanGoBack => CurrentStep > WorkflowStep.Setup && CurrentStep < WorkflowStep.Done;
 

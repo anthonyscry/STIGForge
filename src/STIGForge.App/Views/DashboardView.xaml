@@ -191,7 +191,9 @@
                     Padding="12"
                     Background="{DynamicResource SurfaceMutedBrush}"
                     BorderBrush="{DynamicResource WarningBrush}"
-                    BorderThickness="1">
+                    BorderThickness="1"
+                    AutomationProperties.LiveSetting="Assertive"
+                    AutomationProperties.Name="{Binding FailureCardLiveRegionHint}">
                 <Border.Style>
                     <Style TargetType="Border">
                         <Setter Property="Visibility" Value="Visible" />
@@ -204,6 +206,10 @@
                 </Border.Style>
 
                 <StackPanel>
+                    <TextBlock Text="{Binding FailureCardLiveRegionHint}"
+                               Opacity="0"
+                               Height="1"
+                               AutomationProperties.LiveSetting="Assertive" />
                     <DockPanel Margin="0,0,0,10" LastChildFill="False">
                         <TextBlock Text="{Binding CurrentFailureCard.Title}"
                                    FontSize="16"
@@ -240,23 +246,36 @@
                                 Margin="0,0,8,0"
                                 Style="{DynamicResource WorkflowDashboardButtonStyle}"
                                 Command="{Binding ShowSettingsCommand}"
+                                Visibility="{Binding CurrentFailureCard.ShowOpenSettingsAction, Converter={StaticResource BoolToVisibility}}"
                                 AutomationProperties.Name="Open settings for failure recovery"
                                 ToolTip="Open settings to correct workflow paths" />
-                        <Button Content="Rerun Scan"
-                                Width="132"
+                        <Button Content="Open Output Folder"
+                                Width="152"
                                 Height="32"
                                 TabIndex="71"
                                 Margin="0,0,8,0"
                                 Style="{DynamicResource WorkflowDashboardButtonStyle}"
+                                Command="{Binding OpenOutputFolderCommand}"
+                                Visibility="{Binding CurrentFailureCard.ShowOpenOutputFolderAction, Converter={StaticResource BoolToVisibility}}"
+                                AutomationProperties.Name="Open output folder for failure recovery"
+                                ToolTip="Open output folder to inspect diagnostics" />
+                        <Button Content="Rerun Scan"
+                                Width="132"
+                                Height="32"
+                                TabIndex="72"
+                                Margin="0,0,8,0"
+                                Style="{DynamicResource WorkflowDashboardButtonStyle}"
                                 Command="{Binding RunScanStepCommand}"
+                                Visibility="{Binding CurrentFailureCard.ShowRetryScanAction, Converter={StaticResource BoolToVisibility}}"
                                 AutomationProperties.Name="Rerun scan from failure card"
                                 ToolTip="Retry the Scan step" />
                         <Button Content="Rerun Verify"
                                 Width="132"
                                 Height="32"
-                                TabIndex="72"
+                                TabIndex="73"
                                 Style="{DynamicResource WorkflowDashboardButtonStyle}"
                                 Command="{Binding RunVerifyStepCommand}"
+                                Visibility="{Binding CurrentFailureCard.ShowRetryVerifyAction, Converter={StaticResource BoolToVisibility}}"
                                 AutomationProperties.Name="Rerun verify from failure card"
                                 ToolTip="Retry the Verify step" />
                     </WrapPanel>
