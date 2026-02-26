@@ -132,6 +132,14 @@ public sealed class VerificationWorkflowService : IVerificationWorkflowService
       return BuildSkippedRun(toolName, now, "Missing command path.");
     }
 
+    if (string.IsNullOrWhiteSpace(request.Scap.Arguments))
+    {
+      diagnostics.Add($"{toolName} enabled but SCAP arguments were empty. Configure explicit SCC arguments (benchmark/input and output path).");
+      return BuildSkippedRun(toolName, now, "Missing SCAP arguments.");
+    }
+
+    var artifactsBeforeRun = SnapshotScapArtifactPaths(request.OutputRoot);
+
     try
     {
       var runResult = _scapRunner.Run(
@@ -141,6 +149,13 @@ public sealed class VerificationWorkflowService : IVerificationWorkflowService
 
       if (runResult.ExitCode != 0)
         diagnostics.Add($"{toolName} exited with code {runResult.ExitCode}.");
+      else
+      {
+        var artifactsAfterRun = SnapshotScapArtifactPaths(request.OutputRoot);
+        var producedArtifacts = artifactsAfterRun.Except(artifactsBeforeRun, StringComparer.OrdinalIgnoreCase).Any();
+        if (!producedArtifacts)
+          diagnostics.Add($"{toolName} executed with exit code 0 but produced no SCAP artifacts.");
+      }
 
       return new VerificationToolRunResult
       {
@@ -167,6 +182,52 @@ public sealed class VerificationWorkflowService : IVerificationWorkflowService
         Error = ex.Message
       };
     }
+  }
+
+  private static HashSet<string> SnapshotScapArtifactPaths(string outputRoot)
+  {
+    var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+    if (string.IsNullOrWhiteSpace(outputRoot) || !Directory.Exists(outputRoot))
+      return paths;
+
+    try
+    {
+      foreach (var path in Directory.EnumerateFiles(outputRoot, "*", SearchOption.AllDirectories))
+      {
+        if (IsScapArtifactPath(path))
+          paths.Add(Path.GetFullPath(path));
+      }
+    }
+    catch (UnauthorizedAccessException)
+    {
+    }
+    catch (IOException)
+    {
+    }
+
+    return paths;
+  }
+
+  private static bool IsScapArtifactPath(string path)
+  {
+    var extension = Path.GetExtension(path);
+    if (string.IsNullOrWhiteSpace(extension))
+      return false;
+
+    if (string.Equals(extension, ".arf", StringComparison.OrdinalIgnoreCase)
+      || string.Equals(extension, ".html", StringComparison.OrdinalIgnoreCase)
+      || string.Equals(extension, ".xccdf", StringComparison.OrdinalIgnoreCase))
+      return true;
+
+    if (!string.Equals(extension, ".xml", StringComparison.OrdinalIgnoreCase))
+      return false;
+
+    var fileName = Path.GetFileName(path);
+    return fileName.Contains("xccdf", StringComparison.OrdinalIgnoreCase)
+      || fileName.Contains("scap", StringComparison.OrdinalIgnoreCase)
+      || fileName.Contains("arf", StringComparison.OrdinalIgnoreCase)
+      || fileName.Contains("results", StringComparison.OrdinalIgnoreCase);
   }
 
   private static VerificationToolRunResult BuildSkippedRun(string tool, DateTimeOffset at, string message)

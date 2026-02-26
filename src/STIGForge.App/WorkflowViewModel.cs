@@ -44,6 +44,7 @@ public enum WorkflowRootCauseCode
     ElevationRequired,
     EvaluatePathInvalid,
     NoCklOutput,
+    ScapNoOutput,
     ToolExitNonZero,
     OutputNotWritable,
     UnknownFailure
@@ -124,6 +125,14 @@ public partial class WorkflowViewModel : ObservableObject
         var diagnostics = result.Diagnostics ?? Array.Empty<string>();
         return diagnostics.Any(diagnostic =>
             diagnostic.Contains("No CKL results", StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool HasScapDidNothingDiagnostic(VerificationWorkflowResult result)
+    {
+        var diagnostics = result.Diagnostics ?? Array.Empty<string>();
+        return diagnostics.Any(diagnostic =>
+            diagnostic.Contains("SCAP arguments were empty", StringComparison.OrdinalIgnoreCase)
+            || diagnostic.Contains("produced no SCAP artifacts", StringComparison.OrdinalIgnoreCase));
     }
 
     private static bool IsZeroFindingsFailure(VerificationWorkflowResult result)
@@ -316,6 +325,18 @@ public partial class WorkflowViewModel : ObservableObject
             showOpenOutputFolderAction: true);
     }
 
+    private static WorkflowFailureCard CreateVerifyScapNoOutputCard()
+    {
+        return CreateFailureCard(
+            WorkflowRootCauseCode.ScapNoOutput,
+            "SCC produced no usable output",
+            "SCC was configured for Verify, but no SCAP artifacts were produced for result consolidation.",
+            "Open Settings and either clear SCC path for Evaluate-only verify or run SCC manually with explicit arguments/output, then rerun Verify.",
+            showOpenSettingsAction: true,
+            showRetryVerifyAction: true,
+            showOpenOutputFolderAction: true);
+    }
+
     private string BuildEvaluateStigArguments(string outputRoot)
     {
         var parts = new List<string>();
@@ -367,6 +388,12 @@ public partial class WorkflowViewModel : ObservableObject
     private string _evaluateAdditionalArgs = string.Empty;
 
     [ObservableProperty]
+    private string _sccArguments = string.Empty;
+
+    [ObservableProperty]
+    private string _sccWorkingDirectory = string.Empty;
+
+    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanGoNext))]
     private string _sccToolPath = string.Empty;
 
@@ -397,6 +424,9 @@ public partial class WorkflowViewModel : ObservableObject
 
     [ObservableProperty]
     private int _importedItemsCount;
+
+    [ObservableProperty]
+    private bool _isImportedLibraryExpanded;
 
     [ObservableProperty]
     private ObservableCollection<ImportedPackViewModel> _importedPacks = new();
@@ -827,7 +857,9 @@ public partial class WorkflowViewModel : ObservableObject
                 Scap = new ScapWorkflowOptions
                 {
                     Enabled = !string.IsNullOrWhiteSpace(resolvedSccCommandPath),
-                    CommandPath = resolvedSccCommandPath ?? string.Empty
+                    CommandPath = resolvedSccCommandPath ?? string.Empty,
+                    Arguments = SccArguments,
+                    WorkingDirectory = string.IsNullOrWhiteSpace(SccWorkingDirectory) ? null : SccWorkingDirectory
                 }
             };
 
@@ -838,6 +870,14 @@ public partial class WorkflowViewModel : ObservableObject
             VerifyFindingsCount = result.ConsolidatedResultCount;
             FixedCount = BaselineFindingsCount - VerifyFindingsCount;
             if (FixedCount < 0) FixedCount = 0;
+
+            if (HasScapDidNothingDiagnostic(result))
+            {
+                StatusText = "Verification did not complete: SCC ran without usable arguments/output.";
+                CurrentFailureCard = CreateVerifyScapNoOutputCard();
+                await WriteMissionJsonAsync(result, CancellationToken.None, CurrentFailureCard, "Verify");
+                return false;
+            }
 
             if (VerifyFindingsCount == 0)
             {
@@ -1086,6 +1126,8 @@ public partial class WorkflowViewModel : ObservableObject
         EvaluateSelectStig = settings.EvaluateSelectStig;
         EvaluateAdditionalArgs = settings.EvaluateAdditionalArgs;
         SccToolPath = settings.SccToolPath;
+        SccArguments = settings.SccArguments;
+        SccWorkingDirectory = settings.SccWorkingDirectory;
         OutputFolderPath = settings.OutputFolderPath;
         MachineTarget = settings.MachineTarget;
         RequireElevationForScan = settings.RequireElevationForScan;
@@ -1105,6 +1147,8 @@ public partial class WorkflowViewModel : ObservableObject
             EvaluateSelectStig = EvaluateSelectStig,
             EvaluateAdditionalArgs = EvaluateAdditionalArgs,
             SccToolPath = SccToolPath,
+            SccArguments = SccArguments,
+            SccWorkingDirectory = SccWorkingDirectory,
             OutputFolderPath = OutputFolderPath,
             MachineTarget = MachineTarget,
             RequireElevationForScan = RequireElevationForScan,
@@ -1469,6 +1513,7 @@ public partial class WorkflowViewModel : ObservableObject
         FixedCount = 0;
         AppliedFixesCount = 0;
         ImportedItemsCount = 0;
+        IsImportedLibraryExpanded = false;
         ImportedPacks = new ObservableCollection<ImportedPackViewModel>();
         ImportWarningCount = 0;
         ImportWarnings = new List<string>();

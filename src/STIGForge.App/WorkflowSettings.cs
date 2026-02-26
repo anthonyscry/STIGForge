@@ -12,6 +12,8 @@ public class WorkflowSettings
     public string EvaluateSelectStig { get; set; } = string.Empty;
     public string EvaluateAdditionalArgs { get; set; } = string.Empty;
     public string SccToolPath { get; set; } = string.Empty;
+    public string SccArguments { get; set; } = string.Empty;
+    public string SccWorkingDirectory { get; set; } = string.Empty;
     public string OutputFolderPath { get; set; } = string.Empty;
     public string MachineTarget { get; set; } = "localhost";
     public bool RequireElevationForScan { get; set; } = true;

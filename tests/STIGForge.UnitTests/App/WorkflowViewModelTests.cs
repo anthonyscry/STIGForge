@@ -28,6 +28,13 @@ public class WorkflowViewModelTests
     }
 
     [Fact]
+    public void ImportedLibrary_IsCollapsedByDefault()
+    {
+        var vm = new WorkflowViewModel();
+        Assert.False(vm.IsImportedLibraryExpanded);
+    }
+
+    [Fact]
     public void CanGoBack_IsFalse_OnSetupStep()
     {
         var vm = new WorkflowViewModel();
@@ -136,7 +143,9 @@ public class WorkflowViewModelTests
                     EvaluateAfPath = @"C:\test\evaluate\af",
                     EvaluateSelectStig = "U_MS_Windows_11_STIG",
                     EvaluateAdditionalArgs = "-ThrottleLimit 4 -SkipSignatureCheck",
-                    RequireElevationForScan = false
+                    RequireElevationForScan = false,
+                    SccArguments = "--benchmark sample.xml --results-dir out",
+                    SccWorkingDirectory = @"C:\test\scc"
                 };
 
                 vm.SaveSettingsCommand.Execute(null);
@@ -146,6 +155,8 @@ public class WorkflowViewModelTests
                 Assert.Equal(vm.EvaluateSelectStig, reloaded.EvaluateSelectStig);
                 Assert.Equal(vm.EvaluateAdditionalArgs, reloaded.EvaluateAdditionalArgs);
                 Assert.Equal(vm.RequireElevationForScan, reloaded.RequireElevationForScan);
+                Assert.Equal(vm.SccArguments, reloaded.SccArguments);
+                Assert.Equal(vm.SccWorkingDirectory, reloaded.SccWorkingDirectory);
             }
             finally
             {
@@ -535,6 +546,55 @@ public class WorkflowViewModelTests
         }
         finally
         {
+            Directory.Delete(evaluateTool, recursive: true);
+            Directory.Delete(outputRoot, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task RunVerifyStepCommand_WhenSccAdvancedOptionsConfigured_PropagatesScapArgumentsAndWorkingDirectory()
+    {
+        var outputRoot = Directory.CreateTempSubdirectory().FullName;
+        var outputFolder = Path.Combine(outputRoot, "verify output");
+        Directory.CreateDirectory(outputFolder);
+        var evaluateTool = Directory.CreateTempSubdirectory().FullName;
+        CreateEvaluateStigScript(evaluateTool);
+        var sccFolder = Directory.CreateTempSubdirectory().FullName;
+        var sccPath = Path.Combine(sccFolder, "cscc.exe");
+        File.WriteAllText(sccPath, "stub");
+        var sccWorkingDir = Directory.CreateTempSubdirectory().FullName;
+
+        var verifyService = new TrackingVerificationWorkflowService(new VerificationWorkflowResult
+        {
+            ConsolidatedResultCount = 1
+        });
+
+        try
+        {
+            var vm = new WorkflowViewModel(
+                importScanner: null,
+                verifyService: verifyService,
+                isElevatedResolver: () => true)
+            {
+                VerifyState = StepState.Ready,
+                OutputFolderPath = outputFolder,
+                EvaluateStigToolPath = evaluateTool,
+                SccToolPath = sccPath,
+                SccArguments = "--benchmark C:\\bench\\sample.xml --results-dir C:\\scan\\out",
+                SccWorkingDirectory = sccWorkingDir
+            };
+
+            await vm.RunVerifyStepCommand.ExecuteAsync(null);
+
+            Assert.True(verifyService.LastRequest!.Scap.Enabled);
+            Assert.Equal(sccPath, verifyService.LastRequest.Scap.CommandPath);
+            Assert.Equal(vm.SccArguments, verifyService.LastRequest.Scap.Arguments);
+            Assert.Equal(sccWorkingDir, verifyService.LastRequest.Scap.WorkingDirectory);
+        }
+        finally
+        {
+            Directory.Delete(sccWorkingDir, recursive: true);
+            Directory.Delete(sccFolder, recursive: true);
             Directory.Delete(evaluateTool, recursive: true);
             Directory.Delete(outputRoot, recursive: true);
         }
@@ -1444,6 +1504,68 @@ public class WorkflowViewModelTests
         {
             Directory.Delete(evaluateTool, recursive: true);
             Directory.Delete(outputFolder, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task RunVerifyStepCommand_WhenScapDidNothingDiagnosticPresent_SetsScapNoOutputFailureCard()
+    {
+        var outputFolder = Directory.CreateTempSubdirectory().FullName;
+        var evaluateTool = Directory.CreateTempSubdirectory().FullName;
+        CreateEvaluateStigScript(evaluateTool);
+        var sccFolder = Directory.CreateTempSubdirectory().FullName;
+        var sccCliPath = Path.Combine(sccFolder, "cscc.exe");
+        File.WriteAllText(sccCliPath, "stub");
+
+        var verifyService = new TrackingVerificationWorkflowService(new VerificationWorkflowResult
+        {
+            ConsolidatedResultCount = 12,
+            Diagnostics =
+            [
+                "SCC enabled but SCAP arguments were empty. Configure explicit SCC arguments (benchmark/input and output path)."
+            ],
+            ToolRuns =
+            [
+                new VerificationToolRunResult
+                {
+                    Tool = "SCC",
+                    Executed = false,
+                    ExitCode = 0
+                }
+            ]
+        });
+
+        try
+        {
+            var vm = new WorkflowViewModel(
+                importScanner: null,
+                verifyService: verifyService,
+                runApply: null,
+                autoScanRootResolver: null,
+                isElevatedResolver: () => true)
+            {
+                VerifyState = StepState.Ready,
+                OutputFolderPath = outputFolder,
+                EvaluateStigToolPath = evaluateTool,
+                SccToolPath = sccCliPath
+            };
+
+            await vm.RunVerifyStepCommand.ExecuteAsync(null);
+
+            Assert.Equal(StepState.Error, vm.VerifyState);
+            Assert.Contains("scc", vm.VerifyError, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("arguments", vm.VerifyError, StringComparison.OrdinalIgnoreCase);
+            Assert.NotNull(vm.CurrentFailureCard);
+            Assert.Equal(WorkflowRootCauseCode.ScapNoOutput, vm.CurrentFailureCard!.RootCauseCode);
+            Assert.True(vm.CurrentFailureCard.ShowOpenSettingsAction);
+            Assert.True(vm.CurrentFailureCard.ShowRetryVerifyAction);
+            Assert.True(vm.CurrentFailureCard.ShowOpenOutputFolderAction);
+        }
+        finally
+        {
+            Directory.Delete(evaluateTool, recursive: true);
+            Directory.Delete(outputFolder, recursive: true);
+            Directory.Delete(sccFolder, recursive: true);
         }
     }
 

@@ -105,6 +105,16 @@
           </StackPanel>
         </GroupBox>
 
+        <GroupBox Header="SCC Advanced" Margin="0,0,0,16" Padding="12">
+          <StackPanel>
+            <TextBlock Text="Arguments (cscc/cscc-remote)" FontWeight="SemiBold" Margin="0,0,0,4"/>
+            <TextBox Text="{Binding SccArguments, UpdateSourceTrigger=PropertyChanged}" Height="32" VerticalContentAlignment="Center" Margin="0,0,0,10"/>
+
+            <TextBlock Text="Working Directory (optional)" FontWeight="SemiBold" Margin="0,0,0,4"/>
+            <TextBox Text="{Binding SccWorkingDirectory, UpdateSourceTrigger=PropertyChanged}" Height="32" VerticalContentAlignment="Center"/>
+          </StackPanel>
+        </GroupBox>
+
         <GroupBox Header="Export Formats" Padding="12">
           <StackPanel>
             <CheckBox Content="CKL" IsChecked="{Binding ExportCkl}" Margin="0,0,0,8"/>

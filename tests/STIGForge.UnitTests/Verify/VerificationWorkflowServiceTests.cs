@@ -102,6 +102,32 @@ public sealed class VerificationWorkflowServiceTests : IDisposable
     result.Diagnostics.Should().Contain(d => d.Contains("SCAP enabled", StringComparison.Ordinal));
   }
 
+  [Fact]
+  public async Task RunAsync_WithScapEnabledAndEmptyArguments_AddsScapArgumentDiagnostic()
+  {
+    var outputRoot = Path.Combine(_tempDir, "scap-empty-args");
+    Directory.CreateDirectory(outputRoot);
+
+    var service = new VerificationWorkflowService(new EvaluateStigRunner(), new ScapRunner());
+    var request = new VerificationWorkflowRequest
+    {
+      OutputRoot = outputRoot,
+      Scap = new ScapWorkflowOptions
+      {
+        Enabled = true,
+        CommandPath = "cscc.exe",
+        Arguments = "   ",
+        ToolLabel = "SCC"
+      }
+    };
+
+    var result = await service.RunAsync(request, CancellationToken.None);
+
+    result.ToolRuns.Should().ContainSingle(r => string.Equals(r.Tool, "SCC", StringComparison.OrdinalIgnoreCase)
+      && !r.Executed);
+    result.Diagnostics.Should().Contain(d => d.Contains("arguments were empty", StringComparison.OrdinalIgnoreCase));
+  }
+
   private static void WriteCkl(string filePath)
   {
     File.WriteAllText(filePath, """

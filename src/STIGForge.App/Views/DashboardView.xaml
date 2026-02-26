@@ -63,30 +63,34 @@
                         </TextBlock.Style>
                     </TextBlock>
 
-                    <TreeView Margin="0,6,0,0"
-                              MinHeight="62"
-                              MaxHeight="200"
-                              ItemsSource="{Binding ImportedPacks}"
-                              ToolTip="Content packs detected during Import step">
-                        <TreeView.ItemTemplate>
-                            <HierarchicalDataTemplate ItemsSource="{Binding Files}">
-                                <StackPanel Orientation="Horizontal" Margin="0,4">
-                                    <TextBlock Text="&#x1F4E6; " Foreground="{DynamicResource AccentBrush}" Margin="0,0,4,0"/>
-                                    <TextBlock Text="{Binding PackName}" FontWeight="SemiBold" />
-                                    <TextBlock Text="{Binding Files.Count, StringFormat=' ({0} files)'}" Foreground="{DynamicResource TextMutedBrush}" />
-                                </StackPanel>
-                                <HierarchicalDataTemplate.ItemTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal" Margin="0,2">
-                                            <TextBlock Text="&#x1F4C4; " Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,4,0"/>
-                                            <TextBlock Text="{Binding}" Foreground="{DynamicResource TextMutedBrush}"/>
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </HierarchicalDataTemplate.ItemTemplate>
-                            </HierarchicalDataTemplate>
-                        </TreeView.ItemTemplate>
-                        <TreeView.Style>
-                            <Style TargetType="TreeView">
+                    <Expander Margin="0,6,0,0"
+                              Header="Imported files"
+                              IsExpanded="{Binding IsImportedLibraryExpanded, Mode=TwoWay}">
+                        <TreeView Margin="0,6,0,0"
+                                  MinHeight="62"
+                                  MaxHeight="200"
+                                  ItemsSource="{Binding ImportedPacks}"
+                                  ToolTip="Content packs detected during Import step">
+                            <TreeView.ItemTemplate>
+                                <HierarchicalDataTemplate ItemsSource="{Binding Files}">
+                                    <StackPanel Orientation="Horizontal" Margin="0,4">
+                                        <TextBlock Text="&#x1F4E6; " Foreground="{DynamicResource AccentBrush}" Margin="0,0,4,0"/>
+                                        <TextBlock Text="{Binding PackName}" FontWeight="SemiBold" />
+                                        <TextBlock Text="{Binding Files.Count, StringFormat=' ({0} files)'}" Foreground="{DynamicResource TextMutedBrush}" />
+                                    </StackPanel>
+                                    <HierarchicalDataTemplate.ItemTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" Margin="0,2">
+                                                <TextBlock Text="&#x1F4C4; " Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,4,0"/>
+                                                <TextBlock Text="{Binding}" Foreground="{DynamicResource TextMutedBrush}"/>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </HierarchicalDataTemplate.ItemTemplate>
+                                </HierarchicalDataTemplate>
+                            </TreeView.ItemTemplate>
+                        </TreeView>
+                        <Expander.Style>
+                            <Style TargetType="Expander" BasedOn="{StaticResource {x:Type Expander}}">
                                 <Setter Property="Visibility" Value="Visible" />
                                 <Style.Triggers>
                                     <DataTrigger Binding="{Binding ImportedItemsCount}" Value="0">
@@ -94,8 +98,8 @@
                                     </DataTrigger>
                                 </Style.Triggers>
                             </Style>
-                        </TreeView.Style>
-                    </TreeView>
+                        </Expander.Style>
+                    </Expander>
 
                     <TextBlock Margin="0,8,0,0"
                                Foreground="{DynamicResource WarningBrush}"
