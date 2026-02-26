@@ -1316,6 +1316,44 @@ public class WorkflowViewModelTests
     }
 
     [Fact]
+    public async Task RunVerifyStepCommand_WhenEvaluatePathInvalid_SetsVerifyPathFailureCard()
+    {
+        var outputFolder = Directory.CreateTempSubdirectory().FullName;
+
+        try
+        {
+            var vm = new WorkflowViewModel(
+                importScanner: null,
+                verifyService: new TrackingVerificationWorkflowService(new VerificationWorkflowResult
+                {
+                    ConsolidatedResultCount = 1
+                }),
+                runApply: null,
+                autoScanRootResolver: null,
+                isElevatedResolver: () => true)
+            {
+                ScanState = StepState.Complete,
+                HardenState = StepState.Complete,
+                VerifyState = StepState.Ready,
+                OutputFolderPath = outputFolder,
+                EvaluateStigToolPath = @"C:\missing\Evaluate-STIG"
+            };
+
+            await vm.RunVerifyStepCommand.ExecuteAsync(null);
+
+            Assert.NotNull(vm.CurrentFailureCard);
+            Assert.Equal(WorkflowRootCauseCode.EvaluatePathInvalid, vm.CurrentFailureCard!.RootCauseCode);
+            Assert.Contains("path", vm.CurrentFailureCard.NextStep, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("settings", vm.CurrentFailureCard.NextStep, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("verify", vm.CurrentFailureCard.NextStep, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            Directory.Delete(outputFolder, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task RunVerifyStepCommand_WhenZeroFindingsAndEvaluateExitCodeIsFive_ClassifiesAsAdminFailure()
     {
         var outputFolder = Directory.CreateTempSubdirectory().FullName;

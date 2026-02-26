@@ -244,6 +244,15 @@ public partial class WorkflowViewModel : ObservableObject
             "Open Settings, correct the Evaluate-STIG path, save, and rerun Scan.");
     }
 
+    private static WorkflowFailureCard CreateVerifyEvaluatePathInvalidCard()
+    {
+        return CreateFailureCard(
+            WorkflowRootCauseCode.EvaluatePathInvalid,
+            "Evaluate-STIG path is invalid",
+            "The configured Evaluate-STIG location does not contain a usable Evaluate-STIG.ps1 script.",
+            "Open Settings, correct the Evaluate-STIG path, save, and rerun Verify.");
+    }
+
     private static WorkflowFailureCard CreateElevationRequiredCard(string whatHappened)
     {
         return CreateFailureCard(
@@ -730,7 +739,7 @@ public partial class WorkflowViewModel : ObservableObject
         {
             StatusText = "Evaluate-STIG tool path is not configured or invalid";
             VerifyFindingsCount = 0;
-            CurrentFailureCard = CreateEvaluatePathInvalidCard();
+            CurrentFailureCard = CreateVerifyEvaluatePathInvalidCard();
             return false;
         }
 
