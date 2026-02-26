@@ -198,6 +198,43 @@ public partial class WorkflowViewModel : ObservableObject
             "Review diagnostics in mission output, adjust settings, and rerun Scan.");
     }
 
+    private static WorkflowFailureCard BuildVerifyFailureCard(VerificationWorkflowResult result)
+    {
+        var evaluateRun = FindEvaluateRun(result);
+        if (evaluateRun is { Executed: true, ExitCode: 5 })
+        {
+            return CreateFailureCard(
+                WorkflowRootCauseCode.ElevationRequired,
+                "Administrator privileges required",
+                "Evaluate-STIG exited with code 5 during verification scan.",
+                "Relaunch STIGForge as administrator and rerun Verify.");
+        }
+
+        if (HasNoCklDiagnostic(result))
+        {
+            return CreateFailureCard(
+                WorkflowRootCauseCode.NoCklOutput,
+                "No CKL output detected",
+                "Verification completed without producing CKL results in the output folder.",
+                "Verify CKL output path and STIG scope in Settings, then rerun Verify.");
+        }
+
+        if (evaluateRun is { Executed: true } && evaluateRun.ExitCode != 0)
+        {
+            return CreateFailureCard(
+                WorkflowRootCauseCode.ToolExitNonZero,
+                "Evaluate-STIG exited with an error",
+                $"Evaluate-STIG returned exit code {evaluateRun.ExitCode} during verification scan.",
+                "Review diagnostics in mission output and rerun Verify after correcting the issue.");
+        }
+
+        return CreateFailureCard(
+            WorkflowRootCauseCode.UnknownFailure,
+            "Verification could not be completed",
+            "Verification returned zero findings but did not provide a known failure signature.",
+            "Review diagnostics in mission output, adjust settings, and rerun Verify.");
+    }
+
     private static WorkflowFailureCard CreateEvaluatePathInvalidCard()
     {
         return CreateFailureCard(
@@ -214,6 +251,24 @@ public partial class WorkflowViewModel : ObservableObject
             "Administrator privileges required",
             whatHappened,
             "Relaunch STIGForge as administrator and rerun Scan.");
+    }
+
+    private static WorkflowFailureCard CreateVerifyElevationRequiredCard(string whatHappened)
+    {
+        return CreateFailureCard(
+            WorkflowRootCauseCode.ElevationRequired,
+            "Administrator privileges required",
+            whatHappened,
+            "Relaunch STIGForge as administrator and rerun Verify.");
+    }
+
+    private static WorkflowFailureCard CreateVerifyUnknownFailureCard(string whatHappened)
+    {
+        return CreateFailureCard(
+            WorkflowRootCauseCode.UnknownFailure,
+            "Verification could not be completed",
+            whatHappened,
+            "Review diagnostics in mission output and rerun Verify.");
     }
 
     private string BuildEvaluateStigArguments(string outputRoot)
@@ -653,6 +708,7 @@ public partial class WorkflowViewModel : ObservableObject
     private async Task<bool> RunVerifyAsync()
     {
         StatusText = "Running verification scan (Evaluate-STIG + SCC)...";
+        CurrentFailureCard = null;
 
         if (_verifyService == null)
         {
@@ -665,6 +721,7 @@ public partial class WorkflowViewModel : ObservableObject
         {
             StatusText = adminMessage;
             VerifyFindingsCount = 0;
+            CurrentFailureCard = CreateVerifyElevationRequiredCard("Verification preflight blocked because STIGForge is not running with administrator privileges.");
             return false;
         }
 
@@ -673,6 +730,7 @@ public partial class WorkflowViewModel : ObservableObject
         {
             StatusText = "Evaluate-STIG tool path is not configured or invalid";
             VerifyFindingsCount = 0;
+            CurrentFailureCard = CreateEvaluatePathInvalidCard();
             return false;
         }
 
@@ -736,16 +794,24 @@ public partial class WorkflowViewModel : ObservableObject
             if (VerifyFindingsCount == 0)
             {
                 StatusText = BuildZeroFindingsMessage("Verification scan", result);
-                return !IsZeroFindingsFailure(result);
+                var isFailure = IsZeroFindingsFailure(result);
+                if (isFailure)
+                    CurrentFailureCard = BuildVerifyFailureCard(result);
+                else
+                    CurrentFailureCard = null;
+
+                return !isFailure;
             }
 
             StatusText = $"Verification complete: {VerifyFindingsCount} remaining ({FixedCount} fixed)";
+            CurrentFailureCard = null;
             return true;
         }
         catch (Exception ex)
         {
             StatusText = $"Verification failed: {ex.Message}";
             VerifyFindingsCount = 0;
+            CurrentFailureCard = CreateVerifyUnknownFailureCard($"Verification failed unexpectedly: {ex.Message}");
             return false;
         }
     }

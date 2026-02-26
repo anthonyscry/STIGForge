@@ -1402,6 +1402,87 @@ public class WorkflowViewModelTests
     }
 
     [Fact]
+    public async Task RunVerifyStepCommand_WhenEvaluateExitCodeFive_SetsElevationFailureCard()
+    {
+        var outputFolder = Directory.CreateTempSubdirectory().FullName;
+        var evaluateTool = Directory.CreateTempSubdirectory().FullName;
+        CreateEvaluateStigScript(evaluateTool);
+        var verifyService = new TrackingVerificationWorkflowService(new VerificationWorkflowResult
+        {
+            ConsolidatedResultCount = 0,
+            ToolRuns =
+            [
+                new VerificationToolRunResult
+                {
+                    Tool = "Evaluate-STIG",
+                    Executed = true,
+                    ExitCode = 5,
+                    Error = "You must run this from an elevated PowerShell session"
+                }
+            ]
+        });
+
+        try
+        {
+            var vm = new WorkflowViewModel(
+                importScanner: null,
+                verifyService: verifyService,
+                runApply: null,
+                autoScanRootResolver: null,
+                isElevatedResolver: () => true)
+            {
+                VerifyState = StepState.Ready,
+                OutputFolderPath = outputFolder,
+                EvaluateStigToolPath = evaluateTool
+            };
+
+            await vm.RunVerifyStepCommand.ExecuteAsync(null);
+
+            Assert.NotNull(vm.CurrentFailureCard);
+            Assert.Equal(WorkflowRootCauseCode.ElevationRequired, vm.CurrentFailureCard!.RootCauseCode);
+            Assert.Contains("administrator", vm.CurrentFailureCard.NextStep, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("rerun", vm.CurrentFailureCard.NextStep, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            Directory.Delete(evaluateTool, recursive: true);
+            Directory.Delete(outputFolder, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task RunVerifyStepCommand_WhenUnknownError_SetsUnknownFailureCard()
+    {
+        var outputFolder = Directory.CreateTempSubdirectory().FullName;
+        var evaluateTool = Directory.CreateTempSubdirectory().FullName;
+        CreateEvaluateStigScript(evaluateTool);
+
+        try
+        {
+            var vm = new WorkflowViewModel(
+                importScanner: null,
+                verifyService: new ThrowingVerificationWorkflowService("verify exploded"),
+                isElevatedResolver: () => true)
+            {
+                VerifyState = StepState.Ready,
+                OutputFolderPath = outputFolder,
+                EvaluateStigToolPath = evaluateTool
+            };
+
+            await vm.RunVerifyStepCommand.ExecuteAsync(null);
+
+            Assert.NotNull(vm.CurrentFailureCard);
+            Assert.Equal(WorkflowRootCauseCode.UnknownFailure, vm.CurrentFailureCard!.RootCauseCode);
+            Assert.Contains("diagnostics", vm.CurrentFailureCard.NextStep, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            Directory.Delete(evaluateTool, recursive: true);
+            Directory.Delete(outputFolder, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task RunVerifyStepCommand_WhenSuccessful_WritesMissionJson()
     {
         var outputFolder = Directory.CreateTempSubdirectory().FullName;
