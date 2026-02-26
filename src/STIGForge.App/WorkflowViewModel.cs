@@ -74,6 +74,12 @@ public partial class WorkflowViewModel : ObservableObject
 
     private bool EnsureAdminPreflight(out string message)
     {
+        if (!RequireElevationForScan)
+        {
+            message = string.Empty;
+            return true;
+        }
+
         if (_isElevatedResolver())
         {
             message = string.Empty;

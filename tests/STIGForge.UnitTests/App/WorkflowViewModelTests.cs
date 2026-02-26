@@ -856,6 +856,46 @@ public class WorkflowViewModelTests
     }
 
     [Fact]
+    public async Task RunScanStepCommand_WhenElevationNotRequired_AllowsNonElevatedProcess()
+    {
+        var outputFolder = Directory.CreateTempSubdirectory().FullName;
+        var evaluateTool = Directory.CreateTempSubdirectory().FullName;
+        CreateEvaluateStigScript(evaluateTool);
+        var verifyService = new TrackingVerificationWorkflowService(new VerificationWorkflowResult
+        {
+            ConsolidatedResultCount = 3
+        });
+
+        try
+        {
+            var vm = new WorkflowViewModel(
+                importScanner: null,
+                verifyService: verifyService,
+                runApply: null,
+                autoScanRootResolver: null,
+                isElevatedResolver: () => false)
+            {
+                ScanState = StepState.Ready,
+                ImportedItemsCount = 1,
+                OutputFolderPath = outputFolder,
+                EvaluateStigToolPath = evaluateTool,
+                RequireElevationForScan = false
+            };
+
+            await vm.RunScanStepCommand.ExecuteAsync(null);
+
+            Assert.Equal(StepState.Complete, vm.ScanState);
+            Assert.Equal(1, verifyService.CallCount);
+            Assert.DoesNotContain("administrator", vm.StatusText, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            Directory.Delete(evaluateTool, recursive: true);
+            Directory.Delete(outputFolder, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task RunScanStepCommand_WhenEvaluateExitCodeIsFive_ShowsElevationSpecificGuidance()
     {
         var evaluateTool = Directory.CreateTempSubdirectory().FullName;
@@ -977,6 +1017,47 @@ public class WorkflowViewModelTests
             Assert.Equal(StepState.Error, vm.VerifyState);
             Assert.Contains("administrator", vm.VerifyError, StringComparison.OrdinalIgnoreCase);
             Assert.Equal(0, verifyService.CallCount);
+        }
+        finally
+        {
+            Directory.Delete(evaluateTool, recursive: true);
+            Directory.Delete(outputFolder, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task RunVerifyStepCommand_WhenElevationNotRequired_AllowsNonElevatedProcess()
+    {
+        var outputFolder = Directory.CreateTempSubdirectory().FullName;
+        var evaluateTool = Directory.CreateTempSubdirectory().FullName;
+        CreateEvaluateStigScript(evaluateTool);
+        var verifyService = new TrackingVerificationWorkflowService(new VerificationWorkflowResult
+        {
+            ConsolidatedResultCount = 1
+        });
+
+        try
+        {
+            var vm = new WorkflowViewModel(
+                importScanner: null,
+                verifyService: verifyService,
+                runApply: null,
+                autoScanRootResolver: null,
+                isElevatedResolver: () => false)
+            {
+                ScanState = StepState.Complete,
+                HardenState = StepState.Complete,
+                VerifyState = StepState.Ready,
+                OutputFolderPath = outputFolder,
+                EvaluateStigToolPath = evaluateTool,
+                RequireElevationForScan = false
+            };
+
+            await vm.RunVerifyStepCommand.ExecuteAsync(null);
+
+            Assert.Equal(StepState.Complete, vm.VerifyState);
+            Assert.Equal(1, verifyService.CallCount);
+            Assert.DoesNotContain("administrator", vm.StatusText, StringComparison.OrdinalIgnoreCase);
         }
         finally
         {
