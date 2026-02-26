@@ -1646,6 +1646,48 @@ public class WorkflowViewModelTests
         }
     }
 
+    [Fact]
+    public async Task RunVerifyStepCommand_WhenZeroFindingsFailure_WritesMissionWithRootCauseDiagnostic()
+    {
+        var outputFolder = Directory.CreateTempSubdirectory().FullName;
+        var evaluateTool = Directory.CreateTempSubdirectory().FullName;
+        CreateEvaluateStigScript(evaluateTool);
+
+        var verifyService = new TrackingVerificationWorkflowService(new VerificationWorkflowResult
+        {
+            ConsolidatedResultCount = 0,
+            Diagnostics = ["No CKL results were found under output root."]
+        });
+
+        var vm = new WorkflowViewModel(
+            importScanner: null,
+            verifyService: verifyService,
+            isElevatedResolver: () => true)
+        {
+            VerifyState = StepState.Ready,
+            OutputFolderPath = outputFolder,
+            EvaluateStigToolPath = evaluateTool
+        };
+
+        try
+        {
+            await vm.RunVerifyStepCommand.ExecuteAsync(null);
+
+            var missionPath = Path.Combine(outputFolder, "mission.json");
+            var missionJson = await File.ReadAllTextAsync(missionPath);
+            var mission = JsonSerializer.Deserialize<LocalWorkflowMission>(missionJson);
+
+            Assert.NotNull(mission);
+            Assert.Contains(mission!.Diagnostics, d => d.Contains("RootCause=NoCklOutput", StringComparison.OrdinalIgnoreCase));
+            Assert.Contains(mission.Diagnostics, d => d.Contains("Stage=Verify", StringComparison.OrdinalIgnoreCase));
+        }
+        finally
+        {
+            Directory.Delete(evaluateTool, recursive: true);
+            Directory.Delete(outputFolder, recursive: true);
+        }
+    }
+
     private static void CreateMinimalStigZip(string folder, string fileName)
     {
         var zipPath = Path.Combine(folder, fileName);

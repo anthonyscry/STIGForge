@@ -839,22 +839,29 @@ public partial class WorkflowViewModel : ObservableObject
             FixedCount = BaselineFindingsCount - VerifyFindingsCount;
             if (FixedCount < 0) FixedCount = 0;
 
-            await WriteMissionJsonAsync(result, CancellationToken.None);
-
             if (VerifyFindingsCount == 0)
             {
                 StatusText = BuildZeroFindingsMessage("Verification scan", result);
                 var isFailure = IsZeroFindingsFailure(result);
+                WorkflowFailureCard? missionFailureCard = null;
                 if (isFailure)
-                    CurrentFailureCard = BuildVerifyFailureCard(result);
+                {
+                    missionFailureCard = BuildVerifyFailureCard(result);
+                    CurrentFailureCard = missionFailureCard;
+                }
                 else
+                {
                     CurrentFailureCard = null;
+                }
+
+                await WriteMissionJsonAsync(result, CancellationToken.None, missionFailureCard, "Verify");
 
                 return !isFailure;
             }
 
             StatusText = $"Verification complete: {VerifyFindingsCount} remaining ({FixedCount} fixed)";
             CurrentFailureCard = null;
+            await WriteMissionJsonAsync(result, CancellationToken.None, null, "Verify");
             return true;
         }
         catch (Exception ex)
@@ -866,7 +873,11 @@ public partial class WorkflowViewModel : ObservableObject
         }
     }
 
-    private async Task WriteMissionJsonAsync(VerificationWorkflowResult result, CancellationToken ct)
+    private async Task WriteMissionJsonAsync(
+        VerificationWorkflowResult result,
+        CancellationToken ct,
+        WorkflowFailureCard? failureCard = null,
+        string stage = "Verify")
     {
         if (string.IsNullOrWhiteSpace(OutputFolderPath))
             throw new InvalidOperationException("Output folder is required to write mission.json");
@@ -876,7 +887,7 @@ public partial class WorkflowViewModel : ObservableObject
         var missionPath = Path.Combine(OutputFolderPath, "mission.json");
         var mission = new LocalWorkflowMission
         {
-            Diagnostics = BuildMissionDiagnostics(result),
+            Diagnostics = BuildMissionDiagnostics(result, failureCard, stage),
             StageMetadata = new LocalWorkflowStageMetadata
             {
                 MissionJsonPath = missionPath,
@@ -898,11 +909,19 @@ public partial class WorkflowViewModel : ObservableObject
         MissionJsonPath = missionPath;
     }
 
-    private static IReadOnlyList<string> BuildMissionDiagnostics(VerificationWorkflowResult result)
+    private static IReadOnlyList<string> BuildMissionDiagnostics(
+        VerificationWorkflowResult result,
+        WorkflowFailureCard? failureCard,
+        string stage)
     {
         var diagnostics = (result.Diagnostics ?? Array.Empty<string>())
             .Where(d => !string.IsNullOrWhiteSpace(d))
             .ToList();
+
+        if (failureCard is not null)
+        {
+            diagnostics.Add($"RootCause={failureCard.RootCauseCode}; Stage={stage}");
+        }
 
         var toolRuns = result.ToolRuns ?? Array.Empty<VerificationToolRunResult>();
         foreach (var run in toolRuns)
