@@ -125,6 +125,9 @@ For Dashboard **Scan** and **Verify** workflow runs:
 - Confirm the Evaluate-STIG path resolves to `Evaluate-STIG.ps1`.
 - Configure advanced settings in **Settings -> Evaluate-STIG Advanced** when the default command needs customization.
 - Minimal example: set `AFPath` to `C:\Evaluate-STIG\AnswerFile.xml` and `SelectSTIG` to `U_MS_Windows_11_V1R4_STIG`, then run **Verify**.
+- If Scan/Verify fails, use the dashboard failure card to see **What happened** and the exact **Next step**.
+- Use failure-card actions (`Open Settings`, `Open Output Folder`, `Rerun Scan`, `Rerun Verify`) for one-click recovery.
+- Detailed diagnostics remain in `mission.json` under the configured output folder.
 
 ### 6. Handle Manual Controls
 
