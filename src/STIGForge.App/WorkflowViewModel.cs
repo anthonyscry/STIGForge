@@ -146,6 +146,67 @@ public partial class WorkflowViewModel : ObservableObject
         return $"{operationName} complete: 0 findings";
     }
 
+    private static WorkflowFailureCard CreateFailureCard(
+        WorkflowRootCauseCode rootCauseCode,
+        string title,
+        string whatHappened,
+        string nextStep)
+    {
+        return new WorkflowFailureCard
+        {
+            RootCauseCode = rootCauseCode,
+            Title = title,
+            WhatHappened = whatHappened,
+            NextStep = nextStep
+        };
+    }
+
+    private static WorkflowFailureCard BuildScanFailureCard(VerificationWorkflowResult result)
+    {
+        var evaluateRun = FindEvaluateRun(result);
+        if (evaluateRun is { Executed: true, ExitCode: 5 })
+        {
+            return CreateFailureCard(
+                WorkflowRootCauseCode.ElevationRequired,
+                "Administrator privileges required",
+                "Evaluate-STIG exited with code 5 during baseline scan.",
+                "Relaunch STIGForge as administrator and rerun Scan.");
+        }
+
+        if (HasNoCklDiagnostic(result))
+        {
+            return CreateFailureCard(
+                WorkflowRootCauseCode.NoCklOutput,
+                "No CKL output detected",
+                "Scan completed without producing CKL results in the output folder.",
+                "Verify CKL output path and STIG scope in Settings, then rerun Scan.");
+        }
+
+        if (evaluateRun is { Executed: true } && evaluateRun.ExitCode != 0)
+        {
+            return CreateFailureCard(
+                WorkflowRootCauseCode.ToolExitNonZero,
+                "Evaluate-STIG exited with an error",
+                $"Evaluate-STIG returned exit code {evaluateRun.ExitCode} during baseline scan.",
+                "Review diagnostics in mission output and rerun Scan after correcting the issue.");
+        }
+
+        return CreateFailureCard(
+            WorkflowRootCauseCode.UnknownFailure,
+            "Scan could not be completed",
+            "Baseline scan returned zero findings but did not provide a known failure signature.",
+            "Review diagnostics in mission output, adjust settings, and rerun Scan.");
+    }
+
+    private static WorkflowFailureCard CreateEvaluatePathInvalidCard()
+    {
+        return CreateFailureCard(
+            WorkflowRootCauseCode.EvaluatePathInvalid,
+            "Evaluate-STIG path is invalid",
+            "The configured Evaluate-STIG location does not contain a usable Evaluate-STIG.ps1 script.",
+            "Open Settings, correct the Evaluate-STIG path, save, and rerun Scan.");
+    }
+
     private string BuildEvaluateStigArguments(string outputRoot)
     {
         var parts = new List<string>();
@@ -462,6 +523,7 @@ public partial class WorkflowViewModel : ObservableObject
         {
             StatusText = "Evaluate-STIG tool path is not configured or invalid";
             BaselineFindingsCount = 0;
+            CurrentFailureCard = CreateEvaluatePathInvalidCard();
             return false;
         }
 
@@ -502,7 +564,11 @@ public partial class WorkflowViewModel : ObservableObject
             if (BaselineFindingsCount == 0)
             {
                 StatusText = BuildZeroFindingsMessage("Baseline scan", result);
-                return !IsZeroFindingsFailure(result);
+                var isFailure = IsZeroFindingsFailure(result);
+                if (isFailure)
+                    CurrentFailureCard = BuildScanFailureCard(result);
+
+                return !isFailure;
             }
 
             StatusText = $"Baseline scan complete: {BaselineFindingsCount} findings";

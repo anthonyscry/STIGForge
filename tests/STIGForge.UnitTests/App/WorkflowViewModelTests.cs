@@ -316,6 +316,135 @@ public class WorkflowViewModelTests
     }
 
     [Fact]
+    public async Task RunScanStepCommand_WhenEvaluateExitCodeFive_SetsElevationFailureCard()
+    {
+        var evaluateTool = Directory.CreateTempSubdirectory().FullName;
+        var outputFolder = Directory.CreateTempSubdirectory().FullName;
+        CreateEvaluateStigScript(evaluateTool);
+
+        var verifyService = new TrackingVerificationWorkflowService(new VerificationWorkflowResult
+        {
+            ConsolidatedResultCount = 0,
+            ToolRuns =
+            [
+                new VerificationToolRunResult
+                {
+                    Tool = "Evaluate-STIG",
+                    Executed = true,
+                    ExitCode = 5,
+                    Error = "You must run this from an elevated PowerShell session"
+                }
+            ]
+        });
+
+        try
+        {
+            var vm = new WorkflowViewModel(
+                importScanner: null,
+                verifyService: verifyService,
+                runApply: null,
+                autoScanRootResolver: null,
+                isElevatedResolver: () => true)
+            {
+                ScanState = StepState.Ready,
+                ImportedItemsCount = 1,
+                OutputFolderPath = outputFolder,
+                EvaluateStigToolPath = evaluateTool
+            };
+
+            await vm.RunScanStepCommand.ExecuteAsync(null);
+
+            Assert.NotNull(vm.CurrentFailureCard);
+            Assert.Equal(WorkflowRootCauseCode.ElevationRequired, vm.CurrentFailureCard!.RootCauseCode);
+            Assert.Contains("administrator", vm.CurrentFailureCard.NextStep, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("rerun", vm.CurrentFailureCard.NextStep, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            Directory.Delete(evaluateTool, recursive: true);
+            Directory.Delete(outputFolder, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task RunScanStepCommand_WhenNoCklDiagnostic_SetsNoCklFailureCard()
+    {
+        var evaluateTool = Directory.CreateTempSubdirectory().FullName;
+        var outputFolder = Directory.CreateTempSubdirectory().FullName;
+        CreateEvaluateStigScript(evaluateTool);
+
+        var verifyService = new TrackingVerificationWorkflowService(new VerificationWorkflowResult
+        {
+            ConsolidatedResultCount = 0,
+            Diagnostics = ["No CKL results were found under output root."]
+        });
+
+        try
+        {
+            var vm = new WorkflowViewModel(
+                importScanner: null,
+                verifyService: verifyService,
+                runApply: null,
+                autoScanRootResolver: null,
+                isElevatedResolver: () => true)
+            {
+                ScanState = StepState.Ready,
+                ImportedItemsCount = 1,
+                OutputFolderPath = outputFolder,
+                EvaluateStigToolPath = evaluateTool
+            };
+
+            await vm.RunScanStepCommand.ExecuteAsync(null);
+
+            Assert.NotNull(vm.CurrentFailureCard);
+            Assert.Equal(WorkflowRootCauseCode.NoCklOutput, vm.CurrentFailureCard!.RootCauseCode);
+            Assert.Contains("output", vm.CurrentFailureCard.NextStep, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("ckl", vm.CurrentFailureCard.NextStep, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            Directory.Delete(evaluateTool, recursive: true);
+            Directory.Delete(outputFolder, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task RunScanStepCommand_WhenEvaluatePathInvalid_SetsPathFailureCard()
+    {
+        var outputFolder = Directory.CreateTempSubdirectory().FullName;
+
+        try
+        {
+            var vm = new WorkflowViewModel(
+                importScanner: null,
+                verifyService: new TrackingVerificationWorkflowService(new VerificationWorkflowResult
+                {
+                    ConsolidatedResultCount = 3
+                }),
+                runApply: null,
+                autoScanRootResolver: null,
+                isElevatedResolver: () => true)
+            {
+                ScanState = StepState.Ready,
+                ImportedItemsCount = 1,
+                OutputFolderPath = outputFolder,
+                EvaluateStigToolPath = @"C:\missing\Evaluate-STIG"
+            };
+
+            await vm.RunScanStepCommand.ExecuteAsync(null);
+
+            Assert.NotNull(vm.CurrentFailureCard);
+            Assert.Equal(WorkflowRootCauseCode.EvaluatePathInvalid, vm.CurrentFailureCard!.RootCauseCode);
+            Assert.Contains("path", vm.CurrentFailureCard.NextStep, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("settings", vm.CurrentFailureCard.NextStep, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            Directory.Delete(outputFolder, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task RunScanStepCommand_WhenAdvancedEvaluateOptionsConfigured_PreservesQuotedValuesAndCoreArgs()
     {
         var evaluateTool = Directory.CreateTempSubdirectory().FullName;
