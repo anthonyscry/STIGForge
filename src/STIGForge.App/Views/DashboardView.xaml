@@ -187,6 +187,82 @@
                                           RecoveryButtonToolTip="Retry Verify step (Alt+V)" />
             </UniformGrid>
 
+            <Border Margin="0,0,0,14"
+                    Padding="12"
+                    Background="{DynamicResource SurfaceMutedBrush}"
+                    BorderBrush="{DynamicResource WarningBrush}"
+                    BorderThickness="1">
+                <Border.Style>
+                    <Style TargetType="Border">
+                        <Setter Property="Visibility" Value="Visible" />
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding CurrentFailureCard}" Value="{x:Null}">
+                                <Setter Property="Visibility" Value="Collapsed" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </Border.Style>
+
+                <StackPanel>
+                    <DockPanel Margin="0,0,0,10" LastChildFill="False">
+                        <TextBlock Text="{Binding CurrentFailureCard.Title}"
+                                   FontSize="16"
+                                   FontWeight="SemiBold"
+                                   VerticalAlignment="Center" />
+                        <Border DockPanel.Dock="Right"
+                                Padding="8,2"
+                                Background="{DynamicResource AccentSoftBrush}">
+                            <TextBlock Text="{Binding CurrentFailureCard.Confidence, StringFormat=Confidence: {0}}"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource AccentBrush}" />
+                        </Border>
+                    </DockPanel>
+
+                    <TextBlock Text="What happened"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextMutedBrush}" />
+                    <TextBlock Margin="0,2,0,8"
+                               Text="{Binding CurrentFailureCard.WhatHappened}"
+                               TextWrapping="Wrap" />
+
+                    <TextBlock Text="Next step"
+                               FontWeight="SemiBold"
+                               Foreground="{DynamicResource TextMutedBrush}" />
+                    <TextBlock Margin="0,2,0,10"
+                               Text="{Binding CurrentFailureCard.NextStep}"
+                               TextWrapping="Wrap" />
+
+                    <WrapPanel>
+                        <Button Content="Open Settings"
+                                Width="132"
+                                Height="32"
+                                TabIndex="70"
+                                Margin="0,0,8,0"
+                                Style="{DynamicResource WorkflowDashboardButtonStyle}"
+                                Command="{Binding ShowSettingsCommand}"
+                                AutomationProperties.Name="Open settings for failure recovery"
+                                ToolTip="Open settings to correct workflow paths" />
+                        <Button Content="Rerun Scan"
+                                Width="132"
+                                Height="32"
+                                TabIndex="71"
+                                Margin="0,0,8,0"
+                                Style="{DynamicResource WorkflowDashboardButtonStyle}"
+                                Command="{Binding RunScanStepCommand}"
+                                AutomationProperties.Name="Rerun scan from failure card"
+                                ToolTip="Retry the Scan step" />
+                        <Button Content="Rerun Verify"
+                                Width="132"
+                                Height="32"
+                                TabIndex="72"
+                                Style="{DynamicResource WorkflowDashboardButtonStyle}"
+                                Command="{Binding RunVerifyStepCommand}"
+                                AutomationProperties.Name="Rerun verify from failure card"
+                                ToolTip="Retry the Verify step" />
+                    </WrapPanel>
+                </StackPanel>
+            </Border>
+
             <TextBlock Margin="0,0,0,14"
                        Foreground="{DynamicResource TextMutedBrush}"
                        Text="Scan and Verify require Administrator mode." />
