@@ -20,6 +20,13 @@ public class WorkflowViewModelTests
     }
 
     [Fact]
+    public void FailureCardState_DefaultsToNull()
+    {
+        var vm = new WorkflowViewModel();
+        Assert.Null(vm.CurrentFailureCard);
+    }
+
+    [Fact]
     public void CanGoBack_IsFalse_OnSetupStep()
     {
         var vm = new WorkflowViewModel();

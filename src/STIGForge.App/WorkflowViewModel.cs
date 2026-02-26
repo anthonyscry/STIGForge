@@ -39,6 +39,25 @@ public enum StepState
     Error
 }
 
+public enum WorkflowRootCauseCode
+{
+    ElevationRequired,
+    EvaluatePathInvalid,
+    NoCklOutput,
+    ToolExitNonZero,
+    OutputNotWritable,
+    UnknownFailure
+}
+
+public sealed class WorkflowFailureCard
+{
+    public WorkflowRootCauseCode RootCauseCode { get; init; }
+    public string Title { get; init; } = string.Empty;
+    public string WhatHappened { get; init; } = string.Empty;
+    public string NextStep { get; init; } = string.Empty;
+    public string Confidence { get; init; } = "Medium";
+}
+
 public partial class WorkflowViewModel : ObservableObject
 {
     private readonly ImportInboxScanner? _importScanner;
@@ -271,6 +290,9 @@ public partial class WorkflowViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _exportXccdf;
+
+    [ObservableProperty]
+    private WorkflowFailureCard? _currentFailureCard;
 
     public bool CanGoBack => CurrentStep > WorkflowStep.Setup && CurrentStep < WorkflowStep.Done;
 
