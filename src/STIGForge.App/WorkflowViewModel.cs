@@ -207,6 +207,15 @@ public partial class WorkflowViewModel : ObservableObject
             "Open Settings, correct the Evaluate-STIG path, save, and rerun Scan.");
     }
 
+    private static WorkflowFailureCard CreateElevationRequiredCard(string whatHappened)
+    {
+        return CreateFailureCard(
+            WorkflowRootCauseCode.ElevationRequired,
+            "Administrator privileges required",
+            whatHappened,
+            "Relaunch STIGForge as administrator and rerun Scan.");
+    }
+
     private string BuildEvaluateStigArguments(string outputRoot)
     {
         var parts = new List<string>();
@@ -496,6 +505,7 @@ public partial class WorkflowViewModel : ObservableObject
     private async Task<bool> RunScanAsync()
     {
         StatusText = "Running Evaluate-STIG baseline scan...";
+        CurrentFailureCard = null;
 
         if (_verifyService == null)
         {
@@ -515,6 +525,7 @@ public partial class WorkflowViewModel : ObservableObject
         {
             StatusText = adminMessage;
             BaselineFindingsCount = 0;
+            CurrentFailureCard = CreateElevationRequiredCard("Baseline scan preflight blocked because STIGForge is not running with administrator privileges.");
             return false;
         }
 
@@ -572,6 +583,7 @@ public partial class WorkflowViewModel : ObservableObject
             }
 
             StatusText = $"Baseline scan complete: {BaselineFindingsCount} findings";
+            CurrentFailureCard = null;
             return true;
         }
         catch (Exception ex)

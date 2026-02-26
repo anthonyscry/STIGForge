@@ -982,6 +982,8 @@ public class WorkflowViewModelTests
 
             Assert.Equal(StepState.Error, vm.ScanState);
             Assert.Contains("administrator", vm.ScanError, StringComparison.OrdinalIgnoreCase);
+            Assert.NotNull(vm.CurrentFailureCard);
+            Assert.Equal(WorkflowRootCauseCode.ElevationRequired, vm.CurrentFailureCard!.RootCauseCode);
             Assert.Equal(0, verifyService.CallCount);
         }
         finally
@@ -1073,6 +1075,117 @@ public class WorkflowViewModelTests
             Assert.Equal(StepState.Error, vm.ScanState);
             Assert.Contains("administrator", vm.ScanError, StringComparison.OrdinalIgnoreCase);
             Assert.Contains("exit code 5", vm.ScanError, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            Directory.Delete(evaluateTool, recursive: true);
+            Directory.Delete(outputFolder, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task RunScanStepCommand_WhenFailureThenSuccess_ClearsFailureCard()
+    {
+        var evaluateTool = Directory.CreateTempSubdirectory().FullName;
+        var outputFolder = Directory.CreateTempSubdirectory().FullName;
+        CreateEvaluateStigScript(evaluateTool);
+
+        var verifyService = new SequenceVerificationWorkflowService(
+            new VerificationWorkflowResult
+            {
+                ConsolidatedResultCount = 0,
+                Diagnostics = ["No CKL results were found under output root."]
+            },
+            new VerificationWorkflowResult
+            {
+                ConsolidatedResultCount = 2
+            });
+
+        try
+        {
+            var vm = new WorkflowViewModel(
+                importScanner: null,
+                verifyService: verifyService,
+                runApply: null,
+                autoScanRootResolver: null,
+                isElevatedResolver: () => true)
+            {
+                ScanState = StepState.Ready,
+                ImportedItemsCount = 1,
+                OutputFolderPath = outputFolder,
+                EvaluateStigToolPath = evaluateTool
+            };
+
+            await vm.RunScanStepCommand.ExecuteAsync(null);
+
+            Assert.NotNull(vm.CurrentFailureCard);
+            Assert.Equal(WorkflowRootCauseCode.NoCklOutput, vm.CurrentFailureCard!.RootCauseCode);
+
+            await vm.RunScanStepCommand.ExecuteAsync(null);
+
+            Assert.Equal(StepState.Complete, vm.ScanState);
+            Assert.Null(vm.CurrentFailureCard);
+        }
+        finally
+        {
+            Directory.Delete(evaluateTool, recursive: true);
+            Directory.Delete(outputFolder, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task RunScanStepCommand_WhenFailureThenDifferentFailure_ReplacesFailureCard()
+    {
+        var evaluateTool = Directory.CreateTempSubdirectory().FullName;
+        var outputFolder = Directory.CreateTempSubdirectory().FullName;
+        CreateEvaluateStigScript(evaluateTool);
+
+        var verifyService = new SequenceVerificationWorkflowService(
+            new VerificationWorkflowResult
+            {
+                ConsolidatedResultCount = 0,
+                Diagnostics = ["No CKL results were found under output root."]
+            },
+            new VerificationWorkflowResult
+            {
+                ConsolidatedResultCount = 0,
+                ToolRuns =
+                [
+                    new VerificationToolRunResult
+                    {
+                        Tool = "Evaluate-STIG",
+                        Executed = true,
+                        ExitCode = 23,
+                        Error = "Generic failure"
+                    }
+                ]
+            });
+
+        try
+        {
+            var vm = new WorkflowViewModel(
+                importScanner: null,
+                verifyService: verifyService,
+                runApply: null,
+                autoScanRootResolver: null,
+                isElevatedResolver: () => true)
+            {
+                ScanState = StepState.Ready,
+                ImportedItemsCount = 1,
+                OutputFolderPath = outputFolder,
+                EvaluateStigToolPath = evaluateTool
+            };
+
+            await vm.RunScanStepCommand.ExecuteAsync(null);
+            var firstCard = vm.CurrentFailureCard;
+            Assert.NotNull(firstCard);
+            Assert.Equal(WorkflowRootCauseCode.NoCklOutput, firstCard!.RootCauseCode);
+
+            await vm.RunScanStepCommand.ExecuteAsync(null);
+
+            Assert.NotNull(vm.CurrentFailureCard);
+            Assert.NotSame(firstCard, vm.CurrentFailureCard);
+            Assert.Equal(WorkflowRootCauseCode.ToolExitNonZero, vm.CurrentFailureCard!.RootCauseCode);
         }
         finally
         {
@@ -1452,6 +1565,24 @@ public class WorkflowViewModelTests
             CallCount++;
             LastRequest = request;
             return Task.FromResult(_result);
+        }
+    }
+
+    private sealed class SequenceVerificationWorkflowService : IVerificationWorkflowService
+    {
+        private readonly Queue<VerificationWorkflowResult> _results;
+
+        public SequenceVerificationWorkflowService(params VerificationWorkflowResult[] results)
+        {
+            _results = new Queue<VerificationWorkflowResult>(results);
+        }
+
+        public Task<VerificationWorkflowResult> RunAsync(VerificationWorkflowRequest request, CancellationToken ct)
+        {
+            if (_results.Count == 0)
+                throw new InvalidOperationException("No queued verification result available.");
+
+            return Task.FromResult(_results.Dequeue());
         }
     }
 
