@@ -4,12 +4,17 @@ namespace STIGForge.Verify;
 
 public sealed class ScapRunner
 {
-  public VerifyRunResult Run(string commandPath, string arguments, string? workingDirectory)
+  private const int DefaultTimeoutSeconds = 300;
+
+  public VerifyRunResult Run(string commandPath, string arguments, string? workingDirectory, int timeoutSeconds = DefaultTimeoutSeconds)
   {
     var resolvedCommandPath = ResolveCommandPath(commandPath);
     var resolvedWorkingDirectory = string.IsNullOrWhiteSpace(workingDirectory)
       ? Path.GetDirectoryName(resolvedCommandPath) ?? Environment.CurrentDirectory
       : workingDirectory;
+
+    var effectiveTimeoutSeconds = timeoutSeconds <= 0 ? DefaultTimeoutSeconds : timeoutSeconds;
+    var timeoutMilliseconds = checked(effectiveTimeoutSeconds * 1000);
 
     var psi = new ProcessStartInfo
     {
@@ -29,10 +34,10 @@ public sealed class ScapRunner
 
     var output = process.StandardOutput.ReadToEnd();
     var error = process.StandardError.ReadToEnd();
-    if (!process.WaitForExit(30000))
+    if (!process.WaitForExit(timeoutMilliseconds))
     {
       process.Kill();
-      throw new TimeoutException("Process did not exit within 30 seconds.");
+      throw new TimeoutException($"Process did not exit within {effectiveTimeoutSeconds} seconds.");
     }
 
     return new VerifyRunResult

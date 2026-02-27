@@ -70,6 +70,9 @@ public sealed class VerificationWorkflowService : IVerificationWorkflowService
       NotApplicableCount = resultSummary.NotApplicableCount,
       NotReviewedCount = resultSummary.NotReviewedCount,
       ErrorCount = resultSummary.ErrorCount,
+      CatICount = resultSummary.CatICount,
+      CatIICount = resultSummary.CatIICount,
+      CatIIICount = resultSummary.CatIIICount,
       ToolRuns = toolRuns,
       Diagnostics = diagnostics
     });
@@ -156,7 +159,8 @@ public sealed class VerificationWorkflowService : IVerificationWorkflowService
       var runResult = _scapRunner.Run(
         request.Scap.CommandPath,
         request.Scap.Arguments,
-        string.IsNullOrWhiteSpace(request.Scap.WorkingDirectory) ? null : request.Scap.WorkingDirectory);
+        string.IsNullOrWhiteSpace(request.Scap.WorkingDirectory) ? null : request.Scap.WorkingDirectory,
+        request.Scap.TimeoutSeconds);
 
       if (runResult.ExitCode != 0)
         diagnostics.Add($"{toolName} exited with code {runResult.ExitCode}.");
@@ -317,6 +321,18 @@ public sealed class VerificationWorkflowService : IVerificationWorkflowService
           break;
         case StatusCategory.Fail:
           summary.FailCount++;
+          switch (ClassifySeverity(result.Severity))
+          {
+            case SeverityCategory.CatI:
+              summary.CatICount++;
+              break;
+            case SeverityCategory.CatII:
+              summary.CatIICount++;
+              break;
+            case SeverityCategory.CatIII:
+              summary.CatIIICount++;
+              break;
+          }
           break;
         case StatusCategory.NotApplicable:
           summary.NotApplicableCount++;
@@ -331,6 +347,23 @@ public sealed class VerificationWorkflowService : IVerificationWorkflowService
     }
 
     return summary;
+  }
+
+  private static SeverityCategory ClassifySeverity(string? severity)
+  {
+    if (string.IsNullOrWhiteSpace(severity))
+      return SeverityCategory.Unknown;
+
+    var normalized = severity.Trim().ToLowerInvariant();
+
+    return normalized switch
+    {
+      "critical" => SeverityCategory.CatI,
+      "high" => SeverityCategory.CatI,
+      "medium" => SeverityCategory.CatII,
+      "low" => SeverityCategory.CatIII,
+      _ => SeverityCategory.Unknown
+    };
   }
 
   private static StatusCategory ClassifyStatus(string? status)
@@ -371,6 +404,9 @@ public sealed class VerificationWorkflowService : IVerificationWorkflowService
     public int NotApplicableCount { get; set; }
     public int NotReviewedCount { get; set; }
     public int ErrorCount { get; set; }
+    public int CatICount { get; set; }
+    public int CatIICount { get; set; }
+    public int CatIIICount { get; set; }
   }
 
   private enum StatusCategory
@@ -380,5 +416,13 @@ public sealed class VerificationWorkflowService : IVerificationWorkflowService
     NotApplicable,
     NotReviewed,
     Error
+  }
+
+  private enum SeverityCategory
+  {
+    Unknown,
+    CatI,
+    CatII,
+    CatIII
   }
 }

@@ -187,9 +187,40 @@ public sealed class VerificationWorkflowServiceTests : IDisposable
     result.NotApplicableCount.Should().Be(1);
     result.NotReviewedCount.Should().Be(1);
     result.ErrorCount.Should().Be(1);
+    result.CatICount.Should().Be(0);
+    result.CatIICount.Should().Be(1);
+    result.CatIIICount.Should().Be(0);
   }
 
-  private static void WriteCkl(string filePath, string status = "NotAFinding", string? vulnId = "V-9000", string? ruleId = "SV-9000")
+  [Fact]
+  public async Task RunAsync_WithMixedFailSeverities_ComputesCatCounts()
+  {
+    var outputRoot = Path.Combine(_tempDir, "cat-severity-summary");
+    Directory.CreateDirectory(outputRoot);
+
+    WriteCkl(Path.Combine(outputRoot, "cat1.ckl"), status: "Open", severity: "high", vulnId: "V-3001", ruleId: "SV-3001");
+    WriteCkl(Path.Combine(outputRoot, "cat2.ckl"), status: "Open", severity: "medium", vulnId: "V-3002", ruleId: "SV-3002");
+    WriteCkl(Path.Combine(outputRoot, "cat3.ckl"), status: "Open", severity: "low", vulnId: "V-3003", ruleId: "SV-3003");
+    WriteCkl(Path.Combine(outputRoot, "pass.ckl"), status: "NotAFinding", severity: "high", vulnId: "V-3004", ruleId: "SV-3004");
+
+    var service = new VerificationWorkflowService(new EvaluateStigRunner(), new ScapRunner());
+    var result = await service.RunAsync(new VerificationWorkflowRequest
+    {
+      OutputRoot = outputRoot
+    }, CancellationToken.None);
+
+    result.FailCount.Should().Be(3);
+    result.CatICount.Should().Be(1);
+    result.CatIICount.Should().Be(1);
+    result.CatIIICount.Should().Be(1);
+  }
+
+  private static void WriteCkl(
+    string filePath,
+    string status = "NotAFinding",
+    string severity = "medium",
+    string? vulnId = "V-9000",
+    string? ruleId = "SV-9000")
   {
     File.WriteAllText(filePath, $"""
 <CHECKLIST>
@@ -197,7 +228,7 @@ public sealed class VerificationWorkflowServiceTests : IDisposable
     <STIG_DATA><VULN_ATTRIBUTE>Vuln_Num</VULN_ATTRIBUTE><ATTRIBUTE_DATA>{vulnId}</ATTRIBUTE_DATA></STIG_DATA>
     <STIG_DATA><VULN_ATTRIBUTE>Rule_ID</VULN_ATTRIBUTE><ATTRIBUTE_DATA>{ruleId}</ATTRIBUTE_DATA></STIG_DATA>
     <STIG_DATA><VULN_ATTRIBUTE>Rule_Title</VULN_ATTRIBUTE><ATTRIBUTE_DATA>Sample Control</ATTRIBUTE_DATA></STIG_DATA>
-    <STIG_DATA><VULN_ATTRIBUTE>Severity</VULN_ATTRIBUTE><ATTRIBUTE_DATA>medium</ATTRIBUTE_DATA></STIG_DATA>
+    <STIG_DATA><VULN_ATTRIBUTE>Severity</VULN_ATTRIBUTE><ATTRIBUTE_DATA>{severity}</ATTRIBUTE_DATA></STIG_DATA>
     <STATUS>{status}</STATUS>
     <FINDING_DETAILS>none</FINDING_DETAILS>
     <COMMENTS>ok</COMMENTS>

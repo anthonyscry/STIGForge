@@ -111,7 +111,27 @@
             <TextBox Text="{Binding SccArguments, UpdateSourceTrigger=PropertyChanged}" Height="32" VerticalContentAlignment="Center" Margin="0,0,0,10"/>
 
             <TextBlock Text="Working Directory (optional)" FontWeight="SemiBold" Margin="0,0,0,4"/>
-            <TextBox Text="{Binding SccWorkingDirectory, UpdateSourceTrigger=PropertyChanged}" Height="32" VerticalContentAlignment="Center"/>
+            <TextBox Text="{Binding SccWorkingDirectory, UpdateSourceTrigger=PropertyChanged}" Height="32" VerticalContentAlignment="Center" Margin="0,0,0,10"/>
+
+            <TextBlock Text="Timeout Seconds (30-3600)" FontWeight="SemiBold" Margin="0,0,0,4"/>
+            <TextBox Text="{Binding SccTimeoutSeconds, UpdateSourceTrigger=PropertyChanged}" Height="32" VerticalContentAlignment="Center" Margin="0,0,0,10"/>
+
+            <TextBlock Text="Tip: provide valid cscc scan switches. STIGForge auto-adds -u &lt;output-folder&gt; when missing."
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource TextMutedBrush}"
+                       Margin="0,0,0,10"/>
+
+            <Button Content="Test SCC Headless"
+                    Width="170"
+                    Height="32"
+                    HorizontalAlignment="Left"
+                    Command="{Binding TestSccHeadlessCommand}"/>
+
+            <TextBlock Margin="0,8,0,0"
+                       TextWrapping="Wrap"
+                       Foreground="{DynamicResource TextMutedBrush}"
+                       Text="{Binding StatusText}"
+                       Visibility="{Binding StatusText, Converter={StaticResource NullOrEmptyToCollapsed}}"/>
           </StackPanel>
         </GroupBox>
 

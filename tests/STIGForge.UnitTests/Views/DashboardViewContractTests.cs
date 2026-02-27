@@ -9,6 +9,24 @@ namespace STIGForge.UnitTests.Views;
 public sealed class DashboardViewContractTests
 {
     [Fact]
+    public void DashboardView_DefinesTopTabs()
+    {
+        var document = LoadDashboardViewDocument();
+        XNamespace presentation = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+
+        var tabHeaders = document
+            .Descendants(presentation + "TabItem")
+            .Select(node => (string?)node.Attribute("Header"))
+            .Where(header => !string.IsNullOrWhiteSpace(header))
+            .ToArray();
+
+        Assert.Contains("Import Library", tabHeaders);
+        Assert.Contains("Workflow", tabHeaders);
+        Assert.Contains("Results", tabHeaders);
+        Assert.Contains("Compliance Summary", tabHeaders);
+    }
+
+    [Fact]
     public void DashboardView_DefinesComplianceSummaryCard()
     {
         var document = LoadDashboardViewDocument();
@@ -26,6 +44,34 @@ public sealed class DashboardViewContractTests
 
         Assert.NotNull(donut);
         Assert.Contains("TotalRuleCount", document.ToString(), StringComparison.Ordinal);
+        Assert.Contains("CatIVulnerabilityCount", document.ToString(), StringComparison.Ordinal);
+        Assert.Contains("CatIIVulnerabilityCount", document.ToString(), StringComparison.Ordinal);
+        Assert.Contains("CatIIIVulnerabilityCount", document.ToString(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void DashboardView_WorkflowTab_UsesScanHardenVerifyCards()
+    {
+        var document = LoadDashboardViewDocument();
+        XNamespace presentation = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+
+        var workflowTab = document
+            .Descendants(presentation + "TabItem")
+            .FirstOrDefault(node => string.Equals((string?)node.Attribute("Header"), "Workflow", StringComparison.Ordinal));
+
+        Assert.NotNull(workflowTab);
+
+        var stepNames = workflowTab!
+            .Descendants()
+            .Where(node => string.Equals(node.Name.LocalName, "WorkflowStepCard", StringComparison.Ordinal))
+            .Select(node => (string?)node.Attribute("StepName"))
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .ToArray();
+
+        Assert.Contains("Scan", stepNames);
+        Assert.Contains("Harden", stepNames);
+        Assert.Contains("Verify", stepNames);
+        Assert.DoesNotContain("Import", stepNames);
     }
 
     private static XDocument LoadDashboardViewDocument()

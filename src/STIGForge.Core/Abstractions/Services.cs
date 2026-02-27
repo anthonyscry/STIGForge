@@ -212,6 +212,8 @@ public sealed class ScapWorkflowOptions
 
   public string? WorkingDirectory { get; set; }
 
+  public int TimeoutSeconds { get; set; } = 300;
+
   public string ToolLabel { get; set; } = "SCAP";
 }
 
@@ -242,6 +244,12 @@ public sealed class VerificationWorkflowResult
   public int NotReviewedCount { get; set; }
 
   public int ErrorCount { get; set; }
+
+  public int CatICount { get; set; }
+
+  public int CatIICount { get; set; }
+
+  public int CatIIICount { get; set; }
 
   public IReadOnlyList<VerificationToolRunResult> ToolRuns { get; set; } = Array.Empty<VerificationToolRunResult>();
 

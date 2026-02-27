@@ -3,411 +3,481 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="clr-namespace:STIGForge.App.Views"
              xmlns:chartControls="clr-namespace:STIGForge.App.Views.Controls">
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Margin="0,0,0,8">
-            <DockPanel Margin="0,0,0,16">
-                <TextBlock Text="Workflow Dashboard" FontSize="22" FontWeight="SemiBold" VerticalAlignment="Center" />
-                <Button Content="Run Auto (Ctrl+R)"
-                         DockPanel.Dock="Right"
-                         Width="170"
-                         Height="34"
-                         Padding="14,4"
-                         TabIndex="0"
-                         Style="{DynamicResource WorkflowDashboardButtonStyle}"
-                        Command="{Binding RunAutoWorkflowCommand}"
-                        AutomationProperties.Name="Run auto workflow"
-                        ToolTip="Run all workflow steps in order (Ctrl+R)" />
-            </DockPanel>
-
-            <TextBlock Text="Shortcuts: Ctrl+R run all, Alt+I/S/H/V run steps, Alt+K skip harden, Ctrl+O open output, Ctrl+N restart"
-                       Margin="0,0,0,12"
-                       FontSize="11"
-                       Foreground="{DynamicResource TextMutedBrush}" />
-
-            <Border Margin="0,0,0,12"
-                    Padding="10"
-                    MinHeight="40"
-                    Background="{DynamicResource SurfaceMutedBrush}"
-                    Visibility="{Binding StatusText, Converter={StaticResource NullOrEmptyToCollapsed}}">
-                <StackPanel>
-                    <TextBlock Text="{Binding StatusText}" TextWrapping="Wrap" />
-                    <ProgressBar Height="8"
-                                 Margin="0,8,0,0"
-                                 IsIndeterminate="True"
-                                 Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}" />
-                </StackPanel>
-            </Border>
-
-            <Border Margin="0,0,0,12"
-                    Padding="10"
-                    Background="{DynamicResource SurfaceMutedBrush}">
-                <StackPanel>
-                    <DockPanel LastChildFill="False">
-                        <TextBlock Text="Imported Library" FontWeight="SemiBold" VerticalAlignment="Center" />
-                        <TextBlock DockPanel.Dock="Right"
-                                   Foreground="{DynamicResource TextMutedBrush}"
-                                   Text="{Binding ImportedItemsCount, StringFormat=Items: {0}}" />
+    <TabControl Margin="0,0,0,8">
+        <TabItem Header="Import Library">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="0,0,0,8">
+                    <DockPanel Margin="0,0,0,16">
+                        <TextBlock Text="Import Library" FontSize="22" FontWeight="SemiBold" VerticalAlignment="Center" />
                     </DockPanel>
 
-                    <TextBlock Margin="0,6,0,0"
-                               Foreground="{DynamicResource TextMutedBrush}"
-                               Text="No content packs loaded yet. Run Import to scan your library.">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="Visibility" Value="Collapsed" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding ImportedItemsCount}" Value="0">
-                                        <Setter Property="Visibility" Value="Visible" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
+                    <TextBlock Text="Use Import to load STIG, SCAP, and ADMX library content before scanning."
+                               Margin="0,0,0,12"
+                               FontSize="11"
+                               Foreground="{DynamicResource TextMutedBrush}" />
 
-                    <Expander Margin="0,6,0,0"
-                              Header="Imported files"
-                              IsExpanded="{Binding IsImportedLibraryExpanded, Mode=TwoWay}">
-                        <TreeView Margin="0,6,0,0"
-                                  MinHeight="62"
-                                  MaxHeight="200"
-                                  ItemsSource="{Binding ImportedPacks}"
-                                  ToolTip="Content packs detected during Import step">
-                            <TreeView.ItemTemplate>
-                                <HierarchicalDataTemplate ItemsSource="{Binding Files}">
-                                    <StackPanel Orientation="Horizontal" Margin="0,4">
-                                        <TextBlock Text="&#x1F4E6; " Foreground="{DynamicResource AccentBrush}" Margin="0,0,4,0"/>
-                                        <TextBlock Text="{Binding PackName}" FontWeight="SemiBold" />
-                                        <TextBlock Text="{Binding Files.Count, StringFormat=' ({0} files)'}" Foreground="{DynamicResource TextMutedBrush}" />
-                                    </StackPanel>
-                                    <HierarchicalDataTemplate.ItemTemplate>
-                                        <DataTemplate>
-                                            <StackPanel Orientation="Horizontal" Margin="0,2">
-                                                <TextBlock Text="&#x1F4C4; " Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,4,0"/>
-                                                <TextBlock Text="{Binding}" Foreground="{DynamicResource TextMutedBrush}"/>
-                                            </StackPanel>
-                                        </DataTemplate>
-                                    </HierarchicalDataTemplate.ItemTemplate>
-                                </HierarchicalDataTemplate>
-                            </TreeView.ItemTemplate>
-                        </TreeView>
-                        <Expander.Style>
-                            <Style TargetType="Expander" BasedOn="{StaticResource {x:Type Expander}}">
-                                <Setter Property="Visibility" Value="Visible" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding ImportedItemsCount}" Value="0">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </Expander.Style>
-                    </Expander>
+                    <Border Margin="0,0,0,12"
+                            Padding="10"
+                            MinHeight="40"
+                            Background="{DynamicResource SurfaceMutedBrush}"
+                            Visibility="{Binding StatusText, Converter={StaticResource NullOrEmptyToCollapsed}}">
+                        <StackPanel>
+                            <TextBlock Text="{Binding StatusText}" TextWrapping="Wrap" />
+                            <ProgressBar Height="8"
+                                         Margin="0,8,0,0"
+                                         IsIndeterminate="True"
+                                         Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}" />
+                        </StackPanel>
+                    </Border>
 
-                    <TextBlock Margin="0,8,0,0"
-                               Foreground="{DynamicResource WarningBrush}"
-                               Text="{Binding ImportWarningCount, StringFormat=Import Warnings: {0}}">
-                        <TextBlock.Style>
-                            <Style TargetType="TextBlock">
-                                <Setter Property="Visibility" Value="Visible" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding ImportWarningCount}" Value="0">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </TextBlock.Style>
-                    </TextBlock>
+                    <controls:WorkflowStepCard StepName="Import"
+                                               StepState="{Binding ImportState}"
+                                               ErrorMessage="{Binding ImportError}"
+                                               RunCommand="{Binding RunImportStepCommand}"
+                                               RunButtonLabel="Run Import"
+                                               RunButtonTabIndex="0"
+                                               RunButtonAutomationName="Run Import step"
+                                               RunButtonToolTip="Run Import step (Alt+I)"
+                                               RecoveryButtonTabIndex="1"
+                                               RecoveryButtonAutomationName="Retry Import step"
+                                               RecoveryButtonToolTip="Retry Import step (Alt+I)"
+                                               Margin="0,0,0,12" />
 
-                    <ListBox Margin="0,6,0,0"
-                             MinHeight="34"
-                             MaxHeight="84"
-                             Foreground="{DynamicResource WarningBrush}"
-                             ItemsSource="{Binding ImportWarnings}"
-                             ToolTip="Import warnings from scanned files and folders">
-                        <ListBox.Style>
-                            <Style TargetType="ListBox">
-                                <Setter Property="Visibility" Value="Visible" />
-                                <Style.Triggers>
-                                    <DataTrigger Binding="{Binding ImportWarningCount}" Value="0">
-                                        <Setter Property="Visibility" Value="Collapsed" />
-                                    </DataTrigger>
-                                </Style.Triggers>
-                            </Style>
-                        </ListBox.Style>
-                    </ListBox>
-                </StackPanel>
-            </Border>
+                    <Border Margin="0,0,0,12"
+                            Padding="10"
+                            Background="{DynamicResource SurfaceMutedBrush}">
+                        <StackPanel>
+                            <DockPanel LastChildFill="False">
+                                <TextBlock Text="Imported Library" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                <TextBlock DockPanel.Dock="Right"
+                                           Foreground="{DynamicResource TextMutedBrush}"
+                                           Text="{Binding ImportedItemsCount, StringFormat=Items: {0}}" />
+                            </DockPanel>
 
-            <UniformGrid Rows="2" Columns="2" Margin="0,0,0,14" VerticalAlignment="Top">
-                <controls:WorkflowStepCard StepName="Import"
-                                          StepState="{Binding ImportState}"
-                                          ErrorMessage="{Binding ImportError}"
-                                          RunCommand="{Binding RunImportStepCommand}"
-                                          RunButtonLabel="1  Import"
-                                          RunButtonTabIndex="10"
-                                          RunButtonAutomationName="Run Import step"
-                                          RunButtonToolTip="Run Import step (Alt+I)"
-                                          RecoveryButtonTabIndex="11"
-                                          RecoveryButtonAutomationName="Retry Import step"
-                                          RecoveryButtonToolTip="Retry Import step (Alt+I)" />
-
-                <controls:WorkflowStepCard StepName="Scan"
-                                          StepState="{Binding ScanState}"
-                                          ErrorMessage="{Binding ScanError}"
-                                          RunCommand="{Binding RunScanStepCommand}"
-                                          RunButtonLabel="2  Scan"
-                                          RunButtonTabIndex="20"
-                                          RunButtonAutomationName="Run Scan step"
-                                          RunButtonToolTip="Run Scan step (Alt+S)"
-                                          RecoveryButtonTabIndex="21"
-                                          RecoveryButtonAutomationName="Retry Scan step"
-                                          RecoveryButtonToolTip="Retry Scan step (Alt+S)" />
-
-                <controls:WorkflowStepCard StepName="Harden"
-                                          StepState="{Binding HardenState}"
-                                          ErrorMessage="{Binding HardenError}"
-                                          RunCommand="{Binding RunHardenStepCommand}"
-                                          RunButtonLabel="3  Harden"
-                                          RunButtonTabIndex="30"
-                                          RunButtonAutomationName="Run Harden step"
-                                          RunButtonToolTip="Run Harden step (Alt+H)"
-                                          SecondaryCommand="{Binding SkipHardenStepCommand}"
-                                          SecondaryButtonLabel="Skip Harden"
-                                          SecondaryButtonTabIndex="32"
-                                          SecondaryButtonAutomationName="Skip Harden step"
-                                          SecondaryButtonToolTip="Skip harden and continue to verify (Alt+K)"
-                                          RecoveryButtonTabIndex="31"
-                                          RecoveryButtonAutomationName="Retry Harden step"
-                                          RecoveryButtonToolTip="Retry Harden step (Alt+H)" />
-
-             <controls:WorkflowStepCard StepName="Verify"
-                                           StepState="{Binding VerifyState}"
-                                           ErrorMessage="{Binding VerifyError}"
-                                           RunCommand="{Binding RunVerifyStepCommand}"
-                                           RunButtonLabel="4  Verify"
-                                           RunButtonTabIndex="40"
-                                           RunButtonAutomationName="Run Verify step"
-                                           RunButtonToolTip="Run Verify step (Alt+V)"
-                                           RecoveryButtonTabIndex="41"
-                                           RecoveryButtonAutomationName="Retry Verify step"
-                                           RecoveryButtonToolTip="Retry Verify step (Alt+V)" />
-            </UniformGrid>
-
-            <Border Margin="0,0,0,14"
-                    Padding="12"
-                    Background="{DynamicResource SurfaceBrush}"
-                    BorderBrush="{DynamicResource SurfaceBrush}"
-                    BorderThickness="1">
-                <StackPanel>
-                    <DockPanel LastChildFill="False">
-                        <TextBlock Text="Compliance Summary"
-                                   FontSize="16"
-                                   FontWeight="SemiBold"
-                                   VerticalAlignment="Center" />
-                        <Border DockPanel.Dock="Right"
-                                Padding="6,2"
-                                CornerRadius="6"
-                                Background="{DynamicResource SurfaceMutedBrush}">
-                            <TextBlock Text="{Binding CompliancePercent, StringFormat={}{0:0}%}"
-                                       FontWeight="SemiBold"
-                                       Foreground="{DynamicResource AccentBrush}"
-                                       FontSize="16"
-                                       VerticalAlignment="Center" />
-                        </Border>
-                    </DockPanel>
-                    <Grid Margin="0,10,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="180" />
-                            <ColumnDefinition Width="*" />
-                        </Grid.ColumnDefinitions>
-                        <chartControls:ComplianceDonutChart Grid.Column="0"
-                                                            Width="180"
-                                                            Height="180"
-                                                            PassValue="{Binding CompliancePassCount}"
-                                                            FailValue="{Binding ComplianceFailCount}"
-                                                            OtherValue="{Binding ComplianceOtherCount}"
-                                                            CenterText="{Binding CompliancePercent, StringFormat={}{0:0}%}"
-                                                            HorizontalAlignment="Center"
-                                                            VerticalAlignment="Center" />
-                        <StackPanel Grid.Column="1"
-                                    Margin="16,0,0,0"
-                                    VerticalAlignment="Top">
-                            <StackPanel x:Name="ComplianceStatsPanel">
-                                <StackPanel.Style>
-                                    <Style TargetType="StackPanel">
-                                        <Setter Property="Visibility" Value="Visible" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding TotalRuleCount}" Value="0">
-                                                <Setter Property="Visibility" Value="Collapsed" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </StackPanel.Style>
-                                <TextBlock Text="Total rules"
-                                           FontWeight="SemiBold"
-                                           Foreground="{DynamicResource TextMutedBrush}" />
-                                <TextBlock Text="{Binding TotalRuleCount, StringFormat=Total rules: {0}}"
-                                           FontSize="15"
-                                           FontWeight="Bold" />
-                                <TextBlock Text="{Binding CompliancePassCount, StringFormat=Pass: {0}}"
-                                           Foreground="{DynamicResource SuccessBrush}"
-                                           Margin="0,6,0,0" />
-                                <TextBlock Text="{Binding ComplianceFailCount, StringFormat=Fail: {0}}"
-                                           Foreground="{DynamicResource DangerBrush}" />
-                                <TextBlock Text="{Binding ComplianceOtherCount, StringFormat=Other: {0}}"
-                                           Foreground="{DynamicResource WarningBrush}" />
-                            </StackPanel>
-                            <TextBlock Text="No compliance data collected yet."
-                                       Margin="0,12,0,0"
-                                       Foreground="{DynamicResource TextMutedBrush}">
+                            <TextBlock Margin="0,6,0,0"
+                                       Foreground="{DynamicResource TextMutedBrush}"
+                                       Text="No content packs loaded yet. Run Import to scan your library.">
                                 <TextBlock.Style>
                                     <Style TargetType="TextBlock">
                                         <Setter Property="Visibility" Value="Collapsed" />
                                         <Style.Triggers>
-                                            <DataTrigger Binding="{Binding TotalRuleCount}" Value="0">
+                                            <DataTrigger Binding="{Binding ImportedItemsCount}" Value="0">
                                                 <Setter Property="Visibility" Value="Visible" />
                                             </DataTrigger>
                                         </Style.Triggers>
                                     </Style>
                                 </TextBlock.Style>
                             </TextBlock>
+
+                            <Expander Margin="0,6,0,0"
+                                      Header="Imported files"
+                                      IsExpanded="{Binding IsImportedLibraryExpanded, Mode=TwoWay}">
+                                <TreeView Margin="0,6,0,0"
+                                          MinHeight="62"
+                                          MaxHeight="280"
+                                          ItemsSource="{Binding ImportedPacks}"
+                                          ToolTip="Content packs detected during Import step">
+                                    <TreeView.ItemTemplate>
+                                        <HierarchicalDataTemplate ItemsSource="{Binding Files}">
+                                            <StackPanel Orientation="Horizontal" Margin="0,4">
+                                                <TextBlock Text="&#x1F4E6; " Foreground="{DynamicResource AccentBrush}" Margin="0,0,4,0" />
+                                                <TextBlock Text="{Binding PackName}" FontWeight="SemiBold" />
+                                                <TextBlock Text="{Binding Files.Count, StringFormat=' ({0} files)'}" Foreground="{DynamicResource TextMutedBrush}" />
+                                            </StackPanel>
+                                            <HierarchicalDataTemplate.ItemTemplate>
+                                                <DataTemplate>
+                                                    <StackPanel Orientation="Horizontal" Margin="0,2">
+                                                        <TextBlock Text="&#x1F4C4; " Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,4,0" />
+                                                        <TextBlock Text="{Binding}" Foreground="{DynamicResource TextMutedBrush}" />
+                                                    </StackPanel>
+                                                </DataTemplate>
+                                            </HierarchicalDataTemplate.ItemTemplate>
+                                        </HierarchicalDataTemplate>
+                                    </TreeView.ItemTemplate>
+                                </TreeView>
+                                <Expander.Style>
+                                    <Style TargetType="Expander" BasedOn="{StaticResource {x:Type Expander}}">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ImportedItemsCount}" Value="0">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Expander.Style>
+                            </Expander>
+
+                            <TextBlock Margin="0,8,0,0"
+                                       Foreground="{DynamicResource WarningBrush}"
+                                       Text="{Binding ImportWarningCount, StringFormat=Import Warnings: {0}}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ImportWarningCount}" Value="0">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+
+                            <ListBox Margin="0,6,0,0"
+                                     MinHeight="34"
+                                     MaxHeight="120"
+                                     Foreground="{DynamicResource WarningBrush}"
+                                     ItemsSource="{Binding ImportWarnings}"
+                                     ToolTip="Import warnings from scanned files and folders"
+                                     AutomationProperties.Name="Import warnings list">
+                                <ListBox.Style>
+                                    <Style TargetType="ListBox">
+                                        <Setter Property="Visibility" Value="Visible" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding ImportWarningCount}" Value="0">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </ListBox.Style>
+                            </ListBox>
                         </StackPanel>
-                    </Grid>
+                    </Border>
                 </StackPanel>
-            </Border>
+            </ScrollViewer>
+        </TabItem>
 
-            <Border Margin="0,0,0,14"
-                    Padding="12"
-                    Background="{DynamicResource SurfaceMutedBrush}"
-                    BorderBrush="{DynamicResource WarningBrush}"
-                    BorderThickness="1"
-                    AutomationProperties.LiveSetting="Assertive"
-                    AutomationProperties.Name="{Binding FailureCardLiveRegionHint}">
-                <Border.Style>
-                    <Style TargetType="Border">
-                        <Setter Property="Visibility" Value="Visible" />
-                        <Style.Triggers>
-                            <DataTrigger Binding="{Binding CurrentFailureCard}" Value="{x:Null}">
-                                <Setter Property="Visibility" Value="Collapsed" />
-                            </DataTrigger>
-                        </Style.Triggers>
-                    </Style>
-                </Border.Style>
-
-                <StackPanel>
-                    <TextBlock Text="{Binding FailureCardLiveRegionHint}"
-                               Opacity="0"
-                               Height="1"
-                               AutomationProperties.LiveSetting="Assertive" />
-                    <DockPanel Margin="0,0,0,10" LastChildFill="False">
-                        <TextBlock Text="{Binding CurrentFailureCard.Title}"
-                                   FontSize="16"
-                                   FontWeight="SemiBold"
-                                   VerticalAlignment="Center" />
-                        <Border DockPanel.Dock="Right"
-                                Padding="8,2"
-                                Background="{DynamicResource AccentSoftBrush}">
-                            <TextBlock Text="{Binding CurrentFailureCard.Confidence, StringFormat=Confidence: {0}}"
-                                       FontWeight="SemiBold"
-                                       Foreground="{DynamicResource AccentBrush}" />
-                        </Border>
+        <TabItem Header="Workflow">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="0,0,0,8">
+                    <DockPanel Margin="0,0,0,16">
+                        <TextBlock Text="Workflow" FontSize="22" FontWeight="SemiBold" VerticalAlignment="Center" />
+                        <Button Content="Run Auto (Ctrl+R)"
+                                DockPanel.Dock="Right"
+                                Width="170"
+                                Height="34"
+                                Padding="14,4"
+                                TabIndex="10"
+                                Style="{DynamicResource WorkflowDashboardButtonStyle}"
+                                Command="{Binding RunAutoWorkflowCommand}"
+                                AutomationProperties.Name="Run auto workflow"
+                                ToolTip="Run all workflow steps in order (Ctrl+R)" />
                     </DockPanel>
 
-                    <TextBlock Text="What happened"
-                               FontWeight="SemiBold"
+                    <TextBlock Text="Shortcuts: Ctrl+R run all, Alt+S/H/V run workflow steps, Alt+I import, Alt+K skip harden, Ctrl+O open output, Ctrl+N restart"
+                               Margin="0,0,0,12"
+                               FontSize="11"
                                Foreground="{DynamicResource TextMutedBrush}" />
-                    <TextBlock Margin="0,2,0,8"
-                               Text="{Binding CurrentFailureCard.WhatHappened}"
-                               TextWrapping="Wrap" />
 
-                    <TextBlock Text="Next step"
-                               FontWeight="SemiBold"
-                               Foreground="{DynamicResource TextMutedBrush}" />
-                    <TextBlock Margin="0,2,0,10"
-                               Text="{Binding CurrentFailureCard.NextStep}"
-                               TextWrapping="Wrap" />
+                    <Border Margin="0,0,0,12"
+                            Padding="10"
+                            MinHeight="40"
+                            Background="{DynamicResource SurfaceMutedBrush}"
+                            Visibility="{Binding StatusText, Converter={StaticResource NullOrEmptyToCollapsed}}">
+                        <StackPanel>
+                            <TextBlock Text="{Binding StatusText}" TextWrapping="Wrap" />
+                            <ProgressBar Height="8"
+                                         Margin="0,8,0,0"
+                                         IsIndeterminate="True"
+                                         Visibility="{Binding IsBusy, Converter={StaticResource BoolToVisibility}}" />
+                        </StackPanel>
+                    </Border>
 
-                    <WrapPanel>
-                        <Button Content="Open Settings"
-                                Width="132"
-                                Height="32"
-                                TabIndex="70"
-                                Margin="0,0,8,0"
-                                Style="{DynamicResource WorkflowDashboardButtonStyle}"
-                                Command="{Binding ShowSettingsCommand}"
-                                Visibility="{Binding CurrentFailureCard.ShowOpenSettingsAction, Converter={StaticResource BoolToVisibility}}"
-                                AutomationProperties.Name="Open settings for failure recovery"
-                                ToolTip="Open settings to correct workflow paths" />
-                        <Button Content="Open Output Folder"
-                                Width="152"
-                                Height="32"
-                                TabIndex="71"
-                                Margin="0,0,8,0"
-                                Style="{DynamicResource WorkflowDashboardButtonStyle}"
-                                Command="{Binding OpenOutputFolderCommand}"
-                                Visibility="{Binding CurrentFailureCard.ShowOpenOutputFolderAction, Converter={StaticResource BoolToVisibility}}"
-                                AutomationProperties.Name="Open output folder for failure recovery"
-                                ToolTip="Open output folder to inspect diagnostics" />
-                        <Button Content="Rerun Scan"
-                                Width="132"
-                                Height="32"
-                                TabIndex="72"
-                                Margin="0,0,8,0"
-                                Style="{DynamicResource WorkflowDashboardButtonStyle}"
-                                Command="{Binding RunScanStepCommand}"
-                                Visibility="{Binding CurrentFailureCard.ShowRetryScanAction, Converter={StaticResource BoolToVisibility}}"
-                                AutomationProperties.Name="Rerun scan from failure card"
-                                ToolTip="Retry the Scan step" />
-                        <Button Content="Rerun Verify"
-                                Width="132"
-                                Height="32"
-                                TabIndex="73"
-                                Style="{DynamicResource WorkflowDashboardButtonStyle}"
-                                Command="{Binding RunVerifyStepCommand}"
-                                Visibility="{Binding CurrentFailureCard.ShowRetryVerifyAction, Converter={StaticResource BoolToVisibility}}"
-                                AutomationProperties.Name="Rerun verify from failure card"
-                                ToolTip="Retry the Verify step" />
+                    <WrapPanel Margin="0,0,0,14" HorizontalAlignment="Left">
+                        <controls:WorkflowStepCard StepName="Scan"
+                                                   StepState="{Binding ScanState}"
+                                                   ErrorMessage="{Binding ScanError}"
+                                                   RunCommand="{Binding RunScanStepCommand}"
+                                                   RunButtonLabel="1  Scan"
+                                                   RunButtonTabIndex="20"
+                                                   RunButtonAutomationName="Run Scan step"
+                                                   RunButtonToolTip="Run Scan step (Alt+S)"
+                                                   RecoveryButtonTabIndex="21"
+                                                   RecoveryButtonAutomationName="Retry Scan step"
+                                                   RecoveryButtonToolTip="Retry Scan step (Alt+S)"
+                                                   Margin="0,0,12,12" />
+
+                        <controls:WorkflowStepCard StepName="Harden"
+                                                   StepState="{Binding HardenState}"
+                                                   ErrorMessage="{Binding HardenError}"
+                                                   RunCommand="{Binding RunHardenStepCommand}"
+                                                   RunButtonLabel="2  Harden"
+                                                   RunButtonTabIndex="30"
+                                                   RunButtonAutomationName="Run Harden step"
+                                                   RunButtonToolTip="Run Harden step (Alt+H)"
+                                                   SecondaryCommand="{Binding SkipHardenStepCommand}"
+                                                   SecondaryButtonLabel="Skip Harden"
+                                                   SecondaryButtonTabIndex="32"
+                                                   SecondaryButtonAutomationName="Skip Harden step"
+                                                   SecondaryButtonToolTip="Skip harden and continue to verify (Alt+K)"
+                                                   RecoveryButtonTabIndex="31"
+                                                   RecoveryButtonAutomationName="Retry Harden step"
+                                                   RecoveryButtonToolTip="Retry Harden step (Alt+H)"
+                                                   Margin="0,0,12,12" />
+
+                        <controls:WorkflowStepCard StepName="Verify"
+                                                   StepState="{Binding VerifyState}"
+                                                   ErrorMessage="{Binding VerifyError}"
+                                                   RunCommand="{Binding RunVerifyStepCommand}"
+                                                   RunButtonLabel="3  Verify"
+                                                   RunButtonTabIndex="40"
+                                                   RunButtonAutomationName="Run Verify step"
+                                                   RunButtonToolTip="Run Verify step (Alt+V)"
+                                                   RecoveryButtonTabIndex="41"
+                                                   RecoveryButtonAutomationName="Retry Verify step"
+                                                   RecoveryButtonToolTip="Retry Verify step (Alt+V)"
+                                                   Margin="0,0,12,12" />
                     </WrapPanel>
+
+                    <Border Margin="0,0,0,14"
+                            Padding="12"
+                            Background="{DynamicResource SurfaceMutedBrush}"
+                            BorderBrush="{DynamicResource WarningBrush}"
+                            BorderThickness="1"
+                            AutomationProperties.LiveSetting="Assertive"
+                            AutomationProperties.Name="{Binding FailureCardLiveRegionHint}">
+                        <Border.Style>
+                            <Style TargetType="Border">
+                                <Setter Property="Visibility" Value="Visible" />
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding CurrentFailureCard}" Value="{x:Null}">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Border.Style>
+
+                        <StackPanel>
+                            <TextBlock Text="{Binding FailureCardLiveRegionHint}"
+                                       Opacity="0"
+                                       Height="1"
+                                       AutomationProperties.LiveSetting="Assertive" />
+                            <DockPanel Margin="0,0,0,10" LastChildFill="False">
+                                <TextBlock Text="{Binding CurrentFailureCard.Title}"
+                                           FontSize="16"
+                                           FontWeight="SemiBold"
+                                           VerticalAlignment="Center" />
+                                <Border DockPanel.Dock="Right"
+                                        Padding="8,2"
+                                        Background="{DynamicResource AccentSoftBrush}">
+                                    <TextBlock Text="{Binding CurrentFailureCard.Confidence, StringFormat=Confidence: {0}}"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource AccentBrush}" />
+                                </Border>
+                            </DockPanel>
+
+                            <TextBlock Text="What happened"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextMutedBrush}" />
+                            <TextBlock Margin="0,2,0,8"
+                                       Text="{Binding CurrentFailureCard.WhatHappened}"
+                                       TextWrapping="Wrap" />
+
+                            <TextBlock Text="Next step"
+                                       FontWeight="SemiBold"
+                                       Foreground="{DynamicResource TextMutedBrush}" />
+                            <TextBlock Margin="0,2,0,10"
+                                       Text="{Binding CurrentFailureCard.NextStep}"
+                                       TextWrapping="Wrap" />
+
+                            <WrapPanel>
+                                <Button Content="Open Settings"
+                                        Width="132"
+                                        Height="32"
+                                        TabIndex="70"
+                                        Margin="0,0,8,0"
+                                        Style="{DynamicResource WorkflowDashboardButtonStyle}"
+                                        Command="{Binding ShowSettingsCommand}"
+                                        Visibility="{Binding CurrentFailureCard.ShowOpenSettingsAction, Converter={StaticResource BoolToVisibility}}"
+                                        AutomationProperties.Name="Open settings for failure recovery"
+                                        ToolTip="Open settings to correct workflow paths" />
+                                <Button Content="Open Output Folder"
+                                        Width="152"
+                                        Height="32"
+                                        TabIndex="71"
+                                        Margin="0,0,8,0"
+                                        Style="{DynamicResource WorkflowDashboardButtonStyle}"
+                                        Command="{Binding OpenOutputFolderCommand}"
+                                        Visibility="{Binding CurrentFailureCard.ShowOpenOutputFolderAction, Converter={StaticResource BoolToVisibility}}"
+                                        AutomationProperties.Name="Open output folder for failure recovery"
+                                        ToolTip="Open output folder to inspect diagnostics" />
+                                <Button Content="Rerun Scan"
+                                        Width="132"
+                                        Height="32"
+                                        TabIndex="72"
+                                        Margin="0,0,8,0"
+                                        Style="{DynamicResource WorkflowDashboardButtonStyle}"
+                                        Command="{Binding RunScanStepCommand}"
+                                        Visibility="{Binding CurrentFailureCard.ShowRetryScanAction, Converter={StaticResource BoolToVisibility}}"
+                                        AutomationProperties.Name="Rerun scan from failure card"
+                                        ToolTip="Retry the Scan step" />
+                                <Button Content="Rerun Verify"
+                                        Width="132"
+                                        Height="32"
+                                        TabIndex="73"
+                                        Style="{DynamicResource WorkflowDashboardButtonStyle}"
+                                        Command="{Binding RunVerifyStepCommand}"
+                                        Visibility="{Binding CurrentFailureCard.ShowRetryVerifyAction, Converter={StaticResource BoolToVisibility}}"
+                                        AutomationProperties.Name="Rerun verify from failure card"
+                                        ToolTip="Retry the Verify step" />
+                            </WrapPanel>
+                        </StackPanel>
+                    </Border>
+
+                    <TextBlock Margin="0,0,0,14"
+                               Foreground="{DynamicResource TextMutedBrush}"
+                               Text="Scan and Verify require Administrator mode." />
                 </StackPanel>
-            </Border>
+            </ScrollViewer>
+        </TabItem>
 
-            <TextBlock Margin="0,0,0,14"
-                       Foreground="{DynamicResource TextMutedBrush}"
-                       Text="Scan and Verify require Administrator mode." />
+        <TabItem Header="Results">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="0,0,0,8">
+                    <Border Padding="12">
+                        <StackPanel>
+                            <TextBlock Text="Results" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,10" />
 
-            <Border Padding="12">
-                <StackPanel>
-                    <TextBlock Text="Results" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,10" />
+                            <TextBlock Text="Mission JSON" FontWeight="SemiBold" Margin="0,0,0,4" />
+                            <TextBox Text="{Binding MissionJsonPath}" IsReadOnly="True" Margin="0,0,0,10" />
 
-                    <TextBlock Text="Mission JSON" FontWeight="SemiBold" Margin="0,0,0,4" />
-                    <TextBox Text="{Binding MissionJsonPath}" IsReadOnly="True" IsTabStop="False" Margin="0,0,0,10" />
+                            <TextBlock Text="Output Folder" FontWeight="SemiBold" Margin="0,0,0,4" />
+                            <TextBox Text="{Binding OutputFolderPath}" IsReadOnly="True" Margin="0,0,0,10" />
 
-                    <TextBlock Text="Output Folder" FontWeight="SemiBold" Margin="0,0,0,4" />
-                    <TextBox Text="{Binding OutputFolderPath}" IsReadOnly="True" IsTabStop="False" Margin="0,0,0,10" />
+                            <WrapPanel Margin="0,0,0,8">
+                                <Button Content="Open Output Folder (Ctrl+O)"
+                                        Width="220"
+                                        Height="34"
+                                        TabIndex="90"
+                                        Margin="0,0,8,8"
+                                        Style="{DynamicResource WorkflowDashboardButtonStyle}"
+                                        Command="{Binding OpenOutputFolderCommand}"
+                                        AutomationProperties.Name="Open output folder"
+                                        ToolTip="Open output folder (Ctrl+O)" />
 
-                    <StackPanel Orientation="Horizontal" Margin="0,0,0,8">
-                        <Button Content="Open Output Folder (Ctrl+O)"
-                                Width="220"
-                                Height="34"
-                                HorizontalAlignment="Left"
-                                TabIndex="90"
-                                Style="{DynamicResource WorkflowDashboardButtonStyle}"
-                                Command="{Binding OpenOutputFolderCommand}"
-                                AutomationProperties.Name="Open output folder"
-                                ToolTip="Open output folder (Ctrl+O)" />
-
-                        <Button Content="Restart Workflow (Ctrl+N)"
-                                Width="230"
-                                Height="34"
-                                Margin="8,0,0,0"
-                                HorizontalAlignment="Left"
-                                TabIndex="91"
-                                Style="{DynamicResource WorkflowDashboardButtonStyle}"
-                                Command="{Binding RestartWorkflowCommand}"
-                                AutomationProperties.Name="Restart workflow"
-                                ToolTip="Reset workflow states and clear outputs (Ctrl+N)" />
-                    </StackPanel>
+                                <Button Content="Restart Workflow (Ctrl+N)"
+                                        Width="230"
+                                        Height="34"
+                                        TabIndex="91"
+                                        Margin="0,0,8,8"
+                                        Style="{DynamicResource WorkflowDashboardButtonStyle}"
+                                        Command="{Binding RestartWorkflowCommand}"
+                                        AutomationProperties.Name="Restart workflow"
+                                        ToolTip="Reset workflow states and clear outputs (Ctrl+N)" />
+                            </WrapPanel>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
-            </Border>
-        </StackPanel>
-    </ScrollViewer>
+            </ScrollViewer>
+        </TabItem>
+
+        <TabItem Header="Compliance Summary">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <StackPanel Margin="0,0,0,8">
+                    <Border Margin="0,0,0,14"
+                            Padding="12"
+                            Background="{DynamicResource SurfaceBrush}"
+                            BorderBrush="{DynamicResource SurfaceBrush}"
+                            BorderThickness="1">
+                        <StackPanel>
+                            <DockPanel LastChildFill="False">
+                                <TextBlock Text="Compliance Summary"
+                                           FontSize="16"
+                                           FontWeight="SemiBold"
+                                           VerticalAlignment="Center" />
+                                <Border DockPanel.Dock="Right"
+                                        Padding="6,2"
+                                        CornerRadius="6"
+                                        Background="{DynamicResource SurfaceMutedBrush}">
+                                    <TextBlock Text="{Binding CompliancePercent, StringFormat={}{0:0}%}"
+                                               FontWeight="SemiBold"
+                                               Foreground="{DynamicResource AccentBrush}"
+                                               FontSize="16"
+                                               VerticalAlignment="Center" />
+                                </Border>
+                            </DockPanel>
+
+                            <Grid Margin="0,10,0,0">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="180" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+
+                                <chartControls:ComplianceDonutChart Grid.Column="0"
+                                                                    Width="180"
+                                                                    Height="180"
+                                                                    PassValue="{Binding CompliancePassCount}"
+                                                                    FailValue="{Binding ComplianceFailCount}"
+                                                                    OtherValue="{Binding ComplianceOtherCount}"
+                                                                    CenterText="{Binding CompliancePercent, StringFormat={}{0:0}%}"
+                                                                    HorizontalAlignment="Center"
+                                                                    VerticalAlignment="Center" />
+
+                                <StackPanel Grid.Column="1"
+                                            Margin="16,0,0,0"
+                                            VerticalAlignment="Top">
+                                    <StackPanel x:Name="ComplianceStatsPanel">
+                                        <StackPanel.Style>
+                                            <Style TargetType="StackPanel">
+                                                <Setter Property="Visibility" Value="Visible" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding TotalRuleCount}" Value="0">
+                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </StackPanel.Style>
+
+                                        <TextBlock Text="Total rules"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextMutedBrush}" />
+                                        <TextBlock Text="{Binding TotalRuleCount, StringFormat=Total rules: {0}}"
+                                                   FontSize="15"
+                                                   FontWeight="Bold" />
+                                        <TextBlock Text="{Binding CompliancePassCount, StringFormat=Pass: {0}}"
+                                                   Foreground="{DynamicResource SuccessBrush}"
+                                                   Margin="0,6,0,0" />
+                                        <TextBlock Text="{Binding ComplianceFailCount, StringFormat=Fail: {0}}"
+                                                   Foreground="{DynamicResource DangerBrush}" />
+                                        <TextBlock Text="{Binding ComplianceOtherCount, StringFormat=Other: {0}}"
+                                                   Foreground="{DynamicResource WarningBrush}" />
+
+                                        <Separator Margin="0,8,0,8" />
+
+                                        <TextBlock Text="Vulnerabilities"
+                                                   FontWeight="SemiBold"
+                                                   Foreground="{DynamicResource TextMutedBrush}" />
+                                        <TextBlock Text="{Binding TotalCatVulnerabilityCount, StringFormat=Total vulnerabilities: {0}}"
+                                                   FontSize="15"
+                                                   FontWeight="Bold" />
+                                        <TextBlock Text="{Binding CatIVulnerabilityCount, StringFormat=CAT I: {0}}"
+                                                   Foreground="{DynamicResource DangerBrush}"
+                                                   Margin="0,6,0,0" />
+                                        <TextBlock Text="{Binding CatIIVulnerabilityCount, StringFormat=CAT II: {0}}"
+                                                   Foreground="{DynamicResource WarningBrush}" />
+                                        <TextBlock Text="{Binding CatIIIVulnerabilityCount, StringFormat=CAT III: {0}}"
+                                                   Foreground="{DynamicResource TextMutedBrush}" />
+                                    </StackPanel>
+
+                                    <TextBlock Text="No compliance data collected yet."
+                                               Margin="0,12,0,0"
+                                               Foreground="{DynamicResource TextMutedBrush}">
+                                        <TextBlock.Style>
+                                            <Style TargetType="TextBlock">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                                <Style.Triggers>
+                                                    <DataTrigger Binding="{Binding TotalRuleCount}" Value="0">
+                                                        <Setter Property="Visibility" Value="Visible" />
+                                                    </DataTrigger>
+                                                </Style.Triggers>
+                                            </Style>
+                                        </TextBlock.Style>
+                                    </TextBlock>
+                                </StackPanel>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </TabItem>
+    </TabControl>
 </UserControl>

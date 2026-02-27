@@ -145,7 +145,8 @@ public class WorkflowViewModelTests
                     EvaluateAdditionalArgs = "-ThrottleLimit 4 -SkipSignatureCheck",
                     RequireElevationForScan = false,
                     SccArguments = "--benchmark sample.xml --results-dir out",
-                    SccWorkingDirectory = @"C:\test\scc"
+                    SccWorkingDirectory = @"C:\test\scc",
+                    SccTimeoutSeconds = 420
                 };
 
                 vm.SaveSettingsCommand.Execute(null);
@@ -157,6 +158,7 @@ public class WorkflowViewModelTests
                 Assert.Equal(vm.RequireElevationForScan, reloaded.RequireElevationForScan);
                 Assert.Equal(vm.SccArguments, reloaded.SccArguments);
                 Assert.Equal(vm.SccWorkingDirectory, reloaded.SccWorkingDirectory);
+                Assert.Equal(vm.SccTimeoutSeconds, reloaded.SccTimeoutSeconds);
             }
             finally
             {
@@ -190,6 +192,14 @@ public class WorkflowViewModelTests
         var vm = new WorkflowViewModel();
         Assert.NotNull(vm.ShowHelpCommand);
         Assert.True(vm.ShowHelpCommand.CanExecute(null));
+    }
+
+    [Fact]
+    public void TestSccHeadlessCommand_IsGenerated()
+    {
+        var vm = new WorkflowViewModel();
+        Assert.NotNull(vm.TestSccHeadlessCommand);
+        Assert.True(vm.TestSccHeadlessCommand.CanExecute(null));
     }
 
     [Fact]
@@ -661,7 +671,8 @@ public class WorkflowViewModelTests
                 EvaluateStigToolPath = evaluateTool,
                 SccToolPath = sccPath,
                 SccArguments = "--benchmark C:\\bench\\sample.xml --results-dir C:\\scan\\out",
-                SccWorkingDirectory = sccWorkingDir
+                SccWorkingDirectory = sccWorkingDir,
+                SccTimeoutSeconds = 900
             };
 
             await vm.RunVerifyStepCommand.ExecuteAsync(null);
@@ -670,12 +681,209 @@ public class WorkflowViewModelTests
             Assert.Equal(sccPath, verifyService.LastRequest.Scap.CommandPath);
             Assert.Equal(vm.SccArguments, verifyService.LastRequest.Scap.Arguments);
             Assert.Equal(sccWorkingDir, verifyService.LastRequest.Scap.WorkingDirectory);
+            Assert.Equal(900, verifyService.LastRequest.Scap.TimeoutSeconds);
         }
         finally
         {
             Directory.Delete(sccWorkingDir, recursive: true);
             Directory.Delete(sccFolder, recursive: true);
             Directory.Delete(evaluateTool, recursive: true);
+            Directory.Delete(outputRoot, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task RunVerifyStepCommand_WhenSccArgsMissingOutput_AppendsOutputFolderAsResultsDir()
+    {
+        var outputRoot = Directory.CreateTempSubdirectory().FullName;
+        var outputFolder = Path.Combine(outputRoot, "verify output");
+        Directory.CreateDirectory(outputFolder);
+        var evaluateTool = Directory.CreateTempSubdirectory().FullName;
+        CreateEvaluateStigScript(evaluateTool);
+        var sccFolder = Directory.CreateTempSubdirectory().FullName;
+        var sccPath = Path.Combine(sccFolder, "cscc.exe");
+        File.WriteAllText(sccPath, "stub");
+
+        var verifyService = new TrackingVerificationWorkflowService(new VerificationWorkflowResult
+        {
+            ConsolidatedResultCount = 1,
+            ToolRuns =
+            [
+                new VerificationToolRunResult
+                {
+                    Tool = "SCC",
+                    Executed = true,
+                    ExitCode = 0
+                }
+            ]
+        });
+
+        try
+        {
+            var vm = new WorkflowViewModel(
+                importScanner: null,
+                verifyService: verifyService,
+                isElevatedResolver: () => true)
+            {
+                VerifyState = StepState.Ready,
+                OutputFolderPath = outputFolder,
+                EvaluateStigToolPath = evaluateTool,
+                SccToolPath = sccPath,
+                SccArguments = "--benchmark C:\\bench\\sample.xml"
+            };
+
+            await vm.RunVerifyStepCommand.ExecuteAsync(null);
+
+            Assert.Equal(StepState.Complete, vm.VerifyState);
+            Assert.Contains("-u", verifyService.LastRequest!.Scap.Arguments, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains(outputFolder, verifyService.LastRequest.Scap.Arguments, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            Directory.Delete(sccFolder, recursive: true);
+            Directory.Delete(evaluateTool, recursive: true);
+            Directory.Delete(outputRoot, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task RunVerifyStepCommand_WhenSccOutputSwitchMissingValue_FailsPreflightWithoutCallingService()
+    {
+        var outputRoot = Directory.CreateTempSubdirectory().FullName;
+        var outputFolder = Path.Combine(outputRoot, "verify output");
+        Directory.CreateDirectory(outputFolder);
+        var evaluateTool = Directory.CreateTempSubdirectory().FullName;
+        CreateEvaluateStigScript(evaluateTool);
+        var sccFolder = Directory.CreateTempSubdirectory().FullName;
+        var sccPath = Path.Combine(sccFolder, "cscc.exe");
+        File.WriteAllText(sccPath, "stub");
+
+        var verifyService = new TrackingVerificationWorkflowService(new VerificationWorkflowResult
+        {
+            ConsolidatedResultCount = 1
+        });
+
+        try
+        {
+            var vm = new WorkflowViewModel(
+                importScanner: null,
+                verifyService: verifyService,
+                isElevatedResolver: () => true)
+            {
+                VerifyState = StepState.Ready,
+                OutputFolderPath = outputFolder,
+                EvaluateStigToolPath = evaluateTool,
+                SccToolPath = sccPath,
+                SccArguments = "--benchmark C:\\bench\\sample.xml --results-dir"
+            };
+
+            await vm.RunVerifyStepCommand.ExecuteAsync(null);
+
+            Assert.Equal(StepState.Error, vm.VerifyState);
+            Assert.Contains("output switch", vm.VerifyError, StringComparison.OrdinalIgnoreCase);
+            Assert.Equal(0, verifyService.CallCount);
+        }
+        finally
+        {
+            Directory.Delete(sccFolder, recursive: true);
+            Directory.Delete(evaluateTool, recursive: true);
+            Directory.Delete(outputRoot, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task RunVerifyStepCommand_WhenSccOutputSwitchUsesUnixPath_TreatsPathAsValue()
+    {
+        var outputRoot = Directory.CreateTempSubdirectory().FullName;
+        var outputFolder = Path.Combine(outputRoot, "verify output");
+        Directory.CreateDirectory(outputFolder);
+        var evaluateTool = Directory.CreateTempSubdirectory().FullName;
+        CreateEvaluateStigScript(evaluateTool);
+        var sccFolder = Directory.CreateTempSubdirectory().FullName;
+        var sccPath = Path.Combine(sccFolder, "cscc.exe");
+        File.WriteAllText(sccPath, "stub");
+
+        var verifyService = new TrackingVerificationWorkflowService(new VerificationWorkflowResult
+        {
+            ConsolidatedResultCount = 1
+        });
+
+        try
+        {
+            var vm = new WorkflowViewModel(
+                importScanner: null,
+                verifyService: verifyService,
+                isElevatedResolver: () => true)
+            {
+                VerifyState = StepState.Ready,
+                OutputFolderPath = outputFolder,
+                EvaluateStigToolPath = evaluateTool,
+                SccToolPath = sccPath,
+                SccArguments = "--benchmark /tmp/bench.xml --results-dir /var/tmp/scc-out"
+            };
+
+            await vm.RunVerifyStepCommand.ExecuteAsync(null);
+
+            Assert.Equal(StepState.Complete, vm.VerifyState);
+            Assert.Equal(1, verifyService.CallCount);
+            Assert.Contains("--results-dir /var/tmp/scc-out", verifyService.LastRequest!.Scap.Arguments, StringComparison.Ordinal);
+        }
+        finally
+        {
+            Directory.Delete(sccFolder, recursive: true);
+            Directory.Delete(evaluateTool, recursive: true);
+            Directory.Delete(outputRoot, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task TestSccHeadlessCommand_WhenConfigured_RunsScapOnlyValidationWithInjectedOutput()
+    {
+        var outputRoot = Directory.CreateTempSubdirectory().FullName;
+        var outputFolder = Path.Combine(outputRoot, "verify output");
+        Directory.CreateDirectory(outputFolder);
+        var sccFolder = Directory.CreateTempSubdirectory().FullName;
+        var sccPath = Path.Combine(sccFolder, "cscc.exe");
+        File.WriteAllText(sccPath, "stub");
+
+        var verifyService = new TrackingVerificationWorkflowService(new VerificationWorkflowResult
+        {
+            ConsolidatedResultCount = 0,
+            ToolRuns =
+            [
+                new VerificationToolRunResult
+                {
+                    Tool = "SCC",
+                    Executed = true,
+                    ExitCode = 0
+                }
+            ]
+        });
+
+        try
+        {
+            var vm = new WorkflowViewModel(
+                importScanner: null,
+                verifyService: verifyService,
+                isElevatedResolver: () => true)
+            {
+                OutputFolderPath = outputFolder,
+                SccToolPath = sccPath,
+                SccArguments = "--benchmark C:\\bench\\sample.xml"
+            };
+
+            await vm.TestSccHeadlessCommand.ExecuteAsync(null);
+
+            Assert.Equal(1, verifyService.CallCount);
+            Assert.False(verifyService.LastRequest!.EvaluateStig.Enabled);
+            Assert.True(verifyService.LastRequest.Scap.Enabled);
+            Assert.Equal(sccPath, verifyService.LastRequest.Scap.CommandPath);
+            Assert.Contains("-u", verifyService.LastRequest.Scap.Arguments, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("validation passed", vm.StatusText, StringComparison.OrdinalIgnoreCase);
+        }
+        finally
+        {
+            Directory.Delete(sccFolder, recursive: true);
             Directory.Delete(outputRoot, recursive: true);
         }
     }
@@ -924,6 +1132,64 @@ public class WorkflowViewModelTests
             Assert.Equal(StepState.Complete, vm.HardenState);
             Assert.Equal(1, vm.AppliedFixesCount);
             Assert.Equal(StepState.Ready, vm.VerifyState);
+        }
+        finally
+        {
+            tempFolder.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task RunHardenStepCommand_WhenHardeningArtifactsExist_PassesPowerStigDscAndLgpoPaths()
+    {
+        var tempFolder = Directory.CreateTempSubdirectory();
+        var applyRoot = Path.Combine(tempFolder.FullName, "Apply");
+        var powerStigModule = Path.Combine(applyRoot, "Modules", "PowerSTIG", "PowerSTIG.psd1");
+        var powerStigData = Path.Combine(applyRoot, "PowerStigData", "stigdata.psd1");
+        var dscPath = Path.Combine(applyRoot, "Dsc");
+        var lgpoPolicy = Path.Combine(applyRoot, "GPO", "Machine", "Registry.pol");
+
+        Directory.CreateDirectory(Path.GetDirectoryName(powerStigModule)!);
+        Directory.CreateDirectory(Path.GetDirectoryName(powerStigData)!);
+        Directory.CreateDirectory(dscPath);
+        Directory.CreateDirectory(Path.GetDirectoryName(lgpoPolicy)!);
+        File.WriteAllText(powerStigModule, "module");
+        File.WriteAllText(powerStigData, "data");
+        File.WriteAllText(lgpoPolicy, "policy");
+
+        ApplyRequest? capturedRequest = null;
+
+        try
+        {
+            var vm = new WorkflowViewModel(
+                runApply: (request, _) =>
+                {
+                    capturedRequest = request;
+                    return Task.FromResult(new ApplyResult
+                    {
+                        IsMissionComplete = true,
+                        Steps =
+                        [
+                            new ApplyStepOutcome { ExitCode = 0 }
+                        ]
+                    });
+                })
+            {
+                HardenState = StepState.Ready,
+                OutputFolderPath = tempFolder.FullName,
+                VerifyState = StepState.Locked
+            };
+
+            await vm.RunHardenStepCommand.ExecuteAsync(null);
+
+            Assert.Equal(StepState.Complete, vm.HardenState);
+            Assert.NotNull(capturedRequest);
+            Assert.Equal(tempFolder.FullName, capturedRequest!.BundleRoot);
+            Assert.Equal(dscPath, capturedRequest.DscMofPath);
+            Assert.Equal(powerStigData, capturedRequest.PowerStigDataFile);
+            Assert.Equal(lgpoPolicy, capturedRequest.LgpoPolFilePath);
+            Assert.Equal(STIGForge.Apply.Lgpo.LgpoScope.Machine, capturedRequest.LgpoScope);
+            Assert.Contains("PowerSTIG", capturedRequest.PowerStigModulePath ?? string.Empty, StringComparison.OrdinalIgnoreCase);
         }
         finally
         {
@@ -1987,6 +2253,9 @@ public class WorkflowViewModelTests
             NotApplicableCount = 1,
             NotReviewedCount = 0,
             ErrorCount = 1,
+            CatICount = 1,
+            CatIICount = 1,
+            CatIIICount = 0,
             ToolRuns =
             [
                 new VerificationToolRunResult
@@ -2016,6 +2285,10 @@ public class WorkflowViewModelTests
             Assert.Equal(8, vm.CompliancePassCount);
             Assert.Equal(2, vm.ComplianceFailCount);
             Assert.Equal(2, vm.ComplianceOtherCount);
+            Assert.Equal(1, vm.CatIVulnerabilityCount);
+            Assert.Equal(1, vm.CatIIVulnerabilityCount);
+            Assert.Equal(0, vm.CatIIIVulnerabilityCount);
+            Assert.Equal(2, vm.TotalCatVulnerabilityCount);
             var expectedPercent = 8d / (8 + 2 + 1) * 100;
             Assert.Equal(expectedPercent, vm.CompliancePercent, precision: 5);
         }
@@ -2035,6 +2308,10 @@ public class WorkflowViewModelTests
             CompliancePassCount = 3,
             ComplianceFailCount = 1,
             ComplianceOtherCount = 1,
+            CatIVulnerabilityCount = 1,
+            CatIIVulnerabilityCount = 2,
+            CatIIIVulnerabilityCount = 3,
+            TotalCatVulnerabilityCount = 6,
             CompliancePercent = 75
         };
 
@@ -2044,6 +2321,10 @@ public class WorkflowViewModelTests
         Assert.Equal(0, vm.CompliancePassCount);
         Assert.Equal(0, vm.ComplianceFailCount);
         Assert.Equal(0, vm.ComplianceOtherCount);
+        Assert.Equal(0, vm.CatIVulnerabilityCount);
+        Assert.Equal(0, vm.CatIIVulnerabilityCount);
+        Assert.Equal(0, vm.CatIIIVulnerabilityCount);
+        Assert.Equal(0, vm.TotalCatVulnerabilityCount);
         Assert.Equal(0, vm.CompliancePercent);
     }
 

@@ -14,6 +14,7 @@ public class WorkflowSettings
     public string SccToolPath { get; set; } = string.Empty;
     public string SccArguments { get; set; } = string.Empty;
     public string SccWorkingDirectory { get; set; } = string.Empty;
+    public int SccTimeoutSeconds { get; set; } = 300;
     public string OutputFolderPath { get; set; } = string.Empty;
     public string MachineTarget { get; set; } = "localhost";
     public bool RequireElevationForScan { get; set; } = true;

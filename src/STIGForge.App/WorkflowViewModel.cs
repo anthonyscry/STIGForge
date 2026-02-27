@@ -1,8 +1,10 @@
 using System.IO;
 using System.Security.Principal;
+using System.Text;
 using System.Text.Json;
 using System.Windows;
 using STIGForge.Apply;
+using STIGForge.Apply.Lgpo;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using STIGForge.App.Views;
@@ -45,6 +47,7 @@ public enum WorkflowRootCauseCode
     EvaluatePathInvalid,
     NoCklOutput,
     ScapNoOutput,
+    ScapArgumentsInvalid,
     ToolExitNonZero,
     OutputNotWritable,
     UnknownFailure
@@ -65,6 +68,23 @@ public sealed class WorkflowFailureCard
 
 public partial class WorkflowViewModel : ObservableObject
 {
+    private const int DefaultSccTimeoutSeconds = 300;
+    private const int MinSccTimeoutSeconds = 30;
+    private const int MaxSccTimeoutSeconds = 3600;
+
+    private static readonly string[] SccOutputSwitches =
+    [
+        "--results-dir",
+        "--results-directory",
+        "--output",
+        "--output-dir",
+        "--output-directory",
+        "-u",
+        "/u",
+        "-o",
+        "/o"
+    ];
+
     private readonly ImportInboxScanner? _importScanner;
     private readonly IVerificationWorkflowService? _verifyService;
     private readonly Func<ApplyRequest, CancellationToken, Task<ApplyResult>>? _runApply;
@@ -351,6 +371,21 @@ public partial class WorkflowViewModel : ObservableObject
             showOpenOutputFolderAction: true);
     }
 
+    private static WorkflowFailureCard CreateVerifyScapArgumentsInvalidCard(string details)
+    {
+        var detailText = string.IsNullOrWhiteSpace(details)
+            ? "SCC arguments are missing required scan/content options."
+            : details;
+
+        return CreateFailureCard(
+            WorkflowRootCauseCode.ScapArgumentsInvalid,
+            "SCC arguments are invalid",
+            detailText,
+            "Open Settings and provide SCC arguments that include scan/content options. STIGForge auto-adds the output folder argument when missing.",
+            showOpenSettingsAction: true,
+            showRetryVerifyAction: true);
+    }
+
     private string BuildEvaluateStigArguments(string outputRoot)
     {
         var parts = new List<string>();
@@ -377,6 +412,193 @@ public partial class WorkflowViewModel : ObservableObject
     private static string QuoteCommandLineArgument(string value)
     {
         return "\"" + value.Replace("\"", "\\\"") + "\"";
+    }
+
+    private static string AppendCommandLineArgumentWithValue(string existingArguments, string switchName, string value)
+    {
+        var prefix = string.IsNullOrWhiteSpace(existingArguments)
+            ? string.Empty
+            : existingArguments.Trim() + " ";
+
+        return prefix + switchName + " " + QuoteCommandLineArgument(value);
+    }
+
+    private static bool LooksLikeSwitchToken(string token)
+    {
+        if (string.IsNullOrWhiteSpace(token))
+            return false;
+
+        if (token[0] == '-')
+            return true;
+
+        if (token[0] != '/')
+            return false;
+
+        return SccOutputSwitches
+            .Where(candidate => candidate.StartsWith("/", StringComparison.Ordinal))
+            .Any(candidate => string.Equals(candidate, token, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static bool TryGetSwitchAndInlineValue(string token, out string switchToken, out string inlineValue)
+    {
+        switchToken = string.Empty;
+        inlineValue = string.Empty;
+
+        if (!LooksLikeSwitchToken(token))
+            return false;
+
+        var equalsIndex = token.IndexOf('=');
+        if (equalsIndex > 0)
+        {
+            switchToken = token[..equalsIndex];
+            inlineValue = token[(equalsIndex + 1)..];
+            return true;
+        }
+
+        switchToken = token;
+        return true;
+    }
+
+    private static bool IsSccOutputSwitch(string switchToken)
+    {
+        if (string.IsNullOrWhiteSpace(switchToken))
+            return false;
+
+        return SccOutputSwitches.Any(candidate => string.Equals(candidate, switchToken, StringComparison.OrdinalIgnoreCase));
+    }
+
+    private static List<string> TokenizeCommandLineArguments(string arguments)
+    {
+        var tokens = new List<string>();
+        if (string.IsNullOrWhiteSpace(arguments))
+            return tokens;
+
+        var current = new StringBuilder();
+        var inQuotes = false;
+
+        foreach (var ch in arguments)
+        {
+            if (ch == '"')
+            {
+                inQuotes = !inQuotes;
+                continue;
+            }
+
+            if (char.IsWhiteSpace(ch) && !inQuotes)
+            {
+                if (current.Length > 0)
+                {
+                    tokens.Add(current.ToString());
+                    current.Clear();
+                }
+
+                continue;
+            }
+
+            current.Append(ch);
+        }
+
+        if (current.Length > 0)
+            tokens.Add(current.ToString());
+
+        return tokens;
+    }
+
+    private readonly record struct SccArgumentAnalysis(
+        bool HasAnyToken,
+        bool HasOutputSwitch,
+        bool HasOutputValue,
+        bool MissingOutputValue,
+        bool HasNonOutputDirective);
+
+    private static SccArgumentAnalysis AnalyzeSccArguments(string arguments)
+    {
+        var tokens = TokenizeCommandLineArguments(arguments);
+        if (tokens.Count == 0)
+            return new SccArgumentAnalysis(false, false, false, false, false);
+
+        var consumedAsOutputValue = new HashSet<int>();
+        var hasOutputSwitch = false;
+        var hasOutputValue = false;
+        var missingOutputValue = false;
+        var hasNonOutputDirective = false;
+
+        for (var i = 0; i < tokens.Count; i++)
+        {
+            if (consumedAsOutputValue.Contains(i))
+                continue;
+
+            var token = tokens[i];
+            if (TryGetSwitchAndInlineValue(token, out var switchToken, out var inlineValue))
+            {
+                if (IsSccOutputSwitch(switchToken))
+                {
+                    hasOutputSwitch = true;
+
+                    if (!string.IsNullOrWhiteSpace(inlineValue))
+                    {
+                        hasOutputValue = true;
+                        continue;
+                    }
+
+                    if (i + 1 < tokens.Count && !LooksLikeSwitchToken(tokens[i + 1]))
+                    {
+                        hasOutputValue = true;
+                        consumedAsOutputValue.Add(i + 1);
+                    }
+                    else
+                    {
+                        missingOutputValue = true;
+                    }
+
+                    continue;
+                }
+
+                hasNonOutputDirective = true;
+                continue;
+            }
+
+            hasNonOutputDirective = true;
+        }
+
+        return new SccArgumentAnalysis(
+            HasAnyToken: true,
+            HasOutputSwitch: hasOutputSwitch,
+            HasOutputValue: hasOutputValue,
+            MissingOutputValue: missingOutputValue,
+            HasNonOutputDirective: hasNonOutputDirective);
+    }
+
+    private static bool TryBuildSccHeadlessArguments(string rawArguments, string outputRoot, out string effectiveArguments, out string validationError)
+    {
+        effectiveArguments = (rawArguments ?? string.Empty).Trim();
+        validationError = string.Empty;
+
+        if (string.IsNullOrWhiteSpace(outputRoot))
+        {
+            validationError = "Output folder is required for SCC validation.";
+            return false;
+        }
+
+        var initial = AnalyzeSccArguments(effectiveArguments);
+        if (!initial.HasOutputSwitch)
+            effectiveArguments = AppendCommandLineArgumentWithValue(effectiveArguments, "-u", outputRoot);
+
+        var normalized = AnalyzeSccArguments(effectiveArguments);
+
+        if (normalized.MissingOutputValue || (normalized.HasOutputSwitch && !normalized.HasOutputValue))
+        {
+            validationError = "SCC arguments include an output switch without a valid path value.";
+            return false;
+        }
+
+        if (!normalized.HasAnyToken)
+        {
+            validationError = "SCC arguments are empty.";
+            return false;
+        }
+
+        return true;
     }
 
     [ObservableProperty]
@@ -408,6 +630,9 @@ public partial class WorkflowViewModel : ObservableObject
     private string _sccWorkingDirectory = string.Empty;
 
     [ObservableProperty]
+    private int _sccTimeoutSeconds = DefaultSccTimeoutSeconds;
+
+    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanGoNext))]
     private string _sccToolPath = string.Empty;
 
@@ -425,6 +650,7 @@ public partial class WorkflowViewModel : ObservableObject
     private string _missionJsonPath = string.Empty;
 
     [ObservableProperty]
+    [NotifyCanExecuteChangedFor(nameof(TestSccHeadlessCommand))]
     private bool _isBusy;
 
     [ObservableProperty]
@@ -474,6 +700,18 @@ public partial class WorkflowViewModel : ObservableObject
 
     [ObservableProperty]
     private int _complianceOtherCount;
+
+    [ObservableProperty]
+    private int _catIVulnerabilityCount;
+
+    [ObservableProperty]
+    private int _catIIVulnerabilityCount;
+
+    [ObservableProperty]
+    private int _catIIIVulnerabilityCount;
+
+    [ObservableProperty]
+    private int _totalCatVulnerabilityCount;
 
     [ObservableProperty]
     private double _compliancePercent;
@@ -535,6 +773,7 @@ public partial class WorkflowViewModel : ObservableObject
     public bool CanRunHarden => HardenState == StepState.Ready || HardenState == StepState.Complete || HardenState == StepState.Error;
     public bool CanSkipHarden => HardenState == StepState.Ready || HardenState == StepState.Error;
     public bool CanRunVerify => VerifyState == StepState.Ready || VerifyState == StepState.Complete || VerifyState == StepState.Error;
+    public bool CanTestSccHeadless => !IsBusy;
 
     public bool CanRunAutoWorkflow => 
         ImportState != StepState.Running && 
@@ -550,6 +789,18 @@ public partial class WorkflowViewModel : ObservableObject
         WorkflowStep.Done => false,
         _ => !IsBusy
     };
+
+    partial void OnSccTimeoutSecondsChanged(int value)
+    {
+        if (value < MinSccTimeoutSeconds)
+        {
+            SccTimeoutSeconds = MinSccTimeoutSeconds;
+            return;
+        }
+
+        if (value > MaxSccTimeoutSeconds)
+            SccTimeoutSeconds = MaxSccTimeoutSeconds;
+    }
 
     [RelayCommand(CanExecute = nameof(CanGoBack))]
     private void GoBack()
@@ -783,10 +1034,8 @@ public partial class WorkflowViewModel : ObservableObject
 
         try
         {
-            var result = await _runApply(new ApplyRequest
-            {
-                BundleRoot = OutputFolderPath
-            }, CancellationToken.None);
+            var request = BuildHardenApplyRequest(OutputFolderPath);
+            var result = await _runApply(request, CancellationToken.None);
 
             if (!result.IsMissionComplete)
             {
@@ -812,6 +1061,147 @@ public partial class WorkflowViewModel : ObservableObject
             StatusText = $"Hardening failed: {ex.Message}";
             return false;
         }
+    }
+
+    private static ApplyRequest BuildHardenApplyRequest(string bundleRoot)
+    {
+        var applyRoot = Path.Combine(bundleRoot, "Apply");
+        var powerStigModulePath = ResolvePowerStigModulePath(applyRoot);
+        var dscMofPath = ResolveDscMofPath(applyRoot);
+        if (string.IsNullOrWhiteSpace(dscMofPath) && !string.IsNullOrWhiteSpace(powerStigModulePath))
+            dscMofPath = Path.Combine(applyRoot, "Dsc");
+
+        var lgpoPolPath = ResolveLgpoPolFilePath(applyRoot, out var lgpoScope);
+        var powerStigDataPath = ResolvePowerStigDataPath(applyRoot);
+
+        var request = new ApplyRequest
+        {
+            BundleRoot = bundleRoot,
+            DscMofPath = dscMofPath,
+            PowerStigModulePath = powerStigModulePath,
+            PowerStigDataFile = powerStigDataPath,
+            PowerStigOutputPath = string.IsNullOrWhiteSpace(powerStigModulePath)
+                ? null
+                : Path.Combine(applyRoot, "Dsc"),
+            PowerStigDataGeneratedPath = powerStigDataPath,
+            LgpoPolFilePath = lgpoPolPath,
+            LgpoScope = lgpoScope
+        };
+
+        var lgpoExePath = ResolveLgpoExePath(bundleRoot);
+        if (!string.IsNullOrWhiteSpace(lgpoExePath))
+            request.LgpoExePath = lgpoExePath;
+
+        return request;
+    }
+
+    private static string? ResolveDscMofPath(string applyRoot)
+    {
+        var candidate = Path.Combine(applyRoot, "Dsc");
+        return Directory.Exists(candidate) ? candidate : null;
+    }
+
+    private static string? ResolvePowerStigDataPath(string applyRoot)
+    {
+        var candidate = Path.Combine(applyRoot, "PowerStigData", "stigdata.psd1");
+        return File.Exists(candidate) ? candidate : null;
+    }
+
+    private static string? ResolvePowerStigModulePath(string applyRoot)
+    {
+        if (!Directory.Exists(applyRoot))
+            return null;
+
+        try
+        {
+            var psd1 = Directory.EnumerateFiles(applyRoot, "PowerSTIG.psd1", SearchOption.AllDirectories)
+                .FirstOrDefault();
+            if (!string.IsNullOrWhiteSpace(psd1))
+                return psd1;
+
+            var psm1 = Directory.EnumerateFiles(applyRoot, "PowerSTIG.psm1", SearchOption.AllDirectories)
+                .FirstOrDefault();
+            if (!string.IsNullOrWhiteSpace(psm1))
+                return psm1;
+
+            var moduleDirectory = Directory.EnumerateDirectories(applyRoot, "PowerSTIG", SearchOption.AllDirectories)
+                .FirstOrDefault();
+            if (!string.IsNullOrWhiteSpace(moduleDirectory))
+                return moduleDirectory;
+        }
+        catch (IOException)
+        {
+        }
+        catch (UnauthorizedAccessException)
+        {
+        }
+
+        return null;
+    }
+
+    private static string? ResolveLgpoPolFilePath(string applyRoot, out LgpoScope? scope)
+    {
+        scope = null;
+        if (!Directory.Exists(applyRoot))
+            return null;
+
+        var candidates = new[]
+        {
+            Path.Combine(applyRoot, "GPO", "Machine", "Registry.pol"),
+            Path.Combine(applyRoot, "GPO", "Machine", "registry.pol"),
+            Path.Combine(applyRoot, "GPO", "machine.pol"),
+            Path.Combine(applyRoot, "LGPO", "Machine", "Registry.pol"),
+            Path.Combine(applyRoot, "LGPO", "Machine", "registry.pol"),
+            Path.Combine(applyRoot, "LGPO", "machine.pol"),
+            Path.Combine(applyRoot, "Policies", "Machine", "Registry.pol"),
+            Path.Combine(applyRoot, "Policies", "machine.pol")
+        };
+
+        foreach (var candidate in candidates)
+        {
+            if (!File.Exists(candidate))
+                continue;
+
+            scope = ResolveLgpoScope(candidate);
+            return candidate;
+        }
+
+        try
+        {
+            var discovered = Directory.EnumerateFiles(applyRoot, "*.pol", SearchOption.AllDirectories)
+                .OrderBy(path => ResolveLgpoScope(path) == LgpoScope.Machine ? 0 : 1)
+                .ThenBy(path => path, StringComparer.OrdinalIgnoreCase)
+                .FirstOrDefault();
+
+            if (!string.IsNullOrWhiteSpace(discovered))
+            {
+                scope = ResolveLgpoScope(discovered);
+                return discovered;
+            }
+        }
+        catch (IOException)
+        {
+        }
+        catch (UnauthorizedAccessException)
+        {
+        }
+
+        return null;
+    }
+
+    private static LgpoScope ResolveLgpoScope(string polPath)
+    {
+        if (polPath.IndexOf($"{Path.DirectorySeparatorChar}User{Path.DirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase) >= 0
+            || polPath.IndexOf($"{Path.AltDirectorySeparatorChar}User{Path.AltDirectorySeparatorChar}", StringComparison.OrdinalIgnoreCase) >= 0)
+            return LgpoScope.User;
+
+        return LgpoScope.Machine;
+    }
+
+    private static string? ResolveLgpoExePath(string bundleRoot)
+    {
+        var candidate = Path.Combine(bundleRoot, "tools", "LGPO.exe");
+        return File.Exists(candidate) ? candidate : null;
     }
 
     private async Task<bool> RunVerifyAsync()
@@ -873,6 +1263,21 @@ public partial class WorkflowViewModel : ObservableObject
 
         Directory.CreateDirectory(OutputFolderPath);
 
+        var effectiveSccArguments = string.Empty;
+        if (!string.IsNullOrWhiteSpace(resolvedSccCommandPath))
+        {
+            if (!TryBuildSccHeadlessArguments(SccArguments, OutputFolderPath, out effectiveSccArguments, out var sccValidationError))
+            {
+                StatusText = "SCC arguments are invalid: " + sccValidationError;
+                VerifyFindingsCount = 0;
+                CurrentFailureCard = CreateVerifyScapArgumentsInvalidCard(sccValidationError);
+                return false;
+            }
+
+            if (!string.Equals(effectiveSccArguments, SccArguments, StringComparison.Ordinal))
+                SccArguments = effectiveSccArguments;
+        }
+
         try
         {
             var request = new VerificationWorkflowRequest
@@ -888,8 +1293,9 @@ public partial class WorkflowViewModel : ObservableObject
                 {
                     Enabled = !string.IsNullOrWhiteSpace(resolvedSccCommandPath),
                     CommandPath = resolvedSccCommandPath ?? string.Empty,
-                    Arguments = SccArguments,
-                    WorkingDirectory = string.IsNullOrWhiteSpace(SccWorkingDirectory) ? null : SccWorkingDirectory
+                    Arguments = effectiveSccArguments,
+                    WorkingDirectory = string.IsNullOrWhiteSpace(SccWorkingDirectory) ? null : SccWorkingDirectory,
+                    TimeoutSeconds = SccTimeoutSeconds
                 }
             };
 
@@ -952,6 +1358,10 @@ public partial class WorkflowViewModel : ObservableObject
         CompliancePassCount = 0;
         ComplianceFailCount = 0;
         ComplianceOtherCount = 0;
+        CatIVulnerabilityCount = 0;
+        CatIIVulnerabilityCount = 0;
+        CatIIIVulnerabilityCount = 0;
+        TotalCatVulnerabilityCount = 0;
         CompliancePercent = 0;
     }
 
@@ -964,6 +1374,10 @@ public partial class WorkflowViewModel : ObservableObject
         CompliancePassCount = result.PassCount;
         ComplianceFailCount = result.FailCount;
         ComplianceOtherCount = result.NotApplicableCount + result.NotReviewedCount + result.ErrorCount;
+        CatIVulnerabilityCount = result.CatICount;
+        CatIIVulnerabilityCount = result.CatIICount;
+        CatIIIVulnerabilityCount = result.CatIIICount;
+        TotalCatVulnerabilityCount = CatIVulnerabilityCount + CatIIVulnerabilityCount + CatIIIVulnerabilityCount;
         var denominator = result.PassCount + result.FailCount + result.ErrorCount;
         CompliancePercent = denominator > 0
             ? (double)result.PassCount / denominator * 100
@@ -1155,6 +1569,119 @@ public partial class WorkflowViewModel : ObservableObject
         }
     }
 
+    [RelayCommand(CanExecute = nameof(CanTestSccHeadless))]
+    private async Task TestSccHeadlessAsync()
+    {
+        IsBusy = true;
+        CurrentFailureCard = null;
+
+        try
+        {
+            if (_verifyService == null)
+            {
+                StatusText = "Verification service not configured";
+                return;
+            }
+
+            if (!EnsureAdminPreflight(out var adminMessage))
+            {
+                StatusText = adminMessage;
+                CurrentFailureCard = CreateVerifyElevationRequiredCard("SCC headless validation requires administrator privileges.");
+                return;
+            }
+
+            var resolvedSccCommandPath = ResolveSccCommandPath(SccToolPath);
+            if (string.IsNullOrWhiteSpace(resolvedSccCommandPath))
+            {
+                StatusText = LooksLikeUnsupportedSccGuiPath(SccToolPath)
+                    ? "SCC GUI executable (scc.exe) is not supported for automation. Use cscc.exe or cscc-remote.exe."
+                    : "SCC tool path is not configured or no cscc.exe/cscc-remote.exe executable was found";
+                return;
+            }
+
+            if (!string.Equals(resolvedSccCommandPath, SccToolPath, StringComparison.OrdinalIgnoreCase))
+                SccToolPath = resolvedSccCommandPath;
+
+            if (string.IsNullOrWhiteSpace(OutputFolderPath))
+            {
+                StatusText = "Output folder is required for SCC headless validation";
+                return;
+            }
+
+            Directory.CreateDirectory(OutputFolderPath);
+
+            if (!TryBuildSccHeadlessArguments(SccArguments, OutputFolderPath, out var effectiveSccArguments, out var sccValidationError))
+            {
+                StatusText = "SCC headless validation failed: " + sccValidationError;
+                CurrentFailureCard = CreateVerifyScapArgumentsInvalidCard(sccValidationError);
+                return;
+            }
+
+            if (!string.Equals(effectiveSccArguments, SccArguments, StringComparison.Ordinal))
+                SccArguments = effectiveSccArguments;
+
+            StatusText = "Running SCC headless validation...";
+
+            var request = new VerificationWorkflowRequest
+            {
+                OutputRoot = OutputFolderPath,
+                ConsolidatedToolLabel = "SCC Headless Test",
+                EvaluateStig = new EvaluateStigWorkflowOptions
+                {
+                    Enabled = false
+                },
+                Scap = new ScapWorkflowOptions
+                {
+                    Enabled = true,
+                    CommandPath = resolvedSccCommandPath,
+                    Arguments = effectiveSccArguments,
+                    WorkingDirectory = string.IsNullOrWhiteSpace(SccWorkingDirectory) ? null : SccWorkingDirectory,
+                    TimeoutSeconds = SccTimeoutSeconds,
+                    ToolLabel = "SCC"
+                }
+            };
+
+            var result = await Task.Run(
+                () => _verifyService.RunAsync(request, CancellationToken.None),
+                CancellationToken.None);
+
+            var scapRun = result.ToolRuns?.FirstOrDefault(run =>
+                string.Equals(run.Tool, "SCC", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(run.Tool, "SCAP", StringComparison.OrdinalIgnoreCase));
+
+            if (scapRun is null || !scapRun.Executed)
+            {
+                StatusText = "SCC headless validation failed: SCC did not execute.";
+                return;
+            }
+
+            if (scapRun.ExitCode != 0)
+            {
+                StatusText = $"SCC headless validation failed: SCC exited with code {scapRun.ExitCode}.";
+                return;
+            }
+
+            if (HasScapDidNothingDiagnostic(result))
+            {
+                StatusText = "SCC headless validation failed: SCC ran but produced no SCAP artifacts.";
+                CurrentFailureCard = CreateVerifyScapNoOutputCard();
+                return;
+            }
+
+            StatusText = "SCC headless validation passed: SCC executed and produced SCAP artifacts.";
+            CurrentFailureCard = null;
+        }
+        catch (Exception ex)
+        {
+            StatusText = $"SCC headless validation failed: {ex.Message}";
+            CurrentFailureCard = CreateVerifyUnknownFailureCard($"SCC headless validation failed unexpectedly: {ex.Message}");
+        }
+        finally
+        {
+            IsBusy = false;
+        }
+    }
+
     [RelayCommand(CanExecute = nameof(CanRunAutoWorkflow))]
     private async Task RunAutoWorkflowAsync()
     {
@@ -1185,6 +1712,7 @@ public partial class WorkflowViewModel : ObservableObject
         SccToolPath = settings.SccToolPath;
         SccArguments = settings.SccArguments;
         SccWorkingDirectory = settings.SccWorkingDirectory;
+        SccTimeoutSeconds = settings.SccTimeoutSeconds;
         OutputFolderPath = settings.OutputFolderPath;
         MachineTarget = settings.MachineTarget;
         RequireElevationForScan = settings.RequireElevationForScan;
@@ -1206,6 +1734,7 @@ public partial class WorkflowViewModel : ObservableObject
             SccToolPath = SccToolPath,
             SccArguments = SccArguments,
             SccWorkingDirectory = SccWorkingDirectory,
+            SccTimeoutSeconds = SccTimeoutSeconds,
             OutputFolderPath = OutputFolderPath,
             MachineTarget = MachineTarget,
             RequireElevationForScan = RequireElevationForScan,
