@@ -2,6 +2,7 @@ namespace STIGForge.Verify;
 
 public sealed class ControlResult
 {
+  public string? AssetId { get; set; }
   public string? VulnId { get; set; }
   public string? RuleId { get; set; }
   public string? Title { get; set; }
@@ -12,6 +13,7 @@ public sealed class ControlResult
   public string Tool { get; set; } = string.Empty;
   public string SourceFile { get; set; } = string.Empty;
   public DateTimeOffset? VerifiedAt { get; set; }
+  public string? BenchmarkId { get; set; }
 }
 
 public sealed class VerifyRunResult

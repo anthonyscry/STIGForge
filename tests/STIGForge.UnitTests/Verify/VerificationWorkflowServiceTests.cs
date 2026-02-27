@@ -128,16 +128,77 @@ public sealed class VerificationWorkflowServiceTests : IDisposable
     result.Diagnostics.Should().Contain(d => d.Contains("arguments were empty", StringComparison.OrdinalIgnoreCase));
   }
 
-  private static void WriteCkl(string filePath)
+  [Fact]
+  public async Task RunAsync_WithDuplicateControls_UsesMergedResultsForSummary()
   {
-    File.WriteAllText(filePath, """
+    var outputRoot = Path.Combine(_tempDir, "merged-duplicates");
+    Directory.CreateDirectory(outputRoot);
+
+    var olderPath = Path.Combine(outputRoot, "control-old.ckl");
+    WriteCkl(olderPath, status: "Open", vulnId: "V-MERGE", ruleId: "SV-MERGE");
+    File.SetLastWriteTimeUtc(olderPath, DateTimeOffset.UtcNow.AddMinutes(-2).UtcDateTime);
+
+    var newerPath = Path.Combine(outputRoot, "control-new.ckl");
+    WriteCkl(newerPath, status: "NotAFinding", vulnId: "V-MERGE", ruleId: "SV-MERGE");
+    File.SetLastWriteTimeUtc(newerPath, DateTimeOffset.UtcNow.AddMinutes(-1).UtcDateTime);
+
+    var service = new VerificationWorkflowService(new EvaluateStigRunner(), new ScapRunner());
+    var request = new VerificationWorkflowRequest
+    {
+      OutputRoot = outputRoot,
+      ConsolidatedToolLabel = "Manual CKL"
+    };
+
+    var result = await service.RunAsync(request, CancellationToken.None);
+
+    result.ConsolidatedResultCount.Should().Be(1);
+    result.TotalRuleCount.Should().Be(1);
+    result.PassCount.Should().Be(1);
+    result.FailCount.Should().Be(0);
+    result.NotApplicableCount.Should().Be(0);
+    result.NotReviewedCount.Should().Be(0);
+    result.ErrorCount.Should().Be(0);
+  }
+
+  [Fact]
+  public async Task RunAsync_WithVariousStatuses_ComputesSummaryCounts()
+  {
+    var outputRoot = Path.Combine(_tempDir, "status-coverage");
+    Directory.CreateDirectory(outputRoot);
+
+    WriteCkl(Path.Combine(outputRoot, "pass.ckl"), status: "NotAFinding", vulnId: "V-2001", ruleId: "SV-2001");
+    WriteCkl(Path.Combine(outputRoot, "fail.ckl"), status: "Open", vulnId: "V-2002", ruleId: "SV-2002");
+    WriteCkl(Path.Combine(outputRoot, "na.ckl"), status: "Not_Applicable", vulnId: "V-2003", ruleId: "SV-2003");
+    WriteCkl(Path.Combine(outputRoot, "not-reviewed.ckl"), status: "Not_Reviewed", vulnId: "V-2004", ruleId: "SV-2004");
+    WriteCkl(Path.Combine(outputRoot, "error.ckl"), status: "Error", vulnId: "V-2005", ruleId: "SV-2005");
+
+    var service = new VerificationWorkflowService(new EvaluateStigRunner(), new ScapRunner());
+    var request = new VerificationWorkflowRequest
+    {
+      OutputRoot = outputRoot
+    };
+
+    var result = await service.RunAsync(request, CancellationToken.None);
+
+    result.ConsolidatedResultCount.Should().Be(5);
+    result.TotalRuleCount.Should().Be(5);
+    result.PassCount.Should().Be(1);
+    result.FailCount.Should().Be(1);
+    result.NotApplicableCount.Should().Be(1);
+    result.NotReviewedCount.Should().Be(1);
+    result.ErrorCount.Should().Be(1);
+  }
+
+  private static void WriteCkl(string filePath, string status = "NotAFinding", string? vulnId = "V-9000", string? ruleId = "SV-9000")
+  {
+    File.WriteAllText(filePath, $"""
 <CHECKLIST>
   <VULN>
-    <STIG_DATA><VULN_ATTRIBUTE>Vuln_Num</VULN_ATTRIBUTE><ATTRIBUTE_DATA>V-9000</ATTRIBUTE_DATA></STIG_DATA>
-    <STIG_DATA><VULN_ATTRIBUTE>Rule_ID</VULN_ATTRIBUTE><ATTRIBUTE_DATA>SV-9000</ATTRIBUTE_DATA></STIG_DATA>
+    <STIG_DATA><VULN_ATTRIBUTE>Vuln_Num</VULN_ATTRIBUTE><ATTRIBUTE_DATA>{vulnId}</ATTRIBUTE_DATA></STIG_DATA>
+    <STIG_DATA><VULN_ATTRIBUTE>Rule_ID</VULN_ATTRIBUTE><ATTRIBUTE_DATA>{ruleId}</ATTRIBUTE_DATA></STIG_DATA>
     <STIG_DATA><VULN_ATTRIBUTE>Rule_Title</VULN_ATTRIBUTE><ATTRIBUTE_DATA>Sample Control</ATTRIBUTE_DATA></STIG_DATA>
     <STIG_DATA><VULN_ATTRIBUTE>Severity</VULN_ATTRIBUTE><ATTRIBUTE_DATA>medium</ATTRIBUTE_DATA></STIG_DATA>
-    <STATUS>NotAFinding</STATUS>
+    <STATUS>{status}</STATUS>
     <FINDING_DETAILS>none</FINDING_DETAILS>
     <COMMENTS>ok</COMMENTS>
   </VULN>

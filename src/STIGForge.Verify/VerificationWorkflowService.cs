@@ -1,3 +1,4 @@
+using System.IO;
 using STIGForge.Core.Abstractions;
 
 namespace STIGForge.Verify;
@@ -39,6 +40,9 @@ public sealed class VerificationWorkflowService : IVerificationWorkflowService
     report.StartedAt = ResolveReportStart(workflowStartedAt, toolRuns);
     report.FinishedAt = ResolveReportFinish(report.StartedAt, toolRuns);
 
+    var mergedResults = SnapshotMergeService.Merge(report.Results, string.Empty);
+    report.Results = mergedResults;
+
     VerifyReportWriter.WriteJson(artifacts.ConsolidatedJsonPath, report);
     VerifyReportWriter.WriteCsv(artifacts.ConsolidatedCsvPath, report.Results);
 
@@ -49,6 +53,7 @@ public sealed class VerificationWorkflowService : IVerificationWorkflowService
       diagnostics.Add("No CKL results were found under output root.");
 
     var workflowFinishedAt = DateTimeOffset.Now;
+    var resultSummary = BuildResultSummary(mergedResults);
 
     return Task.FromResult(new VerificationWorkflowResult
     {
@@ -58,7 +63,13 @@ public sealed class VerificationWorkflowService : IVerificationWorkflowService
       ConsolidatedCsvPath = artifacts.ConsolidatedCsvPath,
       CoverageSummaryJsonPath = artifacts.CoverageSummaryJsonPath,
       CoverageSummaryCsvPath = artifacts.CoverageSummaryCsvPath,
-      ConsolidatedResultCount = report.Results.Count,
+      ConsolidatedResultCount = mergedResults.Count,
+      TotalRuleCount = resultSummary.TotalRuleCount,
+      PassCount = resultSummary.PassCount,
+      FailCount = resultSummary.FailCount,
+      NotApplicableCount = resultSummary.NotApplicableCount,
+      NotReviewedCount = resultSummary.NotReviewedCount,
+      ErrorCount = resultSummary.ErrorCount,
       ToolRuns = toolRuns,
       Diagnostics = diagnostics
     });
@@ -193,14 +204,17 @@ public sealed class VerificationWorkflowService : IVerificationWorkflowService
 
     try
     {
-      foreach (var path in Directory.EnumerateFiles(outputRoot, "*", SearchOption.AllDirectories))
+      var options = new EnumerationOptions
+      {
+        IgnoreInaccessible = true,
+        RecurseSubdirectories = true
+      };
+
+      foreach (var path in Directory.EnumerateFiles(outputRoot, "*", options))
       {
         if (IsScapArtifactPath(path))
           paths.Add(Path.GetFullPath(path));
       }
-    }
-    catch (UnauthorizedAccessException)
-    {
     }
     catch (IOException)
     {
@@ -285,5 +299,86 @@ public sealed class VerificationWorkflowService : IVerificationWorkflowService
   {
     var executedFinishes = runs.Where(r => r.Executed).Select(r => r.FinishedAt).ToList();
     return executedFinishes.Count == 0 ? fallback : executedFinishes.Max();
+  }
+
+  private static ResultSummary BuildResultSummary(IReadOnlyList<ControlResult> results)
+  {
+    var summary = new ResultSummary
+    {
+      TotalRuleCount = results.Count
+    };
+
+    foreach (var result in results)
+    {
+      switch (ClassifyStatus(result.Status))
+      {
+        case StatusCategory.Pass:
+          summary.PassCount++;
+          break;
+        case StatusCategory.Fail:
+          summary.FailCount++;
+          break;
+        case StatusCategory.NotApplicable:
+          summary.NotApplicableCount++;
+          break;
+        case StatusCategory.NotReviewed:
+          summary.NotReviewedCount++;
+          break;
+        case StatusCategory.Error:
+          summary.ErrorCount++;
+          break;
+      }
+    }
+
+    return summary;
+  }
+
+  private static StatusCategory ClassifyStatus(string? status)
+  {
+    if (string.IsNullOrWhiteSpace(status))
+      return StatusCategory.NotReviewed;
+
+    var normalized = status.Trim()
+      .Replace("_", string.Empty)
+      .Replace("-", string.Empty)
+      .Replace(" ", string.Empty)
+      .ToLowerInvariant();
+
+    return normalized switch
+    {
+      "notafinding" => StatusCategory.Pass,
+      "pass" => StatusCategory.Pass,
+      "compliant" => StatusCategory.Pass,
+      "open" => StatusCategory.Fail,
+      "fail" => StatusCategory.Fail,
+      "noncompliant" => StatusCategory.Fail,
+      "notapplicable" => StatusCategory.NotApplicable,
+      "na" => StatusCategory.NotApplicable,
+      "notreviewed" => StatusCategory.NotReviewed,
+      "notchecked" => StatusCategory.NotReviewed,
+      "notselected" => StatusCategory.NotReviewed,
+      "unknown" => StatusCategory.NotReviewed,
+      "error" => StatusCategory.Error,
+      _ => StatusCategory.NotReviewed
+    };
+  }
+
+  private sealed class ResultSummary
+  {
+    public int TotalRuleCount { get; set; }
+    public int PassCount { get; set; }
+    public int FailCount { get; set; }
+    public int NotApplicableCount { get; set; }
+    public int NotReviewedCount { get; set; }
+    public int ErrorCount { get; set; }
+  }
+
+  private enum StatusCategory
+  {
+    Pass,
+    Fail,
+    NotApplicable,
+    NotReviewed,
+    Error
   }
 }

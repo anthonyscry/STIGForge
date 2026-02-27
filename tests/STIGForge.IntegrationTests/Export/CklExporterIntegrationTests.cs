@@ -1,4 +1,6 @@
+using System.Linq;
 using System.Text.Json;
+using System.Xml.Linq;
 using FluentAssertions;
 using STIGForge.Export;
 using STIGForge.Verify;
@@ -79,12 +81,12 @@ public class CklExporterIntegrationTests : IDisposable
 
         CreateBundleWithResults(bundleRoot, results);
 
-        var result = CklExporter.ExportCkl(new CklExportRequest
-        {
-            BundleRoot = bundleRoot,
-            HostName = "TESTHOST",
-            StigId = "Test_STIG"
-        });
+    var result = CklExporter.ExportCkl(new CklExportRequest
+    {
+        BundleRoot = bundleRoot,
+        HostName = "TESTHOST",
+        StigId = "Test_STIG"
+    });
 
         result.ControlCount.Should().Be(2);
         result.OutputPath.Should().NotBeNullOrWhiteSpace();
@@ -108,8 +110,8 @@ public class CklExporterIntegrationTests : IDisposable
             BundleRoot = bundleRoot
         });
 
-        result.ControlCount.Should().Be(0);
-    }
+    result.ControlCount.Should().Be(0);
+  }
 
     [Fact]
     public void ExportCkl_MissingBundleRoot_Throws()
@@ -119,6 +121,141 @@ public class CklExporterIntegrationTests : IDisposable
             BundleRoot = string.Empty
         });
 
-        act.Should().Throw<ArgumentException>();
-    }
+    act.Should().Throw<ArgumentException>();
+  }
+
+  [Fact]
+  public void ExportCkl_DeduplicatesControls_PreservesMergedDetailsAndComments()
+  {
+    var bundleRoot = Path.Combine(_testRoot, "bundle-merge");
+    Directory.CreateDirectory(bundleRoot);
+
+    CreateBundleWithResults(bundleRoot, new List<ControlResult>
+    {
+      new()
+      {
+        VulnId = "V-50001",
+        RuleId = "SV-50001r1_rule",
+        Title = "Integration Merge",
+        Severity = "medium",
+        Status = "Open",
+        FindingDetails = "Base detail",
+        Comments = "Base comment",
+        Tool = "TestTool",
+        SourceFile = "test.xml"
+      }
+    });
+
+    AddAdditionalReport(bundleRoot, "run2", new List<ControlResult>
+    {
+      new()
+      {
+        VulnId = "V-50001",
+        RuleId = "SV-50001r1_rule",
+        Title = "Integration Merge",
+        Severity = "medium",
+        Status = "NotAFinding",
+        FindingDetails = "Secondary detail",
+        Comments = "Secondary comment",
+        Tool = "TestTool",
+        SourceFile = "test.xml"
+      }
+    });
+
+    var result = CklExporter.ExportCkl(new CklExportRequest { BundleRoot = bundleRoot });
+    var doc = XDocument.Load(result.OutputPath);
+    var vuln = doc.Descendants("VULN").Single();
+    vuln.Element("FINDING_DETAILS")!.Value.Should().Contain("Base detail");
+    vuln.Element("FINDING_DETAILS")!.Value.Should().Contain("Secondary detail");
+    vuln.Element("COMMENTS")!.Value.Should().Contain("Base comment");
+    vuln.Element("COMMENTS")!.Value.Should().Contain("Secondary comment");
+  }
+
+  [Fact]
+  public void ExportCkl_DoesNotDuplicateRepeatedTextAcrossReports()
+  {
+    const string repeatedDetail = "Consistent detail";
+    const string repeatedComment = "Consistent comment";
+    var bundleRoot = Path.Combine(_testRoot, "bundle-repeated-text");
+    Directory.CreateDirectory(bundleRoot);
+
+    CreateBundleWithResults(bundleRoot, new List<ControlResult>
+    {
+      new()
+      {
+        VulnId = "V-50200",
+        RuleId = "SV-50200r1_rule",
+        Title = "Repeated Integration Text",
+        Severity = "medium",
+        Status = "Open",
+        FindingDetails = repeatedDetail,
+        Comments = repeatedComment,
+        Tool = "TestTool",
+        SourceFile = "test.xml"
+      }
+    });
+
+    AddAdditionalReport(bundleRoot, "run2", new List<ControlResult>
+    {
+      new()
+      {
+        VulnId = "V-50200",
+        RuleId = "SV-50200r1_rule",
+        Title = "Repeated Integration Text",
+        Severity = "medium",
+        Status = "Open",
+        FindingDetails = repeatedDetail,
+        Comments = repeatedComment,
+        Tool = "TestTool",
+        SourceFile = "test.xml"
+      }
+    });
+
+    AddAdditionalReport(bundleRoot, "run3", new List<ControlResult>
+    {
+      new()
+      {
+        VulnId = "V-50200",
+        RuleId = "SV-50200r1_rule",
+        Title = "Repeated Integration Text",
+        Severity = "medium",
+        Status = "Open",
+        FindingDetails = repeatedDetail,
+        Comments = repeatedComment,
+        Tool = "TestTool",
+        SourceFile = "test.xml"
+      }
+    });
+
+    var result = CklExporter.ExportCkl(new CklExportRequest { BundleRoot = bundleRoot });
+    var doc = XDocument.Load(result.OutputPath);
+    var vuln = doc.Descendants("VULN").Single();
+
+    vuln.Element("FINDING_DETAILS")!.Value.Should().Be(repeatedDetail);
+    vuln.Element("COMMENTS")!.Value.Should().Be(repeatedComment);
+  }
+
+  private void AddAdditionalReport(string bundleRoot, string runName, IReadOnlyList<ControlResult> results)
+  {
+    var verifyDir = Path.Combine(bundleRoot, "Verify", runName);
+    Directory.CreateDirectory(verifyDir);
+
+    var report = new VerifyReport
+    {
+      Tool = "TestTool",
+      ToolVersion = "1.0",
+      StartedAt = DateTimeOffset.UtcNow,
+      FinishedAt = DateTimeOffset.UtcNow,
+      OutputRoot = verifyDir,
+      Results = results
+    };
+
+    var json = JsonSerializer.Serialize(report, new JsonSerializerOptions
+    {
+      PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+      WriteIndented = true
+    });
+
+    File.WriteAllText(Path.Combine(verifyDir, "consolidated-results.json"), json);
+  }
 }

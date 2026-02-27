@@ -137,11 +137,25 @@ public partial class WorkflowViewModel : ObservableObject
 
     private static bool IsZeroFindingsFailure(VerificationWorkflowResult result)
     {
+        if (!HasAnyResults(result))
+            return true;
+
         var evaluateRun = FindEvaluateRun(result);
         if (evaluateRun is { Executed: true } && evaluateRun.ExitCode != 0)
             return true;
 
         return HasNoCklDiagnostic(result);
+    }
+
+    private static bool HasAnyResults(VerificationWorkflowResult result)
+    {
+        if (result == null)
+            return false;
+
+        if (result.TotalRuleCount > 0)
+            return true;
+
+        return result.ConsolidatedResultCount > 0;
     }
 
     private static string BuildZeroFindingsMessage(string operationName, VerificationWorkflowResult result)
@@ -450,6 +464,21 @@ public partial class WorkflowViewModel : ObservableObject
     private int _fixedCount;
 
     [ObservableProperty]
+    private int _totalRuleCount;
+
+    [ObservableProperty]
+    private int _compliancePassCount;
+
+    [ObservableProperty]
+    private int _complianceFailCount;
+
+    [ObservableProperty]
+    private int _complianceOtherCount;
+
+    [ObservableProperty]
+    private double _compliancePercent;
+
+    [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(RunImportStepCommand))]
     [NotifyCanExecuteChangedFor(nameof(RunAutoWorkflowCommand))]
     private StepState _importState = StepState.Ready;
@@ -706,15 +735,15 @@ public partial class WorkflowViewModel : ObservableObject
                 () => _verifyService.RunAsync(request, CancellationToken.None),
                 CancellationToken.None);
 
-            BaselineFindingsCount = result.ConsolidatedResultCount;
-            if (BaselineFindingsCount == 0)
+            var baselineOpenFindings = result.FailCount + result.ErrorCount;
+            BaselineFindingsCount = baselineOpenFindings;
+            if (baselineOpenFindings == 0)
             {
-                StatusText = BuildZeroFindingsMessage("Baseline scan", result);
-                var isFailure = IsZeroFindingsFailure(result);
-                if (isFailure)
-                    CurrentFailureCard = BuildScanFailureCard(result);
+              StatusText = BuildZeroFindingsMessage("Baseline scan", result);
+              var isFailure = IsZeroFindingsFailure(result);
+              CurrentFailureCard = isFailure ? BuildScanFailureCard(result) : null;
 
-                return !isFailure;
+              return !isFailure;
             }
 
             StatusText = $"Baseline scan complete: {BaselineFindingsCount} findings";
@@ -789,6 +818,7 @@ public partial class WorkflowViewModel : ObservableObject
     {
         StatusText = "Running verification scan (Evaluate-STIG + SCC)...";
         CurrentFailureCard = null;
+        ResetComplianceMetrics();
 
         if (_verifyService == null)
         {
@@ -867,36 +897,39 @@ public partial class WorkflowViewModel : ObservableObject
                 () => _verifyService.RunAsync(request, CancellationToken.None),
                 CancellationToken.None);
 
-            VerifyFindingsCount = result.ConsolidatedResultCount;
+            UpdateComplianceMetrics(result);
+
+            var verifyOpenFindings = result.FailCount + result.ErrorCount;
+            VerifyFindingsCount = verifyOpenFindings;
             FixedCount = BaselineFindingsCount - VerifyFindingsCount;
             if (FixedCount < 0) FixedCount = 0;
 
             if (HasScapDidNothingDiagnostic(result))
             {
-                StatusText = "Verification did not complete: SCC ran without usable arguments/output.";
-                CurrentFailureCard = CreateVerifyScapNoOutputCard();
-                await WriteMissionJsonAsync(result, CancellationToken.None, CurrentFailureCard, "Verify");
-                return false;
+              StatusText = "Verification did not complete: SCC ran without usable arguments/output.";
+              CurrentFailureCard = CreateVerifyScapNoOutputCard();
+              await WriteMissionJsonAsync(result, CancellationToken.None, CurrentFailureCard, "Verify");
+              return false;
             }
 
-            if (VerifyFindingsCount == 0)
+            if (verifyOpenFindings == 0)
             {
-                StatusText = BuildZeroFindingsMessage("Verification scan", result);
-                var isFailure = IsZeroFindingsFailure(result);
-                WorkflowFailureCard? missionFailureCard = null;
-                if (isFailure)
-                {
-                    missionFailureCard = BuildVerifyFailureCard(result);
-                    CurrentFailureCard = missionFailureCard;
-                }
-                else
-                {
-                    CurrentFailureCard = null;
-                }
+              StatusText = BuildZeroFindingsMessage("Verification scan", result);
+              var isFailure = IsZeroFindingsFailure(result);
+              WorkflowFailureCard? missionFailureCard = null;
+              if (isFailure)
+              {
+                missionFailureCard = BuildVerifyFailureCard(result);
+                CurrentFailureCard = missionFailureCard;
+              }
+              else
+              {
+                CurrentFailureCard = null;
+              }
 
-                await WriteMissionJsonAsync(result, CancellationToken.None, missionFailureCard, "Verify");
+              await WriteMissionJsonAsync(result, CancellationToken.None, missionFailureCard, "Verify");
 
-                return !isFailure;
+              return !isFailure;
             }
 
             StatusText = $"Verification complete: {VerifyFindingsCount} remaining ({FixedCount} fixed)";
@@ -911,6 +944,30 @@ public partial class WorkflowViewModel : ObservableObject
             CurrentFailureCard = CreateVerifyUnknownFailureCard($"Verification failed unexpectedly: {ex.Message}");
             return false;
         }
+    }
+
+    private void ResetComplianceMetrics()
+    {
+        TotalRuleCount = 0;
+        CompliancePassCount = 0;
+        ComplianceFailCount = 0;
+        ComplianceOtherCount = 0;
+        CompliancePercent = 0;
+    }
+
+    private void UpdateComplianceMetrics(VerificationWorkflowResult result)
+    {
+        if (result == null)
+            return;
+
+        TotalRuleCount = result.TotalRuleCount;
+        CompliancePassCount = result.PassCount;
+        ComplianceFailCount = result.FailCount;
+        ComplianceOtherCount = result.NotApplicableCount + result.NotReviewedCount + result.ErrorCount;
+        var denominator = result.PassCount + result.FailCount + result.ErrorCount;
+        CompliancePercent = denominator > 0
+            ? (double)result.PassCount / denominator * 100
+            : 0;
     }
 
     private async Task WriteMissionJsonAsync(
@@ -1520,5 +1577,6 @@ public partial class WorkflowViewModel : ObservableObject
         MissionJsonPath = string.Empty;
         StatusText = string.Empty;
         ProgressValue = 0;
+        ResetComplianceMetrics();
     }
 }

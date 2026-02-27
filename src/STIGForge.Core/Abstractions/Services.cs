@@ -231,6 +231,18 @@ public sealed class VerificationWorkflowResult
 
   public int ConsolidatedResultCount { get; set; }
 
+  public int TotalRuleCount { get; set; }
+
+  public int PassCount { get; set; }
+
+  public int FailCount { get; set; }
+
+  public int NotApplicableCount { get; set; }
+
+  public int NotReviewedCount { get; set; }
+
+  public int ErrorCount { get; set; }
+
   public IReadOnlyList<VerificationToolRunResult> ToolRuns { get; set; } = Array.Empty<VerificationToolRunResult>();
 
   public IReadOnlyList<string> Diagnostics { get; set; } = Array.Empty<string>();

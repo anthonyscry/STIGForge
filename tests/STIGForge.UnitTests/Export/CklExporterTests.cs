@@ -1,3 +1,5 @@
+using System.Linq;
+using System.Reflection;
 using System.Text.Json;
 using System.Xml.Linq;
 using System.IO.Compression;
@@ -163,6 +165,193 @@ public sealed class CklExporterTests : IDisposable
     doc.Descendants("iSTIG").Count().Should().Be(2);
   }
 
+  [Fact]
+  public void ExportCkl_DeduplicatesControls_PreservesMergedDetailsAndComments()
+  {
+    var bundleRoot = CreateTestBundle("bundle-dedup", new List<ControlResult>
+    {
+      new() { VulnId = "V-20001", RuleId = "SV-20001r1_rule", Title = "Merged Control", Severity = "high", Status = "Open", FindingDetails = "Initial detail", Comments = "Initial comment", Tool = "Test" }
+    });
+
+    AddVerifyReport(bundleRoot, "run2", new List<ControlResult>
+    {
+      new() { VulnId = "V-20001", RuleId = "SV-20001r1_rule", Title = "Merged Control", Severity = "high", Status = "NotAFinding", FindingDetails = "Duplicate detail", Comments = "Duplicate comment", Tool = "Test" }
+    });
+
+    var result = CklExporter.ExportCkl(new CklExportRequest { BundleRoot = bundleRoot });
+    result.ControlCount.Should().Be(1);
+
+    var doc = XDocument.Load(result.OutputPath);
+    var vuln = doc.Descendants("VULN").Single();
+    vuln.Element("FINDING_DETAILS")!.Value.Should().Contain("Initial detail");
+    vuln.Element("FINDING_DETAILS")!.Value.Should().Contain("Duplicate detail");
+    vuln.Element("COMMENTS")!.Value.Should().Contain("Initial comment");
+    vuln.Element("COMMENTS")!.Value.Should().Contain("Duplicate comment");
+  }
+
+  [Fact]
+  public void LoadResultsForBundle_StatusWinnerAlignsMetadata()
+  {
+    var bundleRoot = CreateTestBundle("bundle-status-metadata", new List<ControlResult>
+    {
+      new()
+      {
+        VulnId = "V-21001",
+        RuleId = "SV-21001r1_rule",
+        Title = "Metadata Merge",
+        Severity = "medium",
+        Status = "NotAFinding",
+        Tool = "BaselineTool",
+        SourceFile = "baseline.xml",
+        VerifiedAt = DateTimeOffset.Parse("2026-02-01T00:00:00Z")
+      }
+    });
+
+    AddVerifyReport(bundleRoot, "run2", new List<ControlResult>
+    {
+      new()
+      {
+        VulnId = "V-21001",
+        RuleId = "SV-21001r1_rule",
+        Title = "Metadata Merge",
+        Severity = "medium",
+        Status = "Open",
+        Tool = "WinnerTool",
+        SourceFile = "winner.xml",
+        VerifiedAt = DateTimeOffset.Parse("2026-02-02T00:00:00Z")
+      }
+    });
+
+    var method = typeof(CklExporter).GetMethod("LoadResultsForBundle", BindingFlags.NonPublic | BindingFlags.Static);
+    method.Should().NotBeNull();
+    var resultSet = method!.Invoke(null, new object[] { bundleRoot })!;
+    var resultsProp = resultSet.GetType().GetProperty("Results");
+    var results = (IReadOnlyList<ControlResult>)resultsProp!.GetValue(resultSet)!;
+    var merged = results.Single();
+
+    merged.Status.Should().Be("Open");
+    merged.Tool.Should().Be("WinnerTool");
+    merged.SourceFile.Should().Be("winner.xml");
+    merged.VerifiedAt.Should().Be(DateTimeOffset.Parse("2026-02-02T00:00:00Z"));
+  }
+
+  [Fact]
+  public void LoadResultsForBundle_StatusWinnerPrefersLatestVerifiedAt()
+  {
+    var bundleRoot = CreateTestBundle("bundle-status-latest", new List<ControlResult>
+    {
+      new()
+      {
+        VulnId = "V-22010",
+        RuleId = "SV-22010r1_rule",
+        Title = "Latest Verification",
+        Severity = "medium",
+        Status = "Open",
+        Tool = "BaselineTool",
+        SourceFile = "baseline.xml",
+        VerifiedAt = DateTimeOffset.Parse("2026-02-01T00:00:00Z")
+      }
+    });
+
+    AddVerifyReport(bundleRoot, "run2", new List<ControlResult>
+    {
+      new()
+      {
+        VulnId = "V-22010",
+        RuleId = "SV-22010r1_rule",
+        Title = "Latest Verification",
+        Severity = "medium",
+        Status = "NotAFinding",
+        Tool = "LaterTool",
+        SourceFile = "later.xml",
+        VerifiedAt = DateTimeOffset.Parse("2026-02-03T00:00:00Z")
+      }
+    });
+
+    var method = typeof(CklExporter).GetMethod("LoadResultsForBundle", BindingFlags.NonPublic | BindingFlags.Static);
+    method.Should().NotBeNull();
+    var resultSet = method!.Invoke(null, new object[] { bundleRoot })!;
+    var resultsProp = resultSet.GetType().GetProperty("Results");
+    var results = (IReadOnlyList<ControlResult>)resultsProp!.GetValue(resultSet)!;
+    var merged = results.Single();
+
+    merged.Status.Should().Be("NotAFinding");
+    merged.Tool.Should().Be("LaterTool");
+    merged.SourceFile.Should().Be("later.xml");
+    merged.VerifiedAt.Should().Be(DateTimeOffset.Parse("2026-02-03T00:00:00Z"));
+  }
+
+  [Fact]
+  public void ExportCkl_DoesNotDuplicateRepeatedDetailsAndComments()
+  {
+    const string repeatedDetail = "Shared detail";
+    const string repeatedComment = "Shared comment";
+    var bundleRoot = CreateTestBundle("bundle-repeated-text", new List<ControlResult>
+    {
+      new()
+      {
+        VulnId = "V-22001",
+        RuleId = "SV-22001r1_rule",
+        Title = "Repeated Text",
+        Severity = "medium",
+        Status = "Open",
+        FindingDetails = repeatedDetail,
+        Comments = repeatedComment,
+        Tool = "Test"
+      }
+    });
+
+    AddVerifyReport(bundleRoot, "run2", new List<ControlResult>
+    {
+      new()
+      {
+        VulnId = "V-22001",
+        RuleId = "SV-22001r1_rule",
+        Title = "Repeated Text",
+        Severity = "medium",
+        Status = "Open",
+        FindingDetails = repeatedDetail,
+        Comments = repeatedComment,
+        Tool = "Test"
+      }
+    });
+
+    AddVerifyReport(bundleRoot, "run3", new List<ControlResult>
+    {
+      new()
+      {
+        VulnId = "V-22001",
+        RuleId = "SV-22001r1_rule",
+        Title = "Repeated Text",
+        Severity = "medium",
+        Status = "Open",
+        FindingDetails = repeatedDetail,
+        Comments = repeatedComment,
+        Tool = "Test"
+      }
+    });
+
+    var result = CklExporter.ExportCkl(new CklExportRequest { BundleRoot = bundleRoot });
+    var doc = XDocument.Load(result.OutputPath);
+    var vuln = doc.Descendants("VULN").Single();
+
+    vuln.Element("FINDING_DETAILS")!.Value.Should().Be(repeatedDetail);
+    vuln.Element("COMMENTS")!.Value.Should().Be(repeatedComment);
+  }
+
+  [Fact]
+  public void ExportCkl_UnknownStatusDefaultsToNotReviewed()
+  {
+    var bundleRoot = CreateTestBundle("bundle-unknown-status", new List<ControlResult>
+    {
+      new() { VulnId = "V-30001", RuleId = "SV-30001r1_rule", Title = "Mystery status", Severity = "low", Status = "WeirdState", Tool = "Test" }
+    });
+
+    var result = CklExporter.ExportCkl(new CklExportRequest { BundleRoot = bundleRoot });
+    var doc = XDocument.Load(result.OutputPath);
+    doc.Descendants("STATUS").Single().Value.Should().Be("Not_Reviewed");
+  }
+
   private string CreateTestBundle(string folderName = "bundle", IReadOnlyList<ControlResult>? controls = null)
   {
     var bundleRoot = Path.Combine(_tempDir, folderName);
@@ -196,5 +385,19 @@ public sealed class CklExporterTests : IDisposable
     File.WriteAllText(Path.Combine(manifestDir, "manifest.json"), JsonSerializer.Serialize(manifest));
 
     return bundleRoot;
+  }
+
+  private static void AddVerifyReport(string bundleRoot, string runName, IReadOnlyList<ControlResult> results)
+  {
+    var reportDir = Path.Combine(bundleRoot, "Verify", runName);
+    Directory.CreateDirectory(reportDir);
+
+    var report = new VerifyReport
+    {
+      Tool = "Test",
+      Results = results
+    };
+
+    File.WriteAllText(Path.Combine(reportDir, "consolidated-results.json"), JsonSerializer.Serialize(report, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase }));
   }
 }

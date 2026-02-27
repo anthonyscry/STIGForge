@@ -552,6 +552,86 @@ public class WorkflowViewModelTests
     }
 
     [Fact]
+    public async Task RunVerifyStepCommand_OpenFindingsReflectFailAndErrorCounts()
+    {
+        var outputFolder = Directory.CreateTempSubdirectory().FullName;
+        var evaluateTool = Directory.CreateTempSubdirectory().FullName;
+        CreateEvaluateStigScript(evaluateTool);
+        var verifyService = new TrackingVerificationWorkflowService(new VerificationWorkflowResult
+        {
+            ConsolidatedResultCount = 4,
+            TotalRuleCount = 4,
+            FailCount = 1,
+            ErrorCount = 2
+        });
+
+        try
+        {
+            var vm = new WorkflowViewModel(
+                importScanner: null,
+                verifyService: verifyService,
+                isElevatedResolver: () => true)
+            {
+                VerifyState = StepState.Ready,
+                ScanState = StepState.Complete,
+                HardenState = StepState.Complete,
+                OutputFolderPath = outputFolder,
+                EvaluateStigToolPath = evaluateTool
+            };
+
+            await vm.RunVerifyStepCommand.ExecuteAsync(null);
+
+            Assert.Equal(3, vm.VerifyFindingsCount);
+            Assert.Equal(0, vm.FixedCount);
+            Assert.Equal(StepState.Complete, vm.VerifyState);
+        }
+        finally
+        {
+            Directory.Delete(evaluateTool, recursive: true);
+            Directory.Delete(outputFolder, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task RunVerifyStepCommand_WhenNoResultsWithoutDiagnostics_FailsWithUnknownFailure()
+    {
+        var outputFolder = Directory.CreateTempSubdirectory().FullName;
+        var evaluateTool = Directory.CreateTempSubdirectory().FullName;
+        CreateEvaluateStigScript(evaluateTool);
+        var verifyService = new TrackingVerificationWorkflowService(new VerificationWorkflowResult
+        {
+            ConsolidatedResultCount = 0,
+            TotalRuleCount = 0
+        });
+
+        try
+        {
+            var vm = new WorkflowViewModel(
+                importScanner: null,
+                verifyService: verifyService,
+                isElevatedResolver: () => true)
+            {
+                VerifyState = StepState.Ready,
+                ScanState = StepState.Complete,
+                HardenState = StepState.Complete,
+                OutputFolderPath = outputFolder,
+                EvaluateStigToolPath = evaluateTool
+            };
+
+            await vm.RunVerifyStepCommand.ExecuteAsync(null);
+
+            Assert.Equal(StepState.Error, vm.VerifyState);
+            Assert.NotNull(vm.CurrentFailureCard);
+            Assert.Equal(WorkflowRootCauseCode.UnknownFailure, vm.CurrentFailureCard!.RootCauseCode);
+        }
+        finally
+        {
+            Directory.Delete(evaluateTool, recursive: true);
+            Directory.Delete(outputFolder, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task RunVerifyStepCommand_WhenSccAdvancedOptionsConfigured_PropagatesScapArgumentsAndWorkingDirectory()
     {
         var outputRoot = Directory.CreateTempSubdirectory().FullName;
@@ -1012,6 +1092,87 @@ public class WorkflowViewModelTests
             Assert.Equal(StepState.Error, vm.ScanState);
             Assert.Equal("No imported content detected. Run Import and confirm items in Imported Library.", vm.ScanError);
             Assert.Equal(0, verifyService.CallCount);
+        }
+        finally
+        {
+            Directory.Delete(evaluateTool, recursive: true);
+            Directory.Delete(outputFolder, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task RunScanStepCommand_OpenFindingsReflectFailAndErrorCounts()
+    {
+        var evaluateTool = Directory.CreateTempSubdirectory().FullName;
+        var outputFolder = Directory.CreateTempSubdirectory().FullName;
+        CreateEvaluateStigScript(evaluateTool);
+        var verifyService = new TrackingVerificationWorkflowService(new VerificationWorkflowResult
+        {
+            ConsolidatedResultCount = 5,
+            TotalRuleCount = 5,
+            FailCount = 2,
+            ErrorCount = 1
+        });
+
+        try
+        {
+            var vm = new WorkflowViewModel(
+                importScanner: null,
+                verifyService: verifyService,
+                runApply: null,
+                autoScanRootResolver: null,
+                isElevatedResolver: () => true)
+            {
+                ScanState = StepState.Ready,
+                ImportedItemsCount = 1,
+                OutputFolderPath = outputFolder,
+                EvaluateStigToolPath = evaluateTool
+            };
+
+            await vm.RunScanStepCommand.ExecuteAsync(null);
+
+            Assert.Equal(3, vm.BaselineFindingsCount);
+            Assert.Equal(StepState.Complete, vm.ScanState);
+        }
+        finally
+        {
+            Directory.Delete(evaluateTool, recursive: true);
+            Directory.Delete(outputFolder, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task RunScanStepCommand_WhenNoResultsWithoutDiagnostics_FailsWithUnknownFailure()
+    {
+        var evaluateTool = Directory.CreateTempSubdirectory().FullName;
+        var outputFolder = Directory.CreateTempSubdirectory().FullName;
+        CreateEvaluateStigScript(evaluateTool);
+        var verifyService = new TrackingVerificationWorkflowService(new VerificationWorkflowResult
+        {
+            ConsolidatedResultCount = 0,
+            TotalRuleCount = 0
+        });
+
+        try
+        {
+            var vm = new WorkflowViewModel(
+                importScanner: null,
+                verifyService: verifyService,
+                runApply: null,
+                autoScanRootResolver: null,
+                isElevatedResolver: () => true)
+            {
+                ScanState = StepState.Ready,
+                ImportedItemsCount = 1,
+                OutputFolderPath = outputFolder,
+                EvaluateStigToolPath = evaluateTool
+            };
+
+            await vm.RunScanStepCommand.ExecuteAsync(null);
+
+            Assert.Equal(StepState.Error, vm.ScanState);
+            Assert.NotNull(vm.CurrentFailureCard);
+            Assert.Equal(WorkflowRootCauseCode.UnknownFailure, vm.CurrentFailureCard!.RootCauseCode);
         }
         finally
         {
@@ -1808,6 +1969,82 @@ public class WorkflowViewModelTests
             Directory.Delete(evaluateTool, recursive: true);
             Directory.Delete(outputFolder, recursive: true);
         }
+    }
+
+    [Fact]
+    public async Task RunVerifyStepCommand_UpdatesComplianceMetricsFromResult()
+    {
+        var outputFolder = Directory.CreateTempSubdirectory().FullName;
+        var evaluateTool = Directory.CreateTempSubdirectory().FullName;
+        CreateEvaluateStigScript(evaluateTool);
+
+        var verifyService = new TrackingVerificationWorkflowService(new VerificationWorkflowResult
+        {
+            ConsolidatedResultCount = 5,
+            TotalRuleCount = 12,
+            PassCount = 8,
+            FailCount = 2,
+            NotApplicableCount = 1,
+            NotReviewedCount = 0,
+            ErrorCount = 1,
+            ToolRuns =
+            [
+                new VerificationToolRunResult
+                {
+                    Tool = "Evaluate-STIG",
+                    Executed = true,
+                    ExitCode = 0
+                }
+            ]
+        });
+
+        var vm = new WorkflowViewModel(
+            importScanner: null,
+            verifyService: verifyService,
+            isElevatedResolver: () => true)
+        {
+            VerifyState = StepState.Ready,
+            OutputFolderPath = outputFolder,
+            EvaluateStigToolPath = evaluateTool
+        };
+
+        try
+        {
+            await vm.RunVerifyStepCommand.ExecuteAsync(null);
+
+            Assert.Equal(12, vm.TotalRuleCount);
+            Assert.Equal(8, vm.CompliancePassCount);
+            Assert.Equal(2, vm.ComplianceFailCount);
+            Assert.Equal(2, vm.ComplianceOtherCount);
+            var expectedPercent = 8d / (8 + 2 + 1) * 100;
+            Assert.Equal(expectedPercent, vm.CompliancePercent, precision: 5);
+        }
+        finally
+        {
+            Directory.Delete(evaluateTool, recursive: true);
+            Directory.Delete(outputFolder, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void RestartWorkflow_ResetsComplianceMetrics()
+    {
+        var vm = new WorkflowViewModel
+        {
+            TotalRuleCount = 5,
+            CompliancePassCount = 3,
+            ComplianceFailCount = 1,
+            ComplianceOtherCount = 1,
+            CompliancePercent = 75
+        };
+
+        vm.RestartWorkflowCommand.Execute(null);
+
+        Assert.Equal(0, vm.TotalRuleCount);
+        Assert.Equal(0, vm.CompliancePassCount);
+        Assert.Equal(0, vm.ComplianceFailCount);
+        Assert.Equal(0, vm.ComplianceOtherCount);
+        Assert.Equal(0, vm.CompliancePercent);
     }
 
     private static void CreateMinimalStigZip(string folder, string fileName)

@@ -1,3 +1,4 @@
+using System;
 using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
@@ -244,7 +245,14 @@ public static class CklExporter
       foreach (var result in report.Results)
       {
         var key = BuildControlKey(result);
-        dedup[key] = result;
+        if (dedup.TryGetValue(key, out var existing))
+        {
+          MergeControlResults(existing, result);
+        }
+        else
+        {
+          dedup[key] = result;
+        }
       }
     }
 
@@ -262,6 +270,111 @@ public static class CklExporter
     if (!string.IsNullOrWhiteSpace(result.RuleId))
       return "RULE:" + result.RuleId;
     return "TITLE:" + (result.Title ?? string.Empty);
+  }
+
+  private static void MergeControlResults(ControlResult existing, ControlResult incoming)
+  {
+    existing.AssetId = PreferValue(existing.AssetId, incoming.AssetId);
+    existing.VulnId = PreferValue(existing.VulnId, incoming.VulnId);
+    existing.RuleId = PreferValue(existing.RuleId, incoming.RuleId);
+    existing.Title = PreferValue(existing.Title, incoming.Title);
+    existing.Severity = PreferValue(existing.Severity, incoming.Severity);
+
+    var statusOutcome = ResolveStatusWinner(existing, incoming);
+    var winner = statusOutcome == StatusWinner.Incoming ? incoming : existing;
+    var loser = statusOutcome == StatusWinner.Incoming ? existing : incoming;
+
+    existing.Status = winner.Status;
+    existing.Tool = ChooseMetadataValue(winner.Tool, loser.Tool);
+    existing.SourceFile = ChooseMetadataValue(winner.SourceFile, loser.SourceFile);
+    existing.VerifiedAt = winner.VerifiedAt ?? loser.VerifiedAt;
+
+    existing.BenchmarkId = PreferValue(existing.BenchmarkId, incoming.BenchmarkId);
+    existing.FindingDetails = MergeText(existing.FindingDetails, incoming.FindingDetails);
+    existing.Comments = MergeText(existing.Comments, incoming.Comments);
+  }
+
+  private static string? PreferValue(string? current, string? candidate)
+  {
+    if (!string.IsNullOrWhiteSpace(current))
+      return current;
+
+    return string.IsNullOrWhiteSpace(candidate) ? current : candidate;
+  }
+
+  private enum StatusWinner
+  {
+    Existing,
+    Incoming
+  }
+
+  private static StatusWinner ResolveStatusWinner(ControlResult current, ControlResult candidate)
+  {
+    var currentTimestamp = current.VerifiedAt ?? DateTimeOffset.MinValue;
+    var candidateTimestamp = candidate.VerifiedAt ?? DateTimeOffset.MinValue;
+    if (candidateTimestamp != currentTimestamp)
+      return candidateTimestamp > currentTimestamp ? StatusWinner.Incoming : StatusWinner.Existing;
+
+    var currentPriority = MapStatusPriority(current.Status);
+    var candidatePriority = MapStatusPriority(candidate.Status);
+    if (candidatePriority != currentPriority)
+      return candidatePriority > currentPriority ? StatusWinner.Incoming : StatusWinner.Existing;
+
+    var comparison = string.CompareOrdinal(BuildTieBreakKey(current), BuildTieBreakKey(candidate));
+    if (comparison < 0)
+      return StatusWinner.Incoming;
+
+    return StatusWinner.Existing;
+  }
+
+  private static int MapStatusPriority(string? value)
+  {
+    return ExportStatusMapper.MapToVerifyStatus(value ?? string.Empty) switch
+    {
+      VerifyStatus.Fail => 3,
+      VerifyStatus.Error => 3,
+      VerifyStatus.NotReviewed => 2,
+      VerifyStatus.Unknown => 2,
+      VerifyStatus.NotApplicable => 1,
+      VerifyStatus.Pass => 0,
+      VerifyStatus.Informational => 0,
+      _ => 0
+    };
+  }
+
+  private static string? MergeText(string? existing, string? candidate)
+  {
+    var hasExisting = !string.IsNullOrWhiteSpace(existing);
+    var hasCandidate = !string.IsNullOrWhiteSpace(candidate);
+
+    if (!hasExisting)
+      return candidate;
+    if (!hasCandidate)
+      return existing;
+    var existingValue = existing!;
+    var candidateValue = candidate!;
+    if (string.Equals(existingValue, candidateValue, StringComparison.Ordinal))
+      return existingValue;
+    if (existingValue.Contains(candidateValue, StringComparison.Ordinal))
+      return existingValue;
+
+    return existingValue + Environment.NewLine + candidateValue;
+  }
+
+  private static string ChooseMetadataValue(string winnerValue, string loserValue)
+  {
+    if (!string.IsNullOrWhiteSpace(winnerValue))
+      return winnerValue;
+
+    return string.IsNullOrWhiteSpace(loserValue) ? string.Empty : loserValue;
+  }
+
+  private static string BuildTieBreakKey(ControlResult result)
+  {
+    var status = result.Status ?? string.Empty;
+    var tool = result.Tool ?? string.Empty;
+    var sourceFile = result.SourceFile ?? string.Empty;
+    return string.Join('|', status, tool, sourceFile);
   }
 
   private static void TryReadBundleManifest(string bundleRoot, out string packId, out string packName)
