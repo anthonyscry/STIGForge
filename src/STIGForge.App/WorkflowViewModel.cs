@@ -1035,6 +1035,12 @@ public partial class WorkflowViewModel : ObservableObject
         try
         {
             var request = BuildHardenApplyRequest(OutputFolderPath);
+            if (!HasAnyHardenApplyInput(request))
+            {
+                StatusText = BuildMissingHardenArtifactsMessage(OutputFolderPath);
+                return false;
+            }
+
             var result = await _runApply(request, CancellationToken.None);
 
             if (!result.IsMissionComplete)
@@ -1093,6 +1099,25 @@ public partial class WorkflowViewModel : ObservableObject
             request.LgpoExePath = lgpoExePath;
 
         return request;
+    }
+
+    private static bool HasAnyHardenApplyInput(ApplyRequest request)
+    {
+        return !string.IsNullOrWhiteSpace(request.PowerStigModulePath)
+            || !string.IsNullOrWhiteSpace(request.DscMofPath)
+            || !string.IsNullOrWhiteSpace(request.LgpoPolFilePath)
+            || !string.IsNullOrWhiteSpace(request.ScriptPath);
+    }
+
+    private static string BuildMissingHardenArtifactsMessage(string bundleRoot)
+    {
+        var applyRoot = Path.Combine(bundleRoot, "Apply");
+        var dscPath = Path.Combine(applyRoot, "Dsc");
+        var lgpoPath = Path.Combine(applyRoot, "GPO", "Machine", "Registry.pol");
+
+        return "Hardening cannot run: no apply artifacts were found under " + applyRoot
+            + ". Expected at least one of: PowerSTIG module in Apply, DSC directory " + dscPath
+            + ", or LGPO policy " + lgpoPath + ".";
     }
 
     private static string? ResolveDscMofPath(string applyRoot)

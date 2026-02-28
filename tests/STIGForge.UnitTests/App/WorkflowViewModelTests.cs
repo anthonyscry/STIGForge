@@ -1004,12 +1004,47 @@ public class WorkflowViewModelTests
     }
 
     [Fact]
+    public async Task RunHardenStepCommand_WhenApplyArtifactsMissing_SetsErrorStateAndSkipsApplyRunner()
+    {
+        var tempFolder = Directory.CreateTempSubdirectory();
+        var applyInvocations = 0;
+
+        try
+        {
+            var vm = new WorkflowViewModel(
+                runApply: (_, __) =>
+                {
+                    applyInvocations++;
+                    return Task.FromResult(new ApplyResult { IsMissionComplete = true });
+                })
+            {
+                HardenState = StepState.Ready,
+                OutputFolderPath = tempFolder.FullName,
+                VerifyState = StepState.Locked
+            };
+
+            await vm.RunHardenStepCommand.ExecuteAsync(null);
+
+            Assert.Equal(0, applyInvocations);
+            Assert.Equal(StepState.Error, vm.HardenState);
+            Assert.Contains("no apply artifacts", vm.HardenError, StringComparison.OrdinalIgnoreCase);
+            Assert.Equal(StepState.Locked, vm.VerifyState);
+        }
+        finally
+        {
+            tempFolder.Delete(recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task RunHardenStepCommand_WhenApplyRunnerThrows_SetsErrorState()
     {
         var tempFolder = Directory.CreateTempSubdirectory();
 
         try
         {
+            CreateMinimalApplyArtifacts(tempFolder.FullName);
+
             var vm = new WorkflowViewModel(
                 runApply: (_, __) => throw new InvalidOperationException("apply exploded"))
             {
@@ -1035,6 +1070,8 @@ public class WorkflowViewModelTests
 
         try
         {
+            CreateMinimalApplyArtifacts(tempFolder.FullName);
+
             var vm = new WorkflowViewModel(
                 runApply: (_, __) => Task.FromResult(new ApplyResult
                 {
@@ -1071,6 +1108,8 @@ public class WorkflowViewModelTests
 
         try
         {
+            CreateMinimalApplyArtifacts(outputFolder);
+
             var vm = new WorkflowViewModel(
                 importScanner: new ImportInboxScanner(new FixedHashingService()),
                 verifyService: verifyService,
@@ -1111,6 +1150,8 @@ public class WorkflowViewModelTests
 
         try
         {
+            CreateMinimalApplyArtifacts(tempFolder.FullName);
+
             var vm = new WorkflowViewModel(
                 runApply: (_, __) => Task.FromResult(new ApplyResult
                 {
@@ -1204,6 +1245,8 @@ public class WorkflowViewModelTests
 
         try
         {
+            CreateMinimalApplyArtifacts(tempFolder.FullName);
+
             var vm = new WorkflowViewModel(
                 runApply: (_, __) => Task.FromResult(new ApplyResult
                 {
@@ -2335,6 +2378,11 @@ public class WorkflowViewModelTests
         var entry = archive.CreateEntry("sample-xccdf.xml");
         using var writer = new StreamWriter(entry.Open());
         writer.Write("<Benchmark xmlns=\"http://checklists.nist.gov/xccdf/1.2\" />");
+    }
+
+    private static void CreateMinimalApplyArtifacts(string bundleRoot)
+    {
+        Directory.CreateDirectory(Path.Combine(bundleRoot, "Apply", "Dsc"));
     }
 
     private static void CreateEvaluateStigScript(string folder)
