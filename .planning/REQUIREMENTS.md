@@ -19,9 +19,9 @@ Operators can execute a deterministic offline hardening mission flow with audita
 
 ### WPF Parity and Usability
 
-- [ ] **WP-01**: WPF app exposes diff/rebase workflow end-to-end without CLI fallback for standard operator paths.
-- [ ] **WP-02**: WPF status and mission summaries match CLI semantics for blocking failures, warnings, and optional skips.
-- [ ] **WP-03**: WPF surfaces actionable recovery guidance for failed apply/rebase paths (required artifacts, next command/action, and rollback guidance).
+- [x] **WP-01**: WPF app exposes diff/rebase workflow end-to-end without CLI fallback for standard operator paths.
+- [x] **WP-02**: WPF status and mission summaries match CLI semantics for blocking failures, warnings, and optional skips.
+- [x] **WP-03**: WPF surfaces actionable recovery guidance for failed apply/rebase paths (required artifacts, next command/action, and rollback guidance).
 
 ### Quality and Release Operations
 
@@ -65,4 +65,4 @@ Operators can execute a deterministic offline hardening mission flow with audita
 - Unmapped: 0
 
 ---
-*Last updated: 2026-02-27 after Phase 11 UR traceability reconciliation*
+*Last updated: 2026-02-28 after Phase 12 closure reconciliation*
