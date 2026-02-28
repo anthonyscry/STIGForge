@@ -232,7 +232,12 @@ try {
     [pscustomobject]@{ key = "quarterlySummary"; relativePath = "quarterly-pack/quarterly-pack-summary.json"; required = $true },
     [pscustomobject]@{ key = "quarterlyReport"; relativePath = "quarterly-pack/quarterly-pack-report.md"; required = $true },
     [pscustomobject]@{ key = "upgradeRebaseSummary"; relativePath = "upgrade-rebase/upgrade-rebase-summary.json"; required = $true },
-    [pscustomobject]@{ key = "upgradeRebaseReport"; relativePath = "upgrade-rebase/upgrade-rebase-report.md"; required = $true }
+    [pscustomobject]@{ key = "upgradeRebaseReport"; relativePath = "upgrade-rebase/upgrade-rebase-report.md"; required = $true },
+    [pscustomobject]@{ key = "upgradeRebaseDiffContract"; relativePath = "upgrade-rebase/upgrade-rebase-summary.json"; required = $true; contractStage = "upgrade-rebase-diff-contract" },
+    [pscustomobject]@{ key = "upgradeRebaseOverlayContract"; relativePath = "upgrade-rebase/upgrade-rebase-summary.json"; required = $true; contractStage = "upgrade-rebase-overlay-contract" },
+    [pscustomobject]@{ key = "upgradeRebaseParityContract"; relativePath = "upgrade-rebase/upgrade-rebase-summary.json"; required = $true; contractStage = "upgrade-rebase-parity-contract" },
+    [pscustomobject]@{ key = "upgradeRebaseCliContract"; relativePath = "upgrade-rebase/upgrade-rebase-summary.json"; required = $true; contractStage = "upgrade-rebase-cli-contract" },
+    [pscustomobject]@{ key = "upgradeRebaseRollbackSafety"; relativePath = "upgrade-rebase/upgrade-rebase-summary.json"; required = $true; contractStage = "upgrade-rebase-rollback-safety" }
   )
 
   $releaseGateEvidence = @()
@@ -240,36 +245,99 @@ try {
   $releaseGateMessage = "No release gate artifacts were linked"
 
   if (Test-Path -LiteralPath $releaseGateRootFull) {
-    $missingRequired = @()
+    $requiredIssues = @()
+    $upgradeRebaseSummaryPath = Join-Path $releaseGateRootFull "upgrade-rebase/upgrade-rebase-summary.json"
+    $upgradeRebaseSummaryData = $null
+    $upgradeRebaseSummaryLoaded = $false
+    $upgradeRebaseSummaryLoadError = ""
 
     foreach ($artifact in $releaseGateCatalog) {
       $artifactPath = Join-Path $releaseGateRootFull $artifact.relativePath
       $exists = Test-Path -LiteralPath $artifactPath
       $hashValue = ""
+      $contractStageName = $artifact.contractStage
+      $contractStagePassed = $null
+      $contractStageFailure = $null
 
       if ($exists) {
         $hashValue = (Get-FileHash -Algorithm SHA256 -Path $artifactPath).Hash.ToLowerInvariant()
       }
       elseif ($artifact.required) {
-        $missingRequired += $artifact.key
+        $requiredIssues += "$($artifact.key) (artifact missing)"
       }
 
-      $releaseGateEvidence += [pscustomobject]@{
+      if ($contractStageName) {
+        if (-not $upgradeRebaseSummaryLoaded) {
+          if (Test-Path -LiteralPath $upgradeRebaseSummaryPath) {
+            try {
+              $upgradeRebaseSummaryData = Get-Content -Path $upgradeRebaseSummaryPath -Raw | ConvertFrom-Json -ErrorAction Stop
+            }
+            catch {
+              $upgradeRebaseSummaryData = $null
+              $upgradeRebaseSummaryLoadError = $_.Exception.Message
+            }
+          }
+          else {
+            $upgradeRebaseSummaryLoadError = "Upgrade/rebase summary was not generated"
+          }
+          $upgradeRebaseSummaryLoaded = $true
+        }
+
+        if (-not $upgradeRebaseSummaryData) {
+          $contractStageFailure = if (-not [string]::IsNullOrWhiteSpace($upgradeRebaseSummaryLoadError)) { $upgradeRebaseSummaryLoadError } else { "Upgrade/rebase summary unavailable" }
+          $contractStagePassed = $false
+        }
+        else {
+          $steps = if ($upgradeRebaseSummaryData.steps) { @($upgradeRebaseSummaryData.steps) } else { @() }
+          $matchingSteps = @($steps | Where-Object { $_.name -eq $contractStageName })
+          if ($matchingSteps.Count -eq 0) {
+            $contractStageFailure = "No step named '$contractStageName' was recorded in the summary"
+            $contractStagePassed = $false
+          }
+          elseif ($matchingSteps.Count -gt 1) {
+            $contractStageFailure = "Multiple steps named '$contractStageName' were recorded in the summary"
+            $contractStagePassed = $false
+          }
+          else {
+            $matchingStep = $matchingSteps[0]
+            if ($matchingStep.succeeded) {
+              $contractStagePassed = $true
+            }
+            else {
+              $contractStageFailure = "Step failed with exit code $($matchingStep.exitCode)"
+              $contractStagePassed = $false
+            }
+          }
+        }
+
+        if ($contractStageFailure -and $artifact.required) {
+          $requiredIssues += "$($artifact.key) (contract stage '$contractStageName' failed: $contractStageFailure)"
+        }
+      }
+
+      $evidenceFields = @{
         key = $artifact.key
         required = [bool]$artifact.required
         exists = [bool]$exists
         path = $artifactPath
         sha256 = $hashValue
       }
+      if ($contractStageName) {
+        $evidenceFields.contractStage = $contractStageName
+        $evidenceFields.contractStagePassed = $contractStagePassed
+        $evidenceFields.contractStageFailure = $contractStageFailure
+      }
+
+      $releaseGateEvidence += [pscustomobject]$evidenceFields
     }
 
-    if ($missingRequired.Count -eq 0) {
+    if ($requiredIssues.Count -eq 0) {
       $releaseGateStatus = "linked"
-      $releaseGateMessage = "All required release gate artifacts are present"
+      $releaseGateMessage = "All required release gate evidence is present and valid"
     }
     else {
       $releaseGateStatus = "partial"
-      $releaseGateMessage = "Missing required release gate artifacts: $($missingRequired -join ', ')"
+      $releaseGateMessage = "Required release gate evidence issues: $($requiredIssues -join '; ')"
     }
   }
 
