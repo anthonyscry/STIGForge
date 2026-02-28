@@ -50,9 +50,9 @@ Operators can execute a deterministic offline hardening mission flow with audita
 | UR-02 | Phase 11 | Completed |
 | UR-03 | Phase 11 | Completed |
 | UR-04 | Phase 11 | Completed |
-| WP-01 | Phase 12 | Pending |
-| WP-02 | Phase 12 | Pending |
-| WP-03 | Phase 12 | Pending |
+| WP-01 | Phase 12 | Completed |
+| WP-02 | Phase 12 | Completed |
+| WP-03 | Phase 12 | Completed |
 | QA-01 | Phase 13 | Pending |
 | QA-02 | Phase 13 | Pending |
 | QA-03 | Phase 13 | Pending |
@@ -60,8 +60,8 @@ Operators can execute a deterministic offline hardening mission flow with audita
 **Coverage:**
 - v1.1 requirements: 10 total
 - Mapped to phases: 10
-- Pending: 6
-- Completed: 4
+- Pending: 3
+- Completed: 7
 - Unmapped: 0
 
 ---
