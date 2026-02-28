@@ -138,10 +138,15 @@ New-Item -ItemType Directory -Path $sbomRoot -Force | Out-Null
 
 $cliPublishDir = Join-Path $publishRoot "cli-$Runtime"
 $appPublishDir = Join-Path $publishRoot "app-$Runtime"
+$cliProjectRelativePath = "src/STIGForge.Cli/STIGForge.Cli.csproj"
+$cliProjectPath = Join-Path $repoRoot $cliProjectRelativePath
 
 $signingCertPath = ""
 $importedCertThumbprint = ""
 $signingPerformed = $false
+$cliPublishLogPath = Join-Path $logsRoot "publish-cli.log"
+$cliPublishExecuted = $false
+$cliZipCreated = $false
 
 Write-Host "[package] repository: $repoRoot"
 Write-Host "[package] output:     $outputRootFull"
@@ -156,7 +161,13 @@ try {
   Invoke-DotnetStep -Name "restore" -Arguments @("restore", "STIGForge.sln", "--nologo", "--runtime", $Runtime, "-p:EnableWindowsTargeting=true") -LogPath (Join-Path $logsRoot "restore.log")
   Invoke-DotnetStep -Name "build" -Arguments @("build", "STIGForge.sln", "--configuration", $Configuration, "--nologo", "--no-restore", "-p:EnableWindowsTargeting=true") -LogPath (Join-Path $logsRoot "build.log")
 
-  Invoke-DotnetStep -Name "publish-cli" -Arguments @("publish", "src/STIGForge.Cli/STIGForge.Cli.csproj", "--configuration", $Configuration, "--runtime", $Runtime, "--self-contained", "false", "-p:EnableWindowsTargeting=true", "-o", $cliPublishDir) -LogPath (Join-Path $logsRoot "publish-cli.log")
+  if (Test-Path -LiteralPath $cliProjectPath) {
+    Invoke-DotnetStep -Name "publish-cli" -Arguments @("publish", $cliProjectRelativePath, "--configuration", $Configuration, "--runtime", $Runtime, "--self-contained", "false", "-p:EnableWindowsTargeting=true", "-o", $cliPublishDir) -LogPath $cliPublishLogPath
+    $cliPublishExecuted = $true
+  }
+  else {
+    Write-Host "[package] publish-cli skipped: $cliProjectRelativePath not found" -ForegroundColor Yellow
+  }
   Invoke-DotnetStep -Name "publish-app" -Arguments @("publish", "src/STIGForge.App/STIGForge.App.csproj", "--configuration", $Configuration, "--runtime", $Runtime, "--self-contained", "false", "-p:EnableWindowsTargeting=true", "-o", $appPublishDir) -LogPath (Join-Path $logsRoot "publish-app.log")
 
   if ($RequireSigning) {
@@ -200,7 +211,13 @@ try {
 
   if (Test-Path $cliZipPath) { Remove-Item -Path $cliZipPath -Force }
   if (Test-Path $appZipPath) { Remove-Item -Path $appZipPath -Force }
-  Compress-Archive -Path (Join-Path $cliPublishDir "*") -DestinationPath $cliZipPath
+  if ($cliPublishExecuted -and (Test-Path -LiteralPath $cliPublishDir)) {
+    Compress-Archive -Path (Join-Path $cliPublishDir "*") -DestinationPath $cliZipPath
+    $cliZipCreated = $true
+  }
+  else {
+    Write-Host "[package] cli zip skipped: publish output unavailable" -ForegroundColor Yellow
+  }
   Compress-Archive -Path (Join-Path $appPublishDir "*") -DestinationPath $appZipPath
 
   $isWindowsHost = if (Get-Variable -Name IsWindows -ErrorAction SilentlyContinue) {
@@ -209,7 +226,10 @@ try {
   else {
     $env:OS -eq "Windows_NT"
   }
-  $sbomTarget = if ($isWindowsHost) { "STIGForge.sln" } else { "src/STIGForge.Cli/STIGForge.Cli.csproj" }
+  $sbomTarget = "STIGForge.sln"
+  if (-not $isWindowsHost -and (Test-Path -LiteralPath $cliProjectPath)) {
+    $sbomTarget = $cliProjectRelativePath
+  }
   $dependencyInventoryStatus = "skipped"
   $dependencyInventoryMessage = "Dependency inventory skipped by configuration"
   $dependencyInventoryPath = Join-Path $sbomRoot "dotnet-packages.json"
@@ -403,7 +423,7 @@ try {
     buildLogs = [pscustomobject]@{
       restore = Join-Path $logsRoot "restore.log"
       build = Join-Path $logsRoot "build.log"
-      publishCli = Join-Path $logsRoot "publish-cli.log"
+      publishCli = if ($cliPublishExecuted) { $cliPublishLogPath } else { "" }
       publishApp = Join-Path $logsRoot "publish-app.log"
     }
     dependencyInventory = [pscustomobject]@{
@@ -432,7 +452,12 @@ try {
   $checksumsRelativePath = "manifest$([IO.Path]::DirectorySeparatorChar)sha256-checksums.txt"
   Write-Checksums -Root $outputRootFull -OutputPath $checksumsPath -ExcludeRelativePaths @($checksumsRelativePath)
 
-  Write-Host "[package] cli zip:    $cliZipPath" -ForegroundColor Green
+  if ($cliZipCreated) {
+    Write-Host "[package] cli zip:    $cliZipPath" -ForegroundColor Green
+  }
+  else {
+    Write-Host "[package] cli zip:    (not generated)" -ForegroundColor Yellow
+  }
   Write-Host "[package] app zip:    $appZipPath" -ForegroundColor Green
   Write-Host "[package] dependency: $dependencyInventoryPath ($dependencyInventoryStatus)" -ForegroundColor Green
   Write-Host "[package] evidence:   $reproducibilityPath" -ForegroundColor Green
