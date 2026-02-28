@@ -2,19 +2,19 @@
 
 ## Project Reference
 
-See: `.planning/PROJECT.md` (updated 2026-02-22)
+See: `.planning/PROJECT.md` (updated 2026-02-28)
 
 **Core value:** Produce deterministic, defensible compliance outcomes with strict control mapping and complete evidence packaging, without requiring internet access.
-**Current focus:** Phase 12 - WPF Parity Evidence Promotion and Verification
+**Current focus:** Post-Phase 12 closure handoff and next-phase selection
 
 ## Current Position
 
 Phase: 12 of 15 (WPF Parity Evidence Promotion and Verification)
-Plan: 1 of TBD
-Status: Planned (ready for execution)
-Last activity: 2026-02-27 - Completed Phase 11 verification backfill and UR closure reconciliation
+Plan: Phase 12 closure merged (transitioning to next-phase planning)
+Status: Phase 12 completion work merged (next-phase readiness on deck)
+Last activity: 2026-02-28 - PR #6 merge completes Phase 12 closure and handoff
 
-Progress: [############__] 12 completed v1.1 milestone plan summaries (phases 08-13)
+Progress: [############__] Phase 12 closure merged; milestone summaries updated (phases 08-13)
 
 ## Performance Metrics
 
@@ -65,14 +65,21 @@ Recent decisions affecting current work:
 ### Pending Todos
 
 - Active snapshot: `.planning/snapshots/v1.1-TODO-ACTIVE.md`
-- Immediate focus: Phase 12 parity evidence promotion and verification planning.
+- Immediate focus: Next-phase planning/readiness and WP selection inputs.
 
 ### Blockers/Concerns
 
 None.
 
+### Handoff Snapshot (2026-02-28)
+
+- PR #4: docs(planning): reconcile phase 12 promotion wiring closure posture — merge commit 0ee8a76
+- PR #5: fix(release): enforce explicit upgrade/rebase contract stage gates — merge commit 30ff14c
+- PR #6: docs(planning): promote WP closure to completed status — merge commit 5acc6dc
+- WP-01..WP-03 Completed/closed with the fail-closed reversion guard remaining active
+
 ## Session Continuity
 
-Last session: 2026-02-27
-Stopped at: Phase 11 verification backfill closeout and roadmap status reconciliation.
-Resume file: .planning/milestones/v1.1-phases/12-wpf-parity-evidence-promotion-and-verification/12-wpf-parity-evidence-promotion-and-verification-01-PLAN.md
+Last session: 2026-02-28 (Phase 12 closure work completed and merged)
+Stopped at: Phase 12 closure handoff and readiness checks for next-phase planning.
+Resume file: .planning/milestones/v1.1-phases/12-wpf-parity-evidence-promotion-and-verification/12-wpf-parity-evidence-promotion-and-verification-01-PLAN.md (use as anchor for next-phase planning)
