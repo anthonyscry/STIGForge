@@ -109,16 +109,27 @@ jobs:
             throw "Upgrade/rebase validation status is '$($summary.status)': $($summary.message)"
           }
 
-          $parityStep = @($summary.steps | Where-Object { $_.name -eq 'upgrade-rebase-parity-contract' })
-          if ($parityStep.Count -ne 1) {
-            throw "Parity contract evidence step not found in upgrade/rebase summary."
+          $requiredStages = @(
+            [pscustomobject]@{ name = 'upgrade-rebase-diff-contract'; requirement = 'WP-01' }
+            [pscustomobject]@{ name = 'upgrade-rebase-overlay-contract'; requirement = 'WP-01' }
+            [pscustomobject]@{ name = 'upgrade-rebase-parity-contract'; requirement = 'WP-02' }
+            [pscustomobject]@{ name = 'upgrade-rebase-cli-contract'; requirement = 'WP-01' }
+            [pscustomobject]@{ name = 'upgrade-rebase-rollback-safety'; requirement = 'WP-03' }
+          )
+
+          foreach ($stage in $requiredStages) {
+            $stageStep = @($summary.steps | Where-Object { $_.name -eq $stage.name })
+            if ($stageStep.Count -ne 1) {
+              throw "Required stage '$($stage.name)' ($($stage.requirement)) evidence step missing from upgrade/rebase summary."
+            }
+
+            if (-not [bool]$stageStep[0].succeeded) {
+              $logDetail = if ([string]::IsNullOrWhiteSpace($stageStep[0].logPath)) { '' } else { " See log: $($stageStep[0].logPath)" }
+              throw "Required stage '$($stage.name)' ($($stage.requirement)) evidence failed.$logDetail"
+            }
           }
 
-          if (-not [bool]$parityStep[0].succeeded) {
-            throw "Parity contract step failed. See $($parityStep[0].logPath)"
-          }
-
-          Write-Host "Release parity evidence validated." -ForegroundColor Green
+          Write-Host "All required upgrade/rebase contract stages validated." -ForegroundColor Green
 
       - name: Validate quarterly trend evidence
         shell: pwsh
