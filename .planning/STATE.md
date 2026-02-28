@@ -5,28 +5,28 @@
 See: `.planning/PROJECT.md` (updated 2026-02-22)
 
 **Core value:** Produce deterministic, defensible compliance outcomes with strict control mapping and complete evidence packaging, without requiring internet access.
-**Current focus:** Phase 14 - Test Coverage Expansion
+**Current focus:** Phase 12 - WPF Parity Evidence Promotion and Verification
 
 ## Current Position
 
-Phase: 14 of 15 (Test Coverage Expansion)
+Phase: 12 of 15 (WPF Parity Evidence Promotion and Verification)
 Plan: 1 of TBD
-Status: Execution complete (plan 14-01 implementation finished)
-Last activity: 2026-02-23 - Wired CI coverage merge/report/gate and mutation report steps for report-only rollout
+Status: Planned (ready for execution)
+Last activity: 2026-02-27 - Completed Phase 11 verification backfill and UR closure reconciliation
 
-Progress: [###########_] TBD (1/TBD plans complete)
+Progress: [############__] 12 completed v1.1 milestone plan summaries (phases 08-13)
 
 ## Performance Metrics
 
 **Velocity (v1.1 milestone):**
-- Total plans completed: 10
-- Average duration: 7 min
-- Total execution time: ~60 min
+- Total plans completed: 12
+- Average duration: 2 min (metadata-recorded plans only)
+- Total execution time: ~13 min recorded (6/12 plans include duration metadata)
 
 **All-time (including previous milestones):**
-- Total plans completed: 34
-- Average duration: 6 min
-- Total execution time: ~206 min
+- Total plans completed: pending recalculation
+- Average duration: pending recalculation
+- Total execution time: pending recalculation
 
 ## Accumulated Context
 
@@ -64,7 +64,8 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-None.
+- Active snapshot: `.planning/snapshots/v1.1-TODO-ACTIVE.md`
+- Immediate focus: Phase 12 parity evidence promotion and verification planning.
 
 ### Blockers/Concerns
 
@@ -72,6 +73,6 @@ None.
 
 ## Session Continuity
 
-Last session: 2026-02-23
-Stopped at: Phase 14 plan 14-01 (coverage and mutation gating implementation complete)
-Resume file: .planning/phases/14-test-coverage-expansion/14-01-PLAN.md
+Last session: 2026-02-27
+Stopped at: Phase 11 verification backfill closeout and roadmap status reconciliation.
+Resume file: .planning/milestones/v1.1-phases/12-wpf-parity-evidence-promotion-and-verification/12-wpf-parity-evidence-promotion-and-verification-01-PLAN.md
