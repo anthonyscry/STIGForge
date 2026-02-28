@@ -369,15 +369,20 @@ Write-Host "[security-gate] repository: $RepositoryRoot"
 Write-Host "[security-gate] output:     $outputRootFull"
 
 $scanTarget = "STIGForge.sln"
+$cliProjectRelativePath = "src/STIGForge.Cli/STIGForge.Cli.csproj"
+$cliProjectPath = Join-Path $RepositoryRoot $cliProjectRelativePath
 $isWindowsHost = if (Get-Variable -Name IsWindows -ErrorAction SilentlyContinue) {
   [bool]$IsWindows
 }
 else {
   $env:OS -eq "Windows_NT"
 }
-if (-not $isWindowsHost) {
-  $scanTarget = "src/STIGForge.Cli/STIGForge.Cli.csproj"
+if (-not $isWindowsHost -and (Test-Path -LiteralPath $cliProjectPath)) {
+  $scanTarget = $cliProjectRelativePath
   Write-Host "[security-gate] scan target: $scanTarget (non-Windows host)"
+}
+elseif (-not $isWindowsHost) {
+  Write-Host "[security-gate] scan target: $scanTarget (non-Windows host, CLI project not found)"
 }
 else {
   Write-Host "[security-gate] scan target: $scanTarget"

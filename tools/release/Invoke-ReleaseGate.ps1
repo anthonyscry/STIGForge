@@ -108,15 +108,20 @@ Write-Host "[release-gate] shell:      $script:CommandShell"
 Write-Host "[release-gate] dotnet:     $((Get-Command dotnet).Source)"
 
 $sbomTarget = "STIGForge.sln"
+$cliProjectRelativePath = "src/STIGForge.Cli/STIGForge.Cli.csproj"
+$cliProjectPath = Join-Path $repoRoot $cliProjectRelativePath
 $isWindowsHost = if (Get-Variable -Name IsWindows -ErrorAction SilentlyContinue) {
   [bool]$IsWindows
 }
 else {
   $env:OS -eq "Windows_NT"
 }
-if (-not $isWindowsHost) {
-  $sbomTarget = "src/STIGForge.Cli/STIGForge.Cli.csproj"
+if (-not $isWindowsHost -and (Test-Path -LiteralPath $cliProjectPath)) {
+  $sbomTarget = $cliProjectRelativePath
   Write-Host "[release-gate] sbom target: $sbomTarget (non-Windows host)"
+}
+elseif (-not $isWindowsHost) {
+  Write-Host "[release-gate] sbom target: $sbomTarget (non-Windows host, CLI project not found)"
 }
 else {
   Write-Host "[release-gate] sbom target: $sbomTarget"
