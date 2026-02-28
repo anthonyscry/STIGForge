@@ -97,7 +97,7 @@ tools/release/
 **When to use:** `WP-01`, `WP-02`, `WP-03` closure.
 **Example:**
 ```markdown
-<!-- Source: .planning/phases/08-upgrade-rebase-operator-workflow/08-VERIFICATION.md -->
+<!-- Source: .planning/milestones/v1.1-phases/08-upgrade-rebase-operator-workflow/08-VERIFICATION.md -->
 | Requirement | REQUIREMENTS.md traceability row | Summary metadata (`requirements-completed`) | Verification evidence mapping | Verdict |
 |---|---|---|---|---|
 | WP-01 | present (`Completed`) | present (`WP-01`) | present | closed |
@@ -182,7 +182,7 @@ Verified patterns from repository sources:
 
 ### Requirement mapping + fail-closed cross-check
 ```markdown
-<!-- Source: .planning/phases/08-upgrade-rebase-operator-workflow/08-VERIFICATION.md -->
+<!-- Source: .planning/milestones/v1.1-phases/08-upgrade-rebase-operator-workflow/08-VERIFICATION.md -->
 ## Requirement Evidence Mapping
 | Requirement | Requirement statement | Evidence from Phase deliverables | Evidence status |
 
@@ -248,11 +248,11 @@ if ($summary.status -ne 'passed') {
 - `.planning/ROADMAP.md` - Phase 12 goal, requirements, and exit criteria.
 - `.planning/REQUIREMENTS.md` - `WP-01`..`WP-03` statements and traceability status.
 - `.planning/v1.1-MILESTONE-AUDIT.md` - orphaning and integration/flow gap evidence for WP requirements.
-- `.planning/phases/09-wpf-parity-and-recovery-ux/09-wpf-parity-and-recovery-ux-01-PLAN.md` - WP-01 behavior and artifacts planned.
-- `.planning/phases/09-wpf-parity-and-recovery-ux/09-wpf-parity-and-recovery-ux-02-PLAN.md` - WP-02/WP-03 behavior and artifacts planned.
-- `.planning/phases/09-wpf-parity-and-recovery-ux/09-wpf-parity-and-recovery-ux-01-SUMMARY.md` - implemented WPF diff/rebase parity evidence.
-- `.planning/phases/09-wpf-parity-and-recovery-ux/09-wpf-parity-and-recovery-ux-02-SUMMARY.md` - implemented WPF severity/recovery evidence.
-- `.planning/phases/08-upgrade-rebase-operator-workflow/08-VERIFICATION.md` - canonical three-source cross-check pattern.
+- `.planning/milestones/v1.1-phases/09-wpf-parity-and-recovery-ux/09-wpf-parity-and-recovery-ux-01-PLAN.md` - WP-01 behavior and artifacts planned.
+- `.planning/milestones/v1.1-phases/09-wpf-parity-and-recovery-ux/09-wpf-parity-and-recovery-ux-02-PLAN.md` - WP-02/WP-03 behavior and artifacts planned.
+- `.planning/milestones/v1.1-phases/09-wpf-parity-and-recovery-ux/09-wpf-parity-and-recovery-ux-01-SUMMARY.md` - implemented WPF diff/rebase parity evidence.
+- `.planning/milestones/v1.1-phases/09-wpf-parity-and-recovery-ux/09-wpf-parity-and-recovery-ux-02-SUMMARY.md` - implemented WPF severity/recovery evidence.
+- `.planning/milestones/v1.1-phases/08-upgrade-rebase-operator-workflow/08-VERIFICATION.md` - canonical three-source cross-check pattern.
 - `.planning/phases/11-verification-backfill-for-upgrade-rebase/11-verification-backfill-for-upgrade-rebase-01-PLAN.md` - fail-closed requirement closure implementation model.
 - `tools/release/Invoke-ReleaseGate.ps1` - contract step generation and summary/report schema.
 - `tools/release/Invoke-PackageBuild.ps1` - release gate evidence catalog linkage into package manifests.

@@ -25,10 +25,10 @@ tech-stack:
 
 key-files:
   created:
-    - .planning/phases/12-wpf-parity-evidence-promotion-and-verification/12-VERIFICATION.md
+    - .planning/milestones/v1.1-phases/12-wpf-parity-evidence-promotion-and-verification/12-VERIFICATION.md
   modified:
     - .planning/REQUIREMENTS.md
-    - .planning/phases/09-wpf-parity-and-recovery-ux/09-VERIFICATION.md
+    - .planning/milestones/v1.1-phases/09-wpf-parity-and-recovery-ux/09-VERIFICATION.md
 
 key-decisions:
   - "Mark WP-01..WP-03 as completed only after source verification evidence and promotion wiring contracts align with REQUIREMENTS traceability."
@@ -58,9 +58,9 @@ completed: 2026-02-16
 
 ## Accomplishments
 
-- Created `.planning/phases/12-wpf-parity-evidence-promotion-and-verification/12-VERIFICATION.md` with deterministic sections for requirement mapping, promotion wiring checks, command results, and three-source cross-check.
+- Created `.planning/milestones/v1.1-phases/12-wpf-parity-evidence-promotion-and-verification/12-VERIFICATION.md` with deterministic sections for requirement mapping, promotion wiring checks, command results, and three-source cross-check.
 - Mapped each of `WP-01`, `WP-02`, and `WP-03` from Phase 09 behavior evidence to explicit promotion contracts (`upgrade-rebase-wpf-workflow-contract`, `upgrade-rebase-wpf-severity-contract`, `upgrade-rebase-wpf-recovery-contract`) and package evidence linkage keys.
-- Reconciled closure state across `.planning/REQUIREMENTS.md`, `.planning/phases/09-wpf-parity-and-recovery-ux/09-VERIFICATION.md`, and `.planning/phases/12-wpf-parity-evidence-promotion-and-verification/12-VERIFICATION.md` to `Completed/closed` with fail-closed reversion language.
+- Reconciled closure state across `.planning/REQUIREMENTS.md`, `.planning/milestones/v1.1-phases/09-wpf-parity-and-recovery-ux/09-VERIFICATION.md`, and `.planning/milestones/v1.1-phases/12-wpf-parity-evidence-promotion-and-verification/12-VERIFICATION.md` to `Completed/closed` with fail-closed reversion language.
 
 ## Task Commits
 
@@ -73,9 +73,9 @@ Each task was committed atomically:
 
 ## Files Created/Modified
 
-- `.planning/phases/12-wpf-parity-evidence-promotion-and-verification/12-VERIFICATION.md` - canonical Phase 12 closure artifact with requirement mapping and promotion wiring checks.
+- `.planning/milestones/v1.1-phases/12-wpf-parity-evidence-promotion-and-verification/12-VERIFICATION.md` - canonical Phase 12 closure artifact with requirement mapping and promotion wiring checks.
 - `.planning/REQUIREMENTS.md` - WP checkboxes and traceability rows moved to `Completed`; coverage counters reconciled.
-- `.planning/phases/09-wpf-parity-and-recovery-ux/09-VERIFICATION.md` - three-source cross-check verdict rows reconciled to `closed`.
+- `.planning/milestones/v1.1-phases/09-wpf-parity-and-recovery-ux/09-VERIFICATION.md` - three-source cross-check verdict rows reconciled to `closed`.
 
 ## Decisions Made
 
@@ -101,6 +101,6 @@ None - no external service configuration required.
 
 ## Self-Check: PASSED
 
-- FOUND: `.planning/phases/12-wpf-parity-evidence-promotion-and-verification/12-wpf-parity-evidence-promotion-and-verification-03-SUMMARY.md`
+- FOUND: `.planning/milestones/v1.1-phases/12-wpf-parity-evidence-promotion-and-verification/12-wpf-parity-evidence-promotion-and-verification-03-SUMMARY.md`
 - FOUND commit: `a96876b`
 - FOUND commit: `aa0eb4a`

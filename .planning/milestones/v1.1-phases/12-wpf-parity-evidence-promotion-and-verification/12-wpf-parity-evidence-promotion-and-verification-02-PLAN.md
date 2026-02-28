@@ -62,7 +62,7 @@ Output: Release gate and workflow validators require explicit WPF contract signa
 @.planning/PROJECT.md
 @.planning/ROADMAP.md
 @.planning/STATE.md
-@.planning/phases/12-wpf-parity-evidence-promotion-and-verification/12-RESEARCH.md
+@.planning/milestones/v1.1-phases/12-wpf-parity-evidence-promotion-and-verification/12-RESEARCH.md
 @tools/release/Invoke-ReleaseGate.ps1
 @tools/release/Invoke-PackageBuild.ps1
 @.github/workflows/ci.yml
@@ -111,5 +111,5 @@ Output: Release gate and workflow validators require explicit WPF contract signa
 </success_criteria>
 
 <output>
-After completion, create `.planning/phases/12-wpf-parity-evidence-promotion-and-verification/12-wpf-parity-evidence-promotion-and-verification-02-SUMMARY.md`
+After completion, create `.planning/milestones/v1.1-phases/12-wpf-parity-evidence-promotion-and-verification/12-wpf-parity-evidence-promotion-and-verification-02-SUMMARY.md`
 </output>

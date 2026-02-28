@@ -113,7 +113,7 @@ Plan 02 evidence promotion work is complete and committed. Ready for `12-wpf-par
 
 ## Self-Check: PASSED
 
-- FOUND: `.planning/phases/12-wpf-parity-evidence-promotion-and-verification/12-wpf-parity-evidence-promotion-and-verification-02-SUMMARY.md`
+- FOUND: `.planning/milestones/v1.1-phases/12-wpf-parity-evidence-promotion-and-verification/12-wpf-parity-evidence-promotion-and-verification-02-SUMMARY.md`
 - FOUND commit: `8d44970`
 - FOUND commit: `2a8be92`
 - FOUND commit: `c18ba24`
