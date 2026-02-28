@@ -59,6 +59,40 @@ function New-Step {
     FinishedAt = $finished
     ExitCode = $exitCode
     Succeeded = ($exitCode -eq 0)
+    Skipped = $false
+    SkipReason = ""
+  }
+}
+
+function New-SkippedStep {
+  param(
+    [Parameter(Mandatory = $true)][string]$Name,
+    [Parameter(Mandatory = $true)][string]$Command,
+    [Parameter(Mandatory = $true)][string]$LogPath,
+    [Parameter(Mandatory = $true)][string]$Reason
+  )
+
+  Write-Host "[release-gate] $Name" -ForegroundColor Yellow
+  Write-Host "[release-gate]   SKIPPED: $Reason"
+
+  $started = Get-Date
+  @(
+    "SKIPPED",
+    "Reason: $Reason",
+    "Command: $Command"
+  ) | Out-File -FilePath $LogPath -Encoding UTF8
+  $finished = Get-Date
+
+  return [pscustomobject]@{
+    Name = $Name
+    Command = $Command
+    LogPath = $LogPath
+    StartedAt = $started
+    FinishedAt = $finished
+    ExitCode = 0
+    Succeeded = $false
+    Skipped = $true
+    SkipReason = $Reason
   }
 }
 
@@ -127,6 +161,11 @@ else {
   Write-Host "[release-gate] sbom target: $sbomTarget"
 }
 
+$windowsDesktopSkipReason = "Skipped on non-Windows host: net8.0-windows tests require Microsoft.WindowsDesktop.App runtime."
+if (-not $isWindowsHost) {
+  Write-Host "[release-gate] non-Windows host detected; Windows Desktop test stages will be marked as skipped." -ForegroundColor Yellow
+}
+
 Push-Location $repoRoot
 
 try {
@@ -175,9 +214,19 @@ try {
     $securityGateArgs += "-EnableNetworkLicenseLookup"
   }
   $steps += New-Step -Name "security-gate" -Command ($securityGateArgs -join " ") -LogPath (Join-Path $logRoot "security-gate.log")
-  $steps += New-Step -Name "test-unit" -Command "dotnet test tests/STIGForge.UnitTests/STIGForge.UnitTests.csproj --configuration $Configuration --framework net8.0-windows --nologo --no-build --filter 'FullyQualifiedName!~RebootCoordinator'" -LogPath (Join-Path $logRoot "test-unit.log")
-  $steps += New-Step -Name "test-integration" -Command "dotnet test tests/STIGForge.IntegrationTests/STIGForge.IntegrationTests.csproj --configuration $Configuration --framework net8.0 --nologo --no-build --filter 'FullyQualifiedName!~E2E'" -LogPath (Join-Path $logRoot "test-integration.log")
-  $steps += New-Step -Name "test-e2e" -Command "dotnet test tests/STIGForge.IntegrationTests/STIGForge.IntegrationTests.csproj --configuration $Configuration --framework net8.0 --nologo --no-build --filter 'FullyQualifiedName~E2E'" -LogPath (Join-Path $logRoot "test-e2e.log")
+
+  $testUnitCommand = "dotnet test tests/STIGForge.UnitTests/STIGForge.UnitTests.csproj --configuration $Configuration --framework net8.0-windows --nologo --no-build --filter 'FullyQualifiedName!~RebootCoordinator'"
+  $testIntegrationCommand = "dotnet test tests/STIGForge.IntegrationTests/STIGForge.IntegrationTests.csproj --configuration $Configuration --framework net8.0 --nologo --no-build --filter 'FullyQualifiedName!~E2E'"
+  $testE2eCommand = "dotnet test tests/STIGForge.IntegrationTests/STIGForge.IntegrationTests.csproj --configuration $Configuration --framework net8.0 --nologo --no-build --filter 'FullyQualifiedName~E2E'"
+
+  if ($isWindowsHost) {
+    $steps += New-Step -Name "test-unit" -Command $testUnitCommand -LogPath (Join-Path $logRoot "test-unit.log")
+  }
+  else {
+    $steps += New-SkippedStep -Name "test-unit" -Command $testUnitCommand -LogPath (Join-Path $logRoot "test-unit.log") -Reason $windowsDesktopSkipReason
+  }
+  $steps += New-Step -Name "test-integration" -Command $testIntegrationCommand -LogPath (Join-Path $logRoot "test-integration.log")
+  $steps += New-Step -Name "test-e2e" -Command $testE2eCommand -LogPath (Join-Path $logRoot "test-e2e.log")
 
   $upgradeRebaseDiffCommand = "dotnet test tests/STIGForge.UnitTests/STIGForge.UnitTests.csproj --configuration $Configuration --framework net8.0-windows --nologo --no-build --filter 'FullyQualifiedName~BaselineDiffServiceTests' --results-directory '$upgradeRebaseResultsRoot'"
   $upgradeRebaseOverlayCommand = "dotnet test tests/STIGForge.UnitTests/STIGForge.UnitTests.csproj --configuration $Configuration --framework net8.0-windows --nologo --no-build --filter 'FullyQualifiedName~OverlayRebaseServiceTests' --results-directory '$upgradeRebaseResultsRoot'"
@@ -185,13 +234,25 @@ try {
   $upgradeRebaseCliCommand = "dotnet test tests/STIGForge.IntegrationTests/STIGForge.IntegrationTests.csproj --configuration $Configuration --framework net8.0 --nologo --no-build --filter 'FullyQualifiedName~CliCommandTests.DiffPacks|FullyQualifiedName~CliCommandTests.RebaseOverlay' --results-directory '$upgradeRebaseResultsRoot'"
   $upgradeRebaseRollbackCommand = "dotnet test tests/STIGForge.UnitTests/STIGForge.UnitTests.csproj --configuration $Configuration --framework net8.0-windows --nologo --no-build --filter 'FullyQualifiedName~ApplyRunnerTests' --results-directory '$upgradeRebaseResultsRoot'"
 
-  $steps += New-Step -Name "upgrade-rebase-diff-contract" -Command $upgradeRebaseDiffCommand -LogPath (Join-Path $logRoot "upgrade-rebase-diff-contract.log")
-  $steps += New-Step -Name "upgrade-rebase-overlay-contract" -Command $upgradeRebaseOverlayCommand -LogPath (Join-Path $logRoot "upgrade-rebase-overlay-contract.log")
-  $steps += New-Step -Name "upgrade-rebase-parity-contract" -Command $upgradeRebaseParityCommand -LogPath (Join-Path $logRoot "upgrade-rebase-parity-contract.log")
+  if ($isWindowsHost) {
+    $steps += New-Step -Name "upgrade-rebase-diff-contract" -Command $upgradeRebaseDiffCommand -LogPath (Join-Path $logRoot "upgrade-rebase-diff-contract.log")
+    $steps += New-Step -Name "upgrade-rebase-overlay-contract" -Command $upgradeRebaseOverlayCommand -LogPath (Join-Path $logRoot "upgrade-rebase-overlay-contract.log")
+    $steps += New-Step -Name "upgrade-rebase-parity-contract" -Command $upgradeRebaseParityCommand -LogPath (Join-Path $logRoot "upgrade-rebase-parity-contract.log")
+  }
+  else {
+    $steps += New-SkippedStep -Name "upgrade-rebase-diff-contract" -Command $upgradeRebaseDiffCommand -LogPath (Join-Path $logRoot "upgrade-rebase-diff-contract.log") -Reason $windowsDesktopSkipReason
+    $steps += New-SkippedStep -Name "upgrade-rebase-overlay-contract" -Command $upgradeRebaseOverlayCommand -LogPath (Join-Path $logRoot "upgrade-rebase-overlay-contract.log") -Reason $windowsDesktopSkipReason
+    $steps += New-SkippedStep -Name "upgrade-rebase-parity-contract" -Command $upgradeRebaseParityCommand -LogPath (Join-Path $logRoot "upgrade-rebase-parity-contract.log") -Reason $windowsDesktopSkipReason
+  }
   $steps += New-Step -Name "upgrade-rebase-cli-contract" -Command $upgradeRebaseCliCommand -LogPath (Join-Path $logRoot "upgrade-rebase-cli-contract.log")
-  $steps += New-Step -Name "upgrade-rebase-rollback-safety" -Command $upgradeRebaseRollbackCommand -LogPath (Join-Path $logRoot "upgrade-rebase-rollback-safety.log")
+  if ($isWindowsHost) {
+    $steps += New-Step -Name "upgrade-rebase-rollback-safety" -Command $upgradeRebaseRollbackCommand -LogPath (Join-Path $logRoot "upgrade-rebase-rollback-safety.log")
+  }
+  else {
+    $steps += New-SkippedStep -Name "upgrade-rebase-rollback-safety" -Command $upgradeRebaseRollbackCommand -LogPath (Join-Path $logRoot "upgrade-rebase-rollback-safety.log") -Reason $windowsDesktopSkipReason
+  }
 
-  $failed = @($steps | Where-Object { -not $_.Succeeded })
+  $failed = @($steps | Where-Object { (-not $_.Succeeded) -and (-not $_.Skipped) })
 
   if ($SkipQuarterlyRegressionPack) {
     $quarterlyPackStatus = "skipped"
@@ -241,10 +302,21 @@ try {
     $upgradeRebaseMessage = "Upgrade/rebase validation steps were not configured"
   }
   else {
-    $upgradeRebaseFailures = @($upgradeRebaseSteps | Where-Object { -not $_.Succeeded })
+    $upgradeRebaseFailures = @($upgradeRebaseSteps | Where-Object { (-not $_.Succeeded) -and (-not $_.Skipped) })
+    $upgradeRebaseSkipped = @($upgradeRebaseSteps | Where-Object { $_.Skipped })
     if ($upgradeRebaseFailures.Count -eq 0) {
-      $upgradeRebaseStatus = "passed"
-      $upgradeRebaseMessage = "All upgrade/rebase validation contracts passed"
+      if ($upgradeRebaseSkipped.Count -eq 0) {
+        $upgradeRebaseStatus = "passed"
+        $upgradeRebaseMessage = "All upgrade/rebase validation contracts passed"
+      }
+      elseif ($upgradeRebaseSkipped.Count -eq $upgradeRebaseSteps.Count) {
+        $upgradeRebaseStatus = "skipped"
+        $upgradeRebaseMessage = "All upgrade/rebase validation contracts were skipped: non-Windows host cannot execute net8.0-windows tests"
+      }
+      else {
+        $upgradeRebaseStatus = "partial"
+        $upgradeRebaseMessage = "Some upgrade/rebase validation contracts were skipped: $($upgradeRebaseSkipped.Name -join ', ')"
+      }
     }
     else {
       $upgradeRebaseStatus = "failed"
@@ -272,7 +344,7 @@ try {
   [void]$upgradeRebaseReport.AppendLine("| Step | Status | Exit Code | Log |")
   [void]$upgradeRebaseReport.AppendLine("|------|--------|-----------|-----|")
   foreach ($step in $upgradeRebaseSteps) {
-    $status = if ($step.Succeeded) { "PASS" } else { "FAIL" }
+    $status = if ($step.Skipped) { "SKIP" } elseif ($step.Succeeded) { "PASS" } else { "FAIL" }
     $relativeLog = Convert-ToRelativePath -BasePath $upgradeRebaseRoot -TargetPath $step.LogPath
     [void]$upgradeRebaseReport.AppendLine("| $($step.Name) | $status | $($step.ExitCode) | $relativeLog |")
   }
@@ -298,6 +370,8 @@ try {
         command = $_.Command
         exitCode = $_.ExitCode
         succeeded = $_.Succeeded
+        skipped = $_.Skipped
+        skipReason = $_.SkipReason
         startedAt = $_.StartedAt.ToUniversalTime().ToString("o")
         finishedAt = $_.FinishedAt.ToUniversalTime().ToString("o")
         logPath = $_.LogPath
@@ -333,7 +407,7 @@ try {
   [void]$report.AppendLine("|------|--------|-----------|-----|")
 
   foreach ($step in $steps) {
-    $status = if ($step.Succeeded) { "PASS" } else { "FAIL" }
+    $status = if ($step.Skipped) { "SKIP" } elseif ($step.Succeeded) { "PASS" } else { "FAIL" }
     $relativeLog = Convert-ToRelativePath -BasePath $reportRoot -TargetPath $step.LogPath
     [void]$report.AppendLine("| $($step.Name) | $status | $($step.ExitCode) | $relativeLog |")
   }
@@ -392,6 +466,8 @@ try {
         command = $_.Command
         exitCode = $_.ExitCode
         succeeded = $_.Succeeded
+        skipped = $_.Skipped
+        skipReason = $_.SkipReason
         startedAt = $_.StartedAt.ToUniversalTime().ToString("o")
         finishedAt = $_.FinishedAt.ToUniversalTime().ToString("o")
         logPath = $_.LogPath
