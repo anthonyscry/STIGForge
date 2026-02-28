@@ -77,5 +77,5 @@ Output: WPF diff/rebase surfaces include deterministic exports, blocking-conflic
 </success_criteria>
 
 <output>
-After completion, create `.planning/phases/09-wpf-parity-and-recovery-ux/09-wpf-parity-and-recovery-ux-01-SUMMARY.md`.
+After completion, create `.planning/milestones/v1.1-phases/09-wpf-parity-and-recovery-ux/09-wpf-parity-and-recovery-ux-01-SUMMARY.md`.
 </output>

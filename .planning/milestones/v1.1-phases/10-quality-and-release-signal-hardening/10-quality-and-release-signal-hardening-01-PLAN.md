@@ -76,5 +76,5 @@ Output: explicit contract coverage in CI and release-gate/workflow evidence that
 </success_criteria>
 
 <output>
-After completion, create `.planning/phases/10-quality-and-release-signal-hardening/10-quality-and-release-signal-hardening-01-SUMMARY.md`.
+After completion, create `.planning/milestones/v1.1-phases/10-quality-and-release-signal-hardening/10-quality-and-release-signal-hardening-01-SUMMARY.md`.
 </output>

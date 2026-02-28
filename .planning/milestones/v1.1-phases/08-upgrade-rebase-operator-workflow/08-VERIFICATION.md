@@ -17,9 +17,9 @@ Requirements stay `unresolved` unless all three sources align.
 Run these commands to validate evidence structure and traceability links:
 
 ```bash
-rg --line-number "^# Plan 0[12] Summary|^## What Was Built|UR-0[1-4]|diff|rebase|blocking|review-required" .planning/phases/08-upgrade-rebase-operator-workflow/08-upgrade-rebase-operator-workflow-0[12]-SUMMARY.md
+rg --line-number "^# Plan 0[12] Summary|^## What Was Built|UR-0[1-4]|diff|rebase|blocking|review-required" .planning/milestones/v1.1-phases/08-upgrade-rebase-operator-workflow/08-upgrade-rebase-operator-workflow-0[12]-SUMMARY.md
 rg --line-number "\| UR-0[1-4] \| Phase 11 \|" .planning/REQUIREMENTS.md
-rg --line-number "^# Phase 08 Verification - Upgrade/Rebase Operator Workflow|^## Requirement Evidence Mapping|^## Three-Source Cross-Check|UR-0[1-4]" .planning/phases/08-upgrade-rebase-operator-workflow/08-VERIFICATION.md
+rg --line-number "^# Phase 08 Verification - Upgrade/Rebase Operator Workflow|^## Requirement Evidence Mapping|^## Three-Source Cross-Check|UR-0[1-4]" .planning/milestones/v1.1-phases/08-upgrade-rebase-operator-workflow/08-VERIFICATION.md
 ```
 
 ## Requirement Evidence Mapping

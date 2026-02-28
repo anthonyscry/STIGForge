@@ -10,7 +10,7 @@ verification, and promotion enforcement artifacts.
 
 | # | Truth | Status | Evidence |
 | --- | --- | --- | --- |
-| 1 | Phase 10 outputs capture deterministic quality and release-signal coverage aligned to QA requirements. | VERIFIED | `.planning/phases/10-quality-and-release-signal-hardening/10-quality-and-release-signal-hardening-01-SUMMARY.md`, `.planning/phases/10-quality-and-release-signal-hardening/10-quality-and-release-signal-hardening-02-SUMMARY.md` |
+| 1 | Phase 10 outputs capture deterministic quality and release-signal coverage aligned to QA requirements. | VERIFIED | `.planning/milestones/v1.1-phases/10-quality-and-release-signal-hardening/10-quality-and-release-signal-hardening-01-SUMMARY.md`, `.planning/milestones/v1.1-phases/10-quality-and-release-signal-hardening/10-quality-and-release-signal-hardening-02-SUMMARY.md` |
 | 2 | Phase 13 enforcement wiring requires mandatory release evidence with fail-closed blocker semantics. | VERIFIED | `tools/release/Test-ReleaseEvidenceContract.ps1`, `.github/workflows/ci.yml`, `.github/workflows/release-package.yml`, `.github/workflows/vm-smoke-matrix.yml`, `tools/release/Invoke-PackageBuild.ps1` |
 | 3 | QA closure reverts to unresolved when any required source (traceability, summary metadata, or verification evidence) drifts. | VERIFIED | This artifact's Three-Source Cross-Check fail-closed rule and `.planning/REQUIREMENTS.md` traceability rows |
 
@@ -18,9 +18,9 @@ verification, and promotion enforcement artifacts.
 
 | Artifact | Expected | Status | Details |
 | --- | --- | --- | --- |
-| `.planning/phases/10-quality-and-release-signal-hardening/10-VERIFICATION.md` | Canonical QA evidence mapping and three-source cross-check | VERIFIED | Contains Observable Truths, Requirement Evidence Mapping, Promotion Wiring Checks, and Three-Source Cross-Check sections |
-| `.planning/phases/10-quality-and-release-signal-hardening/10-quality-and-release-signal-hardening-01-SUMMARY.md` | Machine-readable `requirements-completed` metadata for QA IDs | VERIFIED | Frontmatter includes `requirements-completed` with `QA-01`, `QA-02`, `QA-03` |
-| `.planning/phases/10-quality-and-release-signal-hardening/10-quality-and-release-signal-hardening-02-SUMMARY.md` | Machine-readable `requirements-completed` metadata for QA IDs | VERIFIED | Frontmatter includes identical `requirements-completed` metadata |
+| `.planning/milestones/v1.1-phases/10-quality-and-release-signal-hardening/10-VERIFICATION.md` | Canonical QA evidence mapping and three-source cross-check | VERIFIED | Contains Observable Truths, Requirement Evidence Mapping, Promotion Wiring Checks, and Three-Source Cross-Check sections |
+| `.planning/milestones/v1.1-phases/10-quality-and-release-signal-hardening/10-quality-and-release-signal-hardening-01-SUMMARY.md` | Machine-readable `requirements-completed` metadata for QA IDs | VERIFIED | Frontmatter includes `requirements-completed` with `QA-01`, `QA-02`, `QA-03` |
+| `.planning/milestones/v1.1-phases/10-quality-and-release-signal-hardening/10-quality-and-release-signal-hardening-02-SUMMARY.md` | Machine-readable `requirements-completed` metadata for QA IDs | VERIFIED | Frontmatter includes identical `requirements-completed` metadata |
 | `.planning/REQUIREMENTS.md` | QA checklist and traceability rows reconciled to Completed | VERIFIED | QA checklist entries marked complete and traceability rows map QA IDs to Phase 13 as Completed |
 | `tools/release/Test-ReleaseEvidenceContract.ps1` | Shared fail-closed validator for missing-proof/failed-check/disabled-check blockers | VERIFIED | Mandatory evidence contract validator used across promotion surfaces |
 
@@ -28,10 +28,10 @@ verification, and promotion enforcement artifacts.
 
 | From | To | Via | Status | Details |
 | --- | --- | --- | --- | --- |
-| `.planning/phases/10-quality-and-release-signal-hardening/10-VERIFICATION.md` | `.planning/REQUIREMENTS.md` | Three-source cross-check aligns verification mapping with traceability completion | WIRED | QA rows are checked against verification evidence and summary metadata before closure |
-| `.planning/phases/10-quality-and-release-signal-hardening/10-VERIFICATION.md` | `.planning/phases/10-quality-and-release-signal-hardening/10-quality-and-release-signal-hardening-01-SUMMARY.md` | Requirement mapping references machine-readable `requirements-completed` | WIRED | Summary metadata is required source for QA closure |
-| `.planning/phases/10-quality-and-release-signal-hardening/10-VERIFICATION.md` | `.planning/phases/10-quality-and-release-signal-hardening/10-quality-and-release-signal-hardening-02-SUMMARY.md` | Requirement mapping references matching `requirements-completed` metadata | WIRED | Metadata parity is required for deterministic closure verification |
-| `.planning/phases/10-quality-and-release-signal-hardening/10-quality-and-release-signal-hardening-0[12]-SUMMARY.md` | `.planning/REQUIREMENTS.md` | QA closure metadata reconciles with checklist/traceability state | WIRED | Traceability status remains valid only while metadata stays aligned |
+| `.planning/milestones/v1.1-phases/10-quality-and-release-signal-hardening/10-VERIFICATION.md` | `.planning/REQUIREMENTS.md` | Three-source cross-check aligns verification mapping with traceability completion | WIRED | QA rows are checked against verification evidence and summary metadata before closure |
+| `.planning/milestones/v1.1-phases/10-quality-and-release-signal-hardening/10-VERIFICATION.md` | `.planning/milestones/v1.1-phases/10-quality-and-release-signal-hardening/10-quality-and-release-signal-hardening-01-SUMMARY.md` | Requirement mapping references machine-readable `requirements-completed` | WIRED | Summary metadata is required source for QA closure |
+| `.planning/milestones/v1.1-phases/10-quality-and-release-signal-hardening/10-VERIFICATION.md` | `.planning/milestones/v1.1-phases/10-quality-and-release-signal-hardening/10-quality-and-release-signal-hardening-02-SUMMARY.md` | Requirement mapping references matching `requirements-completed` metadata | WIRED | Metadata parity is required for deterministic closure verification |
+| `.planning/milestones/v1.1-phases/10-quality-and-release-signal-hardening/10-quality-and-release-signal-hardening-0[12]-SUMMARY.md` | `.planning/REQUIREMENTS.md` | QA closure metadata reconciles with checklist/traceability state | WIRED | Traceability status remains valid only while metadata stays aligned |
 | `tools/release/Test-ReleaseEvidenceContract.ps1` | `.github/workflows/ci.yml` | CI must pass mandatory release evidence contract checks | WIRED | Missing, failed, or disabled required evidence blocks promotion |
 | `tools/release/Test-ReleaseEvidenceContract.ps1` | `.github/workflows/release-package.yml` | Release-package flow enforces mandatory contract and disabled-check blockers | WIRED | `run_release_gate=false` is treated as blocking disabled-check |
 | `tools/release/Test-ReleaseEvidenceContract.ps1` | `.github/workflows/vm-smoke-matrix.yml` | VM workflow validates required evidence contract paths | WIRED | VM promotion evidence cannot bypass missing/failed contract checks |

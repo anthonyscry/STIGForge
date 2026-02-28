@@ -79,5 +79,5 @@ Output: WPF dashboard/verify/report/rebase surfaces show severity-consistent sum
 </success_criteria>
 
 <output>
-After completion, create `.planning/phases/09-wpf-parity-and-recovery-ux/09-wpf-parity-and-recovery-ux-02-SUMMARY.md`.
+After completion, create `.planning/milestones/v1.1-phases/09-wpf-parity-and-recovery-ux/09-wpf-parity-and-recovery-ux-02-SUMMARY.md`.
 </output>

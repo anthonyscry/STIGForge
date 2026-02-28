@@ -44,8 +44,8 @@ Output: explicit conflict-resolution guidance in CLI/WPF, strengthened rebase di
 @.planning/ROADMAP.md
 @.planning/REQUIREMENTS.md
 @.planning/STATE.md
-@.planning/phases/08-upgrade-rebase-operator-workflow/08-CONTEXT.md
-@.planning/phases/08-upgrade-rebase-operator-workflow/08-upgrade-rebase-operator-workflow-01-PLAN.md
+@.planning/milestones/v1.1-phases/08-upgrade-rebase-operator-workflow/08-CONTEXT.md
+@.planning/milestones/v1.1-phases/08-upgrade-rebase-operator-workflow/08-upgrade-rebase-operator-workflow-01-PLAN.md
 </context>
 
 <tasks>
@@ -79,5 +79,5 @@ Output: explicit conflict-resolution guidance in CLI/WPF, strengthened rebase di
 </success_criteria>
 
 <output>
-After completion, create `.planning/phases/08-upgrade-rebase-operator-workflow/08-upgrade-rebase-operator-workflow-02-SUMMARY.md`
+After completion, create `.planning/milestones/v1.1-phases/08-upgrade-rebase-operator-workflow/08-upgrade-rebase-operator-workflow-02-SUMMARY.md`
 </output>

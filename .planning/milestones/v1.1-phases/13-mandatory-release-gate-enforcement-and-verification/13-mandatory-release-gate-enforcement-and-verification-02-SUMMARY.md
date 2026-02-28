@@ -23,10 +23,10 @@ tech-stack:
 
 key-files:
   created:
-    - .planning/phases/10-quality-and-release-signal-hardening/10-VERIFICATION.md
+    - .planning/milestones/v1.1-phases/10-quality-and-release-signal-hardening/10-VERIFICATION.md
   modified:
-    - .planning/phases/10-quality-and-release-signal-hardening/10-quality-and-release-signal-hardening-01-SUMMARY.md
-    - .planning/phases/10-quality-and-release-signal-hardening/10-quality-and-release-signal-hardening-02-SUMMARY.md
+    - .planning/milestones/v1.1-phases/10-quality-and-release-signal-hardening/10-quality-and-release-signal-hardening-01-SUMMARY.md
+    - .planning/milestones/v1.1-phases/10-quality-and-release-signal-hardening/10-quality-and-release-signal-hardening-02-SUMMARY.md
     - .planning/REQUIREMENTS.md
 
 key-decisions:
@@ -56,7 +56,7 @@ completed: 2026-02-17
 
 ## Accomplishments
 
-- Created `.planning/phases/10-quality-and-release-signal-hardening/10-VERIFICATION.md` with phase goal, observable truths, required artifacts, key-link wiring, requirement mapping, promotion wiring checks, and three-source cross-check for `QA-01`..`QA-03`.
+- Created `.planning/milestones/v1.1-phases/10-quality-and-release-signal-hardening/10-VERIFICATION.md` with phase goal, observable truths, required artifacts, key-link wiring, requirement mapping, promotion wiring checks, and three-source cross-check for `QA-01`..`QA-03`.
 - Added identical `requirements-completed` metadata (`QA-01`, `QA-02`, `QA-03`) to both Phase 10 summary frontmatters to make closure machine-verifiable.
 - Reconciled `.planning/REQUIREMENTS.md` checklist and traceability rows to `Completed` for all QA requirements after aligning all three closure sources.
 
@@ -72,9 +72,9 @@ Each task was committed atomically:
 
 ## Files Created/Modified
 
-- `.planning/phases/10-quality-and-release-signal-hardening/10-VERIFICATION.md` - canonical QA requirement evidence and fail-closed cross-check artifact.
-- `.planning/phases/10-quality-and-release-signal-hardening/10-quality-and-release-signal-hardening-01-SUMMARY.md` - added `requirements-completed` metadata for QA closure.
-- `.planning/phases/10-quality-and-release-signal-hardening/10-quality-and-release-signal-hardening-02-SUMMARY.md` - added matching `requirements-completed` metadata.
+- `.planning/milestones/v1.1-phases/10-quality-and-release-signal-hardening/10-VERIFICATION.md` - canonical QA requirement evidence and fail-closed cross-check artifact.
+- `.planning/milestones/v1.1-phases/10-quality-and-release-signal-hardening/10-quality-and-release-signal-hardening-01-SUMMARY.md` - added `requirements-completed` metadata for QA closure.
+- `.planning/milestones/v1.1-phases/10-quality-and-release-signal-hardening/10-quality-and-release-signal-hardening-02-SUMMARY.md` - added matching `requirements-completed` metadata.
 - `.planning/REQUIREMENTS.md` - QA checklist, traceability rows, and coverage totals reconciled to completed state.
 
 ## Decisions Made

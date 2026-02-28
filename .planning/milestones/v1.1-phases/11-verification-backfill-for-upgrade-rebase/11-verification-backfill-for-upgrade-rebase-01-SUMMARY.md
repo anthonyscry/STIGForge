@@ -19,10 +19,10 @@ tech-stack:
 
 key-files:
   created:
-    - .planning/phases/08-upgrade-rebase-operator-workflow/08-VERIFICATION.md
+    - .planning/milestones/v1.1-phases/08-upgrade-rebase-operator-workflow/08-VERIFICATION.md
   modified:
-    - .planning/phases/08-upgrade-rebase-operator-workflow/08-upgrade-rebase-operator-workflow-01-SUMMARY.md
-    - .planning/phases/08-upgrade-rebase-operator-workflow/08-upgrade-rebase-operator-workflow-02-SUMMARY.md
+    - .planning/milestones/v1.1-phases/08-upgrade-rebase-operator-workflow/08-upgrade-rebase-operator-workflow-01-SUMMARY.md
+    - .planning/milestones/v1.1-phases/08-upgrade-rebase-operator-workflow/08-upgrade-rebase-operator-workflow-02-SUMMARY.md
     - .planning/REQUIREMENTS.md
 
 key-decisions:
@@ -54,7 +54,7 @@ completed: 2026-02-16
 - **Files modified:** 4
 
 ## Accomplishments
-- Created `.planning/phases/08-upgrade-rebase-operator-workflow/08-VERIFICATION.md` with UR-01..UR-04 evidence mapping and fail-closed verdict model.
+- Created `.planning/milestones/v1.1-phases/08-upgrade-rebase-operator-workflow/08-VERIFICATION.md` with UR-01..UR-04 evidence mapping and fail-closed verdict model.
 - Added identical `requirements-completed` metadata (`UR-01`..`UR-04`) to both Phase 08 plan summaries for machine-verifiable closure.
 - Reconciled `.planning/REQUIREMENTS.md` checklist/traceability and finalized `08-VERIFICATION.md` cross-check verdicts to `closed` for UR requirements.
 
@@ -69,9 +69,9 @@ Each task was committed atomically:
 **Plan metadata:** pending
 
 ## Files Created/Modified
-- `.planning/phases/08-upgrade-rebase-operator-workflow/08-VERIFICATION.md` - canonical verification artifact and three-source cross-check table.
-- `.planning/phases/08-upgrade-rebase-operator-workflow/08-upgrade-rebase-operator-workflow-01-SUMMARY.md` - added `requirements-completed` metadata.
-- `.planning/phases/08-upgrade-rebase-operator-workflow/08-upgrade-rebase-operator-workflow-02-SUMMARY.md` - added matching `requirements-completed` metadata.
+- `.planning/milestones/v1.1-phases/08-upgrade-rebase-operator-workflow/08-VERIFICATION.md` - canonical verification artifact and three-source cross-check table.
+- `.planning/milestones/v1.1-phases/08-upgrade-rebase-operator-workflow/08-upgrade-rebase-operator-workflow-01-SUMMARY.md` - added `requirements-completed` metadata.
+- `.planning/milestones/v1.1-phases/08-upgrade-rebase-operator-workflow/08-upgrade-rebase-operator-workflow-02-SUMMARY.md` - added matching `requirements-completed` metadata.
 - `.planning/REQUIREMENTS.md` - moved UR-01..UR-04 to completed and updated coverage counters.
 
 ## Decisions Made

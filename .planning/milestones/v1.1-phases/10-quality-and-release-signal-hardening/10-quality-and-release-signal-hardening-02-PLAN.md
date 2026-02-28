@@ -76,5 +76,5 @@ Output: CI/release/VM workflows validate presence and pass state of quarterly + 
 </success_criteria>
 
 <output>
-After completion, create `.planning/phases/10-quality-and-release-signal-hardening/10-quality-and-release-signal-hardening-02-SUMMARY.md`.
+After completion, create `.planning/milestones/v1.1-phases/10-quality-and-release-signal-hardening/10-quality-and-release-signal-hardening-02-SUMMARY.md`.
 </output>

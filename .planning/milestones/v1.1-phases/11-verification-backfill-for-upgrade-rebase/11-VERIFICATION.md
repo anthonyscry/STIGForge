@@ -18,7 +18,7 @@ score: 3/3 must-haves verified
 
 | # | Truth | Status | Evidence |
 | --- | --- | --- | --- |
-| 1 | Phase 08 has a verification artifact that explicitly maps UR-01 through UR-04 to concrete evidence. | ✓ VERIFIED | `.planning/phases/08-upgrade-rebase-operator-workflow/08-VERIFICATION.md` exists with `## Requirement Evidence Mapping` and explicit rows for `UR-01`..`UR-04` (lines 25-33), plus `## Three-Source Cross-Check` (line 40). |
+| 1 | Phase 08 has a verification artifact that explicitly maps UR-01 through UR-04 to concrete evidence. | ✓ VERIFIED | `.planning/milestones/v1.1-phases/08-upgrade-rebase-operator-workflow/08-VERIFICATION.md` exists with `## Requirement Evidence Mapping` and explicit rows for `UR-01`..`UR-04` (lines 25-33), plus `## Three-Source Cross-Check` (line 40). |
 | 2 | UR-01 through UR-04 can be machine-verified as closed across requirements traceability, verification artifact, and summary metadata. | ✓ VERIFIED | Both Phase 08 summaries contain identical `requirements-completed` arrays (`UR-01`..`UR-04`, lines 7-11), `REQUIREMENTS.md` traceability rows show all four as `Completed` in Phase 11 (lines 49-52), and `08-VERIFICATION.md` cross-check verdicts are `closed` (lines 44-47). |
 | 3 | No UR requirement is marked completed when any closure source is missing or inconsistent. | ✓ VERIFIED | `08-VERIFICATION.md` defines fail-closed semantics (lines 13 and 49) and three-source table shows all three sources present per UR; no mismatched/missing UR IDs detected across the three sources. |
 
@@ -28,18 +28,18 @@ score: 3/3 must-haves verified
 
 | Artifact | Expected | Status | Details |
 | --- | --- | --- | --- |
-| `.planning/phases/08-upgrade-rebase-operator-workflow/08-VERIFICATION.md` | Canonical Phase 08 verification evidence and three-source cross-check table | ✓ VERIFIED | Exists; substantive evidence mapping for UR-01..UR-04; wired by explicit cross-check references to summary metadata and `REQUIREMENTS.md`. |
-| `.planning/phases/08-upgrade-rebase-operator-workflow/08-upgrade-rebase-operator-workflow-01-SUMMARY.md` | Machine-readable requirement closure metadata for Plan 01 summary | ✓ VERIFIED | Exists; contains `requirements-completed` with `UR-01`..`UR-04`; wired to verification artifact via matching requirement IDs. |
-| `.planning/phases/08-upgrade-rebase-operator-workflow/08-upgrade-rebase-operator-workflow-02-SUMMARY.md` | Machine-readable requirement closure metadata for Plan 02 summary | ✓ VERIFIED | Exists; contains `requirements-completed` with `UR-01`..`UR-04`; wired to verification artifact via matching requirement IDs. |
+| `.planning/milestones/v1.1-phases/08-upgrade-rebase-operator-workflow/08-VERIFICATION.md` | Canonical Phase 08 verification evidence and three-source cross-check table | ✓ VERIFIED | Exists; substantive evidence mapping for UR-01..UR-04; wired by explicit cross-check references to summary metadata and `REQUIREMENTS.md`. |
+| `.planning/milestones/v1.1-phases/08-upgrade-rebase-operator-workflow/08-upgrade-rebase-operator-workflow-01-SUMMARY.md` | Machine-readable requirement closure metadata for Plan 01 summary | ✓ VERIFIED | Exists; contains `requirements-completed` with `UR-01`..`UR-04`; wired to verification artifact via matching requirement IDs. |
+| `.planning/milestones/v1.1-phases/08-upgrade-rebase-operator-workflow/08-upgrade-rebase-operator-workflow-02-SUMMARY.md` | Machine-readable requirement closure metadata for Plan 02 summary | ✓ VERIFIED | Exists; contains `requirements-completed` with `UR-01`..`UR-04`; wired to verification artifact via matching requirement IDs. |
 | `.planning/REQUIREMENTS.md` | Requirement checkbox and traceability status for UR closure | ✓ VERIFIED | Exists; traceability rows `UR-01`..`UR-04` map to Phase 11 and status `Completed`; requirement checklist entries are checked. |
 
 ### Key Link Verification
 
 | From | To | Via | Status | Details |
 | --- | --- | --- | --- | --- |
-| `.planning/phases/08-upgrade-rebase-operator-workflow/08-VERIFICATION.md` | `.planning/REQUIREMENTS.md` | Three-source table status alignment | ✓ WIRED | `08-VERIFICATION.md` cross-check rows mark `UR-01`..`UR-04` as `closed` and explicitly reference `Completed` traceability status, matching `REQUIREMENTS.md` lines 49-52. |
-| `.planning/phases/08-upgrade-rebase-operator-workflow/08-upgrade-rebase-operator-workflow-01-SUMMARY.md` | `.planning/phases/08-upgrade-rebase-operator-workflow/08-VERIFICATION.md` | requirements-completed IDs must match verification IDs | ✓ WIRED | Summary frontmatter lists `UR-01`..`UR-04`; same IDs are present in verification evidence and cross-check tables. |
-| `.planning/phases/08-upgrade-rebase-operator-workflow/08-upgrade-rebase-operator-workflow-02-SUMMARY.md` | `.planning/phases/08-upgrade-rebase-operator-workflow/08-VERIFICATION.md` | requirements-completed IDs must match verification IDs | ✓ WIRED | Summary frontmatter lists `UR-01`..`UR-04`; same IDs are present in verification evidence and cross-check tables. |
+| `.planning/milestones/v1.1-phases/08-upgrade-rebase-operator-workflow/08-VERIFICATION.md` | `.planning/REQUIREMENTS.md` | Three-source table status alignment | ✓ WIRED | `08-VERIFICATION.md` cross-check rows mark `UR-01`..`UR-04` as `closed` and explicitly reference `Completed` traceability status, matching `REQUIREMENTS.md` lines 49-52. |
+| `.planning/milestones/v1.1-phases/08-upgrade-rebase-operator-workflow/08-upgrade-rebase-operator-workflow-01-SUMMARY.md` | `.planning/milestones/v1.1-phases/08-upgrade-rebase-operator-workflow/08-VERIFICATION.md` | requirements-completed IDs must match verification IDs | ✓ WIRED | Summary frontmatter lists `UR-01`..`UR-04`; same IDs are present in verification evidence and cross-check tables. |
+| `.planning/milestones/v1.1-phases/08-upgrade-rebase-operator-workflow/08-upgrade-rebase-operator-workflow-02-SUMMARY.md` | `.planning/milestones/v1.1-phases/08-upgrade-rebase-operator-workflow/08-VERIFICATION.md` | requirements-completed IDs must match verification IDs | ✓ WIRED | Summary frontmatter lists `UR-01`..`UR-04`; same IDs are present in verification evidence and cross-check tables. |
 
 ### Requirements Coverage
 

@@ -55,7 +55,7 @@ Output: deterministic diff/rebase artifacts, blocking unresolved-conflict policy
 @.planning/ROADMAP.md
 @.planning/REQUIREMENTS.md
 @.planning/STATE.md
-@.planning/phases/08-upgrade-rebase-operator-workflow/08-CONTEXT.md
+@.planning/milestones/v1.1-phases/08-upgrade-rebase-operator-workflow/08-CONTEXT.md
 @docs/release/UpgradeAndRebaseValidation.md
 </context>
 
@@ -91,5 +91,5 @@ Output: deterministic diff/rebase artifacts, blocking unresolved-conflict policy
 </success_criteria>
 
 <output>
-After completion, create `.planning/phases/08-upgrade-rebase-operator-workflow/08-upgrade-rebase-operator-workflow-01-SUMMARY.md`
+After completion, create `.planning/milestones/v1.1-phases/08-upgrade-rebase-operator-workflow/08-upgrade-rebase-operator-workflow-01-SUMMARY.md`
 </output>
