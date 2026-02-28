@@ -15,7 +15,7 @@ Solo developer + Claude execution, phase-by-phase delivery with small executable
 - Current milestone: `v1.1` (execution active)
 - Starting phase index: `08`
 - Requirement source: `.planning/REQUIREMENTS.md`
-- Next action: plan and execute gap-closure phases starting at Phase 11
+- Next action: pivot into Phase 13 readiness/execution planning and QA gate readiness
 
 ---
 
@@ -93,16 +93,16 @@ Exit Criteria:
 
 ### Phase 12: WPF Parity Evidence Promotion and Verification
 
-**Status:** Planned
+**Status:** Completed (2026-02-28)
 **Goal:** Close WPF parity evidence gaps by adding explicit WPF workflow contract evidence to promotion artifacts and verification outputs.
 **Requirements:** `WP-01`, `WP-02`, `WP-03`
 **Gap Closure:** Requirement orphaning and integration/flow gaps for explicit WPF parity evidence promotion.
 **Plans:** 1 plan
 
 Plans:
-- [ ] 12-01-PLAN.md - Seed Phase 12 parity-evidence promotion workflow with source-evidence intake, promotion wiring checks, and fail-closed three-source reconciliation for WP-01..WP-03.
+- [x] 12-01-PLAN.md - Seed Phase 12 parity-evidence promotion workflow with source-evidence intake, promotion wiring checks, and fail-closed three-source reconciliation for WP-01..WP-03.
 
-**Immediate next plan:** Execute `12-01-PLAN.md` first to establish source-evidence intake, promotion wiring checks, and fail-closed three-source reconciliation before scheduling follow-on Phase 12 plans.
+**Immediate next plan:** Shift focus to Phase 13 readiness/execution planning so QA workstreams and mandatory release-gate verification can begin now that the Phase 12 plan is closed.
 
 Exit Criteria:
 - Phase 09 verification artifact exists and maps WP requirement evidence.
