@@ -17,9 +17,9 @@ Requirements remain `unresolved` unless all three sources are present and consis
 Run these commands to validate evidence structure and traceability links:
 
 ```bash
-rg --line-number "^# Plan 0[12] Summary|^## What Was Built|WP-0[1-3]|WPF|diff|rebase|severity|recovery" .planning/phases/09-wpf-parity-and-recovery-ux/09-wpf-parity-and-recovery-ux-0[12]-SUMMARY.md
+rg --line-number "^# Plan 0[12] Summary|^## What Was Built|WP-0[1-3]|WPF|diff|rebase|severity|recovery" .planning/milestones/v1.1-phases/09-wpf-parity-and-recovery-ux/09-wpf-parity-and-recovery-ux-0[12]-SUMMARY.md
 rg --line-number "\| WP-0[1-3] \| Phase 12 \|" .planning/REQUIREMENTS.md
-rg --line-number "^# Phase 09 Verification|^## Requirement Evidence Mapping|^## Three-Source Cross-Check|WP-0[1-3]" .planning/phases/09-wpf-parity-and-recovery-ux/09-VERIFICATION.md
+rg --line-number "^# Phase 09 Verification|^## Requirement Evidence Mapping|^## Three-Source Cross-Check|WP-0[1-3]" .planning/milestones/v1.1-phases/09-wpf-parity-and-recovery-ux/09-VERIFICATION.md
 ```
 
 ## Requirement Evidence Mapping
@@ -40,8 +40,8 @@ rg --line-number "^# Phase 09 Verification|^## Requirement Evidence Mapping|^## 
 
 | Requirement | REQUIREMENTS.md traceability row | Summary metadata (`requirements-completed`) | Verification evidence mapping | Verdict |
 |---|---|---|---|---|
-| WP-01 | present (`Completed`) | present (`WP-01`) | present | closed |
-| WP-02 | present (`Completed`) | present (`WP-02`) | present | closed |
-| WP-03 | present (`Completed`) | present (`WP-03`) | present | closed |
+| WP-01 | present (`Pending`) | present (`WP-01`) | present | unresolved |
+| WP-02 | present (`Pending`) | present (`WP-02`) | present | unresolved |
+| WP-03 | present (`Pending`) | present (`WP-03`) | present | unresolved |
 
 Fail-closed rule: keep a requirement `closed` only while all three sources remain present and consistent; any missing or mismatched source reverts to `unresolved`.

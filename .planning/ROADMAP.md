@@ -75,14 +75,14 @@ Exit Criteria:
 
 ### Phase 11: Verification Backfill for Upgrade/Rebase
 
-**Status:** Planned
+**Status:** Completed (2026-02-27)
 **Goal:** Close orphaned requirement evidence for upgrade/rebase workflows by restoring phase verification artifacts and machine-verifiable requirement closure metadata.
 **Requirements:** `UR-01`, `UR-02`, `UR-03`, `UR-04`
 **Gap Closure:** Requirement orphaning gaps from `v1.1-MILESTONE-AUDIT.md`
 **Plans:** 1 plan
 
 Plans:
-- [ ] 11-verification-backfill-for-upgrade-rebase-01-PLAN.md - Backfill Phase 08 verification artifact and reconcile UR requirement closure metadata across planning evidence sources.
+- [x] 11-verification-backfill-for-upgrade-rebase-01-PLAN.md - Backfill Phase 08 verification artifact and reconcile UR requirement closure metadata across planning evidence sources.
 
 Exit Criteria:
 - Phase 08 verification artifact exists and maps UR requirement evidence.
@@ -97,7 +97,12 @@ Exit Criteria:
 **Goal:** Close WPF parity evidence gaps by adding explicit WPF workflow contract evidence to promotion artifacts and verification outputs.
 **Requirements:** `WP-01`, `WP-02`, `WP-03`
 **Gap Closure:** Requirement orphaning and integration/flow gaps for explicit WPF parity evidence promotion.
-**Plans:** 0 plans
+**Plans:** 1 plan
+
+Plans:
+- [ ] 12-01-PLAN.md - Seed Phase 12 parity-evidence promotion workflow with source-evidence intake, promotion wiring checks, and fail-closed three-source reconciliation for WP-01..WP-03.
+
+**Immediate next plan:** Execute `12-01-PLAN.md` first to establish source-evidence intake, promotion wiring checks, and fail-closed three-source reconciliation before scheduling follow-on Phase 12 plans.
 
 Exit Criteria:
 - Phase 09 verification artifact exists and maps WP requirement evidence.
