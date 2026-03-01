@@ -17,21 +17,35 @@
         <KeyBinding Key="O" Modifiers="Ctrl" Command="{Binding OpenOutputFolderCommand}" />
         <KeyBinding Key="N" Modifiers="Ctrl" Command="{Binding RestartWorkflowCommand}" />
     </Window.InputBindings>
-    <Grid Margin="20">
+    <Grid Margin="{DynamicResource AppPagePadding}">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
         <!-- Header -->
-        <DockPanel Grid.Row="0" Margin="0,0,0,20" LastChildFill="False">
-            <TextBlock Text="STIGForge" FontSize="30" FontWeight="Bold" Foreground="{DynamicResource AccentBrush}" VerticalAlignment="Center" DockPanel.Dock="Left"/>
+        <Border Grid.Row="0"
+                Margin="0,0,0,16"
+                Padding="{DynamicResource CardPadding}"
+                Background="{DynamicResource SurfaceMutedBrush}"
+                BorderBrush="{DynamicResource BorderBrush}">
+            <DockPanel LastChildFill="False">
+                <StackPanel DockPanel.Dock="Left">
+                    <TextBlock Text="STIGForge"
+                               FontSize="30"
+                               FontWeight="Bold"
+                               Foreground="{DynamicResource AccentBrush}" />
+                    <TextBlock Text="Build, apply, verify, prove"
+                               Foreground="{DynamicResource TextMutedBrush}"
+                               Margin="0,2,0,0" />
+                </StackPanel>
             <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center">
                 <Button Content="?" Width="38" Height="38" Padding="0" Margin="0,0,8,0" TabIndex="900" ToolTip="Help (F1)" FontSize="16" FontWeight="Bold" Command="{Binding ShowHelpCommand}" AutomationProperties.Name="Help"/>
                 <Button Content="i" Width="38" Height="38" Padding="0" Margin="0,0,8,0" TabIndex="901" ToolTip="About" FontSize="16" FontWeight="Bold" FontStyle="Italic" Command="{Binding ShowAboutCommand}" AutomationProperties.Name="About"/>
                 <Button Content="&#xE713;" Width="38" Height="38" Padding="0" TabIndex="902" ToolTip="Settings" FontFamily="Segoe MDL2 Assets" FontSize="16" Command="{Binding ShowSettingsCommand}" AutomationProperties.Name="Settings"/>
             </StackPanel>
-        </DockPanel>
+            </DockPanel>
+        </Border>
 
         <!-- Dashboard -->
         <views:DashboardView Grid.Row="1"/>

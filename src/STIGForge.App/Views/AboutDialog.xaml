@@ -4,19 +4,29 @@
         Title="About STIGForge" Height="300" Width="440"
         WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
         Background="{DynamicResource WindowBackgroundBrush}">
-  <Grid Margin="24">
+  <Grid Margin="{DynamicResource AppPagePadding}">
     <Grid.RowDefinitions>
       <RowDefinition Height="Auto"/>
       <RowDefinition Height="*"/>
       <RowDefinition Height="Auto"/>
     </Grid.RowDefinitions>
 
-    <StackPanel Grid.Row="0">
-      <TextBlock Text="STIGForge" FontSize="28" FontWeight="Bold" Margin="0,0,0,4"/>
-      <TextBlock Text="Offline-first Windows hardening platform" FontSize="14" Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,16"/>
-    </StackPanel>
+    <Border Grid.Row="0"
+            Padding="{DynamicResource CardPadding}"
+            Margin="0,0,0,16"
+            Background="{DynamicResource SurfaceMutedBrush}"
+            BorderBrush="{DynamicResource BorderBrush}">
+      <StackPanel>
+        <TextBlock Text="STIGForge" FontSize="28" FontWeight="Bold" Margin="0,0,0,4"/>
+        <TextBlock Text="Offline-first Windows hardening platform" FontSize="14" Foreground="{DynamicResource TextMutedBrush}"/>
+      </StackPanel>
+    </Border>
 
-    <StackPanel Grid.Row="1">
+    <Border Grid.Row="1"
+            Padding="{DynamicResource CardPadding}"
+            Background="{DynamicResource SurfaceBrush}"
+            BorderBrush="{DynamicResource BorderBrush}">
+    <StackPanel>
       <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
         <TextBlock Text="Version:" FontWeight="SemiBold" Width="100"/>
         <TextBlock Text="0.1.0-dev"/>
@@ -42,6 +52,7 @@
         <TextBlock Text="{Binding OverlayCount}"/>
       </StackPanel>
     </StackPanel>
+    </Border>
 
     <Button Grid.Row="2" Content="Close" Width="100" Height="28" HorizontalAlignment="Right"
             Click="Close_Click" IsDefault="True" IsCancel="True"/>

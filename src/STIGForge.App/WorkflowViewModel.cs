@@ -725,6 +725,10 @@ public partial class WorkflowViewModel : ObservableObject
     [ObservableProperty]
     private string _verifyComplianceText = string.Empty;
 
+    private bool _scanBaselineComplianceIsValid;
+    private double _scanBaselineCompliancePercent;
+    private int _scanBaselineComplianceDenominator;
+
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(RunImportStepCommand))]
     [NotifyCanExecuteChangedFor(nameof(RunAutoWorkflowCommand))]
@@ -937,14 +941,17 @@ public partial class WorkflowViewModel : ObservableObject
     }
 
     private async Task<bool> RunScanAsync()
-    {
-        StatusText = "Running Evaluate-STIG baseline scan...";
-        CurrentFailureCard = null;
+        {
+            StatusText = "Running Evaluate-STIG baseline scan...";
+            CurrentFailureCard = null;
+            VerifyComplianceText = string.Empty;
+            InvalidateScanComplianceBaseline();
 
         if (_verifyService == null)
         {
             StatusText = "Verification service not configured";
             BaselineFindingsCount = 0;
+            ScanComplianceText = string.Empty;
             return false;
         }
 
@@ -952,6 +959,7 @@ public partial class WorkflowViewModel : ObservableObject
         {
             StatusText = "No imported content detected. Run Import and confirm items in Imported Library.";
             BaselineFindingsCount = 0;
+            ScanComplianceText = string.Empty;
             return false;
         }
 
@@ -960,6 +968,7 @@ public partial class WorkflowViewModel : ObservableObject
             StatusText = adminMessage;
             BaselineFindingsCount = 0;
             CurrentFailureCard = CreateElevationRequiredCard("Baseline scan preflight blocked because STIGForge is not running with administrator privileges.");
+            ScanComplianceText = string.Empty;
             return false;
         }
 
@@ -969,6 +978,7 @@ public partial class WorkflowViewModel : ObservableObject
             StatusText = "Evaluate-STIG tool path is not configured or invalid";
             BaselineFindingsCount = 0;
             CurrentFailureCard = CreateEvaluatePathInvalidCard();
+            ScanComplianceText = string.Empty;
             return false;
         }
 
@@ -979,6 +989,8 @@ public partial class WorkflowViewModel : ObservableObject
         {
             StatusText = "Output folder is required for scanning";
             BaselineFindingsCount = 0;
+            ScanComplianceText = string.Empty;
+            InvalidateScanComplianceBaseline();
             return false;
         }
 
@@ -1010,17 +1022,26 @@ public partial class WorkflowViewModel : ObservableObject
 
             var scanDenom = result.PassCount + result.FailCount + result.ErrorCount;
             var scanPct = scanDenom > 0 ? (double)result.PassCount / scanDenom * 100 : 0;
-            ScanComplianceText = $"{scanPct:F1}% compliant ({result.PassCount}/{scanDenom})";
+            ScanComplianceText = $"Baseline: {scanPct:F1}% compliant ({result.PassCount}/{scanDenom})";
 
             if (baselineOpenFindings == 0)
             {
-              StatusText = BuildZeroFindingsMessage("Baseline scan", result);
-              var isFailure = IsZeroFindingsFailure(result);
-              CurrentFailureCard = isFailure ? BuildScanFailureCard(result) : null;
+                StatusText = BuildZeroFindingsMessage("Baseline scan", result);
+                var isFailure = IsZeroFindingsFailure(result);
+                CurrentFailureCard = isFailure ? BuildScanFailureCard(result) : null;
+                if (isFailure)
+                {
+                    InvalidateScanComplianceBaseline();
+                }
+                else
+                {
+                    SetScanComplianceBaseline(scanPct, scanDenom);
+                }
 
-              return !isFailure;
+                return !isFailure;
             }
 
+            SetScanComplianceBaseline(scanPct, scanDenom);
             StatusText = $"Baseline scan complete: {BaselineFindingsCount} findings";
             CurrentFailureCard = null;
             return true;
@@ -1029,9 +1050,10 @@ public partial class WorkflowViewModel : ObservableObject
         {
             StatusText = $"Scan failed: {ex.Message}";
             BaselineFindingsCount = 0;
+            ScanComplianceText = string.Empty;
             return false;
         }
-    }
+        }
 
     private async Task<bool> RunHardenAsync()
     {
@@ -1809,6 +1831,7 @@ public partial class WorkflowViewModel : ObservableObject
     {
         StatusText = "Running verification scan (Evaluate-STIG + SCC)...";
         CurrentFailureCard = null;
+        VerifyComplianceText = string.Empty;
         ResetComplianceMetrics();
 
         if (_verifyService == null)
@@ -1908,7 +1931,7 @@ public partial class WorkflowViewModel : ObservableObject
 
             var verifyDenom = result.PassCount + result.FailCount + result.ErrorCount;
             var verifyPct = verifyDenom > 0 ? (double)result.PassCount / verifyDenom * 100 : 0;
-            VerifyComplianceText = $"{verifyPct:F1}% compliant ({result.PassCount}/{verifyDenom})";
+            VerifyComplianceText = BuildVerifyComplianceText(verifyPct, result.PassCount, verifyDenom);
 
             var verifyOpenFindings = result.FailCount + result.ErrorCount;
             VerifyFindingsCount = verifyOpenFindings;
@@ -1955,6 +1978,30 @@ public partial class WorkflowViewModel : ObservableObject
             CurrentFailureCard = CreateVerifyUnknownFailureCard($"Verification failed unexpectedly: {ex.Message}");
             return false;
         }
+    }
+
+    private void SetScanComplianceBaseline(double scanPercent, int scanDenominator)
+    {
+        _scanBaselineComplianceIsValid = true;
+        _scanBaselineCompliancePercent = scanPercent;
+        _scanBaselineComplianceDenominator = scanDenominator;
+    }
+
+    private void InvalidateScanComplianceBaseline()
+    {
+        _scanBaselineComplianceIsValid = false;
+        _scanBaselineCompliancePercent = 0;
+        _scanBaselineComplianceDenominator = 0;
+    }
+
+    private string BuildVerifyComplianceText(double verifyPercent, int verifyPass, int verifyDenominator)
+    {
+        var complianceText = $"{verifyPercent:F1}% compliant ({verifyPass}/{verifyDenominator})";
+        if (!_scanBaselineComplianceIsValid || _scanBaselineComplianceDenominator == 0)
+            return complianceText;
+
+        var delta = verifyPercent - _scanBaselineCompliancePercent;
+        return $"{complianceText} | Delta vs baseline: {delta:+0.0;-0.0;0.0} pp";
     }
 
     private void ResetComplianceMetrics()
@@ -2112,6 +2159,9 @@ public partial class WorkflowViewModel : ObservableObject
         ScanState = StepState.Complete;
         ScanError = string.Empty;
         BaselineFindingsCount = 0;
+        ScanComplianceText = string.Empty;
+        VerifyComplianceText = string.Empty;
+        InvalidateScanComplianceBaseline();
         StatusText = "Baseline scan skipped by operator — proceeding to harden";
 
         if (HardenState == StepState.Locked)
@@ -2155,6 +2205,7 @@ public partial class WorkflowViewModel : ObservableObject
         HardenState = StepState.Complete;
         HardenError = string.Empty;
         AppliedFixesCount = 0;
+        InvalidateScanComplianceBaseline();
         StatusText = "Hardening skipped by operator";
 
         if (VerifyState == StepState.Locked)
@@ -2716,6 +2767,7 @@ public partial class WorkflowViewModel : ObservableObject
         FixedCount = 0;
         ScanComplianceText = string.Empty;
         VerifyComplianceText = string.Empty;
+        InvalidateScanComplianceBaseline();
         AppliedFixesCount = 0;
         ImportedItemsCount = 0;
         IsImportedLibraryExpanded = false;

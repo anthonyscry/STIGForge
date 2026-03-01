@@ -3,7 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:controls="clr-namespace:STIGForge.App.Views"
              xmlns:chartControls="clr-namespace:STIGForge.App.Views.Controls">
-    <TabControl Margin="0,0,0,8">
+    <TabControl Margin="0,0,0,8" Padding="6">
         <TabItem Header="Import Library">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel Margin="0,0,0,8">
@@ -17,7 +17,7 @@
                                Foreground="{DynamicResource TextMutedBrush}" />
 
                     <Border Margin="0,0,0,12"
-                            Padding="10"
+                            Padding="{DynamicResource CardPadding}"
                             MinHeight="40"
                             Background="{DynamicResource SurfaceMutedBrush}"
                             Visibility="{Binding StatusText, Converter={StaticResource NullOrEmptyToCollapsed}}">
@@ -44,7 +44,7 @@
                                                Margin="0,0,0,12" />
 
                     <Border Margin="0,0,0,12"
-                            Padding="10"
+                            Padding="{DynamicResource CardPadding}"
                             Background="{DynamicResource SurfaceMutedBrush}">
                         <StackPanel>
                             <DockPanel LastChildFill="False">
@@ -169,7 +169,7 @@
                                Foreground="{DynamicResource TextMutedBrush}" />
 
                     <Border Margin="0,0,0,12"
-                            Padding="10"
+                            Padding="{DynamicResource CardPadding}"
                             MinHeight="40"
                             Background="{DynamicResource SurfaceMutedBrush}"
                             Visibility="{Binding StatusText, Converter={StaticResource NullOrEmptyToCollapsed}}">
@@ -236,7 +236,7 @@
                     </WrapPanel>
 
                     <Border Margin="0,0,0,14"
-                            Padding="12"
+                            Padding="{DynamicResource CardPadding}"
                             Background="{DynamicResource SurfaceMutedBrush}"
                             BorderBrush="{DynamicResource WarningBrush}"
                             BorderThickness="1"
@@ -340,7 +340,7 @@
         <TabItem Header="Results">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel Margin="0,0,0,8">
-                    <Border Padding="12">
+                    <Border Padding="{DynamicResource CardPadding}">
                         <StackPanel>
                             <TextBlock Text="Results" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,10" />
 
@@ -381,7 +381,7 @@
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <StackPanel Margin="0,0,0,8">
                     <Border Margin="0,0,0,14"
-                            Padding="12"
+                            Padding="{DynamicResource CardPadding}"
                             Background="{DynamicResource SurfaceBrush}"
                             BorderBrush="{DynamicResource SurfaceBrush}"
                             BorderThickness="1">

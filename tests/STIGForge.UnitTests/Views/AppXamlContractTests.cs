@@ -5,7 +5,7 @@ namespace STIGForge.UnitTests.Views;
 public sealed class AppXamlContractTests
 {
   [Fact]
-  public void AppXaml_DefinesSingleImplicitWindowStyle_WithSegoeUiDefault()
+  public void AppXaml_DefinesSingleImplicitWindowStyle_WithAppFontFamilyResource()
   {
     var xaml = LoadAppXaml();
     var document = XDocument.Parse(xaml);
@@ -23,7 +23,7 @@ public sealed class AppXamlContractTests
 
     Assert.Contains(setters, setter =>
       string.Equals((string?)setter.Attribute("Property"), "FontFamily", StringComparison.Ordinal)
-      && string.Equals((string?)setter.Attribute("Value"), "Segoe UI", StringComparison.Ordinal));
+      && string.Equals((string?)setter.Attribute("Value"), "{DynamicResource AppFontFamily}", StringComparison.Ordinal));
 
     Assert.Contains(setters, setter =>
       string.Equals((string?)setter.Attribute("Property"), "FontSize", StringComparison.Ordinal)

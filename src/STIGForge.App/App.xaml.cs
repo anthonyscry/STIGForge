@@ -25,7 +25,12 @@ public partial class App : Application
   private IHost? _host;
   private static readonly object StartupTraceLock = new();
   public IServiceProvider Services => _host!.Services;
-
+  private static readonly Uri DarkTheme = new("Themes/DarkTheme.xaml", UriKind.Relative);
+  private static readonly Uri LightTheme = new("Themes/LightTheme.xaml", UriKind.Relative);
+  private static readonly Uri HighContrastTheme = new("Themes/HighContrastTheme.xaml", UriKind.Relative);
+  private static readonly string[] ThemeSourceSuffixes =
+    { "Themes/DarkTheme.xaml", "Themes/LightTheme.xaml", "Themes/HighContrastTheme.xaml" };
+  
   // Startup timing measurement
   private static readonly Stopwatch StartupStopwatch = new();
   private static bool _isColdStart = true;
@@ -158,6 +163,10 @@ public partial class App : Application
 
       // Attach Loaded event handler for startup timing measurement
       main.Loaded += MainWindow_Loaded;
+      SystemParameters.StaticPropertyChanged += OnSystemParametersPropertyChanged;
+      Microsoft.Win32.SystemEvents.UserPreferenceChanged += OnUserPreferenceChanged;
+
+      ApplyTheme();
 
       main.Show();
       TraceStartup("Main window shown");
@@ -180,6 +189,69 @@ public partial class App : Application
       Log.CloseAndFlush();
       Shutdown(-1);
     }
+  }
+
+  private void ApplyTheme()
+  {
+    var selectedTheme = GetThemeForCurrentSystem();
+
+    if (selectedTheme is null)
+      return;
+
+    var mergedDictionaries = Resources.MergedDictionaries;
+    for (var i = mergedDictionaries.Count - 1; i >= 0; i--)
+    {
+      var source = mergedDictionaries[i].Source?.OriginalString;
+
+      if (source != null && ThemeSourceSuffixes.Any(s => source.EndsWith(s, StringComparison.OrdinalIgnoreCase)))
+      {
+        mergedDictionaries.RemoveAt(i);
+      }
+    }
+
+    var alreadySet = mergedDictionaries.Any(
+      d => string.Equals(d.Source?.OriginalString, selectedTheme.OriginalString, StringComparison.OrdinalIgnoreCase));
+
+    if (!alreadySet)
+    {
+      mergedDictionaries.Add(new ResourceDictionary { Source = selectedTheme });
+    }
+  }
+
+  private static Uri GetThemeForCurrentSystem()
+  {
+    if (SystemParameters.HighContrast)
+      return HighContrastTheme;
+
+    return IsSystemLightThemeEnabled() ? LightTheme : DarkTheme;
+  }
+
+  private static bool IsSystemLightThemeEnabled()
+  {
+    try
+    {
+      using var key = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(
+        @"SOFTWARE\Microsoft\Windows\CurrentVersion\Themes\Personalize");
+
+      return key is not null && Convert.ToInt32(key.GetValue("AppsUseLightTheme", 1)) == 1;
+    }
+    catch
+    {
+      return false;
+    }
+  }
+
+  private void OnSystemParametersPropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
+  {
+    if (e.PropertyName == nameof(SystemParameters.HighContrast))
+    {
+      Dispatcher.BeginInvoke((Action)ApplyTheme);
+    }
+  }
+
+  private void OnUserPreferenceChanged(object? sender, Microsoft.Win32.UserPreferenceChangedEventArgs e)
+  {
+    Dispatcher.BeginInvoke((Action)ApplyTheme);
   }
 
   private async Task StartHostAsync(IHost host)
@@ -302,6 +374,9 @@ public partial class App : Application
       System.Threading.Tasks.TaskScheduler.UnobservedTaskException -= OnUnobservedTaskException;
 
       base.OnExit(e);
+
+      SystemParameters.StaticPropertyChanged -= OnSystemParametersPropertyChanged;
+      Microsoft.Win32.SystemEvents.UserPreferenceChanged -= OnUserPreferenceChanged;
 
       if (_host != null)
       {

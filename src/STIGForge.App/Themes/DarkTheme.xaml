@@ -2,8 +2,8 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
 
   <SolidColorBrush x:Key="WindowBackgroundBrush" Color="#0B0D11"/>
-  <SolidColorBrush x:Key="SurfaceBrush" Color="#161921"/>
-  <SolidColorBrush x:Key="SurfaceMutedBrush" Color="#101319"/>
+  <SolidColorBrush x:Key="SurfaceBrush" Color="#151A23"/>
+  <SolidColorBrush x:Key="SurfaceMutedBrush" Color="#0F1420"/>
   <SolidColorBrush x:Key="BorderBrush" Color="#2A2F3B"/>
   <SolidColorBrush x:Key="TextPrimaryBrush" Color="#F8FAFC"/>
   <SolidColorBrush x:Key="TextMutedBrush" Color="#94A3B8"/>
@@ -19,8 +19,8 @@
   <SolidColorBrush x:Key="WorkflowStepErrorBrush" Color="#F43F5E"/>
 
   <!-- Button -->
-  <SolidColorBrush x:Key="ButtonBackgroundBrush" Color="#1E222D"/>
-  <SolidColorBrush x:Key="ButtonHoverBrush" Color="#1E3A8A"/>
+  <SolidColorBrush x:Key="ButtonBackgroundBrush" Color="#1C2431"/>
+  <SolidColorBrush x:Key="ButtonHoverBrush" Color="#244180"/>
   <SolidColorBrush x:Key="ButtonPressedBrush" Color="#1D4ED8"/>
   <SolidColorBrush x:Key="ButtonDisabledBgBrush" Color="#101319"/>
   <SolidColorBrush x:Key="ButtonDisabledBorderBrush" Color="#1E222D"/>
@@ -59,5 +59,8 @@
   <!-- ToolTip -->
   <SolidColorBrush x:Key="ToolTipBgBrush" Color="#1E222D"/>
   <SolidColorBrush x:Key="ToolTipBorderBrush" Color="#334155"/>
+
+  <!-- Visual effects -->
+  <Color x:Key="CardShadowColor">#000000</Color>
 
 </ResourceDictionary>

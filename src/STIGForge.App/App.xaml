@@ -6,6 +6,15 @@
         <ResourceDictionary Source="Themes/DarkTheme.xaml"/>
       </ResourceDictionary.MergedDictionaries>
 
+      <!-- Core UI tokens for visual consistency -->
+      <Thickness x:Key="AppPagePadding">20</Thickness>
+      <Thickness x:Key="SectionSpacing">0,0,0,16</Thickness>
+      <Thickness x:Key="CardPadding">14</Thickness>
+      <CornerRadius x:Key="UiPanelRadius">12</CornerRadius>
+      <CornerRadius x:Key="UiCardRadius">16</CornerRadius>
+      <CornerRadius x:Key="UiButtonRadius">8</CornerRadius>
+      <FontFamily x:Key="AppFontFamily">Aptos, Segoe UI, Calibri</FontFamily>
+
       <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
       <local:NullOrEmptyToCollapsedConverter x:Key="NullOrEmptyToCollapsed" />
       <local:BoolToPassFailConverter x:Key="BoolToPassFail" />
@@ -20,13 +29,17 @@
       <!-- ═══════════ TEXT ═══════════ -->
       <Style TargetType="TextBlock">
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
       </Style>
 
       <!-- ═══════════ BORDER ═══════════ -->
       <Style TargetType="Border">
-        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="CornerRadius" Value="{DynamicResource UiPanelRadius}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
       </Style>
 
       <!-- ═══════════ BUTTON ═══════════ -->
@@ -35,9 +48,12 @@
         <Setter Property="Background" Value="{DynamicResource ButtonBackgroundBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="MinHeight" Value="34" />
+        <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
+        <Setter Property="FontSize" Value="13" />
         <Setter Property="Cursor" Value="Hand" />
         <Setter Property="FontWeight" Value="SemiBold" />
-        <Setter Property="Padding" Value="10,4" />
+        <Setter Property="Padding" Value="12,7" />
         <Setter Property="Template">
           <Setter.Value>
             <ControlTemplate TargetType="Button">
@@ -45,7 +61,7 @@
                       Background="{TemplateBinding Background}"
                       BorderBrush="{TemplateBinding BorderBrush}"
                       BorderThickness="{TemplateBinding BorderThickness}"
-                      CornerRadius="7" SnapsToDevicePixels="True">
+                      CornerRadius="{DynamicResource UiButtonRadius}" SnapsToDevicePixels="True">
                 <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
                                   Margin="{TemplateBinding Padding}" RecognizesAccessKey="True" />
               </Border>
@@ -91,6 +107,7 @@
 
       <Style x:Key="WorkflowCardBorderStyle" TargetType="Border">
         <Setter Property="BorderThickness" Value="2" />
+        <Setter Property="CornerRadius" Value="{DynamicResource UiCardRadius}" />
         <Style.Triggers>
           <Trigger Property="IsMouseOver" Value="True">
             <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
@@ -108,10 +125,13 @@
       <!-- ═══════════ TEXTBOX ═══════════ -->
       <Style TargetType="TextBox">
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
         <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="Padding" Value="8,4" />
+        <Setter Property="MinHeight" Value="32" />
+        <Setter Property="Padding" Value="10,7" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="CaretBrush" Value="{DynamicResource TextPrimaryBrush}" />
         <Setter Property="SelectionBrush" Value="{DynamicResource AccentSoftBrush}" />
         <Style.Triggers>
@@ -124,11 +144,12 @@
 
       <!-- ═══════════ COMBOBOX ═══════════ -->
       <Style TargetType="ComboBox">
+        <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
         <Setter Property="Background" Value="{DynamicResource ComboBoxBgBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="Padding" Value="8,4" />
+        <Setter Property="Padding" Value="10,7" />
         <Setter Property="Template">
           <Setter.Value>
             <ControlTemplate TargetType="ComboBox">
@@ -253,6 +274,8 @@
       <Style TargetType="TabItem">
         <Setter Property="Padding" Value="14,8" />
         <Setter Property="Margin" Value="0,0,4,0" />
+        <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
+        <Setter Property="FontSize" Value="13" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{DynamicResource TextMutedBrush}" />
         <Setter Property="Template">
@@ -326,6 +349,7 @@
 
       <Style TargetType="ListBoxItem">
         <Setter Property="Padding" Value="6,4" />
+        <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
         <Setter Property="Template">
           <Setter.Value>
             <ControlTemplate TargetType="ListBoxItem">
@@ -552,11 +576,24 @@
       <Style TargetType="ProgressBar">
         <Setter Property="Foreground" Value="{DynamicResource AccentBrush}" />
         <Setter Property="Background" Value="{DynamicResource SurfaceMutedBrush}" />
+        <Setter Property="Height" Value="8" />
       </Style>
 
       <!-- ═══════════ EXPANDER ═══════════ -->
       <Style TargetType="Expander">
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+      </Style>
+
+      <!-- ═══════════ GROUPBOX ═══════════ -->
+      <Style TargetType="GroupBox">
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="Background" Value="{DynamicResource SurfaceBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
+        <Setter Property="Padding" Value="10" />
       </Style>
 
       <!-- ═══════════ SCROLLVIEWER ═══════════ -->
@@ -570,11 +607,12 @@
         <Setter Property="Background" Value="{DynamicResource ToolTipBgBrush}" />
         <Setter Property="BorderBrush" Value="{DynamicResource ToolTipBorderBrush}" />
         <Setter Property="Padding" Value="8,5"/>
+        <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
       </Style>
 
       <!-- ═══════════ WINDOW ═══════════ -->
       <Style TargetType="Window">
-        <Setter Property="FontFamily" Value="Segoe UI" />
+        <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
         <Setter Property="FontSize" Value="13" />
         <Setter Property="Background" Value="{DynamicResource WindowBackgroundBrush}" />
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />

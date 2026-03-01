@@ -33,9 +33,13 @@ public static class PowerStigTechnologyMap
     /// </summary>
     public static string BuildDscConfigurationScript(PowerStigTarget target, string outputPath, string? stigDataFile = null, string? moduleVersion = null)
     {
+        var stigVersionParam = string.IsNullOrWhiteSpace(target.OsRole)
+            ? string.Empty
+            : $"\r\n            StigVersion = '{EscapePsString(target.OsRole)}'";
+
         var dataFileParam = string.IsNullOrWhiteSpace(stigDataFile)
             ? string.Empty
-            : $"\r\n            OrgSettings = '{EscapePsString(stigDataFile)}'";
+            : $"\r\n            StigData = '{EscapePsString(stigDataFile)}'";
 
         // WindowsServer requires OsRole (DC or MS); WindowsClient does not have this parameter
         var osRoleParam = string.IsNullOrWhiteSpace(target.OsRole)
@@ -60,7 +64,7 @@ Configuration STIGForgeHarden
     {{
         {target.CompositeResourceName} OsStig
         {{
-            OsVersion = '{EscapePsString(target.OsVersion)}'{osRoleParam}{dataFileParam}
+            OsVersion = '{EscapePsString(target.OsVersion)}'{osRoleParam}{stigVersionParam}{dataFileParam}
         }}{firewallBlock}
     }}
 }}

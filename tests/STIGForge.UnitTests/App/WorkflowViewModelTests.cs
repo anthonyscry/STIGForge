@@ -1451,6 +1451,278 @@ public class WorkflowViewModelTests
     }
 
     [Fact]
+    public async Task RunScanStepCommand_SetsScanComplianceText()
+    {
+        var evaluateTool = Directory.CreateTempSubdirectory().FullName;
+        var outputFolder = Directory.CreateTempSubdirectory().FullName;
+        CreateEvaluateStigScript(evaluateTool);
+        var verifyService = new SequenceVerificationWorkflowService(
+            new VerificationWorkflowResult
+            {
+                ConsolidatedResultCount = 10,
+                TotalRuleCount = 10,
+                PassCount = 8,
+                FailCount = 1,
+                ErrorCount = 1
+            });
+
+        try
+        {
+            var vm = new WorkflowViewModel(
+                importScanner: null,
+                verifyService: verifyService,
+                runApply: null,
+                autoScanRootResolver: null,
+                isElevatedResolver: () => true)
+            {
+                ScanState = StepState.Ready,
+                ImportedItemsCount = 1,
+                OutputFolderPath = outputFolder,
+                EvaluateStigToolPath = evaluateTool
+            };
+
+            await vm.RunScanStepCommand.ExecuteAsync(null);
+
+            Assert.Equal("Baseline: 80.0% compliant (8/10)", vm.ScanComplianceText);
+            Assert.Equal(StepState.Complete, vm.ScanState);
+            Assert.Equal(2, vm.BaselineFindingsCount);
+        }
+        finally
+        {
+            Directory.Delete(evaluateTool, recursive: true);
+            Directory.Delete(outputFolder, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task RunVerifyStepCommand_ShowsComplianceDeltaWhenScanBaselineIsAvailable()
+    {
+        var evaluateTool = Directory.CreateTempSubdirectory().FullName;
+        var outputFolder = Directory.CreateTempSubdirectory().FullName;
+        CreateEvaluateStigScript(evaluateTool);
+
+        var verifyService = new SequenceVerificationWorkflowService(
+            new VerificationWorkflowResult
+            {
+                ConsolidatedResultCount = 10,
+                TotalRuleCount = 10,
+                PassCount = 8,
+                FailCount = 1,
+                ErrorCount = 1
+            },
+            new VerificationWorkflowResult
+            {
+                ConsolidatedResultCount = 10,
+                TotalRuleCount = 10,
+                PassCount = 10,
+                FailCount = 0,
+                ErrorCount = 0
+            });
+
+        try
+        {
+            var vm = new WorkflowViewModel(
+                importScanner: null,
+                verifyService: verifyService,
+                runApply: null,
+                autoScanRootResolver: null,
+                isElevatedResolver: () => true)
+            {
+                ScanState = StepState.Ready,
+                HardenState = StepState.Complete,
+                VerifyState = StepState.Ready,
+                ImportedItemsCount = 1,
+                OutputFolderPath = outputFolder,
+                EvaluateStigToolPath = evaluateTool
+            };
+
+            await vm.RunScanStepCommand.ExecuteAsync(null);
+            await vm.RunVerifyStepCommand.ExecuteAsync(null);
+
+            Assert.Equal("100.0% compliant (10/10) | Delta vs baseline: +20.0 pp", vm.VerifyComplianceText);
+            Assert.Equal(0, vm.VerifyFindingsCount);
+        }
+        finally
+        {
+            Directory.Delete(evaluateTool, recursive: true);
+            Directory.Delete(outputFolder, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task RunHardenStepCommand_ThenRunVerify_ShowsComplianceDeltaAfterBaselineScan()
+    {
+        var evaluateTool = Directory.CreateTempSubdirectory().FullName;
+        var outputFolder = Directory.CreateTempSubdirectory().FullName;
+        CreateEvaluateStigScript(evaluateTool);
+
+        var verifyService = new SequenceVerificationWorkflowService(
+            new VerificationWorkflowResult
+            {
+                ConsolidatedResultCount = 10,
+                TotalRuleCount = 10,
+                PassCount = 8,
+                FailCount = 1,
+                ErrorCount = 1
+            },
+            new VerificationWorkflowResult
+            {
+                ConsolidatedResultCount = 10,
+                TotalRuleCount = 10,
+                PassCount = 10,
+                FailCount = 0,
+                ErrorCount = 0
+            });
+
+        var applyRoot = Directory.CreateTempSubdirectory().FullName;
+
+        try
+        {
+var vm = new WorkflowViewModel(
+    importScanner: null,
+    verifyService: verifyService,
+    runApply: (_, __) => Task.FromResult(new ApplyResult
+                {
+                    IsMissionComplete = true,
+                    Steps =
+                    [
+                    new ApplyStepOutcome { ExitCode = 0 }
+                ]
+            }),
+            isElevatedResolver: () => true)
+        {
+            ScanState = StepState.Ready,
+                HardenState = StepState.Ready,
+                VerifyState = StepState.Locked,
+                ImportedItemsCount = 1,
+                OutputFolderPath = outputFolder,
+                EvaluateStigToolPath = evaluateTool,
+                ImportFolderPath = applyRoot
+            };
+
+            Directory.CreateDirectory(Path.Combine(outputFolder, "Apply", "Dsc"));
+
+            await vm.RunScanStepCommand.ExecuteAsync(null);
+            await vm.RunHardenStepCommand.ExecuteAsync(null);
+            vm.VerifyState = StepState.Ready;
+            await vm.RunVerifyStepCommand.ExecuteAsync(null);
+
+            Assert.Equal(StepState.Complete, vm.HardenState);
+            Assert.Equal("100.0% compliant (10/10) | Delta vs baseline: +20.0 pp", vm.VerifyComplianceText);
+            Assert.Equal(0, vm.VerifyFindingsCount);
+        }
+        finally
+        {
+            Directory.Delete(evaluateTool, recursive: true);
+            Directory.Delete(outputFolder, recursive: true);
+            Directory.Delete(applyRoot, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task RunVerifyStepCommand_DoesNotShowComplianceDeltaWithoutScanBaseline()
+    {
+        var outputFolder = Directory.CreateTempSubdirectory().FullName;
+        var evaluateTool = Directory.CreateTempSubdirectory().FullName;
+        CreateEvaluateStigScript(evaluateTool);
+        var verifyService = new TrackingVerificationWorkflowService(new VerificationWorkflowResult
+        {
+            ConsolidatedResultCount = 10,
+            TotalRuleCount = 10,
+            PassCount = 9,
+            FailCount = 1,
+            ErrorCount = 0
+        });
+
+        try
+        {
+            var vm = new WorkflowViewModel(
+                importScanner: null,
+                verifyService: verifyService,
+                isElevatedResolver: () => true)
+            {
+                VerifyState = StepState.Ready,
+                OutputFolderPath = outputFolder,
+                EvaluateStigToolPath = evaluateTool
+            };
+
+            await vm.RunVerifyStepCommand.ExecuteAsync(null);
+
+            Assert.Equal("90.0% compliant (9/10)", vm.VerifyComplianceText);
+        }
+        finally
+        {
+            Directory.Delete(evaluateTool, recursive: true);
+            Directory.Delete(outputFolder, recursive: true);
+        }
+    }
+
+    [Fact]
+    public async Task RunVerifyStepCommand_DoesNotShowComplianceDeltaAfterRestartWorkflow()
+    {
+        var evaluateTool = Directory.CreateTempSubdirectory().FullName;
+        var outputFolder = Directory.CreateTempSubdirectory().FullName;
+        CreateEvaluateStigScript(evaluateTool);
+        var verifyService = new TrackingVerificationWorkflowService(new VerificationWorkflowResult
+        {
+            ConsolidatedResultCount = 10,
+            TotalRuleCount = 10,
+            PassCount = 10,
+            FailCount = 0,
+            ErrorCount = 0
+        });
+
+        try
+        {
+            var vm = new WorkflowViewModel(
+                importScanner: null,
+                verifyService: verifyService,
+                isElevatedResolver: () => true)
+            {
+                ScanState = StepState.Ready,
+                HardenState = StepState.Locked,
+                VerifyState = StepState.Locked,
+                ImportedItemsCount = 1,
+                OutputFolderPath = outputFolder,
+                EvaluateStigToolPath = evaluateTool
+            };
+
+            await vm.RunScanStepCommand.ExecuteAsync(null);
+        vm.RestartWorkflowCommand.Execute(null);
+        vm.VerifyState = StepState.Ready;
+
+        await vm.RunVerifyStepCommand.ExecuteAsync(null);
+
+            Assert.Equal("100.0% compliant (10/10)", vm.VerifyComplianceText);
+        }
+        finally
+        {
+            Directory.Delete(evaluateTool, recursive: true);
+            Directory.Delete(outputFolder, recursive: true);
+        }
+    }
+
+    [Fact]
+    public void SkipScanStepCommand_ClearsScanAndVerifyBaselineText()
+    {
+        var vm = new WorkflowViewModel
+        {
+            ScanComplianceText = "previous scan result",
+            VerifyComplianceText = "previous verify result",
+            BaselineFindingsCount = 3,
+            ScanState = StepState.Complete,
+            HardenState = StepState.Locked
+        };
+
+        vm.SkipScanStepCommand.Execute(null);
+
+        Assert.Equal(string.Empty, vm.ScanComplianceText);
+        Assert.Equal(string.Empty, vm.VerifyComplianceText);
+        Assert.Equal(0, vm.BaselineFindingsCount);
+        Assert.Equal(StepState.Complete, vm.ScanState);
+    }
+
+    [Fact]
     public async Task RunScanStepCommand_WhenNoResultsWithoutDiagnostics_FailsWithUnknownFailure()
     {
         var evaluateTool = Directory.CreateTempSubdirectory().FullName;

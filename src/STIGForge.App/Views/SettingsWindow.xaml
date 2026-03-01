@@ -11,7 +11,7 @@
         WindowStartupLocation="CenterOwner"
         ResizeMode="NoResize"
         Background="{DynamicResource WindowBackgroundBrush}">
-  <Grid Margin="20">
+  <Grid Margin="{DynamicResource AppPagePadding}">
     <Grid.RowDefinitions>
       <RowDefinition Height="*"/>
       <RowDefinition Height="Auto"/>
@@ -19,6 +19,17 @@
 
     <ScrollViewer VerticalScrollBarVisibility="Auto">
       <StackPanel>
+        <Border Margin="0,0,0,16"
+                Padding="{DynamicResource CardPadding}"
+                Background="{DynamicResource SurfaceMutedBrush}"
+                BorderBrush="{DynamicResource BorderBrush}">
+          <StackPanel>
+            <TextBlock Text="Workflow Settings" FontSize="22" FontWeight="SemiBold" />
+            <TextBlock Text="Configure import, scan, and verification paths for your environment."
+                       Foreground="{DynamicResource TextMutedBrush}"
+                       Margin="0,4,0,0" />
+          </StackPanel>
+        </Border>
         <GroupBox Header="Paths" Margin="0,0,0,16" Padding="12">
           <Grid>
             <Grid.RowDefinitions>
