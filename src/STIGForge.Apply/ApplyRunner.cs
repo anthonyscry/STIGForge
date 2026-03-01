@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text;
 using System.Text.Json;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
@@ -17,6 +18,7 @@ public class ApplyRunner
     private const string ScriptStepName = "apply_script";
     private const string DscStepName = "apply_dsc";
     private const string LgpoStepName = "apply_lgpo";
+    private const string AdmxStepName = "apply_admx_templates";
 
     private readonly ILogger<ApplyRunner> _logger;
     private readonly SnapshotService _snapshotService;
@@ -148,7 +150,7 @@ public class ApplyRunner
         try
         {
           _logger.LogInformation("Creating pre-apply snapshot...");
-          snapshot = await _snapshotService.CreateSnapshot(snapshotsDir, ct).ConfigureAwait(false);
+          snapshot = await _snapshotService.CreateSnapshot(snapshotsDir, ct, request.LgpoExePath).ConfigureAwait(false);
           snapshot.RollbackScriptPath = _rollbackScriptGenerator.GenerateScript(snapshot);
           _logger.LogInformation("Snapshot {SnapshotId} created. Rollback script: {RollbackScript}",
             snapshot.SnapshotId, snapshot.RollbackScriptPath);
@@ -168,18 +170,33 @@ public class ApplyRunner
       }
       else
       {
+        var pstigOutputPath = string.IsNullOrWhiteSpace(request.PowerStigOutputPath)
+          ? Path.Combine(applyRoot, "Dsc")
+          : request.PowerStigOutputPath!;
+
+        // Resolve PowerSTIG target from OsTarget when available
+        Dsc.PowerStigTarget? pstigTarget = null;
+        if (request.OsTarget.HasValue && request.OsTarget.Value != Core.Models.OsTarget.Unknown)
+        {
+          pstigTarget = Dsc.PowerStigTechnologyMap.Resolve(
+            request.OsTarget.Value,
+            request.RoleTemplate ?? Core.Models.RoleTemplate.Workstation);
+          if (pstigTarget != null)
+            _logger.LogInformation("Resolved PowerSTIG target: {Resource} OsVersion={OsVersion} StigType={StigType}",
+              pstigTarget.CompositeResourceName, pstigTarget.OsVersion, pstigTarget.StigType ?? "(none)");
+        }
+
         var outcome = await RunPowerStigCompileAsync(
            request.PowerStigModulePath!,
            request.PowerStigDataFile,
-           string.IsNullOrWhiteSpace(request.PowerStigOutputPath)
-             ? Path.Combine(applyRoot, "Dsc")
-             : request.PowerStigOutputPath!,
+           pstigOutputPath,
            root,
            logsDir,
            snapshotsDir,
            mode,
            request.PowerStigVerbose,
-           ct).ConfigureAwait(false);
+           ct,
+           pstigTarget).ConfigureAwait(false);
 
         outcome = WriteStepEvidence(outcome, root, runId, priorStepSha256);
         steps.Add(outcome);
@@ -284,6 +301,21 @@ public class ApplyRunner
          }
        }
      }
+
+    // ADMX template step
+    if (!string.IsNullOrWhiteSpace(request.AdmxTemplateRootPath))
+    {
+      if (completedSteps.Contains(AdmxStepName))
+      {
+        _logger.LogInformation("Skipping previously completed step: {StepName}", AdmxStepName);
+      }
+      else
+      {
+        var outcome = RunAdmxImport(request, root, logsDir);
+        outcome = WriteStepEvidence(outcome, root, runId, priorStepSha256);
+        steps.Add(outcome);
+      }
+    }
 
     // LGPO step (secondary backend after DSC)
     if (!string.IsNullOrWhiteSpace(request.LgpoPolFilePath) && _lgpoRunner != null)
@@ -738,7 +770,8 @@ public class ApplyRunner
     string snapshotsDir,
     HardeningMode mode,
     bool verbose,
-    CancellationToken ct)
+    CancellationToken ct,
+    Dsc.PowerStigTarget? target = null)
   {
     if (!Directory.Exists(modulePath) && !File.Exists(modulePath))
       throw new FileNotFoundException("PowerSTIG module path not found: " + modulePath, modulePath);
@@ -750,12 +783,24 @@ public class ApplyRunner
     var stderr = Path.Combine(logsDir, "powerstig_compile_" + stepId + ".err.log");
 
     var v = verbose ? " -Verbose" : string.Empty;
-    var dataArg = string.IsNullOrWhiteSpace(dataFile) ? string.Empty : " -StigDataFile \"" + dataFile + "\"";
 
-    var command =
-      "Import-Module \"" + modulePath + "\"; " +
-      "$ErrorActionPreference='Stop'; " +
-      "New-StigDscConfiguration" + dataArg + " -OutputPath \"" + outputPath + "\"" + v + ";";
+    string command;
+    if (target != null)
+    {
+      // OS-targeted compilation: generate a DSC configuration using the resolved
+      // PowerSTIG composite resource (e.g., WindowsServer, WindowsClient)
+      var configScript = Dsc.PowerStigTechnologyMap.BuildDscConfigurationScript(target, outputPath, dataFile);
+      command = "Import-Module \"" + modulePath + "\"; " + configScript + v + ";";
+    }
+    else
+    {
+      // Legacy fallback: generic PowerSTIG compilation without OS targeting
+      var dataArg = string.IsNullOrWhiteSpace(dataFile) ? string.Empty : " -StigDataFile \"" + dataFile + "\"";
+      command =
+        "Import-Module \"" + modulePath + "\"; " +
+        "$ErrorActionPreference='Stop'; " +
+        "New-StigDscConfiguration" + dataArg + " -OutputPath \"" + outputPath + "\"" + v + ";";
+    }
 
     var psi = new ProcessStartInfo
     {
@@ -809,8 +854,178 @@ public class ApplyRunner
     if (!string.IsNullOrWhiteSpace(request.PowerStigModulePath)) planned.Add(PowerStigStepName);
     if (!string.IsNullOrWhiteSpace(request.ScriptPath)) planned.Add(ScriptStepName);
     if (!string.IsNullOrWhiteSpace(request.DscMofPath)) planned.Add(DscStepName);
+    if (!string.IsNullOrWhiteSpace(request.AdmxTemplateRootPath)) planned.Add(AdmxStepName);
     if (!string.IsNullOrWhiteSpace(request.LgpoPolFilePath)) planned.Add(LgpoStepName);
     return planned;
+  }
+
+  private ApplyStepOutcome RunAdmxImport(ApplyRequest request, string bundleRoot, string logsDir)
+  {
+    var started = DateTimeOffset.Now;
+    var stepId = DateTimeOffset.Now.ToString("yyyyMMdd_HHmmss");
+    var stdout = Path.Combine(logsDir, "apply_admx_" + stepId + ".out.log");
+    var stderr = Path.Combine(logsDir, "apply_admx_" + stepId + ".err.log");
+
+    var outBuilder = new StringBuilder(2048);
+    var errBuilder = new StringBuilder(1024);
+    var exitCode = 0;
+
+    try
+    {
+      var sourceRoot = request.AdmxTemplateRootPath!;
+      if (!Directory.Exists(sourceRoot))
+        throw new DirectoryNotFoundException("ADMX template root not found: " + sourceRoot);
+
+      var targetRoot = ResolvePolicyDefinitionsTarget(request, bundleRoot);
+      if (string.IsNullOrWhiteSpace(targetRoot))
+        throw new InvalidOperationException("Unable to resolve PolicyDefinitions target path for ADMX import.");
+
+      Directory.CreateDirectory(targetRoot);
+
+      var copiedAdmx = 0;
+      var copiedAdml = 0;
+      var skipped = new List<string>();
+
+      foreach (var admxPath in Directory.EnumerateFiles(sourceRoot, "*.admx", SearchOption.AllDirectories)
+                   .OrderBy(path => path, StringComparer.OrdinalIgnoreCase))
+      {
+        if (!IsTemplateApplicableToCurrentOs(admxPath))
+        {
+          skipped.Add(admxPath);
+          continue;
+        }
+
+        CopyTemplateFile(sourceRoot, targetRoot, admxPath);
+        copiedAdmx++;
+
+        var baseName = Path.GetFileNameWithoutExtension(admxPath);
+        foreach (var admlPath in Directory.EnumerateFiles(sourceRoot, baseName + ".adml", SearchOption.AllDirectories)
+                     .OrderBy(path => path, StringComparer.OrdinalIgnoreCase))
+        {
+          CopyTemplateFile(sourceRoot, targetRoot, admlPath);
+          copiedAdml++;
+        }
+      }
+
+      outBuilder.AppendLine("ADMX import complete.");
+      outBuilder.AppendLine("Source: " + sourceRoot);
+      outBuilder.AppendLine("Target: " + targetRoot);
+      outBuilder.AppendLine("Copied .admx: " + copiedAdmx);
+      outBuilder.AppendLine("Copied .adml: " + copiedAdml);
+      outBuilder.AppendLine("Skipped (non-applicable): " + skipped.Count);
+
+      if (copiedAdmx == 0)
+      {
+        errBuilder.AppendLine("No applicable ADMX templates were found to import.");
+        exitCode = 1;
+      }
+    }
+    catch (Exception ex)
+    {
+      errBuilder.AppendLine(ex.Message);
+      exitCode = 1;
+    }
+
+    File.WriteAllText(stdout, outBuilder.ToString());
+    File.WriteAllText(stderr, errBuilder.ToString());
+
+    return new ApplyStepOutcome
+    {
+      StepName = AdmxStepName,
+      ExitCode = exitCode,
+      StartedAt = started,
+      FinishedAt = DateTimeOffset.Now,
+      StdOutPath = stdout,
+      StdErrPath = stderr
+    };
+  }
+
+  private static string? ResolvePolicyDefinitionsTarget(ApplyRequest request, string bundleRoot)
+  {
+    if (!string.IsNullOrWhiteSpace(request.AdmxPolicyDefinitionsPath))
+      return request.AdmxPolicyDefinitionsPath;
+
+    if (OperatingSystem.IsWindows())
+    {
+      var windowsDir = Environment.GetFolderPath(Environment.SpecialFolder.Windows);
+      if (!string.IsNullOrWhiteSpace(windowsDir))
+        return Path.Combine(windowsDir, "PolicyDefinitions");
+    }
+
+    return Path.Combine(bundleRoot, "Apply", "PolicyDefinitions");
+  }
+
+  private static bool IsTemplateApplicableToCurrentOs(string path)
+  {
+    var normalized = path.Replace('\\', '/').ToLowerInvariant();
+    var os = DetectHostOsTag();
+
+    var isWin11Tagged = normalized.Contains("windows11") || normalized.Contains("windows_11") || normalized.Contains("win11");
+    var isWin10Tagged = normalized.Contains("windows10") || normalized.Contains("windows_10") || normalized.Contains("win10");
+    var isServerTagged = normalized.Contains("server");
+
+    var isServer2022Tagged = normalized.Contains("2022");
+    var isServer2019Tagged = normalized.Contains("2019");
+    var isServer2016Tagged = normalized.Contains("2016");
+
+    var hasAnyOsTag = isWin11Tagged || isWin10Tagged || isServerTagged;
+    if (!hasAnyOsTag)
+      return true;
+
+    return os switch
+    {
+      "win11" => isWin11Tagged,
+      "win10" => isWin10Tagged,
+      "server2022" => isServerTagged && (isServer2022Tagged || (!isServer2019Tagged && !isServer2016Tagged)),
+      "server2019" => isServerTagged && (isServer2019Tagged || (!isServer2022Tagged && !isServer2016Tagged)),
+      "server2016" => isServerTagged && (isServer2016Tagged || (!isServer2022Tagged && !isServer2019Tagged)),
+      "server" => isServerTagged,
+      _ => true
+    };
+  }
+
+  private static string DetectHostOsTag()
+  {
+    if (!OperatingSystem.IsWindows())
+      return "other";
+
+    var productName = string.Empty;
+    try
+    {
+      productName = Microsoft.Win32.Registry.GetValue(
+          @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion",
+          "ProductName",
+          null) as string ?? string.Empty;
+    }
+    catch
+    {
+      productName = string.Empty;
+    }
+
+    if (productName.IndexOf("Windows 11", StringComparison.OrdinalIgnoreCase) >= 0)
+      return "win11";
+    if (productName.IndexOf("Windows 10", StringComparison.OrdinalIgnoreCase) >= 0)
+      return "win10";
+    if (productName.IndexOf("Server", StringComparison.OrdinalIgnoreCase) >= 0)
+    {
+      if (productName.IndexOf("2022", StringComparison.OrdinalIgnoreCase) >= 0) return "server2022";
+      if (productName.IndexOf("2019", StringComparison.OrdinalIgnoreCase) >= 0) return "server2019";
+      if (productName.IndexOf("2016", StringComparison.OrdinalIgnoreCase) >= 0) return "server2016";
+      return "server";
+    }
+
+    return "other";
+  }
+
+  private static void CopyTemplateFile(string sourceRoot, string targetRoot, string sourceFile)
+  {
+    var relative = Path.GetRelativePath(sourceRoot, sourceFile);
+    var destination = Path.Combine(targetRoot, relative);
+    var destinationDir = Path.GetDirectoryName(destination);
+    if (!string.IsNullOrWhiteSpace(destinationDir))
+      Directory.CreateDirectory(destinationDir);
+
+    File.Copy(sourceFile, destination, true);
   }
 
   private async Task<ApplyStepOutcome> RunLgpoAsync(

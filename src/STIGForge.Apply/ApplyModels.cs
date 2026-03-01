@@ -27,6 +27,14 @@ public sealed class ApplyRequest
    public string? PowerStigDataGeneratedPath { get; set; }
    public bool ResetLcmAfterApply { get; set; } = false;
 
+   /// <summary>Target OS for PowerSTIG composite resource selection. When set, the PowerSTIG
+   /// compile step uses the appropriate composite DSC resource (e.g., WindowsServer/WindowsClient)
+   /// with the matching OsVersion parameter instead of the generic New-StigDscConfiguration.</summary>
+   public OsTarget? OsTarget { get; set; }
+
+   /// <summary>Target role template for PowerSTIG STIG type resolution (MS vs DC for servers).</summary>
+   public RoleTemplate? RoleTemplate { get; set; }
+
    /// <summary>LGPO .pol file path for Group Policy remediation (secondary backend).</summary>
    public string? LgpoPolFilePath { get; set; }
 
@@ -35,6 +43,10 @@ public sealed class ApplyRequest
 
    /// <summary>Optional override path to LGPO.exe.</summary>
    public string? LgpoExePath { get; set; }
+
+   public string? AdmxTemplateRootPath { get; set; }
+
+   public string? AdmxPolicyDefinitionsPath { get; set; }
 
    /// <summary>
    /// Optional mission run ID for timeline and evidence provenance linkage.
