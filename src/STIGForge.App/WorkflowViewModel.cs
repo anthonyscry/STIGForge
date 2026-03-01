@@ -773,6 +773,7 @@ public partial class WorkflowViewModel : ObservableObject
 
     public bool CanRunImport => ImportState == StepState.Ready || ImportState == StepState.Complete || ImportState == StepState.Error;
     public bool CanRunScan => ScanState == StepState.Ready || ScanState == StepState.Complete || ScanState == StepState.Error;
+    public bool CanSkipScan => ScanState == StepState.Ready || ScanState == StepState.Error;
     public bool CanRunHarden => HardenState == StepState.Ready || HardenState == StepState.Complete || HardenState == StepState.Error;
     public bool CanSkipHarden => HardenState == StepState.Ready || HardenState == StepState.Error;
     public bool CanRunVerify => VerifyState == StepState.Ready || VerifyState == StepState.Complete || VerifyState == StepState.Error;
@@ -2044,6 +2045,18 @@ public partial class WorkflowViewModel : ObservableObject
         {
             IsBusy = false;
         }
+    }
+
+    [RelayCommand(CanExecute = nameof(CanSkipScan))]
+    private void SkipScanStep()
+    {
+        ScanState = StepState.Complete;
+        ScanError = string.Empty;
+        BaselineFindingsCount = 0;
+        StatusText = "Baseline scan skipped by operator — proceeding to harden";
+
+        if (HardenState == StepState.Locked)
+            HardenState = StepState.Ready;
     }
 
     [RelayCommand(CanExecute = nameof(CanRunHarden))]

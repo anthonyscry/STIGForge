@@ -10,6 +10,7 @@
         <KeyBinding Key="F1" Command="{Binding ShowHelpCommand}" />
         <KeyBinding Key="I" Modifiers="Alt" Command="{Binding RunImportStepCommand}" />
         <KeyBinding Key="S" Modifiers="Alt" Command="{Binding RunScanStepCommand}" />
+        <KeyBinding Key="J" Modifiers="Alt" Command="{Binding SkipScanStepCommand}" />
         <KeyBinding Key="H" Modifiers="Alt" Command="{Binding RunHardenStepCommand}" />
         <KeyBinding Key="K" Modifiers="Alt" Command="{Binding SkipHardenStepCommand}" />
         <KeyBinding Key="V" Modifiers="Alt" Command="{Binding RunVerifyStepCommand}" />
