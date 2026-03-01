@@ -826,12 +826,31 @@ public class ApplyRunner
     if (Directory.Exists(bundledModulesDir))
       extraModulePaths.Add(bundledModulesDir);
 
-    // User-provided module parent directory
-    var moduleParent = File.Exists(modulePath)
-      ? Path.GetDirectoryName(Path.GetDirectoryName(modulePath))
-      : Path.GetDirectoryName(modulePath);
+    // User-provided module parent directory.
+    // PSModulePath entries must be directories that *contain* module folders.
+    // For a .psd1 at Apply/PowerSTIG/4.29.0/PowerSTIG.psd1 we need Apply/ (3 levels up).
+    // For a directory at Apply/PowerSTIG we need Apply/ (1 level up).
+    string? moduleParent;
+    if (File.Exists(modulePath))
+    {
+      // .psd1 file: Version/Module.psd1 → ModuleName/ → Apply/
+      var versionDir = Path.GetDirectoryName(modulePath);
+      var moduleDir = versionDir != null ? Path.GetDirectoryName(versionDir) : null;
+      moduleParent = moduleDir != null ? Path.GetDirectoryName(moduleDir) : null;
+    }
+    else
+    {
+      // Directory (e.g. Apply/PowerSTIG) → Apply/
+      moduleParent = Path.GetDirectoryName(modulePath);
+    }
     if (!string.IsNullOrWhiteSpace(moduleParent))
       extraModulePaths.Add(moduleParent!);
+
+    // Also add the Apply directory from the bundle root — this is where
+    // EnsurePowerStigDependenciesStaged copies sibling dependency modules.
+    var bundleApplyDir = Path.Combine(bundleRoot, "Apply");
+    if (Directory.Exists(bundleApplyDir) && !extraModulePaths.Contains(bundleApplyDir, StringComparer.OrdinalIgnoreCase))
+      extraModulePaths.Add(bundleApplyDir);
 
     // Prefer bundled PowerSTIG module if available
     var bundledPowerStig = Path.Combine(bundledModulesDir, "PowerSTIG");

@@ -55,7 +55,6 @@ public static class PowerStigTechnologyMap
 Configuration STIGForgeHarden
 {{
     Import-DscResource -ModuleName PowerSTIG{(moduleVersion != null ? $" -ModuleVersion {EscapePsString(moduleVersion)}" : string.Empty)}
-    Import-DscResource -ModuleName PSDscResources
 
     Node localhost
     {{
