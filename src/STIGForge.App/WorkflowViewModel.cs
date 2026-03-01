@@ -1216,78 +1216,153 @@ public partial class WorkflowViewModel : ObservableObject
     private static void EnsurePowerStigDependenciesStaged(string bundleRoot, string importFolderPath)
     {
         var applyRoot = Path.Combine(bundleRoot, "Apply");
+        var logPath = Path.Combine(bundleRoot, "Apply", "dep_staging.log");
+
+        void Log(string msg)
+        {
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(logPath)!);
+                File.AppendAllText(logPath, DateTimeOffset.Now.ToString("HH:mm:ss") + " | " + msg + Environment.NewLine);
+            }
+            catch { }
+        }
+
+        Log("EnsurePowerStigDependenciesStaged started");
+        Log("  bundleRoot: " + bundleRoot);
+        Log("  importFolderPath: " + (importFolderPath ?? "(null)"));
+        Log("  applyRoot: " + applyRoot);
+
         if (!Directory.Exists(applyRoot))
+        {
+            Log("  Apply directory does not exist, returning");
             return;
+        }
+
+        // List what's in Apply/
+        try
+        {
+            foreach (var d in Directory.EnumerateDirectories(applyRoot))
+                Log("  Apply subdir: " + Path.GetFileName(d));
+            foreach (var f in Directory.EnumerateFiles(applyRoot))
+                Log("  Apply file: " + Path.GetFileName(f));
+        }
+        catch { }
 
         // Check if PowerSTIG module exists
         var psd1 = Directory.EnumerateFiles(applyRoot, "PowerStig.psd1", SearchOption.AllDirectories)
             .FirstOrDefault();
         if (string.IsNullOrWhiteSpace(psd1))
-            return; // No PowerSTIG module staged, nothing to check
+        {
+            Log("  No PowerStig.psd1 found in Apply, returning");
+            return;
+        }
+        Log("  Found PowerStig.psd1: " + psd1);
 
-        // Quick check: do dependency modules exist? Look for common ones.
+        // Quick check: do dependency modules exist?
         var knownDeps = new[] { "AuditPolicyDsc", "SecurityPolicyDsc", "WindowsDefenderDsc" };
         var hasDeps = knownDeps.Any(dep =>
             Directory.EnumerateDirectories(applyRoot, dep, SearchOption.TopDirectoryOnly).Any());
         if (hasDeps)
-            return; // Dependencies already staged
+        {
+            Log("  Dependencies already present, returning");
+            return;
+        }
+        Log("  Dependencies missing, searching import folder for PowerSTIG zip");
 
         // Dependencies are missing. Search import folder for PowerSTIG zip.
         if (string.IsNullOrWhiteSpace(importFolderPath) || !Directory.Exists(importFolderPath))
+        {
+            Log("  Import folder not available: '" + (importFolderPath ?? "(null)") + "'");
             return;
+        }
 
+        // List all zips in import folder
         string? powerStigZip = null;
         try
         {
-            powerStigZip = Directory.EnumerateFiles(importFolderPath, "*.zip", SearchOption.TopDirectoryOnly)
+            var allZips = Directory.EnumerateFiles(importFolderPath, "*.zip", SearchOption.TopDirectoryOnly).ToList();
+            foreach (var z in allZips)
+                Log("  Import zip: " + Path.GetFileName(z));
+            powerStigZip = allZips
                 .FirstOrDefault(f => Path.GetFileName(f).IndexOf("PowerStig", StringComparison.OrdinalIgnoreCase) >= 0);
         }
-        catch { return; }
+        catch (Exception ex)
+        {
+            Log("  Error scanning import folder: " + ex.Message);
+            return;
+        }
 
         if (string.IsNullOrWhiteSpace(powerStigZip) || !File.Exists(powerStigZip))
+        {
+            Log("  No PowerSTIG zip found in import folder");
             return;
+        }
+        Log("  Found PowerSTIG zip: " + powerStigZip);
 
         // Extract all modules from the zip into Apply/
         var tempDir = Path.Combine(Path.GetTempPath(), "stigforge-deps-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
             ZipFile.ExtractToDirectory(powerStigZip, tempDir, overwriteFiles: true);
+            Log("  Extracted to: " + tempDir);
 
-            // Find PowerSTIG manifest in extracted content to identify the module root
-            var extractedPsd1 = Directory.EnumerateFiles(tempDir, "PowerStig.psd1", SearchOption.AllDirectories)
-                .FirstOrDefault();
-            if (string.IsNullOrWhiteSpace(extractedPsd1))
-                return;
-
-            // Walk up from the .psd1 to find the shared root containing all module directories.
-            // PSGallery layout: root/ModuleName/Version/files
-            // Flat layout:      root/ModuleName/files
-            var moduleDir = Path.GetDirectoryName(extractedPsd1)!;
-            var moduleRoot = Path.GetDirectoryName(moduleDir);
-            var modulesParent = moduleRoot != null ? Path.GetDirectoryName(moduleRoot) : null;
-
-            var sharedRoot = modulesParent != null
-                && Directory.EnumerateDirectories(modulesParent).Count() > 1
-                ? modulesParent
-                : moduleRoot != null
-                  && Directory.EnumerateDirectories(moduleRoot).Count() > 1
-                  ? moduleRoot
-                  : null;
-
-            if (sharedRoot != null)
+            // Log the extracted structure
+            try
             {
-                foreach (var dir in Directory.EnumerateDirectories(sharedRoot))
+                foreach (var d in Directory.EnumerateDirectories(tempDir))
+                    Log("  Extracted top-level dir: " + Path.GetFileName(d));
+                foreach (var f in Directory.EnumerateFiles(tempDir))
+                    Log("  Extracted top-level file: " + Path.GetFileName(f));
+            }
+            catch { }
+
+            // Find ALL .psd1 manifests in the extracted zip — each one is a module.
+            // Copy each module's directory tree into Apply/.
+            var allManifests = Directory.EnumerateFiles(tempDir, "*.psd1", SearchOption.AllDirectories).ToList();
+            Log("  Found " + allManifests.Count + " .psd1 manifests in zip");
+            foreach (var m in allManifests)
+                Log("    manifest: " + m.Substring(tempDir.Length));
+
+            // Identify unique module directories to copy.
+            // For PSGallery layout (ModuleName/Version/Module.psd1), we want the ModuleName dir.
+            // For flat layout (ModuleName/Module.psd1), we want the ModuleName dir.
+            var moduleDirsToCopy = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (var manifest in allManifests)
+            {
+                var manifestDir = Path.GetDirectoryName(manifest)!;
+                // Skip if this is the temp root itself
+                if (string.Equals(manifestDir, tempDir, StringComparison.OrdinalIgnoreCase))
+                    continue;
+
+                // Walk up to find the top-level module directory under tempDir
+                var current = manifestDir;
+                while (current != null)
                 {
-                    var dirName = Path.GetFileName(dir);
-                    var destDir = Path.Combine(applyRoot, dirName);
-                    if (!Directory.Exists(destDir))
-                        CopyDirectoryRecursive(dir, destDir);
+                    var parent = Path.GetDirectoryName(current);
+                    if (parent != null && string.Equals(parent, tempDir, StringComparison.OrdinalIgnoreCase))
+                    {
+                        moduleDirsToCopy.Add(current);
+                        break;
+                    }
+                    current = parent;
                 }
             }
+
+            Log("  Module directories to copy: " + moduleDirsToCopy.Count);
+            foreach (var dir in moduleDirsToCopy)
+            {
+                var dirName = Path.GetFileName(dir);
+                var destDir = Path.Combine(applyRoot, dirName);
+                Log("    Copying " + dirName + " -> " + destDir);
+                CopyDirectoryRecursive(dir, destDir);
+            }
+
+            Log("  Dependency staging complete");
         }
-        catch
+        catch (Exception ex)
         {
-            // Non-fatal: harden will proceed and report the missing module error
+            Log("  ERROR during extraction: " + ex.GetType().Name + ": " + ex.Message);
         }
         finally
         {
