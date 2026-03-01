@@ -1097,8 +1097,10 @@ public partial class WorkflowViewModel : ObservableObject
         var lgpoPolPath = ResolveLgpoPolFilePath(applyRoot, out var lgpoScope);
         var powerStigDataPath = ResolvePowerStigDataPath(applyRoot);
 
-        // Resolve OS target and role from bundle manifest for PowerSTIG composite resource selection
+        // Resolve OS target and role from bundle manifest, falling back to local OS detection
         var (osTarget, roleTemplate) = ReadOsTargetFromManifest(bundleRoot);
+        if (!osTarget.HasValue || osTarget.Value == OsTarget.Unknown)
+            osTarget = DetectLocalOsTarget();
 
         var request = new ApplyRequest
         {
