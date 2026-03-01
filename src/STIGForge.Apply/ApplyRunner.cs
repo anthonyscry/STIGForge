@@ -760,11 +760,18 @@ public class ApplyRunner
       {
         var modName = Path.GetFileName(modDir);
         // Bundled modules have a known-good layout: ModuleName/Version/ModuleName.psd1
+        // After copying, Unblock-File removes the Zone.Identifier ADS so the LCM can
+        // load .psm1/.ps1 files under RemoteSigned execution policy.
         copyModulesBlock.AppendLine(
           $"if (-not (Test-Path \"$env:ProgramFiles\\WindowsPowerShell\\Modules\\{modName}\")) {{ " +
-          $"Copy-Item -Path '{modDir.Replace("'", "''")}' -Destination \"$env:ProgramFiles\\WindowsPowerShell\\Modules\\{modName}\" -Recurse -Force }}");
+          $"Copy-Item -Path '{modDir.Replace("'", "''")}' -Destination \"$env:ProgramFiles\\WindowsPowerShell\\Modules\\{modName}\" -Recurse -Force; " +
+          $"Get-ChildItem \"$env:ProgramFiles\\WindowsPowerShell\\Modules\\{modName}\" -Recurse -File | Unblock-File }}");
       }
     }
+
+    // Also unblock any modules already present that may still carry Zone.Identifier marks
+    copyModulesBlock.AppendLine(
+      "Get-ChildItem \"$env:ProgramFiles\\WindowsPowerShell\\Modules\" -Recurse -Include '*.psm1','*.psd1','*.ps1','*.cdxml' -File -ErrorAction SilentlyContinue | Unblock-File -ErrorAction SilentlyContinue");
 
     var command = copyModulesBlock.ToString() +
       "Start-DscConfiguration -Path \"" + mofPath + "\" -Wait -Force" + whatIf + v;
