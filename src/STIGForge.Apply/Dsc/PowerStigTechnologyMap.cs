@@ -31,7 +31,7 @@ public static class PowerStigTechnologyMap
     /// Follows the official PowerSTIG usage pattern from
     /// https://github.com/microsoft/PowerStig#powerstigdsc
     /// </summary>
-    public static string BuildDscConfigurationScript(PowerStigTarget target, string outputPath, string? stigDataFile = null)
+    public static string BuildDscConfigurationScript(PowerStigTarget target, string outputPath, string? stigDataFile = null, string? moduleVersion = null)
     {
         var dataFileParam = string.IsNullOrWhiteSpace(stigDataFile)
             ? string.Empty
@@ -54,7 +54,7 @@ public static class PowerStigTechnologyMap
         return $@"$ErrorActionPreference = 'Stop'
 Configuration STIGForgeHarden
 {{
-    Import-DscResource -ModuleName PowerSTIG
+    Import-DscResource -ModuleName PowerSTIG{(moduleVersion != null ? $" -ModuleVersion {EscapePsString(moduleVersion)}" : string.Empty)}
     Import-DscResource -ModuleName PSDscResources
 
     Node localhost

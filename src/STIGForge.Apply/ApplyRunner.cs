@@ -837,11 +837,28 @@ public class ApplyRunner
     var bundledPowerStig = Path.Combine(bundledModulesDir, "PowerSTIG");
     var effectiveModulePath = Directory.Exists(bundledPowerStig) ? bundledPowerStig : modulePath;
 
+    // Detect bundled PowerSTIG version from versioned subdirectory (e.g., PowerSTIG/4.29.0/)
+    // to pin Import-DscResource -ModuleVersion and avoid "multiple versions found" errors.
+    string? powerStigVersion = null;
+    if (Directory.Exists(effectiveModulePath))
+    {
+      foreach (var subDir in Directory.GetDirectories(effectiveModulePath))
+      {
+        var dirName = Path.GetFileName(subDir);
+        if (Version.TryParse(dirName, out _))
+        {
+          powerStigVersion = dirName;
+          // Version detected — will be passed to Import-DscResource -ModuleVersion
+          break;
+        }
+      }
+    }
+
     string command;
     if (target != null)
     {
       // OS-targeted compilation using PowerSTIG composite DSC resources
-      var configScript = Dsc.PowerStigTechnologyMap.BuildDscConfigurationScript(target, outputPath, dataFile);
+      var configScript = Dsc.PowerStigTechnologyMap.BuildDscConfigurationScript(target, outputPath, dataFile, powerStigVersion);
       command = "Import-Module \"" + effectiveModulePath + "\"; " + configScript + v + ";";
     }
     else
