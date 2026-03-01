@@ -746,25 +746,20 @@ public class ApplyRunner
     var v = verbose ? " -Verbose" : string.Empty;
 
     // Start-DscConfiguration invokes the LCM which needs DSC resource modules on PSModulePath.
-    // Copy modules from bundled + bundle Apply dir into the system PSModulePath so the LCM
-    // can find them. We use Copy-Item rather than just PSModulePath because the LCM runs
-    // in a separate process (WMI host) that doesn't inherit our environment variables.
+    // The LCM runs in its own WMI host process and does NOT inherit environment variables,
+    // so we must copy modules into the system modules directory before applying.
+    // ONLY use the app-bundled tools/PSModules as the source — the Apply/ directory may
+    // contain unbuilt source repos or non-module directories that aren't valid DSC modules.
     var copyModulesBlock = new System.Text.StringBuilder();
     var bundledModulesDir = Path.Combine(AppContext.BaseDirectory, "tools", "PSModules");
     var bundleApplyDir = Path.Combine(bundleRoot, "Apply");
-    var moduleSourceDirs = new List<string>();
-    if (Directory.Exists(bundledModulesDir)) moduleSourceDirs.Add(bundledModulesDir);
-    if (Directory.Exists(bundleApplyDir)) moduleSourceDirs.Add(bundleApplyDir);
 
-    foreach (var srcDir in moduleSourceDirs)
+    if (Directory.Exists(bundledModulesDir))
     {
-      foreach (var modDir in Directory.GetDirectories(srcDir))
+      foreach (var modDir in Directory.GetDirectories(bundledModulesDir))
       {
         var modName = Path.GetFileName(modDir);
-        // Only copy known DSC resource modules, skip non-module dirs like Dsc, Logs, Snapshots
-        if (!File.Exists(Path.Combine(modDir, modName + ".psd1")) &&
-            !Directory.EnumerateFiles(modDir, "*.psd1", SearchOption.AllDirectories).Any())
-          continue;
+        // Bundled modules have a known-good layout: ModuleName/Version/ModuleName.psd1
         copyModulesBlock.AppendLine(
           $"if (-not (Test-Path \"$env:ProgramFiles\\WindowsPowerShell\\Modules\\{modName}\")) {{ " +
           $"Copy-Item -Path '{modDir.Replace("'", "''")}' -Destination \"$env:ProgramFiles\\WindowsPowerShell\\Modules\\{modName}\" -Recurse -Force }}");
