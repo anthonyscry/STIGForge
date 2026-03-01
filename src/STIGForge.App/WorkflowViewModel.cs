@@ -732,6 +732,7 @@ public partial class WorkflowViewModel : ObservableObject
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(RunScanStepCommand))]
+    [NotifyCanExecuteChangedFor(nameof(SkipScanStepCommand))]
     [NotifyCanExecuteChangedFor(nameof(RunAutoWorkflowCommand))]
     private StepState _scanState = StepState.Locked;
 
