@@ -1029,39 +1029,30 @@ public sealed class ContentPackImporter
 
     private List<ControlRecord> ImportGpoZip(string rawRoot, string packName, List<ParsingError> errors)
     {
-        var admxFiles = Directory.GetFiles(rawRoot, "*.admx", SearchOption.AllDirectories)
-            .ToList();
-
-        var parsed = new List<ControlRecord>();
-        foreach (var f in admxFiles)
+        try
         {
-            try
+            var result = GpoParser.ParsePackage(rawRoot, packName);
+            foreach (var warning in result.Warnings)
             {
-                parsed.AddRange(GpoParser.Parse(f, packName));
-            }
-            catch (ParsingException ex)
-            {
-                Console.WriteLine($"Parsing error in {f}: {ex.Message}");
                 errors.Add(new ParsingError
                 {
-                    FilePath = Path.GetFileName(f),
-                    ErrorMessage = ex.Message,
-                    ErrorType = "ParsingException"
+                    FilePath = rawRoot,
+                    ErrorMessage = warning,
+                    ErrorType = "GpoParseWarning"
                 });
             }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error parsing {f}: {ex.Message}");
-                errors.Add(new ParsingError
-                {
-                    FilePath = Path.GetFileName(f),
-                    ErrorMessage = ex.Message,
-                    ErrorType = ex.GetType().Name
-                });
-            }
+            return result.Controls.ToList();
         }
-
-        return parsed;
+        catch (Exception ex)
+        {
+            errors.Add(new ParsingError
+            {
+                FilePath = rawRoot,
+                ErrorMessage = ex.Message,
+                ErrorType = ex.GetType().Name
+            });
+            return new List<ControlRecord>();
+        }
     }
 
     private static DateTimeOffset? GuessReleaseDate(string zipPath, string packName)
