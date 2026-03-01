@@ -784,19 +784,28 @@ public class ApplyRunner
 
     var v = verbose ? " -Verbose" : string.Empty;
 
+    // Resolve the module's parent directory so Import-DscResource can find
+    // PowerSTIG at parse time (it searches PSModulePath, not runtime modules).
+    var moduleParent = File.Exists(modulePath)
+      ? Path.GetDirectoryName(Path.GetDirectoryName(modulePath))
+      : Path.GetDirectoryName(modulePath);
+    var psModulePathPrefix = string.IsNullOrWhiteSpace(moduleParent)
+      ? string.Empty
+      : "$env:PSModulePath = '" + moduleParent!.Replace("'", "''") + "' + ';' + $env:PSModulePath; ";
+
     string command;
     if (target != null)
     {
       // OS-targeted compilation: generate a DSC configuration using the resolved
       // PowerSTIG composite resource (e.g., WindowsServer, WindowsClient)
       var configScript = Dsc.PowerStigTechnologyMap.BuildDscConfigurationScript(target, outputPath, dataFile);
-      command = "Import-Module \"" + modulePath + "\"; " + configScript + v + ";";
+      command = psModulePathPrefix + "Import-Module \"" + modulePath + "\"; " + configScript + v + ";";
     }
     else
     {
       // Legacy fallback: generic PowerSTIG compilation without OS targeting
       var dataArg = string.IsNullOrWhiteSpace(dataFile) ? string.Empty : " -StigDataFile \"" + dataFile + "\"";
-      command =
+      command = psModulePathPrefix +
         "Import-Module \"" + modulePath + "\"; " +
         "$ErrorActionPreference='Stop'; " +
         "New-StigDscConfiguration" + dataArg + " -OutputPath \"" + outputPath + "\"" + v + ";";

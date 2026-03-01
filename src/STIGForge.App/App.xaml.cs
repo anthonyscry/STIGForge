@@ -63,10 +63,12 @@ public partial class App : Application
         {
           LoggingConfiguration.ConfigureFromEnvironment();
 
-          var logRoot = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData),
-            "STIGForge", "logs");
+          var logRoot = Path.Combine(AppContext.BaseDirectory, "logs");
           Directory.CreateDirectory(logRoot);
+
+          // Default to Verbose when no environment override is set
+          if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("STIGFORGE_LOG_LEVEL")))
+            LoggingConfiguration.LevelSwitch.MinimumLevel = Serilog.Events.LogEventLevel.Verbose;
 
           lc.MinimumLevel.ControlledBy(LoggingConfiguration.LevelSwitch)
             .Enrich.With(new CorrelationIdEnricher())
