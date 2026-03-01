@@ -200,6 +200,15 @@ public class ApplyRunner
 
         outcome = WriteStepEvidence(outcome, root, runId, priorStepSha256);
         steps.Add(outcome);
+
+        if (outcome.ExitCode != 0)
+        {
+          _logger.LogError("PowerSTIG compile failed (exit code {ExitCode}). Skipping dependent DSC apply step.", outcome.ExitCode);
+          if (!string.IsNullOrWhiteSpace(outcome.StdErrPath) && File.Exists(outcome.StdErrPath))
+          {
+            try { _logger.LogError("PowerSTIG stderr:\n{StdErr}", File.ReadAllText(outcome.StdErrPath)); } catch { }
+          }
+        }
       }
 
       // Check for reboot after PowerSTIG compile
@@ -273,9 +282,20 @@ public class ApplyRunner
        }
     }
 
-   if (!string.IsNullOrWhiteSpace(request.DscMofPath))
+   // Skip DSC apply if PowerSTIG compilation failed (no MOFs to apply)
+   var compileStepFailed = steps.Any(s => s.StepName == PowerStigStepName && s.ExitCode != 0);
+
+   if (!string.IsNullOrWhiteSpace(request.DscMofPath) && !compileStepFailed)
       {
-        if (completedSteps.Contains(DscStepName))
+        // Verify MOF files actually exist before attempting apply
+        var hasMofs = Directory.Exists(request.DscMofPath)
+          && Directory.EnumerateFiles(request.DscMofPath, "*.mof", SearchOption.TopDirectoryOnly).Any();
+
+        if (!hasMofs)
+        {
+          _logger.LogWarning("Skipping DSC apply: no .mof files found in {DscMofPath}", request.DscMofPath);
+        }
+        else if (completedSteps.Contains(DscStepName))
         {
           _logger.LogInformation("Skipping previously completed step: {StepName}", DscStepName);
         }
@@ -752,10 +772,10 @@ public class ApplyRunner
     var outputTask = process.StandardOutput.ReadToEndAsync();
     var errorTask = process.StandardError.ReadToEndAsync();
     await Task.WhenAll(outputTask, errorTask).ConfigureAwait(false);
-    if (!process.WaitForExit(30000))
+    if (!process.WaitForExit(600000))
     {
       process.Kill();
-      throw new TimeoutException("Process did not exit within 30 seconds.");
+      throw new TimeoutException("DSC apply did not complete within 10 minutes.");
     }
 
     File.WriteAllText(stdout, await outputTask.ConfigureAwait(false));
@@ -822,6 +842,10 @@ public class ApplyRunner
         "New-StigDscConfiguration" + dataArg + " -OutputPath \"" + outputPath + "\"" + v + ";";
     }
 
+    // Write the command to a script file for debugging and log it
+    var scriptPath = Path.Combine(logsDir, "powerstig_compile_" + stepId + ".ps1");
+    File.WriteAllText(scriptPath, command);
+
     var psi = new ProcessStartInfo
     {
       FileName = "powershell.exe",
@@ -848,10 +872,10 @@ public class ApplyRunner
     var outputTask = process.StandardOutput.ReadToEndAsync();
     var errorTask = process.StandardError.ReadToEndAsync();
     await Task.WhenAll(outputTask, errorTask).ConfigureAwait(false);
-    if (!process.WaitForExit(30000))
+    if (!process.WaitForExit(300000))
     {
       process.Kill();
-      throw new TimeoutException("Process did not exit within 30 seconds.");
+      throw new TimeoutException("PowerSTIG compilation did not complete within 5 minutes.");
     }
 
     File.WriteAllText(stdout, await outputTask.ConfigureAwait(false));

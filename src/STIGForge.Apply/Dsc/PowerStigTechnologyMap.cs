@@ -39,13 +39,13 @@ public static class PowerStigTechnologyMap
             ? string.Empty
             : $"\r\n            StigVersion = '{EscapePsString(target.StigType)}'";
 
-        // WindowsFirewall is always applied alongside the primary OS STIG
+        // WindowsFirewall is always applied alongside the primary OS STIG.
+        // Omit StigVersion to use the latest bundled STIG data.
         var firewallBlock = target.CompositeResourceName is "WindowsServer" or "WindowsClient"
             ? @"
 
         WindowsFirewall FirewallStig
         {
-            StigVersion = $null
         }"
             : string.Empty;
 
