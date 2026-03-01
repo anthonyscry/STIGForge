@@ -1045,6 +1045,12 @@ public partial class WorkflowViewModel : ObservableObject
 
         try
         {
+            // Ensure PowerSTIG dependencies are staged before harden.
+            // If the user imported with an older build that only staged the
+            // PowerSTIG module itself, the dependency modules (AuditPolicyDsc,
+            // SecurityPolicyDsc, etc.) will be missing and compilation fails.
+            EnsurePowerStigDependenciesStaged(OutputFolderPath, ImportFolderPath);
+
             var request = BuildHardenApplyRequest(OutputFolderPath);
             if (!HasAnyHardenApplyInput(request))
             {
@@ -1199,6 +1205,94 @@ public partial class WorkflowViewModel : ObservableObject
         return "Hardening cannot run: no apply artifacts were found under " + applyRoot
             + ". Expected at least one of: PowerSTIG module in Apply, DSC directory " + dscPath
             + ", LGPO policy " + lgpoPath + ", or ADMX templates under " + admxPath + ".";
+    }
+
+    /// <summary>
+    /// Ensures PowerSTIG dependency modules are staged alongside the PowerSTIG module.
+    /// If the Apply directory has PowerSTIG but is missing required dependencies,
+    /// searches the import folder for a PowerSTIG PSGallery zip and extracts
+    /// all module directories from it.
+    /// </summary>
+    private static void EnsurePowerStigDependenciesStaged(string bundleRoot, string importFolderPath)
+    {
+        var applyRoot = Path.Combine(bundleRoot, "Apply");
+        if (!Directory.Exists(applyRoot))
+            return;
+
+        // Check if PowerSTIG module exists
+        var psd1 = Directory.EnumerateFiles(applyRoot, "PowerStig.psd1", SearchOption.AllDirectories)
+            .FirstOrDefault();
+        if (string.IsNullOrWhiteSpace(psd1))
+            return; // No PowerSTIG module staged, nothing to check
+
+        // Quick check: do dependency modules exist? Look for common ones.
+        var knownDeps = new[] { "AuditPolicyDsc", "SecurityPolicyDsc", "WindowsDefenderDsc" };
+        var hasDeps = knownDeps.Any(dep =>
+            Directory.EnumerateDirectories(applyRoot, dep, SearchOption.TopDirectoryOnly).Any());
+        if (hasDeps)
+            return; // Dependencies already staged
+
+        // Dependencies are missing. Search import folder for PowerSTIG zip.
+        if (string.IsNullOrWhiteSpace(importFolderPath) || !Directory.Exists(importFolderPath))
+            return;
+
+        string? powerStigZip = null;
+        try
+        {
+            powerStigZip = Directory.EnumerateFiles(importFolderPath, "*.zip", SearchOption.TopDirectoryOnly)
+                .FirstOrDefault(f => Path.GetFileName(f).IndexOf("PowerStig", StringComparison.OrdinalIgnoreCase) >= 0);
+        }
+        catch { return; }
+
+        if (string.IsNullOrWhiteSpace(powerStigZip) || !File.Exists(powerStigZip))
+            return;
+
+        // Extract all modules from the zip into Apply/
+        var tempDir = Path.Combine(Path.GetTempPath(), "stigforge-deps-" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            ZipFile.ExtractToDirectory(powerStigZip, tempDir, overwriteFiles: true);
+
+            // Find PowerSTIG manifest in extracted content to identify the module root
+            var extractedPsd1 = Directory.EnumerateFiles(tempDir, "PowerStig.psd1", SearchOption.AllDirectories)
+                .FirstOrDefault();
+            if (string.IsNullOrWhiteSpace(extractedPsd1))
+                return;
+
+            // Walk up from the .psd1 to find the shared root containing all module directories.
+            // PSGallery layout: root/ModuleName/Version/files
+            // Flat layout:      root/ModuleName/files
+            var moduleDir = Path.GetDirectoryName(extractedPsd1)!;
+            var moduleRoot = Path.GetDirectoryName(moduleDir);
+            var modulesParent = moduleRoot != null ? Path.GetDirectoryName(moduleRoot) : null;
+
+            var sharedRoot = modulesParent != null
+                && Directory.EnumerateDirectories(modulesParent).Count() > 1
+                ? modulesParent
+                : moduleRoot != null
+                  && Directory.EnumerateDirectories(moduleRoot).Count() > 1
+                  ? moduleRoot
+                  : null;
+
+            if (sharedRoot != null)
+            {
+                foreach (var dir in Directory.EnumerateDirectories(sharedRoot))
+                {
+                    var dirName = Path.GetFileName(dir);
+                    var destDir = Path.Combine(applyRoot, dirName);
+                    if (!Directory.Exists(destDir))
+                        CopyDirectoryRecursive(dir, destDir);
+                }
+            }
+        }
+        catch
+        {
+            // Non-fatal: harden will proceed and report the missing module error
+        }
+        finally
+        {
+            try { Directory.Delete(tempDir, true); } catch { }
+        }
     }
 
     private static int StageApplyArtifacts(IReadOnlyList<ImportInboxCandidate> candidates, string outputFolder)
