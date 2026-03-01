@@ -34,13 +34,13 @@ public sealed class LcmService
 
         try
         {
-            // Generate LCM configuration MOF content
+            // Generate LCM meta.mof content (DMTF MOF format required by Set-DscLocalConfigurationManager)
             var mofContent = GenerateLcmMof(config);
-            var mofPath = Path.Combine(tempDir, "LCMConfig.mof");
+            var mofPath = Path.Combine(tempDir, "localhost.meta.mof");
             File.WriteAllText(mofPath, mofContent);
 
-            // Build PowerShell command to configure LCM
-            var command = $"Set-DscLocalConfigurationManager -Path \"{mofPath}\" -Force";
+            // -Path expects a directory containing localhost.meta.mof
+            var command = $"Set-DscLocalConfigurationManager -Path \"{tempDir}\" -Force";
 
             _logger.LogDebug("Executing LCM configuration command: {Command}", command);
 
@@ -180,17 +180,26 @@ public sealed class LcmService
     private static string GenerateLcmMof(LcmConfig config)
     {
         var sb = new StringBuilder();
-        sb.AppendLine("configuration LCMConfig");
+        sb.AppendLine("/*");
+        sb.AppendLine("@TargetNode='localhost'");
+        sb.AppendLine($"@GeneratedBy=STIGForge");
+        sb.AppendLine($"@GenerationDate={DateTime.UtcNow:MM/dd/yyyy HH:mm:ss}");
+        sb.AppendLine("@GenerationHost=localhost");
+        sb.AppendLine("*/");
+        sb.AppendLine();
+        sb.AppendLine("instance of MSFT_DSCMetaConfiguration as $MSFT_DSCMetaConfiguration1ref");
         sb.AppendLine("{");
-        sb.AppendLine("    Settings");
-        sb.AppendLine("    {");
-        sb.AppendLine($"        ConfigurationMode = '{config.ConfigurationMode}'");
-        sb.AppendLine($"        RebootNodeIfNeeded = ${config.RebootNodeIfNeeded.ToString().ToLowerInvariant()}");
-        sb.AppendLine($"        ConfigurationModeFrequencyMins = {config.ConfigurationModeFrequencyMins}");
-        sb.AppendLine($"        AllowModuleOverwrite = ${config.AllowModuleOverwrite.ToString().ToLowerInvariant()}");
-        sb.AppendLine("    }");
-        sb.AppendLine("}");
-        sb.AppendLine("LCMConfig");
+        sb.AppendLine($" ConfigurationMode = \"{config.ConfigurationMode}\";");
+        sb.AppendLine($" RebootNodeIfNeeded = {config.RebootNodeIfNeeded.ToString().ToUpperInvariant()};");
+        sb.AppendLine($" ConfigurationModeFrequencyMins = {config.ConfigurationModeFrequencyMins};");
+        sb.AppendLine($" AllowModuleOverwrite = {config.AllowModuleOverwrite.ToString().ToUpperInvariant()};");
+        sb.AppendLine("};");
+        sb.AppendLine();
+        sb.AppendLine("instance of OMI_ConfigurationDocument");
+        sb.AppendLine("{");
+        sb.AppendLine(" Version=\"2.0.0\";");
+        sb.AppendLine(" MinimumCompatibleVersion = \"1.0.0\";");
+        sb.AppendLine("};");
         return sb.ToString();
     }
 
