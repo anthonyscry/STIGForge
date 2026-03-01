@@ -48,6 +48,9 @@ public sealed class ApplyRequest
 
    public string? AdmxPolicyDefinitionsPath { get; set; }
 
+   /// <summary>Path to domain GPO backup folder for GPMC import on Domain Controllers.</summary>
+   public string? DomainGpoBackupPath { get; set; }
+
    /// <summary>
    /// Optional mission run ID for timeline and evidence provenance linkage.
    /// When set, apply step evidence metadata will include this run ID.

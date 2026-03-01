@@ -184,6 +184,18 @@ public sealed class ImportInboxScanner
       AddUniqueCandidate(candidates, seen, candidate);
     }
 
+    var hasLgpoExecutable = namesLower.Any(n => n.EndsWith("lgpo.exe", StringComparison.Ordinal));
+    if (hasLgpoExecutable)
+    {
+      var candidate = CreateCandidate(zipPath, fileName, sha256, importedFrom, isNiwcEnhanced, contentFileNames);
+      candidate.ArtifactKind = ImportArtifactKind.Tool;
+      candidate.ToolKind = ToolArtifactKind.Lgpo;
+      candidate.Confidence = DetectionConfidence.High;
+      candidate.ContentKey = "tool:lgpo";
+      candidate.Reasons.Add("Detected LGPO.exe in archive.");
+      AddUniqueCandidate(candidates, seen, candidate);
+    }
+
     var xmlEntries = archive.Entries
       .Where(e => e.FullName.EndsWith(".xml", StringComparison.OrdinalIgnoreCase))
       .OrderBy(e => e.FullName, StringComparer.OrdinalIgnoreCase)

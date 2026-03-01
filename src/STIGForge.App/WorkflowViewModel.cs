@@ -1114,6 +1114,8 @@ public partial class WorkflowViewModel : ObservableObject
         var (osTarget, roleTemplate) = ReadOsTargetFromManifest(bundleRoot);
         if (!osTarget.HasValue || osTarget.Value == OsTarget.Unknown)
             osTarget = DetectLocalOsTarget();
+        if (!roleTemplate.HasValue)
+            roleTemplate = DetectLocalRoleTemplate();
 
         var request = new ApplyRequest
         {
@@ -1135,6 +1137,10 @@ public partial class WorkflowViewModel : ObservableObject
         var lgpoExePath = ResolveLgpoExePath(bundleRoot);
         if (!string.IsNullOrWhiteSpace(lgpoExePath))
             request.LgpoExePath = lgpoExePath;
+
+        var domainGpoPath = Path.Combine(applyRoot, "DomainGPOs");
+        if (Directory.Exists(domainGpoPath))
+            request.DomainGpoBackupPath = domainGpoPath;
 
         return request;
     }
@@ -1467,6 +1473,28 @@ public partial class WorkflowViewModel : ObservableObject
                         try { Directory.Delete(tempDir, true); } catch { }
                     }
                 }
+                else if (candidate.ArtifactKind == ImportArtifactKind.Tool
+                    && candidate.ToolKind == ToolArtifactKind.Lgpo)
+                {
+                    var tempDir = Path.Combine(Path.GetTempPath(), "stigforge-lgpo-" + Guid.NewGuid().ToString("N")[..8]);
+                    try
+                    {
+                        ZipFile.ExtractToDirectory(candidate.ZipPath, tempDir, overwriteFiles: true);
+                        var lgpoExe = Directory.EnumerateFiles(tempDir, "LGPO.exe", SearchOption.AllDirectories)
+                            .FirstOrDefault();
+                        if (!string.IsNullOrWhiteSpace(lgpoExe))
+                        {
+                            var toolsDir = Path.Combine(outputFolder, "tools");
+                            Directory.CreateDirectory(toolsDir);
+                            File.Copy(lgpoExe, Path.Combine(toolsDir, "LGPO.exe"), overwrite: true);
+                            staged++;
+                        }
+                    }
+                    finally
+                    {
+                        try { Directory.Delete(tempDir, true); } catch { }
+                    }
+                }
             }
             catch
             {
@@ -1500,6 +1528,21 @@ public partial class WorkflowViewModel : ObservableObject
         catch { }
 
         return OsTarget.Unknown;
+    }
+
+    private static RoleTemplate? DetectLocalRoleTemplate()
+    {
+        if (!OperatingSystem.IsWindows()) return null;
+        try
+        {
+            var ntdsStart = Microsoft.Win32.Registry.GetValue(
+                @"HKEY_LOCAL_MACHINE\SYSTEM\CurrentControlSet\Services\NTDS",
+                "Start", null);
+            if (ntdsStart is int startValue && startValue <= 2)
+                return RoleTemplate.DomainController;
+        }
+        catch { }
+        return null;
     }
 
     private static void CopyDirectoryRecursive(string sourceDir, string destDir)

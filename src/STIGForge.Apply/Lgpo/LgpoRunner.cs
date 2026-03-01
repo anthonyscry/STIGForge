@@ -145,6 +145,11 @@ public sealed class LgpoRunner
     if (File.Exists(toolsPath))
       return toolsPath;
 
+    // Check tools/ relative to application base directory (bundled deployment)
+    var baseDirPath = Path.Combine(AppContext.BaseDirectory, "tools", "LGPO.exe");
+    if (File.Exists(baseDirPath))
+      return baseDirPath;
+
     // Fallback: assume it's on PATH
     return "LGPO.exe";
   }

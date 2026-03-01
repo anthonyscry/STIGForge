@@ -17,7 +17,8 @@ public enum ToolArtifactKind
   Unknown,
   EvaluateStig,
   Scc,
-  PowerStig
+  PowerStig,
+  Lgpo
 }
 
 public enum ImportProvenance

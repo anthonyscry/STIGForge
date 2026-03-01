@@ -19,6 +19,7 @@ public class ApplyRunner
     private const string DscStepName = "apply_dsc";
     private const string LgpoStepName = "apply_lgpo";
     private const string AdmxStepName = "apply_admx_templates";
+    private const string GpoImportStepName = "apply_gpo_import";
 
     private readonly ILogger<ApplyRunner> _logger;
     private readonly SnapshotService _snapshotService;
@@ -381,6 +382,22 @@ public class ApplyRunner
           RebootCount = rebootCount + 1,
           ConvergenceStatus = ConvergenceStatus.Diverged
         };
+      }
+    }
+
+    // Domain GPO import step (DC-only, after LGPO)
+    if (!string.IsNullOrWhiteSpace(request.DomainGpoBackupPath)
+        && request.RoleTemplate == Core.Models.RoleTemplate.DomainController)
+    {
+      if (completedSteps.Contains(GpoImportStepName))
+      {
+        _logger.LogInformation("Skipping previously completed step: {StepName}", GpoImportStepName);
+      }
+      else
+      {
+        var outcome = RunGpoImport(request, root, logsDir);
+        outcome = WriteStepEvidence(outcome, root, runId, priorStepSha256);
+        steps.Add(outcome);
       }
     }
 
@@ -1010,6 +1027,8 @@ public class ApplyRunner
     if (!string.IsNullOrWhiteSpace(request.DscMofPath)) planned.Add(DscStepName);
     if (!string.IsNullOrWhiteSpace(request.AdmxTemplateRootPath)) planned.Add(AdmxStepName);
     if (!string.IsNullOrWhiteSpace(request.LgpoPolFilePath)) planned.Add(LgpoStepName);
+    if (!string.IsNullOrWhiteSpace(request.DomainGpoBackupPath)
+        && request.RoleTemplate == Core.Models.RoleTemplate.DomainController) planned.Add(GpoImportStepName);
     return planned;
   }
 
@@ -1210,6 +1229,88 @@ public class ApplyRunner
     {
       StepName = LgpoStepName,
       ExitCode = result.ExitCode,
+      StartedAt = started,
+      FinishedAt = DateTimeOffset.Now,
+      StdOutPath = stdout,
+      StdErrPath = stderr
+    };
+  }
+
+  private ApplyStepOutcome RunGpoImport(ApplyRequest request, string bundleRoot, string logsDir)
+  {
+    var started = DateTimeOffset.Now;
+    var stepId = DateTimeOffset.Now.ToString("yyyyMMdd_HHmmss");
+    var stdout = Path.Combine(logsDir, "apply_gpo_import_" + stepId + ".out.log");
+    var stderr = Path.Combine(logsDir, "apply_gpo_import_" + stepId + ".err.log");
+
+    var outBuilder = new StringBuilder(2048);
+    var errBuilder = new StringBuilder(1024);
+    var exitCode = 0;
+
+    try
+    {
+      var backupRoot = request.DomainGpoBackupPath!;
+      var gpoFolders = Directory.GetDirectories(backupRoot);
+      if (gpoFolders.Length == 0)
+      {
+        outBuilder.AppendLine("No GPO backup subfolders found in " + backupRoot);
+      }
+
+      foreach (var gpoFolder in gpoFolders)
+      {
+        var folderName = Path.GetFileName(gpoFolder);
+        outBuilder.AppendLine("Importing GPO: " + folderName);
+
+        // Build Import-GPO command: -BackupGpoName uses the folder name,
+        // -Path points to the parent, -TargetName uses the same name
+        var script = "Import-Module GroupPolicy; " +
+          $"Import-GPO -BackupGpoName '{folderName}' -Path '{backupRoot}' -TargetName '{folderName}' -CreateIfNeeded";
+
+        var psi = new ProcessStartInfo
+        {
+          FileName = "powershell.exe",
+          Arguments = $"-NoProfile -NonInteractive -Command \"{script}\"",
+          RedirectStandardOutput = true,
+          RedirectStandardError = true,
+          UseShellExecute = false,
+          CreateNoWindow = true
+        };
+
+        using var process = new Process { StartInfo = psi };
+        process.Start();
+        var psOut = process.StandardOutput.ReadToEnd();
+        var psErr = process.StandardError.ReadToEnd();
+        process.WaitForExit(120_000);
+
+        outBuilder.AppendLine(psOut);
+        if (!string.IsNullOrWhiteSpace(psErr))
+          errBuilder.AppendLine(psErr);
+
+        if (process.ExitCode != 0)
+        {
+          exitCode = process.ExitCode;
+          _logger.LogWarning("Import-GPO for {GpoName} exited with code {ExitCode}", folderName, process.ExitCode);
+        }
+        else
+        {
+          _logger.LogInformation("Imported GPO: {GpoName}", folderName);
+        }
+      }
+    }
+    catch (Exception ex)
+    {
+      errBuilder.AppendLine(ex.ToString());
+      exitCode = -1;
+      _logger.LogError(ex, "GPO import step failed");
+    }
+
+    File.WriteAllText(stdout, outBuilder.ToString());
+    File.WriteAllText(stderr, errBuilder.ToString());
+
+    return new ApplyStepOutcome
+    {
+      StepName = GpoImportStepName,
+      ExitCode = exitCode,
       StartedAt = started,
       FinishedAt = DateTimeOffset.Now,
       StdOutPath = stdout,
