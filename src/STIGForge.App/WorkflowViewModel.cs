@@ -1236,13 +1236,45 @@ public partial class WorkflowViewModel : ObservableObject
                     try
                     {
                         ZipFile.ExtractToDirectory(candidate.ZipPath, tempDir, overwriteFiles: true);
+
+                        // PSGallery zips (Save-Module -IncludeDependencies) contain
+                        // sibling module folders: PowerSTIG/, AuditPolicyDsc/, etc.
+                        // Stage ALL module directories so dependencies are resolvable.
                         var psd1 = Directory.EnumerateFiles(tempDir, "PowerSTIG.psd1", SearchOption.AllDirectories)
                             .FirstOrDefault();
                         if (!string.IsNullOrWhiteSpace(psd1))
                         {
+                            // The PSGallery layout is: <root>/<ModuleName>/<Version>/...
+                            // The parent of the versioned folder is the module folder;
+                            // the parent of that is the root containing all modules.
                             var moduleDir = Path.GetDirectoryName(psd1)!;
-                            var destDir = Path.Combine(applyRoot, "PowerSTIG");
-                            CopyDirectoryRecursive(moduleDir, destDir);
+                            var moduleRoot = Path.GetDirectoryName(moduleDir);
+                            // If we can walk up to a shared root that has sibling modules, use it
+                            var modulesParent = moduleRoot != null ? Path.GetDirectoryName(moduleRoot) : null;
+
+                            // Determine the shared root: the directory containing module folders
+                            var sharedRoot = modulesParent != null
+                                && Directory.EnumerateDirectories(modulesParent).Count() > 1
+                                ? modulesParent   // PSGallery layout: root/ModuleName/Version/files
+                                : moduleRoot != null
+                                  && Directory.EnumerateDirectories(moduleRoot).Count() > 1
+                                  ? moduleRoot    // Flat layout: root/ModuleName/files
+                                  : null;
+
+                            if (sharedRoot != null)
+                            {
+                                // Copy every module directory into Apply/
+                                foreach (var dir in Directory.EnumerateDirectories(sharedRoot))
+                                {
+                                    var dirName = Path.GetFileName(dir);
+                                    CopyDirectoryRecursive(dir, Path.Combine(applyRoot, dirName));
+                                }
+                            }
+                            else
+                            {
+                                // Fallback: just copy the PowerSTIG module itself
+                                CopyDirectoryRecursive(moduleDir, Path.Combine(applyRoot, "PowerSTIG"));
+                            }
                             staged++;
                         }
                     }

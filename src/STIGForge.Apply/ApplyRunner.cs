@@ -824,40 +824,19 @@ public class ApplyRunner
       ? string.Empty
       : "$env:PSModulePath = '" + moduleParent!.Replace("'", "''") + "' + ';' + $env:PSModulePath; ";
 
-    // Resolve the .psd1 manifest path for dependency installation
-    var psd1Path = File.Exists(modulePath) && modulePath.EndsWith(".psd1", StringComparison.OrdinalIgnoreCase)
-      ? modulePath
-      : Path.Combine(Directory.Exists(modulePath) ? modulePath : Path.GetDirectoryName(modulePath)!, "PowerStig.psd1");
-
-    // Build a preamble that installs missing RequiredModules from PSGallery.
-    // PowerSTIG depends on DSC resource modules (AuditPolicyDsc, SecurityPolicyDsc, etc.)
-    // that must be present before Import-Module will succeed.
-    var depInstallPrefix =
-      "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; " +
-      "if (-not (Get-PackageProvider -ListAvailable -Name NuGet -ErrorAction SilentlyContinue)) { " +
-        "Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser | Out-Null }; " +
-      "Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -ErrorAction SilentlyContinue; " +
-      "$manifest = Test-ModuleManifest -Path '" + psd1Path.Replace("'", "''") + "' -ErrorAction Stop; " +
-      "foreach ($dep in $manifest.RequiredModules) { " +
-        "$n = if ($dep -is [string]) { $dep } else { $dep.Name }; " +
-        "if (-not (Get-Module -ListAvailable $n -ErrorAction SilentlyContinue)) { " +
-          "Write-Host \"Installing missing PowerSTIG dependency: $n\"; " +
-          "Install-Module -Name $n -Force -SkipPublisherCheck -AllowClobber -Scope AllUsers -ErrorAction Stop } " +
-      "}; ";
-
     string command;
     if (target != null)
     {
       // OS-targeted compilation: generate a DSC configuration using the resolved
       // PowerSTIG composite resource (e.g., WindowsServer, WindowsClient)
       var configScript = Dsc.PowerStigTechnologyMap.BuildDscConfigurationScript(target, outputPath, dataFile);
-      command = psModulePathPrefix + depInstallPrefix + "Import-Module \"" + modulePath + "\"; " + configScript + v + ";";
+      command = psModulePathPrefix + "Import-Module \"" + modulePath + "\"; " + configScript + v + ";";
     }
     else
     {
       // Legacy fallback: generic PowerSTIG compilation without OS targeting
       var dataArg = string.IsNullOrWhiteSpace(dataFile) ? string.Empty : " -StigDataFile \"" + dataFile + "\"";
-      command = psModulePathPrefix + depInstallPrefix +
+      command = psModulePathPrefix +
         "Import-Module \"" + modulePath + "\"; " +
         "$ErrorActionPreference='Stop'; " +
         "New-StigDscConfiguration" + dataArg + " -OutputPath \"" + outputPath + "\"" + v + ";";
