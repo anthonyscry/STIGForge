@@ -16,7 +16,7 @@ public sealed class SnapshotService
         _processRunner = processRunner ?? throw new ArgumentNullException(nameof(processRunner));
     }
 
-    public async Task<SnapshotResult> CreateSnapshot(string snapshotsDir, CancellationToken ct)
+    public async Task<SnapshotResult> CreateSnapshot(string snapshotsDir, CancellationToken ct, string? lgpoExePath = null)
     {
         if (string.IsNullOrWhiteSpace(snapshotsDir))
             throw new ArgumentException("Snapshots directory cannot be empty.", nameof(snapshotsDir));
@@ -54,13 +54,14 @@ public sealed class SnapshotService
             _logger.LogInformation("Audit policy exported to {Path}", auditPolicyPath);
 
             // Export LGPO state (optional)
-            if (_processRunner.ExistsInPath("LGPO.exe"))
+            var resolvedLgpoPath = ResolveLgpoExecutablePath(snapshotsDir, lgpoExePath);
+            if (!string.IsNullOrWhiteSpace(resolvedLgpoPath))
             {
                 _logger.LogInformation("Exporting LGPO state...");
                 lgpoStatePath = Path.Combine(snapshotPath, "lgpo_state");
                 try
                 {
-                    await RunProcessAsync("LGPO.exe", $"/backup \"{lgpoStatePath}\"", snapshotPath, ct).ConfigureAwait(false);
+                    await RunProcessAsync(resolvedLgpoPath, $"/backup \"{lgpoStatePath}\"", snapshotPath, ct).ConfigureAwait(false);
                     _logger.LogInformation("LGPO state exported to {Path}", lgpoStatePath);
                 }
                 catch (SnapshotException ex)
@@ -71,7 +72,7 @@ public sealed class SnapshotService
             }
             else
             {
-                _logger.LogWarning("LGPO.exe not found in PATH - skipping LGPO state export");
+                _logger.LogWarning("LGPO.exe not found in explicit path, bundle tools, or PATH - skipping LGPO state export");
             }
         }
         catch (Exception ex) when (ex is not SnapshotException)
@@ -93,7 +94,7 @@ public sealed class SnapshotService
         return result;
     }
 
-    public async Task RestoreSnapshot(SnapshotResult snapshot, CancellationToken ct)
+    public async Task RestoreSnapshot(SnapshotResult snapshot, CancellationToken ct, string? lgpoExePath = null)
     {
         if (snapshot == null)
             throw new ArgumentNullException(nameof(snapshot));
@@ -126,12 +127,17 @@ public sealed class SnapshotService
             _logger.LogInformation("Audit policy restored from {Path}", snapshot.AuditPolicyPath);
 
             // Restore LGPO state (optional)
-            if (!string.IsNullOrWhiteSpace(snapshot.LgpoStatePath) && File.Exists(snapshot.LgpoStatePath))
+            var resolvedLgpoPath = ResolveLgpoExecutablePath(
+                Path.GetDirectoryName(snapshot.LgpoStatePath ?? string.Empty) ?? string.Empty,
+                lgpoExePath);
+            if (!string.IsNullOrWhiteSpace(snapshot.LgpoStatePath)
+                && File.Exists(snapshot.LgpoStatePath)
+                && !string.IsNullOrWhiteSpace(resolvedLgpoPath))
             {
                 _logger.LogInformation("Restoring LGPO state...");
                 try
                 {
-                    await RunProcessAsync("LGPO.exe", 
+                    await RunProcessAsync(resolvedLgpoPath,
                         $"/restore \"{snapshot.LgpoStatePath}\"",
                         Path.GetDirectoryName(snapshot.LgpoStatePath) ?? string.Empty, ct).ConfigureAwait(false);
                     _logger.LogInformation("LGPO state restored from {Path}", snapshot.LgpoStatePath);
@@ -148,6 +154,36 @@ public sealed class SnapshotService
         }
 
         _logger.LogInformation("Snapshot {SnapshotId} restored successfully. Reboot recommended.", snapshot.SnapshotId);
+    }
+
+    private string? ResolveLgpoExecutablePath(string snapshotsOrStateDir, string? overridePath)
+    {
+        if (!string.IsNullOrWhiteSpace(overridePath) && File.Exists(overridePath))
+            return overridePath;
+
+        try
+        {
+            var full = Path.GetFullPath(snapshotsOrStateDir);
+            var parent = Directory.GetParent(full);
+            if (parent != null && string.Equals(parent.Name, "Apply", StringComparison.OrdinalIgnoreCase))
+            {
+                var bundleRoot = parent.Parent?.FullName;
+                if (!string.IsNullOrWhiteSpace(bundleRoot))
+                {
+                    var bundleToolsCandidate = Path.Combine(bundleRoot, "tools", "LGPO.exe");
+                    if (File.Exists(bundleToolsCandidate))
+                        return bundleToolsCandidate;
+                }
+            }
+        }
+        catch
+        {
+        }
+
+        if (_processRunner.ExistsInPath("LGPO.exe"))
+            return "LGPO.exe";
+
+        return null;
     }
 
     private async Task RunProcessAsync(string fileName, string arguments, string workingDirectory, CancellationToken ct)
