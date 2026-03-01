@@ -587,6 +587,17 @@ public class ApplyRunner
   /// Injects W3C trace context into PowerShell process environment variables.
   /// PowerShell scripts can access via $env:STIGFORGE_TRACE_ID, $env:STIGFORGE_PARENT_SPAN_ID.
   /// </summary>
+  /// <summary>
+  /// Builds PowerShell arguments using -EncodedCommand to avoid all quoting/escaping
+  /// issues with complex scripts containing curly braces, dollar signs, and nested quotes.
+  /// </summary>
+  private static string BuildEncodedCommandArgs(string command)
+  {
+    var bytes = Encoding.Unicode.GetBytes(command);
+    var encoded = Convert.ToBase64String(bytes);
+    return "-NoProfile -ExecutionPolicy Bypass -EncodedCommand " + encoded;
+  }
+
   private static void InjectTraceContext(ProcessStartInfo psi)
   {
     var context = TraceContext.GetCurrentContext();
@@ -718,7 +729,7 @@ public class ApplyRunner
     var psi = new ProcessStartInfo
     {
       FileName = "powershell.exe",
-      Arguments = "-NoProfile -ExecutionPolicy Bypass -Command \"" + command + "\"",
+      Arguments = BuildEncodedCommandArgs(command),
       WorkingDirectory = bundleRoot,
       RedirectStandardOutput = true,
       RedirectStandardError = true,
@@ -814,7 +825,7 @@ public class ApplyRunner
     var psi = new ProcessStartInfo
     {
       FileName = "powershell.exe",
-      Arguments = "-NoProfile -ExecutionPolicy Bypass -Command \"" + command + "\"",
+      Arguments = BuildEncodedCommandArgs(command),
       WorkingDirectory = bundleRoot,
       RedirectStandardOutput = true,
       RedirectStandardError = true,

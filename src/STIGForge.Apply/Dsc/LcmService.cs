@@ -203,6 +203,13 @@ public sealed class LcmService
         return sb.ToString();
     }
 
+    private static string BuildEncodedCommandArgs(string command)
+    {
+        var bytes = Encoding.Unicode.GetBytes(command);
+        var encoded = Convert.ToBase64String(bytes);
+        return "-NoProfile -ExecutionPolicy Bypass -EncodedCommand " + encoded;
+    }
+
     private static async Task<(int exitCode, string stdout, string stderr)> ExecutePowerShellCommand(
         string command,
         CancellationToken ct)
@@ -210,7 +217,7 @@ public sealed class LcmService
         var psi = new ProcessStartInfo
         {
             FileName = "powershell.exe",
-            Arguments = $"-NoProfile -ExecutionPolicy Bypass -Command \"{command}\"",
+            Arguments = BuildEncodedCommandArgs(command),
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             UseShellExecute = false,
