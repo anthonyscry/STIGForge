@@ -1,4 +1,5 @@
 using System.Xml;
+using System.Xml.Linq;
 using STIGForge.Core.Models;
 
 namespace STIGForge.Content.Import;
@@ -128,36 +129,13 @@ public static class DomainGpoBackupParser
 
     private static DomainGpoBackupInfo ParseBackupXml(string xmlPath, string backupDir, string dirGuid)
     {
-        var settings = new XmlReaderSettings
-        {
-            DtdProcessing = DtdProcessing.Prohibit,
-            XmlResolver = null,
-            IgnoreWhitespace = true
-        };
+        var doc = XDocument.Load(xmlPath);
 
-        string? displayName = null;
-        string? gpoGuid = null;
-        string? backupId = null;
-
-        using var reader = XmlReader.Create(xmlPath, settings);
-        while (reader.Read())
-        {
-            if (reader.NodeType != XmlNodeType.Element)
-                continue;
-
-            switch (reader.LocalName)
-            {
-                case "DisplayName":
-                    displayName = reader.ReadElementContentAsString()?.Trim();
-                    break;
-                case "GroupPolicyObjectId" or "ID":
-                    gpoGuid ??= reader.ReadElementContentAsString()?.Trim();
-                    break;
-                case "BackupId":
-                    backupId = reader.ReadElementContentAsString()?.Trim();
-                    break;
-            }
-        }
+        // Search all descendants for the relevant elements (namespace-agnostic)
+        string? displayName = doc.Descendants().FirstOrDefault(e => e.Name.LocalName == "DisplayName")?.Value?.Trim();
+        string? gpoGuid = doc.Descendants().FirstOrDefault(e => e.Name.LocalName == "GroupPolicyObjectId")?.Value?.Trim()
+            ?? doc.Descendants().FirstOrDefault(e => e.Name.LocalName == "ID")?.Value?.Trim();
+        string? backupId = doc.Descendants().FirstOrDefault(e => e.Name.LocalName == "BackupId")?.Value?.Trim();
 
         return new DomainGpoBackupInfo
         {
@@ -170,32 +148,10 @@ public static class DomainGpoBackupParser
 
     private static DomainGpoBackupInfo ParseBkupInfoXml(string xmlPath, string backupDir, string dirGuid)
     {
-        var settings = new XmlReaderSettings
-        {
-            DtdProcessing = DtdProcessing.Prohibit,
-            XmlResolver = null,
-            IgnoreWhitespace = true
-        };
+        var doc = XDocument.Load(xmlPath);
 
-        string? displayName = null;
-        string? gpoGuid = null;
-
-        using var reader = XmlReader.Create(xmlPath, settings);
-        while (reader.Read())
-        {
-            if (reader.NodeType != XmlNodeType.Element)
-                continue;
-
-            switch (reader.LocalName)
-            {
-                case "GPODisplayName":
-                    displayName = reader.ReadElementContentAsString()?.Trim();
-                    break;
-                case "GPOGuid":
-                    gpoGuid = reader.ReadElementContentAsString()?.Trim();
-                    break;
-            }
-        }
+        string? displayName = doc.Descendants().FirstOrDefault(e => e.Name.LocalName == "GPODisplayName")?.Value?.Trim();
+        string? gpoGuid = doc.Descendants().FirstOrDefault(e => e.Name.LocalName == "GPOGuid")?.Value?.Trim();
 
         return new DomainGpoBackupInfo
         {
