@@ -42,6 +42,9 @@ public static class GpoPackageExtractor
         // Stage GptTmpl.inf security templates
         result.SecurityTemplatePath = StageSecurityTemplate(extractedRoot, applyRoot, osTarget);
 
+        // Stage domain GPO backups (DC-only, for manual GPMC import)
+        result.DomainGpoCount = StageDomainGpoBackups(extractedRoot, applyRoot);
+
         return result;
     }
 
@@ -268,6 +271,58 @@ public static class GpoPackageExtractor
         return null;
     }
 
+    /// <summary>
+    /// Stages domain GPO backup folders from GPOs/{GUID}/ into the Apply directory.
+    /// These are for GPMC import on domain controllers only.
+    /// Also generates an Import-DomainGpos.ps1 script for admin use.
+    /// </summary>
+    private static int StageDomainGpoBackups(string extractedRoot, string applyRoot)
+    {
+        var parseResult = DomainGpoBackupParser.ParseBackups(extractedRoot, string.Empty);
+        if (parseResult.Backups.Count == 0)
+            return 0;
+
+        var domainGposDir = Path.Combine(applyRoot, "DomainGPOs");
+        Directory.CreateDirectory(domainGposDir);
+
+        var count = 0;
+        foreach (var backup in parseResult.Backups)
+        {
+            if (!Directory.Exists(backup.BackupPath))
+                continue;
+
+            var destDir = Path.Combine(domainGposDir, Path.GetFileName(backup.BackupPath));
+            CopyDirectory(backup.BackupPath, destDir);
+            count++;
+        }
+
+        if (count > 0)
+        {
+            // Generate GPMC import script
+            var script = DomainGpoBackupParser.GenerateGpmcImportScript(parseResult.Backups, domainGposDir);
+            File.WriteAllText(Path.Combine(domainGposDir, "Import-DomainGpos.ps1"), script);
+        }
+
+        return count;
+    }
+
+    private static void CopyDirectory(string sourceDir, string destDir)
+    {
+        Directory.CreateDirectory(destDir);
+
+        foreach (var file in Directory.EnumerateFiles(sourceDir))
+        {
+            var destFile = Path.Combine(destDir, Path.GetFileName(file));
+            File.Copy(file, destFile, true);
+        }
+
+        foreach (var subDir in Directory.EnumerateDirectories(sourceDir))
+        {
+            var destSubDir = Path.Combine(destDir, Path.GetFileName(subDir));
+            CopyDirectory(subDir, destSubDir);
+        }
+    }
+
     private static bool ContainsAny(string text, params string[] tokens)
     {
         foreach (var token in tokens)
@@ -284,9 +339,12 @@ public sealed class GpoStagingResult
     public int AdmxFileCount { get; set; }
     public string? PolFilePath { get; set; }
     public string? SecurityTemplatePath { get; set; }
+    public int DomainGpoCount { get; set; }
 
     public bool HasAnyArtifacts =>
         AdmxFileCount > 0 || !string.IsNullOrWhiteSpace(PolFilePath) || !string.IsNullOrWhiteSpace(SecurityTemplatePath);
+
+    public bool HasDomainGpos => DomainGpoCount > 0;
 }
 
 public sealed class GpoOsScope

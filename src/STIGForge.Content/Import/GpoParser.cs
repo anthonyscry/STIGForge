@@ -66,6 +66,11 @@ public static class GpoParser
       }
     }
 
+    // Parse domain GPO backups (DC-only, manual GPMC import)
+    var domainGpoResult = DomainGpoBackupParser.ParseBackups(extractedRoot, packName);
+    allControls.AddRange(domainGpoResult.Controls);
+    warnings.AddRange(domainGpoResult.Warnings);
+
     return new GpoFullParseResult
     {
       Controls = allControls,
@@ -73,7 +78,8 @@ public static class GpoParser
       Warnings = warnings,
       AdmxFileCount = admxFiles.Length,
       PolFileCount = polFiles.Length,
-      InfFileCount = infFiles.Length
+      InfFileCount = infFiles.Length,
+      DomainGpoBackups = domainGpoResult.Backups
     };
   }
 
@@ -212,6 +218,7 @@ public sealed class GpoFullParseResult
 {
   public IReadOnlyList<ControlRecord> Controls { get; set; } = Array.Empty<ControlRecord>();
   public IReadOnlyList<GpoOsScope> OsScopes { get; set; } = Array.Empty<GpoOsScope>();
+  public IReadOnlyList<DomainGpoBackupInfo> DomainGpoBackups { get; set; } = Array.Empty<DomainGpoBackupInfo>();
   public List<string> Warnings { get; set; } = new();
   public int AdmxFileCount { get; set; }
   public int PolFileCount { get; set; }

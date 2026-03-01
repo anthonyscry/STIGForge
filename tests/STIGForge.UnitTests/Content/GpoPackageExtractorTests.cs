@@ -74,6 +74,57 @@ public sealed class GpoPackageExtractorTests : IDisposable
         result.HasAnyArtifacts.Should().BeFalse();
     }
 
+    [Fact]
+    public void StageForApply_WithDomainGpos_StagesDomainGpoBackupsAndScript()
+    {
+        var root = CreateGpoPackageStructure(new[] { "Windows 11" });
+        AddDomainGpoBackups(root, new[]
+        {
+            ("{A1B2C3D4-E5F6-7890-ABCD-EF1234567890}", "DoD Windows 11 - Computer"),
+            ("{B2C3D4E5-F6A7-8901-BCDE-F12345678901}", "DoD Windows 11 - User")
+        });
+        var applyRoot = Path.Combine(_tempDir, "apply");
+
+        var result = GpoPackageExtractor.StageForApply(root, applyRoot, OsTarget.Win11);
+
+        result.HasDomainGpos.Should().BeTrue();
+        result.DomainGpoCount.Should().Be(2);
+
+        // Verify DomainGPOs directory was created
+        Directory.Exists(Path.Combine(applyRoot, "DomainGPOs")).Should().BeTrue();
+
+        // Verify import script was generated
+        File.Exists(Path.Combine(applyRoot, "DomainGPOs", "Import-DomainGpos.ps1")).Should().BeTrue();
+        var script = File.ReadAllText(Path.Combine(applyRoot, "DomainGPOs", "Import-DomainGpos.ps1"));
+        script.Should().Contain("Import-GPO");
+        script.Should().Contain("DoD Windows 11 - Computer");
+    }
+
+    [Fact]
+    public void StageForApply_NoDomainGpos_ReportsZeroDomainGpoCount()
+    {
+        var root = CreateGpoPackageStructure(new[] { "Windows 11" });
+        var applyRoot = Path.Combine(_tempDir, "apply");
+
+        var result = GpoPackageExtractor.StageForApply(root, applyRoot, OsTarget.Win11);
+
+        result.HasDomainGpos.Should().BeFalse();
+        result.DomainGpoCount.Should().Be(0);
+    }
+
+    private static void AddDomainGpoBackups(string root, (string guid, string displayName)[] backups)
+    {
+        var gposDir = Path.Combine(root, "GPOs");
+        foreach (var (guid, displayName) in backups)
+        {
+            var backupDir = Path.Combine(gposDir, guid);
+            Directory.CreateDirectory(backupDir);
+            File.WriteAllText(Path.Combine(backupDir, "Backup.xml"),
+                $"<?xml version=\"1.0\"?><GroupPolicyBackupScheme><GroupPolicyObject><DisplayName>{displayName}</DisplayName><BackupId>{guid}</BackupId></GroupPolicyObject></GroupPolicyBackupScheme>");
+            Directory.CreateDirectory(Path.Combine(backupDir, "DomainSysvol", "GPO", "Machine"));
+        }
+    }
+
     private string CreateGpoPackageStructure(string[] osNames)
     {
         var root = Path.Combine(_tempDir, "gpo-package");
