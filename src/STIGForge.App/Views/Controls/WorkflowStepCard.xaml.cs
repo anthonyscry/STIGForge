@@ -116,6 +116,13 @@ public partial class WorkflowStepCard : UserControl
             typeof(WorkflowStepCard),
             new PropertyMetadata(1));
 
+    public static readonly DependencyProperty CompletionTextProperty =
+        DependencyProperty.Register(
+            nameof(CompletionText),
+            typeof(string),
+            typeof(WorkflowStepCard),
+            new PropertyMetadata(string.Empty));
+
     public WorkflowStepCard()
     {
         InitializeComponent();
@@ -215,5 +222,11 @@ public partial class WorkflowStepCard : UserControl
     {
         get => (int)GetValue(SecondaryButtonTabIndexProperty);
         set => SetValue(SecondaryButtonTabIndexProperty, value);
+    }
+
+    public string CompletionText
+    {
+        get => (string)GetValue(CompletionTextProperty);
+        set => SetValue(CompletionTextProperty, value);
     }
 }

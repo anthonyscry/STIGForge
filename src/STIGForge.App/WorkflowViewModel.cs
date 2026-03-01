@@ -720,6 +720,12 @@ public partial class WorkflowViewModel : ObservableObject
     private double _compliancePercent;
 
     [ObservableProperty]
+    private string _scanComplianceText = string.Empty;
+
+    [ObservableProperty]
+    private string _verifyComplianceText = string.Empty;
+
+    [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(RunImportStepCommand))]
     [NotifyCanExecuteChangedFor(nameof(RunAutoWorkflowCommand))]
     private StepState _importState = StepState.Ready;
@@ -1000,6 +1006,11 @@ public partial class WorkflowViewModel : ObservableObject
 
             var baselineOpenFindings = result.FailCount + result.ErrorCount;
             BaselineFindingsCount = baselineOpenFindings;
+
+            var scanDenom = result.PassCount + result.FailCount + result.ErrorCount;
+            var scanPct = scanDenom > 0 ? (double)result.PassCount / scanDenom * 100 : 0;
+            ScanComplianceText = $"{scanPct:F1}% compliant ({result.PassCount}/{scanDenom})";
+
             if (baselineOpenFindings == 0)
             {
               StatusText = BuildZeroFindingsMessage("Baseline scan", result);
@@ -1851,6 +1862,10 @@ public partial class WorkflowViewModel : ObservableObject
 
             UpdateComplianceMetrics(result);
 
+            var verifyDenom = result.PassCount + result.FailCount + result.ErrorCount;
+            var verifyPct = verifyDenom > 0 ? (double)result.PassCount / verifyDenom * 100 : 0;
+            VerifyComplianceText = $"{verifyPct:F1}% compliant ({result.PassCount}/{verifyDenom})";
+
             var verifyOpenFindings = result.FailCount + result.ErrorCount;
             VerifyFindingsCount = verifyOpenFindings;
             FixedCount = BaselineFindingsCount - VerifyFindingsCount;
@@ -2655,6 +2670,8 @@ public partial class WorkflowViewModel : ObservableObject
         BaselineFindingsCount = 0;
         VerifyFindingsCount = 0;
         FixedCount = 0;
+        ScanComplianceText = string.Empty;
+        VerifyComplianceText = string.Empty;
         AppliedFixesCount = 0;
         ImportedItemsCount = 0;
         IsImportedLibraryExpanded = false;

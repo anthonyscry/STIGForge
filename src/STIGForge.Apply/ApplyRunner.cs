@@ -745,7 +745,34 @@ public class ApplyRunner
     var whatIf = mode == HardeningMode.AuditOnly ? " -WhatIf" : string.Empty;
     var v = verbose ? " -Verbose" : string.Empty;
 
-    var command = "Start-DscConfiguration -Path \"" + mofPath + "\" -Wait -Force" + whatIf + v;
+    // Start-DscConfiguration invokes the LCM which needs DSC resource modules on PSModulePath.
+    // Copy modules from bundled + bundle Apply dir into the system PSModulePath so the LCM
+    // can find them. We use Copy-Item rather than just PSModulePath because the LCM runs
+    // in a separate process (WMI host) that doesn't inherit our environment variables.
+    var copyModulesBlock = new System.Text.StringBuilder();
+    var bundledModulesDir = Path.Combine(AppContext.BaseDirectory, "tools", "PSModules");
+    var bundleApplyDir = Path.Combine(bundleRoot, "Apply");
+    var moduleSourceDirs = new List<string>();
+    if (Directory.Exists(bundledModulesDir)) moduleSourceDirs.Add(bundledModulesDir);
+    if (Directory.Exists(bundleApplyDir)) moduleSourceDirs.Add(bundleApplyDir);
+
+    foreach (var srcDir in moduleSourceDirs)
+    {
+      foreach (var modDir in Directory.GetDirectories(srcDir))
+      {
+        var modName = Path.GetFileName(modDir);
+        // Only copy known DSC resource modules, skip non-module dirs like Dsc, Logs, Snapshots
+        if (!File.Exists(Path.Combine(modDir, modName + ".psd1")) &&
+            !Directory.EnumerateFiles(modDir, "*.psd1", SearchOption.AllDirectories).Any())
+          continue;
+        copyModulesBlock.AppendLine(
+          $"if (-not (Test-Path \"$env:ProgramFiles\\WindowsPowerShell\\Modules\\{modName}\")) {{ " +
+          $"Copy-Item -Path '{modDir.Replace("'", "''")}' -Destination \"$env:ProgramFiles\\WindowsPowerShell\\Modules\\{modName}\" -Recurse -Force }}");
+      }
+    }
+
+    var command = copyModulesBlock.ToString() +
+      "Start-DscConfiguration -Path \"" + mofPath + "\" -Wait -Force" + whatIf + v;
     var psi = new ProcessStartInfo
     {
       FileName = "powershell.exe",
@@ -756,6 +783,16 @@ public class ApplyRunner
       UseShellExecute = false,
       CreateNoWindow = true
     };
+
+    // Also set PSModulePath for the PowerShell host process itself
+    var extraModulePaths = new List<string>();
+    if (Directory.Exists(bundledModulesDir)) extraModulePaths.Add(bundledModulesDir);
+    if (Directory.Exists(bundleApplyDir)) extraModulePaths.Add(bundleApplyDir);
+    if (extraModulePaths.Count > 0)
+    {
+      var existing = Environment.GetEnvironmentVariable("PSModulePath") ?? string.Empty;
+      psi.Environment["PSModulePath"] = string.Join(";", extraModulePaths) + ";" + existing;
+    }
 
     psi.Environment["STIGFORGE_BUNDLE_ROOT"] = bundleRoot;
     psi.Environment["STIGFORGE_APPLY_LOG_DIR"] = logsDir;

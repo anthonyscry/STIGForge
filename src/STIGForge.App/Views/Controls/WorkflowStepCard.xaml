@@ -73,6 +73,13 @@
                        Foreground="{DynamicResource SuccessBrush}"
                        Visibility="{Binding StepState, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource StepStateToCompleteVisibility}}" />
 
+            <TextBlock Text="{Binding CompletionText, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                       Margin="0,2,0,0"
+                       FontSize="13"
+                       FontWeight="SemiBold"
+                       Foreground="{DynamicResource AccentBrush}"
+                       Visibility="{Binding CompletionText, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource NullOrEmptyToCollapsed}}" />
+
             <StackPanel Orientation="Horizontal"
                         Margin="0,6,0,0"
                         Visibility="{Binding StepState, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource StepStateToErrorVisibility}}">
