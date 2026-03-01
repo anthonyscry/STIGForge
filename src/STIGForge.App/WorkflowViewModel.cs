@@ -1,4 +1,5 @@
 using System.IO;
+using System.IO.Compression;
 using System.Security.Principal;
 using System.Text;
 using System.Text.Json;
@@ -677,6 +678,8 @@ public partial class WorkflowViewModel : ObservableObject
     [ObservableProperty]
     private List<string> _importWarnings = new();
 
+    private IReadOnlyList<ImportInboxCandidate> _lastImportCandidates = Array.Empty<ImportInboxCandidate>();
+
     [ObservableProperty]
     private int _baselineFindingsCount;
 
@@ -870,7 +873,8 @@ public partial class WorkflowViewModel : ObservableObject
         try
         {
             var result = await _importScanner.ScanAsync(ImportFolderPath, CancellationToken.None);
-            
+            _lastImportCandidates = result.Candidates;
+
             var packs = result.Candidates
                 .GroupBy(c => c.FileName)
                 .Select(g => new ImportedPackViewModel
@@ -902,6 +906,13 @@ public partial class WorkflowViewModel : ObservableObject
             else
             {
                 StatusText = $"Found {ImportedItemsCount} content packs";
+            }
+
+            if (ImportedItemsCount > 0 && !string.IsNullOrWhiteSpace(OutputFolderPath))
+            {
+                var staged = await Task.Run(() => StageApplyArtifacts(_lastImportCandidates, OutputFolderPath));
+                if (staged > 0)
+                    StatusText += $" ({staged} apply artifact(s) staged)";
             }
 
             return true;
@@ -1188,6 +1199,106 @@ public partial class WorkflowViewModel : ObservableObject
         return "Hardening cannot run: no apply artifacts were found under " + applyRoot
             + ". Expected at least one of: PowerSTIG module in Apply, DSC directory " + dscPath
             + ", LGPO policy " + lgpoPath + ", or ADMX templates under " + admxPath + ".";
+    }
+
+    private static int StageApplyArtifacts(IReadOnlyList<ImportInboxCandidate> candidates, string outputFolder)
+    {
+        var applyRoot = Path.Combine(outputFolder, "Apply");
+        var staged = 0;
+        var osTarget = DetectLocalOsTarget();
+
+        foreach (var candidate in candidates)
+        {
+            if (string.IsNullOrWhiteSpace(candidate.ZipPath) || !File.Exists(candidate.ZipPath))
+                continue;
+
+            try
+            {
+                if (candidate.ArtifactKind == ImportArtifactKind.Gpo
+                    || candidate.ArtifactKind == ImportArtifactKind.Admx)
+                {
+                    var tempDir = Path.Combine(Path.GetTempPath(), "stigforge-gpo-" + Guid.NewGuid().ToString("N")[..8]);
+                    try
+                    {
+                        ZipFile.ExtractToDirectory(candidate.ZipPath, tempDir, overwriteFiles: true);
+                        GpoPackageExtractor.StageForApply(tempDir, applyRoot, osTarget);
+                        staged++;
+                    }
+                    finally
+                    {
+                        try { Directory.Delete(tempDir, true); } catch { }
+                    }
+                }
+                else if (candidate.ArtifactKind == ImportArtifactKind.Tool
+                    && candidate.ToolKind == ToolArtifactKind.PowerStig)
+                {
+                    var tempDir = Path.Combine(Path.GetTempPath(), "stigforge-ps-" + Guid.NewGuid().ToString("N")[..8]);
+                    try
+                    {
+                        ZipFile.ExtractToDirectory(candidate.ZipPath, tempDir, overwriteFiles: true);
+                        var psd1 = Directory.EnumerateFiles(tempDir, "PowerSTIG.psd1", SearchOption.AllDirectories)
+                            .FirstOrDefault();
+                        if (!string.IsNullOrWhiteSpace(psd1))
+                        {
+                            var moduleDir = Path.GetDirectoryName(psd1)!;
+                            var destDir = Path.Combine(applyRoot, "PowerSTIG");
+                            CopyDirectoryRecursive(moduleDir, destDir);
+                            staged++;
+                        }
+                    }
+                    finally
+                    {
+                        try { Directory.Delete(tempDir, true); } catch { }
+                    }
+                }
+            }
+            catch
+            {
+                // Continue staging remaining artifacts if one fails
+            }
+        }
+
+        return staged;
+    }
+
+    private static OsTarget DetectLocalOsTarget()
+    {
+        if (!OperatingSystem.IsWindows())
+            return OsTarget.Unknown;
+
+        try
+        {
+            var productName = (Microsoft.Win32.Registry.GetValue(
+                @"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows NT\CurrentVersion",
+                "ProductName", null) as string) ?? string.Empty;
+
+            if (productName.IndexOf("Server", StringComparison.OrdinalIgnoreCase) >= 0)
+            {
+                if (productName.IndexOf("2022", StringComparison.OrdinalIgnoreCase) >= 0) return OsTarget.Server2022;
+                if (productName.IndexOf("2019", StringComparison.OrdinalIgnoreCase) >= 0) return OsTarget.Server2019;
+            }
+
+            if (productName.IndexOf("Windows 11", StringComparison.OrdinalIgnoreCase) >= 0) return OsTarget.Win11;
+            if (productName.IndexOf("Windows 10", StringComparison.OrdinalIgnoreCase) >= 0) return OsTarget.Win10;
+        }
+        catch { }
+
+        return OsTarget.Unknown;
+    }
+
+    private static void CopyDirectoryRecursive(string sourceDir, string destDir)
+    {
+        Directory.CreateDirectory(destDir);
+        foreach (var file in Directory.EnumerateFiles(sourceDir))
+        {
+            var destFile = Path.Combine(destDir, Path.GetFileName(file));
+            File.Copy(file, destFile, overwrite: true);
+        }
+        foreach (var dir in Directory.EnumerateDirectories(sourceDir))
+        {
+            var destSubDir = Path.Combine(destDir, Path.GetFileName(dir));
+            CopyDirectoryRecursive(dir, destSubDir);
+        }
     }
 
     private static string? ResolveDscMofPath(string applyRoot)
