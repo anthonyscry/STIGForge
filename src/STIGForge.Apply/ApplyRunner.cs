@@ -815,27 +815,23 @@ public class ApplyRunner
 
     var v = verbose ? " -Verbose" : string.Empty;
 
-    // Build PSModulePath prefix that includes:
-    // 1. The bundled PSModules directory (ships with the app for air-gapped operation)
-    // 2. The module's parent directory (for user-provided PowerSTIG in Apply/)
-    // Import-DscResource is a parse-time directive that searches PSModulePath.
-    var paths = new List<string>();
+    // Collect additional module paths for PSModulePath injection.
+    // Import-DscResource is a PARSE-TIME directive — it reads PSModulePath from
+    // the process environment BEFORE any script code executes. Setting $env:PSModulePath
+    // inside the command string is too late. We must set it on ProcessStartInfo.Environment.
+    var extraModulePaths = new List<string>();
 
     // Bundled modules: <AppDir>/tools/PSModules
     var bundledModulesDir = Path.Combine(AppContext.BaseDirectory, "tools", "PSModules");
     if (Directory.Exists(bundledModulesDir))
-      paths.Add(bundledModulesDir);
+      extraModulePaths.Add(bundledModulesDir);
 
     // User-provided module parent directory
     var moduleParent = File.Exists(modulePath)
       ? Path.GetDirectoryName(Path.GetDirectoryName(modulePath))
       : Path.GetDirectoryName(modulePath);
     if (!string.IsNullOrWhiteSpace(moduleParent))
-      paths.Add(moduleParent!);
-
-    var psModulePathPrefix = paths.Count > 0
-      ? "$env:PSModulePath = '" + string.Join("' + ';' + '", paths.Select(p => p.Replace("'", "''"))) + "' + ';' + $env:PSModulePath; "
-      : string.Empty;
+      extraModulePaths.Add(moduleParent!);
 
     // Prefer bundled PowerSTIG module if available
     var bundledPowerStig = Path.Combine(bundledModulesDir, "PowerSTIG");
@@ -846,13 +842,13 @@ public class ApplyRunner
     {
       // OS-targeted compilation using PowerSTIG composite DSC resources
       var configScript = Dsc.PowerStigTechnologyMap.BuildDscConfigurationScript(target, outputPath, dataFile);
-      command = psModulePathPrefix + "Import-Module \"" + effectiveModulePath + "\"; " + configScript + v + ";";
+      command = "Import-Module \"" + effectiveModulePath + "\"; " + configScript + v + ";";
     }
     else
     {
       // Legacy fallback: generic PowerSTIG compilation without OS targeting
       var dataArg = string.IsNullOrWhiteSpace(dataFile) ? string.Empty : " -StigDataFile \"" + dataFile + "\"";
-      command = psModulePathPrefix +
+      command =
         "Import-Module \"" + effectiveModulePath + "\"; " +
         "$ErrorActionPreference='Stop'; " +
         "New-StigDscConfiguration" + dataArg + " -OutputPath \"" + outputPath + "\"" + v + ";";
@@ -872,6 +868,14 @@ public class ApplyRunner
       UseShellExecute = false,
       CreateNoWindow = true
     };
+
+    // Prepend bundled + user module paths to PSModulePath so Import-DscResource
+    // (parse-time) and Import-Module (runtime) both find PowerSTIG and dependencies.
+    if (extraModulePaths.Count > 0)
+    {
+      var existingPsModulePath = Environment.GetEnvironmentVariable("PSModulePath") ?? string.Empty;
+      psi.Environment["PSModulePath"] = string.Join(";", extraModulePaths) + ";" + existingPsModulePath;
+    }
 
     psi.Environment["STIGFORGE_BUNDLE_ROOT"] = bundleRoot;
     psi.Environment["STIGFORGE_APPLY_LOG_DIR"] = logsDir;
