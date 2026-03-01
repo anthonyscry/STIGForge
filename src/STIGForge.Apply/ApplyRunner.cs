@@ -182,8 +182,8 @@ public class ApplyRunner
             request.OsTarget.Value,
             request.RoleTemplate ?? Core.Models.RoleTemplate.Workstation);
           if (pstigTarget != null)
-            _logger.LogInformation("Resolved PowerSTIG target: {Resource} OsVersion={OsVersion} StigType={StigType}",
-              pstigTarget.CompositeResourceName, pstigTarget.OsVersion, pstigTarget.StigType ?? "(none)");
+            _logger.LogInformation("Resolved PowerSTIG target: {Resource} OsVersion={OsVersion} OsRole={OsRole}",
+              pstigTarget.CompositeResourceName, pstigTarget.OsVersion, pstigTarget.OsRole ?? "(none)");
         }
 
         var outcome = await RunPowerStigCompileAsync(
@@ -815,64 +815,45 @@ public class ApplyRunner
 
     var v = verbose ? " -Verbose" : string.Empty;
 
-    // Resolve the module's parent directory so Import-DscResource can find
-    // PowerSTIG at parse time (it searches PSModulePath, not runtime modules).
+    // Build PSModulePath prefix that includes:
+    // 1. The bundled PSModules directory (ships with the app for air-gapped operation)
+    // 2. The module's parent directory (for user-provided PowerSTIG in Apply/)
+    // Import-DscResource is a parse-time directive that searches PSModulePath.
+    var paths = new List<string>();
+
+    // Bundled modules: <AppDir>/tools/PSModules
+    var bundledModulesDir = Path.Combine(AppContext.BaseDirectory, "tools", "PSModules");
+    if (Directory.Exists(bundledModulesDir))
+      paths.Add(bundledModulesDir);
+
+    // User-provided module parent directory
     var moduleParent = File.Exists(modulePath)
       ? Path.GetDirectoryName(Path.GetDirectoryName(modulePath))
       : Path.GetDirectoryName(modulePath);
-    var psModulePathPrefix = string.IsNullOrWhiteSpace(moduleParent)
-      ? string.Empty
-      : "$env:PSModulePath = '" + moduleParent!.Replace("'", "''") + "' + ';' + $env:PSModulePath; ";
+    if (!string.IsNullOrWhiteSpace(moduleParent))
+      paths.Add(moduleParent!);
 
-    // Resolve the .psd1 manifest path for reading RequiredModules
-    var psd1Path = File.Exists(modulePath) && modulePath.EndsWith(".psd1", StringComparison.OrdinalIgnoreCase)
-      ? modulePath
-      : Path.Combine(Directory.Exists(modulePath) ? modulePath : Path.GetDirectoryName(modulePath)!, "PowerStig.psd1");
+    var psModulePathPrefix = paths.Count > 0
+      ? "$env:PSModulePath = '" + string.Join("' + ';' + '", paths.Select(p => p.Replace("'", "''"))) + "' + ';' + $env:PSModulePath; "
+      : string.Empty;
 
-    // Build preamble that checks for missing PowerSTIG dependency modules and
-    // attempts to install them. Works when PSGallery is reachable (connected or
-    // local NuGet mirror). On air-gapped systems without a local repository,
-    // the user must pre-install dependencies via Save-Module + manual copy.
-    var depInstallPrefix =
-      "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; " +
-      "$missingMods = @(); " +
-      "try { " +
-        "$m = Test-ModuleManifest -Path '" + psd1Path.Replace("'", "''") + "' -ErrorAction Stop; " +
-        "foreach ($dep in $m.RequiredModules) { " +
-          "$n = if ($dep -is [string]) { $dep } else { $dep.Name }; " +
-          "if (-not (Get-Module -ListAvailable $n -ErrorAction SilentlyContinue)) { $missingMods += $n } " +
-        "} " +
-      "} catch { Write-Host \"WARNING: Could not read PowerSTIG manifest: $_\" }; " +
-      "if ($missingMods.Count -gt 0) { " +
-        "Write-Host \"Installing $($missingMods.Count) missing PowerSTIG dependencies: $($missingMods -join ', ')\"; " +
-        "try { " +
-          "if (-not (Get-PackageProvider -ListAvailable -Name NuGet -ErrorAction SilentlyContinue)) { " +
-            "Install-PackageProvider -Name NuGet -MinimumVersion 2.8.5.201 -Force -Scope CurrentUser | Out-Null }; " +
-          "Set-PSRepository -Name PSGallery -InstallationPolicy Trusted -ErrorAction SilentlyContinue; " +
-          "foreach ($mod in $missingMods) { " +
-            "Write-Host \"  Installing $mod...\"; " +
-            "Install-Module -Name $mod -Force -SkipPublisherCheck -AllowClobber -Scope AllUsers -ErrorAction Stop " +
-          "} " +
-        "} catch { " +
-          "Write-Error \"Failed to install dependencies: $_. For air-gapped systems, run on a connected machine: Save-Module -Name PowerSTIG -Path C:\\PSModules -IncludeDependencies, then copy all module folders to $env:ProgramFiles\\WindowsPowerShell\\Modules\"; " +
-          "throw " +
-        "} " +
-      "}; ";
+    // Prefer bundled PowerSTIG module if available
+    var bundledPowerStig = Path.Combine(bundledModulesDir, "PowerSTIG");
+    var effectiveModulePath = Directory.Exists(bundledPowerStig) ? bundledPowerStig : modulePath;
 
     string command;
     if (target != null)
     {
-      // OS-targeted compilation: generate a DSC configuration using the resolved
-      // PowerSTIG composite resource (e.g., WindowsServer, WindowsClient)
+      // OS-targeted compilation using PowerSTIG composite DSC resources
       var configScript = Dsc.PowerStigTechnologyMap.BuildDscConfigurationScript(target, outputPath, dataFile);
-      command = psModulePathPrefix + depInstallPrefix + "Import-Module \"" + modulePath + "\"; " + configScript + v + ";";
+      command = psModulePathPrefix + "Import-Module \"" + effectiveModulePath + "\"; " + configScript + v + ";";
     }
     else
     {
       // Legacy fallback: generic PowerSTIG compilation without OS targeting
       var dataArg = string.IsNullOrWhiteSpace(dataFile) ? string.Empty : " -StigDataFile \"" + dataFile + "\"";
-      command = psModulePathPrefix + depInstallPrefix +
-        "Import-Module \"" + modulePath + "\"; " +
+      command = psModulePathPrefix +
+        "Import-Module \"" + effectiveModulePath + "\"; " +
         "$ErrorActionPreference='Stop'; " +
         "New-StigDscConfiguration" + dataArg + " -OutputPath \"" + outputPath + "\"" + v + ";";
     }

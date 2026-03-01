@@ -29,35 +29,35 @@ public sealed class PowerStigTechnologyMapTests
     }
 
     [Fact]
-    public void Resolve_ServerWithDomainControllerRole_ReturnsDCStigType()
+    public void Resolve_ServerWithDomainControllerRole_ReturnsDCOsRole()
     {
         var target = PowerStigTechnologyMap.Resolve(OsTarget.Server2022, RoleTemplate.DomainController);
 
         target.Should().NotBeNull();
-        target!.StigType.Should().Be("DC");
+        target!.OsRole.Should().Be("DC");
     }
 
     [Theory]
     [InlineData(RoleTemplate.Workstation)]
     [InlineData(RoleTemplate.MemberServer)]
     [InlineData(RoleTemplate.LabVm)]
-    public void Resolve_ServerWithNonDCRole_ReturnsMSStigType(RoleTemplate role)
+    public void Resolve_ServerWithNonDCRole_ReturnsMSOsRole(RoleTemplate role)
     {
         var target = PowerStigTechnologyMap.Resolve(OsTarget.Server2019, role);
 
         target.Should().NotBeNull();
-        target!.StigType.Should().Be("MS");
+        target!.OsRole.Should().Be("MS");
     }
 
     [Theory]
     [InlineData(RoleTemplate.Workstation)]
     [InlineData(RoleTemplate.DomainController)]
-    public void Resolve_ClientOs_ReturnsNullStigType(RoleTemplate role)
+    public void Resolve_ClientOs_ReturnsNullOsRole(RoleTemplate role)
     {
         var target = PowerStigTechnologyMap.Resolve(OsTarget.Win11, role);
 
         target.Should().NotBeNull();
-        target!.StigType.Should().BeNull();
+        target!.OsRole.Should().BeNull();
     }
 
     [Fact]

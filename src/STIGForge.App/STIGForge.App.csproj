@@ -30,4 +30,12 @@
     <UseWPF>true</UseWPF>
   </PropertyGroup>
 
+  <!-- Bundle PowerSTIG + dependency modules for air-gapped DSC compilation -->
+  <ItemGroup>
+    <None Include="$(MSBuildThisFileDirectory)..\..\tools\PSModules\**\*" Link="tools\PSModules\%(RecursiveDir)%(Filename)%(Extension)">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>

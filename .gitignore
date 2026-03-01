@@ -21,3 +21,9 @@ Thumbs.db
 /import/
 .artifacts/
 .worktrees/
+
+# Bundled PowerShell modules (downloaded at build time)
+tools/PSModules/
+
+# Build artifacts
+artifacts/
