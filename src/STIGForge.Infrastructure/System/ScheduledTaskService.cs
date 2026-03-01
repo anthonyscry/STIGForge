@@ -158,17 +158,13 @@ public sealed class ScheduledTaskService
   private static string GetDefaultCliPath()
   {
     // Try to find the CLI in common locations
-    var current = typeof(ScheduledTaskService).Assembly.Location;
-    if (!string.IsNullOrWhiteSpace(current))
+    var dir = AppContext.BaseDirectory;
+    if (!string.IsNullOrWhiteSpace(dir))
     {
-      var dir = Path.GetDirectoryName(current);
-      if (dir != null)
-      {
-        var candidate = Path.Combine(dir, "STIGForge.Cli.exe");
-        if (File.Exists(candidate)) return candidate;
-        candidate = Path.Combine(dir, "STIGForge.Cli.dll");
-        if (File.Exists(candidate)) return "dotnet \"" + candidate + "\"";
-      }
+      var candidate = Path.Combine(dir, "STIGForge.Cli.exe");
+      if (File.Exists(candidate)) return candidate;
+      candidate = Path.Combine(dir, "STIGForge.Cli.dll");
+      if (File.Exists(candidate)) return "dotnet \"" + candidate + "\"";
     }
     return "STIGForge.Cli.exe";
   }
