@@ -183,7 +183,7 @@ public class XccdfParserTests
         }
         finally
         {
-            File.Delete(xmlPath);
+            DeleteTempFile(xmlPath);
         }
     }
 
@@ -204,7 +204,7 @@ public class XccdfParserTests
         }
         finally
         {
-            File.Delete(xmlPath);
+            DeleteTempFile(xmlPath);
         }
     }
 
@@ -228,7 +228,7 @@ public class XccdfParserTests
         }
         finally
         {
-            File.Delete(xmlPath);
+            DeleteTempFile(xmlPath);
         }
     }
 
@@ -254,18 +254,19 @@ public class XccdfParserTests
         }
         finally
         {
-            File.Delete(xmlPath);
+            DeleteTempFile(xmlPath);
         }
     }
 
     [Theory]
-    [InlineData("CLASSIFIED", ScopeTag.ClassifiedOnly)]
-    [InlineData("UNCLASSIFIED", ScopeTag.UnclassifiedOnly)]
-    [InlineData("MIXED", ScopeTag.Both)]
-    [InlineData("BOTH", ScopeTag.Both)]
-    [InlineData("UNKNOWN_VALUE", ScopeTag.Unknown)]
-    public void ParseXccdf_MapsRearMatterClassificationToScope(string classification, ScopeTag expectedScope)
+    [InlineData("CLASSIFIED", nameof(ScopeTag.ClassifiedOnly))]
+    [InlineData("UNCLASSIFIED", nameof(ScopeTag.UnclassifiedOnly))]
+    [InlineData("MIXED", nameof(ScopeTag.Both))]
+    [InlineData("BOTH", nameof(ScopeTag.Both))]
+    [InlineData("UNKNOWN_VALUE", nameof(ScopeTag.Unknown))]
+    public void ParseXccdf_MapsRearMatterClassificationToScope(string classification, string expectedScopeName)
     {
+        var expectedScope = Enum.Parse<ScopeTag>(expectedScopeName, ignoreCase: true);
         var rearMatter = $"classification:--:{classification}";
         var xml = CreateXccdfWithMetadata(rearMatter: rearMatter);
         var xmlPath = WriteTempXccdf(xml);
@@ -279,7 +280,7 @@ public class XccdfParserTests
         }
         finally
         {
-            File.Delete(xmlPath);
+            DeleteTempFile(xmlPath);
         }
     }
 
@@ -306,7 +307,7 @@ public class XccdfParserTests
         }
         finally
         {
-            File.Delete(xmlPath);
+            DeleteTempFile(xmlPath);
         }
     }
 
@@ -315,6 +316,28 @@ public class XccdfParserTests
         var path = Path.Combine(Path.GetTempPath(), $"stigforge-xccdf-{Guid.NewGuid():N}.xml");
         File.WriteAllText(path, xml);
         return path;
+    }
+
+    private static void DeleteTempFile(string path)
+    {
+        for (var attempt = 0; attempt < 5; attempt++)
+        {
+            try
+            {
+                if (File.Exists(path))
+                    File.Delete(path);
+
+                return;
+            }
+            catch (IOException) when (attempt < 4)
+            {
+                Thread.Sleep(25);
+            }
+            catch (UnauthorizedAccessException) when (attempt < 4)
+            {
+                Thread.Sleep(25);
+            }
+        }
     }
 
     private static string CreateXccdfWithMetadata(
