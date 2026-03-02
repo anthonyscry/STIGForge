@@ -131,6 +131,31 @@ CREATE TABLE IF NOT EXISTS compliance_snapshots (
 );
 CREATE INDEX IF NOT EXISTS ix_compliance_snapshots_bundle ON compliance_snapshots(bundle_root, captured_at DESC);
 
+CREATE TABLE IF NOT EXISTS drift_snapshots (
+  snapshot_id TEXT PRIMARY KEY,
+  bundle_root TEXT NOT NULL,
+  rule_id TEXT NOT NULL,
+  previous_state TEXT NULL,
+  current_state TEXT NOT NULL,
+  change_type TEXT NOT NULL,
+  detected_at TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ix_drift_snapshots_bundle_rule ON drift_snapshots(bundle_root, rule_id, detected_at DESC);
+CREATE INDEX IF NOT EXISTS ix_drift_snapshots_bundle ON drift_snapshots(bundle_root, detected_at DESC);
+
+CREATE TABLE IF NOT EXISTS rollback_snapshots (
+  snapshot_id TEXT PRIMARY KEY,
+  bundle_root TEXT NOT NULL,
+  description TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  registry_keys_json TEXT NOT NULL,
+  file_paths_json TEXT NOT NULL,
+  service_states_json TEXT NOT NULL,
+  gpo_settings_json TEXT NOT NULL,
+  rollback_script_path TEXT NULL
+);
+CREATE INDEX IF NOT EXISTS ix_rollback_snapshots_bundle ON rollback_snapshots(bundle_root, created_at DESC);
+
 CREATE TABLE IF NOT EXISTS control_exceptions (
   exception_id TEXT PRIMARY KEY,
   bundle_root TEXT NOT NULL,

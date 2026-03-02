@@ -5,6 +5,7 @@ using STIGForge.Core.Models;
 using STIGForge.Export;
 using STIGForge.Infrastructure.Hashing;
 using STIGForge.Verify;
+using VerifyControlResult = STIGForge.Verify.ControlResult;
 
 namespace STIGForge.UnitTests.Export;
 
@@ -96,13 +97,13 @@ public sealed class EmassExporterConsistencyTests : IDisposable
     Directory.CreateDirectory(bundleRoot);
 
     WriteManifest(bundleRoot);
-    WriteReport(Path.Combine(bundleRoot, "Verify", "z-run", "consolidated-results.json"), "SCAP", new List<ControlResult>
+    WriteReport(Path.Combine(bundleRoot, "Verify", "z-run", "consolidated-results.json"), "SCAP", new List<VerifyControlResult>
     {
       new() { VulnId = "V-C1", RuleId = "SV-C1", Title = "Control One", Severity = "high", Status = "Open", Tool = "SCAP", SourceFile = "scan-z.xml", VerifiedAt = DateTimeOffset.Parse("2026-02-08T09:00:00Z") },
       new() { VulnId = "V-C2", RuleId = "SV-C2", Title = "Control Two", Severity = "medium", Status = "NotAFinding", Tool = "SCAP", SourceFile = "scan-z.xml", VerifiedAt = DateTimeOffset.Parse("2026-02-08T09:00:00Z") }
     });
 
-    WriteReport(Path.Combine(bundleRoot, "Verify", "a-run", "consolidated-results.json"), "Evaluate-STIG", new List<ControlResult>
+    WriteReport(Path.Combine(bundleRoot, "Verify", "a-run", "consolidated-results.json"), "Evaluate-STIG", new List<VerifyControlResult>
     {
       new() { VulnId = "V-C1", RuleId = "SV-C1", Title = "Control One", Severity = "high", Status = "NotAFinding", Tool = "Evaluate-STIG", SourceFile = "scan-a.xml", VerifiedAt = DateTimeOffset.Parse("2026-02-08T08:00:00Z") },
       new() { VulnId = "V-C3", RuleId = "SV-C3", Title = "Control Three", Severity = "low", Status = "Not_Applicable", Tool = "Evaluate-STIG", SourceFile = "scan-a.xml", VerifiedAt = DateTimeOffset.Parse("2026-02-08T08:00:00Z") }
@@ -147,7 +148,7 @@ public sealed class EmassExporterConsistencyTests : IDisposable
       }));
   }
 
-  private static void WriteReport(string path, string tool, IReadOnlyList<ControlResult> results)
+  private static void WriteReport(string path, string tool, IReadOnlyList<VerifyControlResult> results)
   {
     Directory.CreateDirectory(Path.GetDirectoryName(path)!);
     var report = new VerifyReport

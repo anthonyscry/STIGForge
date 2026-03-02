@@ -83,7 +83,7 @@ public sealed class LocalSetupValidator
         {
           var extractDir = Path.Combine(tempDir, Path.GetFileNameWithoutExtension(zipPath));
           Directory.CreateDirectory(extractDir);
-          ZipFile.ExtractToDirectory(zipPath, extractDir);
+          ExtractZipSafely(zipPath, extractDir);
 
           var scriptFiles = Directory.EnumerateFiles(extractDir, "Evaluate-STIG.ps1", SearchOption.AllDirectories)
             .OrderBy(f => f.Length)
@@ -147,6 +147,43 @@ public sealed class LocalSetupValidator
       var dirName = Path.GetFileName(subDir);
       var targetSubDir = Path.Combine(targetDir, dirName);
       CopyDirectory(subDir, targetSubDir);
+    }
+  }
+
+  private static void ExtractZipSafely(string zipPath, string destinationRoot)
+  {
+    using var archive = ZipFile.OpenRead(zipPath);
+    var destinationFullRoot = Path.GetFullPath(destinationRoot);
+    const int maxEntries = 4096;
+    const long maxExtractedBytes = 512L * 1024 * 1024;
+    long extractedBytes = 0;
+    var count = 0;
+
+    foreach (var entry in archive.Entries)
+    {
+      count++;
+      if (count > maxEntries)
+        throw new InvalidDataException($"Archive entry limit exceeded: {zipPath}");
+
+      var destinationPath = Path.GetFullPath(Path.Combine(destinationFullRoot, entry.FullName));
+      if (!destinationPath.StartsWith(destinationFullRoot, StringComparison.OrdinalIgnoreCase))
+        throw new InvalidDataException($"Archive entry escapes destination root: {entry.FullName}");
+
+      if (string.IsNullOrEmpty(entry.Name))
+      {
+        Directory.CreateDirectory(destinationPath);
+        continue;
+      }
+
+      extractedBytes += entry.Length;
+      if (extractedBytes > maxExtractedBytes)
+        throw new InvalidDataException($"Extracted archive size exceeds limit: {zipPath}");
+
+      var parentDir = Path.GetDirectoryName(destinationPath);
+      if (!string.IsNullOrWhiteSpace(parentDir))
+        Directory.CreateDirectory(parentDir);
+
+      entry.ExtractToFile(destinationPath, overwrite: true);
     }
   }
 }

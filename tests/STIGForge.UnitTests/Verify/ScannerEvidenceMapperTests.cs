@@ -1,6 +1,7 @@
 using FluentAssertions;
 using STIGForge.Core.Models;
 using STIGForge.Verify;
+using VerifyControlResult = STIGForge.Verify.ControlResult;
 
 namespace STIGForge.UnitTests.Verify;
 
@@ -14,7 +15,7 @@ public sealed class ScannerEvidenceMapperTests
       new() { StigId = "xccdf_org.test.benchmark", RuleId = "SV-1000r1_rule" }
     };
 
-    var findings = new List<ControlResult>
+    var findings = new List<VerifyControlResult>
     {
       new() { RuleId = "SV-1000r1_rule", Tool = "Evaluate-STIG", SourceFile = "mapped.ckl" },
       new() { RuleId = "SV-9999r1_rule", Tool = "Evaluate-STIG", SourceFile = "unmapped.ckl" }

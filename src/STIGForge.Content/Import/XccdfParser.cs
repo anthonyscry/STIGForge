@@ -13,72 +13,105 @@ public static class XccdfParser
         var settings = new XmlReaderSettings
         {
             DtdProcessing = DtdProcessing.Prohibit,
+            XmlResolver = null,
             IgnoreWhitespace = true,
-            Async = false
+            Async = false,
+            MaxCharactersFromEntities = 1024,
+            MaxCharactersInDocument = 40_000_000
         };
 
         using var reader = XmlReader.Create(xmlPath, settings);
-        var doc = XDocument.Load(reader, LoadOptions.None);
-        var benchmarkRoot = ResolveBenchmarkRoot(doc.Root);
-        if (benchmarkRoot == null)
-            return Array.Empty<ControlRecord>();
 
-        var ns = benchmarkRoot.Name.Namespace;
-
-        var benchmarkId = benchmarkRoot.Attribute("id")?.Value ?? Path.GetFileNameWithoutExtension(xmlPath);
-        var benchmarkVersion = benchmarkRoot.Element(ns + "version")?.Value?.Trim();
-        if (string.IsNullOrWhiteSpace(benchmarkVersion)) benchmarkVersion = null;
-
+        var benchmarkId = Path.GetFileNameWithoutExtension(xmlPath);
+        string? benchmarkVersion = null;
         DateTimeOffset? benchmarkDate = null;
-        var dateText = benchmarkRoot.Element(ns + "status")?.Attribute("date")?.Value;
-        if (!string.IsNullOrWhiteSpace(dateText) && DateTimeOffset.TryParse(dateText, out var parsedBenchmarkDate))
-            benchmarkDate = parsedBenchmarkDate;
-
-        var rearMatter = benchmarkRoot.Element(ns + "rear-matter")?.Value;
-        var benchmarkRelease = ExtractRearMatterField(rearMatter, "releaseinfo");
-        var classificationText = ExtractRearMatterField(rearMatter, "classification");
-
-        var platformCpe = benchmarkRoot
-            .Descendants(ns + "platform")
-            .Select(p => p.Attribute("idref")?.Value?.Trim())
-            .FirstOrDefault(v => !string.IsNullOrWhiteSpace(v));
-
-        var osTarget = MapOsTarget(platformCpe);
-        var classificationScope = MapClassificationScope(classificationText);
-        var confidence = GetConfidence(benchmarkVersion, benchmarkDate);
+        string? rearMatter = null;
+        string? platformCpe = null;
 
         var results = new List<ControlRecord>();
 
-        foreach (var rule in benchmarkRoot.Descendants(ns + "Rule"))
+        while (reader.Read())
         {
+            if (reader.NodeType != XmlNodeType.Element)
+                continue;
+
+            if (string.Equals(reader.LocalName, "Benchmark", StringComparison.OrdinalIgnoreCase))
+            {
+                var candidateId = reader.GetAttribute("id");
+                if (!string.IsNullOrWhiteSpace(candidateId))
+                    benchmarkId = candidateId;
+                continue;
+            }
+
+            if (string.Equals(reader.LocalName, "version", StringComparison.OrdinalIgnoreCase))
+            {
+                var value = reader.ReadElementContentAsString().Trim();
+                benchmarkVersion = string.IsNullOrWhiteSpace(value) ? null : value;
+                continue;
+            }
+
+            if (string.Equals(reader.LocalName, "status", StringComparison.OrdinalIgnoreCase))
+            {
+                var dateText = reader.GetAttribute("date");
+                if (!string.IsNullOrWhiteSpace(dateText) && DateTimeOffset.TryParse(dateText, out var parsedBenchmarkDate))
+                    benchmarkDate = parsedBenchmarkDate;
+                continue;
+            }
+
+            if (string.Equals(reader.LocalName, "platform", StringComparison.OrdinalIgnoreCase) && string.IsNullOrWhiteSpace(platformCpe))
+            {
+                var candidate = reader.GetAttribute("idref")?.Trim();
+                if (!string.IsNullOrWhiteSpace(candidate))
+                    platformCpe = candidate;
+                continue;
+            }
+
+            if (string.Equals(reader.LocalName, "rear-matter", StringComparison.OrdinalIgnoreCase))
+            {
+                var value = reader.ReadElementContentAsString();
+                rearMatter = string.IsNullOrWhiteSpace(value) ? null : value;
+                continue;
+            }
+
+            if (!string.Equals(reader.LocalName, "Rule", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            using var ruleReader = reader.ReadSubtree();
+            var rule = XElement.Load(ruleReader, LoadOptions.None);
+            var ns = rule.Name.Namespace;
             var control = ParseRule(
                 rule,
                 benchmarkId,
                 packName,
                 ns,
                 benchmarkVersion,
-                benchmarkRelease,
+                null,
                 benchmarkDate,
-                osTarget,
-                classificationScope,
-                confidence);
-            if (control != null) results.Add(control);
+                OsTarget.Unknown,
+                ScopeTag.Unknown,
+                Confidence.Low);
+            if (control != null)
+                results.Add(control);
+        }
+
+        var benchmarkRelease = ExtractRearMatterField(rearMatter, "releaseinfo");
+        var classificationText = ExtractRearMatterField(rearMatter, "classification");
+        var osTarget = MapOsTarget(platformCpe);
+        var classificationScope = MapClassificationScope(classificationText);
+        var confidence = GetConfidence(benchmarkVersion, benchmarkDate);
+
+        foreach (var control in results)
+        {
+            control.ExternalIds.BenchmarkId = benchmarkId;
+            control.Applicability.OsTarget = osTarget;
+            control.Applicability.ClassificationScope = classificationScope;
+            control.Applicability.Confidence = confidence;
+            control.Revision.BenchmarkVersion = benchmarkVersion;
+            control.Revision.BenchmarkRelease = benchmarkRelease;
+            control.Revision.BenchmarkDate = benchmarkDate;
         }
 
         return results;
-    }
-
-    private static XElement? ResolveBenchmarkRoot(XElement? root)
-    {
-        if (root == null)
-            return null;
-
-        if (string.Equals(root.Name.LocalName, "Benchmark", StringComparison.OrdinalIgnoreCase))
-            return root;
-
-        return root
-            .Descendants()
-            .FirstOrDefault(element => string.Equals(element.Name.LocalName, "Benchmark", StringComparison.OrdinalIgnoreCase));
     }
 
     private static ControlRecord? ParseRule(

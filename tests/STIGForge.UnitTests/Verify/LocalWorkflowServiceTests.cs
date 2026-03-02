@@ -6,6 +6,7 @@ using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
 using STIGForge.Infrastructure.Workflow;
 using STIGForge.Verify;
+using VerifyControlResult = STIGForge.Verify.ControlResult;
 
 namespace STIGForge.UnitTests.Verify;
 
@@ -42,7 +43,7 @@ public sealed class LocalWorkflowServiceTests : IDisposable
     {
       Tool = "Evaluate-STIG",
       OutputRoot = outputRoot,
-      Results = new List<ControlResult>
+      Results = new List<VerifyControlResult>
       {
         new() { RuleId = "SV-1000r1_rule", Tool = "Evaluate-STIG", SourceFile = "mapped.ckl" },
         new() { RuleId = "SV-9999r1_rule", Tool = "Evaluate-STIG", SourceFile = "unmapped.ckl" }
@@ -163,7 +164,7 @@ public sealed class LocalWorkflowServiceTests : IDisposable
       OutputRoot = outputRoot,
       Results =
       [
-        new ControlResult { RuleId = "SV-2100r1_rule", Tool = "Evaluate-STIG", SourceFile = "source.ckl" }
+        new VerifyControlResult { RuleId = "SV-2100r1_rule", Tool = "Evaluate-STIG", SourceFile = "source.ckl" }
       ]
     });
 
@@ -217,7 +218,7 @@ public sealed class LocalWorkflowServiceTests : IDisposable
       OutputRoot = outputRoot,
       Results =
       [
-        new ControlResult { RuleId = "SV-3000r1_rule", Tool = "Evaluate-STIG", SourceFile = "source.ckl" }
+        new VerifyControlResult { RuleId = "SV-3000r1_rule", Tool = "Evaluate-STIG", SourceFile = "source.ckl" }
       ]
     });
 
@@ -268,7 +269,7 @@ public sealed class LocalWorkflowServiceTests : IDisposable
       OutputRoot = outputRoot,
       Results =
       [
-        new ControlResult { RuleId = "SV-3500r1_rule", Tool = "Evaluate-STIG", SourceFile = "source.ckl" }
+        new VerifyControlResult { RuleId = "SV-3500r1_rule", Tool = "Evaluate-STIG", SourceFile = "source.ckl" }
       ]
     });
 

@@ -6,6 +6,7 @@ using STIGForge.Core.Models;
 using STIGForge.Export;
 using STIGForge.Infrastructure.Hashing;
 using STIGForge.Verify;
+using VerifyControlResult = STIGForge.Verify.ControlResult;
 
 namespace STIGForge.IntegrationTests.Export;
 
@@ -150,7 +151,7 @@ public sealed class EmassExporterIntegrationTests : IDisposable
       StartedAt = DateTimeOffset.Parse("2026-02-08T00:00:00Z"),
       FinishedAt = DateTimeOffset.Parse("2026-02-08T00:10:00Z"),
       OutputRoot = verifyDir,
-      Results = new List<ControlResult>
+      Results = new List<VerifyControlResult>
       {
         new()
         {

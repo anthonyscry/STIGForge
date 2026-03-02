@@ -1,6 +1,6 @@
 # STIGForge CLI Reference
 
-38 commands organized by workflow phase.
+44 commands organized by workflow phase.
 
 **Usage**: `dotnet run --project src\STIGForge.Cli\STIGForge.Cli.csproj -- <command> [options]`
 
@@ -323,6 +323,167 @@ bundle-summary --bundle <path> [--json]
 |--------|----------|-------------|
 | `--bundle` | Yes | Bundle root path |
 | `--json` | No | Output as JSON |
+
+### `drift-check`
+Detect baseline drift by comparing current compliance state to last known snapshot.
+
+```
+drift-check --bundle <path> [--auto-remediate]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--bundle` | Yes | Bundle root path |
+| `--auto-remediate` | No | Attempt auto-remediation for drifted rules with available handlers |
+
+### `drift-history`
+Show drift event history for a bundle.
+
+```
+drift-history --bundle <path> [--rule-id <id>] [--limit <n>] [--json]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--bundle` | Yes | Bundle root path |
+| `--rule-id` | No | Filter to a specific rule ID |
+| `--limit` | No | Max events to return (default: 100) |
+| `--json` | No | Output as JSON |
+
+### `rollback-create`
+Capture pre-hardening rollback snapshot for a bundle.
+
+```
+rollback-create --bundle <path> --description <text>
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--bundle` | Yes | Bundle root path |
+| `--description` | Yes | Snapshot description |
+
+### `rollback-apply`
+Execute rollback script from a saved snapshot.
+
+```
+rollback-apply --snapshot-id <id>
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--snapshot-id` | Yes | Rollback snapshot ID |
+
+### `rollback-list`
+List rollback snapshots for a bundle.
+
+```
+rollback-list --bundle <path> [--limit <n>] [--json]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--bundle` | Yes | Bundle root path |
+| `--limit` | No | Max snapshots to return (default: 100) |
+| `--json` | No | Output as JSON |
+
+### `gpo-conflicts`
+Detect conflicts where applied GPO settings override local STIG settings.
+
+```
+gpo-conflicts --bundle <path> [--json]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--bundle` | Yes | Bundle root path |
+| `--json` | No | Output as JSON |
+
+### `acas-import`
+Import ACAS/Nessus XML and correlate findings against bundle controls.
+
+```
+acas-import --file <path> [--bundle <path>] [--json]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--file` | Yes | Path to `.nessus` XML file |
+| `--bundle` | No | Bundle root path for STIG rule correlation |
+| `--json` | No | Output as JSON |
+
+### `nessus-import`
+Import raw Nessus `.nessus` findings without bundle correlation.
+
+```
+nessus-import --file <path> [--json]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--file` | Yes | Path to `.nessus` XML file |
+| `--json` | No | Output as JSON |
+
+### `ckl-import`
+Import STIG Viewer CKL checklist and summarize findings.
+
+```
+ckl-import --file <path> [--json]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--file` | Yes | Path to `.ckl` file |
+| `--json` | No | Output as JSON |
+
+### `ckl-export`
+Export bundle controls into CKL format for STIG Viewer workflows.
+
+```
+ckl-export --bundle <path> --output <path> [--host-name <name>] [--stig-title <title>]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--bundle` | Yes | Bundle root path |
+| `--output` | Yes | Output `.ckl` path |
+| `--host-name` | No | Host name metadata (default: machine name) |
+| `--stig-title` | No | STIG title metadata |
+
+### `emass-package`
+Generate eMASS submission package from a bundle.
+
+```
+emass-package --bundle <path> --system-name <name> --system-acronym <acr> --output <path> [--previous-package <path>]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--bundle` | Yes | Bundle root path |
+| `--system-name` | Yes | System name |
+| `--system-acronym` | Yes | System acronym |
+| `--output` | Yes | Output directory |
+| `--previous-package` | No | Prior package root for change-log comparison |
+
+### `agent-install`
+Install continuous compliance agent as a Windows service.
+
+```
+agent-install [--service-name <name>] [--display-name <name>] [--executable <path>]
+```
+
+### `agent-uninstall`
+Uninstall continuous compliance Windows service.
+
+```
+agent-uninstall [--service-name <name>]
+```
+
+### `agent-status`
+Query current continuous compliance Windows service status.
+
+```
+agent-status [--service-name <name>]
+```
 
 ### `overlay-edit`
 Add or remove rule overrides from an overlay.

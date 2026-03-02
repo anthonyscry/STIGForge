@@ -1,6 +1,7 @@
 using System.IO;
 using System.IO.Compression;
 using System.Security.Principal;
+using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using System.Windows;
@@ -656,6 +657,18 @@ public partial class WorkflowViewModel : ObservableObject
 
     [ObservableProperty]
     private string _statusText = string.Empty;
+
+    [ObservableProperty]
+    private long _lastImportDurationMs;
+
+    [ObservableProperty]
+    private long _lastScanDurationMs;
+
+    [ObservableProperty]
+    private long _lastHardenDurationMs;
+
+    [ObservableProperty]
+    private long _lastVerifyDurationMs;
 
     [ObservableProperty]
     private int _progressValue;
@@ -1347,7 +1360,7 @@ public partial class WorkflowViewModel : ObservableObject
         var tempDir = Path.Combine(Path.GetTempPath(), "stigforge-deps-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
-            ZipFile.ExtractToDirectory(powerStigZip, tempDir, overwriteFiles: true);
+            ExtractZipSafely(powerStigZip, tempDir);
             Log("  Extracted to: " + tempDir);
 
             // Log the extracted structure
@@ -1432,7 +1445,7 @@ public partial class WorkflowViewModel : ObservableObject
                     var tempDir = Path.Combine(Path.GetTempPath(), "stigforge-gpo-" + Guid.NewGuid().ToString("N")[..8]);
                     try
                     {
-                        ZipFile.ExtractToDirectory(candidate.ZipPath, tempDir, overwriteFiles: true);
+        ExtractZipSafely(candidate.ZipPath, tempDir);
                         GpoPackageExtractor.StageForApply(tempDir, applyRoot, osTarget);
                         staged++;
                     }
@@ -1447,7 +1460,7 @@ public partial class WorkflowViewModel : ObservableObject
                     var tempDir = Path.Combine(Path.GetTempPath(), "stigforge-ps-" + Guid.NewGuid().ToString("N")[..8]);
                     try
                     {
-                        ZipFile.ExtractToDirectory(candidate.ZipPath, tempDir, overwriteFiles: true);
+        ExtractZipSafely(candidate.ZipPath, tempDir);
 
                         // PSGallery zips (Save-Module -IncludeDependencies) contain
                         // sibling module folders: PowerSTIG/, AuditPolicyDsc/, etc.
@@ -1501,7 +1514,7 @@ public partial class WorkflowViewModel : ObservableObject
                     var tempDir = Path.Combine(Path.GetTempPath(), "stigforge-lgpo-" + Guid.NewGuid().ToString("N")[..8]);
                     try
                     {
-                        ZipFile.ExtractToDirectory(candidate.ZipPath, tempDir, overwriteFiles: true);
+        ExtractZipSafely(candidate.ZipPath, tempDir);
                         var lgpoExe = Directory.EnumerateFiles(tempDir, "LGPO.exe", SearchOption.AllDirectories)
                             .FirstOrDefault();
                         if (!string.IsNullOrWhiteSpace(lgpoExe))
@@ -2107,6 +2120,7 @@ public partial class WorkflowViewModel : ObservableObject
         IsBusy = true;
         ImportState = StepState.Running;
         ImportError = string.Empty;
+        var stopwatch = Stopwatch.StartNew();
         try
         {
             var success = await RunImportAsync();
@@ -2123,6 +2137,8 @@ public partial class WorkflowViewModel : ObservableObject
         }
         finally
         {
+            stopwatch.Stop();
+            LastImportDurationMs = stopwatch.ElapsedMilliseconds;
             IsBusy = false;
         }
     }
@@ -2133,6 +2149,7 @@ public partial class WorkflowViewModel : ObservableObject
         IsBusy = true;
         ScanState = StepState.Running;
         ScanError = string.Empty;
+        var stopwatch = Stopwatch.StartNew();
         try
         {
             var success = await RunScanAsync();
@@ -2149,6 +2166,8 @@ public partial class WorkflowViewModel : ObservableObject
         }
         finally
         {
+            stopwatch.Stop();
+            LastScanDurationMs = stopwatch.ElapsedMilliseconds;
             IsBusy = false;
         }
     }
@@ -2174,6 +2193,7 @@ public partial class WorkflowViewModel : ObservableObject
         IsBusy = true;
         HardenState = StepState.Running;
         HardenError = string.Empty;
+        var stopwatch = Stopwatch.StartNew();
         try
         {
             var success = await RunHardenAsync();
@@ -2195,6 +2215,8 @@ public partial class WorkflowViewModel : ObservableObject
         }
         finally
         {
+            stopwatch.Stop();
+            LastHardenDurationMs = stopwatch.ElapsedMilliseconds;
             IsBusy = false;
         }
     }
@@ -2218,6 +2240,7 @@ public partial class WorkflowViewModel : ObservableObject
         IsBusy = true;
         VerifyState = StepState.Running;
         VerifyError = string.Empty;
+        var stopwatch = Stopwatch.StartNew();
         try
         {
             var success = await RunVerifyAsync();
@@ -2233,6 +2256,8 @@ public partial class WorkflowViewModel : ObservableObject
         }
         finally
         {
+            stopwatch.Stop();
+            LastVerifyDurationMs = stopwatch.ElapsedMilliseconds;
             IsBusy = false;
         }
     }
@@ -2680,6 +2705,43 @@ public partial class WorkflowViewModel : ObservableObject
             return int.MaxValue;
 
         return path.Count(ch => ch == Path.DirectorySeparatorChar || ch == Path.AltDirectorySeparatorChar);
+    }
+
+    private static void ExtractZipSafely(string zipPath, string destinationRoot)
+    {
+        using var archive = ZipFile.OpenRead(zipPath);
+        var destinationFullRoot = Path.GetFullPath(destinationRoot);
+        const int maxEntries = 4096;
+        const long maxExtractedBytes = 512L * 1024 * 1024;
+        long extractedBytes = 0;
+        var count = 0;
+
+        foreach (var entry in archive.Entries)
+        {
+            count++;
+            if (count > maxEntries)
+                throw new InvalidDataException($"Archive entry limit exceeded: {zipPath}");
+
+            var destinationPath = Path.GetFullPath(Path.Combine(destinationFullRoot, entry.FullName));
+            if (!destinationPath.StartsWith(destinationFullRoot, StringComparison.OrdinalIgnoreCase))
+                throw new InvalidDataException($"Archive entry escapes destination root: {entry.FullName}");
+
+            if (string.IsNullOrEmpty(entry.Name))
+            {
+                Directory.CreateDirectory(destinationPath);
+                continue;
+            }
+
+            extractedBytes += entry.Length;
+            if (extractedBytes > maxExtractedBytes)
+                throw new InvalidDataException($"Extracted archive size exceeds limit: {zipPath}");
+
+            var parentDir = Path.GetDirectoryName(destinationPath);
+            if (!string.IsNullOrWhiteSpace(parentDir))
+                Directory.CreateDirectory(parentDir);
+
+            entry.ExtractToFile(destinationPath, overwrite: true);
+        }
     }
 
     [RelayCommand]

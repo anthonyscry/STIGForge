@@ -7,26 +7,20 @@
 This document establishes performance baseline measurements for STIGForge Next.
 Baseline values are "Pending" until benchmarks are executed on reference hardware.
 
-## How to Run Benchmarks
+## How to Capture Baselines
 
-```bash
-# Build in Release mode
-dotnet build -c Release
+```powershell
+# 1) Build and verify repo in Release
+powershell -ExecutionPolicy Bypass -File .\tools\release\Invoke-ReleaseGate.ps1 -Configuration Release -OutputRoot .\.artifacts\release-gate\perf
 
-# Run all benchmarks
-dotnet run -c Release --project benchmarks/STIGForge.Benchmarks
+# 2) Run the desktop app from source for startup baselines
+dotnet run --project .\src\STIGForge.App\STIGForge.App.csproj
 
-# Run specific benchmark categories
-dotnet run -c Release --project benchmarks/STIGForge.Benchmarks --filter "*StartupBenchmarks*"
-dotnet run -c Release --project benchmarks/STIGForge.Benchmarks --filter "*MissionBenchmarks*"
-dotnet run -c Release --project benchmarks/STIGForge.Benchmarks --filter "*ScaleBenchmarks*"
-dotnet run -c Release --project benchmarks/STIGForge.Benchmarks --filter "*MemoryBenchmarks*"
-
-# Quick iteration (shorter runs for development)
-dotnet run -c Release --project benchmarks/STIGForge.Benchmarks -- --job short
+# 3) Capture mission timings from generated logs in ProgramData and release-gate artifacts
+#    (If CLI workflow commands are available in your branch, record those timings too.)
 ```
 
-Results are saved to `BenchmarkDotNet.Artifacts/` directory.
+Capture startup and mission timings from generated logs and mission summary artifacts under `.artifacts/` and `.stigforge/local-workflow`.
 
 ---
 

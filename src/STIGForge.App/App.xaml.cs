@@ -120,6 +120,8 @@ public partial class App : Application
           services.AddSingleton<IProfileRepository>(sp => new SqliteJsonProfileRepository(sp.GetRequiredService<string>()));
           services.AddSingleton<IOverlayRepository>(sp => new SqliteJsonOverlayRepository(sp.GetRequiredService<string>()));
           services.AddSingleton<IMissionRunRepository>(sp => new MissionRunRepository(sp.GetRequiredService<string>()));
+          services.AddSingleton<IDriftRepository>(sp => new SqliteDriftRepository(sp.GetRequiredService<string>()));
+          services.AddSingleton<IRollbackRepository>(sp => new SqliteRollbackRepository(sp.GetRequiredService<string>()));
 
           services.AddSingleton<ImportInboxScanner>();
           services.AddSingleton<ContentPackImporter>();
@@ -137,6 +139,16 @@ public partial class App : Application
           services.AddSingleton<VerificationArtifactAggregationService>();
           services.AddSingleton<MissionTracingService>();
           services.AddSingleton<PerformanceInstrumenter>();
+          services.AddSingleton<DriftDetectionService>();
+          services.AddSingleton<RollbackService>();
+          services.AddSingleton<GpoConflictDetector>();
+          services.AddSingleton<NessusImporter>();
+          services.AddSingleton<AcasCorrelationService>();
+          services.AddSingleton<CklImporter>();
+          services.AddSingleton<CklExporter>();
+          services.AddSingleton<EmassPackageGenerator>();
+          services.AddSingleton<ComplianceAgentFactory>();
+          services.AddSingleton<PhaseCCommandService>();
           services.AddSingleton<IBundleMissionSummaryService, BundleMissionSummaryService>();
           services.AddSingleton<ImportSelectionOrchestrator>();
           services.AddSingleton<BundleOrchestrator>();

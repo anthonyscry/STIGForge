@@ -4,6 +4,7 @@ using System.Text.Json.Serialization;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
 using STIGForge.Verify;
+using VerifyControlResult = STIGForge.Verify.ControlResult;
 
 namespace STIGForge.Export;
 
@@ -181,7 +182,7 @@ public sealed class EmassExporter
   }
 
   private static SubmissionReadiness ComputeSubmissionReadiness(
-    IReadOnlyList<ControlResult> consolidated,
+    IReadOnlyList<VerifyControlResult> consolidated,
     string evidenceDir,
     string poamDir,
     string attestDir)
@@ -281,7 +282,7 @@ public sealed class EmassExporter
     {
       return new ConsolidatedLoadResult
       {
-        Results = new List<ControlResult>(),
+        Results = new List<VerifyControlResult>(),
         SourceReports = new List<string>()
       };
     }
@@ -289,7 +290,7 @@ public sealed class EmassExporter
     var reports = Directory.GetFiles(verifyRoot, "consolidated-results.json", SearchOption.AllDirectories)
       .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
       .ToList();
-    var all = new List<ControlResult>();
+    var all = new List<VerifyControlResult>();
     foreach (var reportPath in reports)
     {
       var report = VerifyReportReader.LoadFromJson(reportPath);
@@ -318,7 +319,7 @@ public sealed class EmassExporter
     return file.Answers;
   }
 
-  private static List<NormalizedVerifyResult> ConvertToNormalizedResults(List<ControlResult> results)
+  private static List<NormalizedVerifyResult> ConvertToNormalizedResults(List<VerifyControlResult> results)
   {
     return results.Select(r => new NormalizedVerifyResult
     {
@@ -337,7 +338,7 @@ public sealed class EmassExporter
     }).ToList();
   }
 
-  private static void MergeManualAnswers(List<ControlResult> results, IReadOnlyList<ManualAnswer> answers)
+  private static void MergeManualAnswers(List<VerifyControlResult> results, IReadOnlyList<ManualAnswer> answers)
   {
     if (answers.Count == 0) return;
 
@@ -349,7 +350,7 @@ public sealed class EmassExporter
 
       if (match == null)
       {
-        results.Add(new ControlResult
+        results.Add(new VerifyControlResult
         {
           RuleId = ans.RuleId,
           VulnId = ans.VulnId,
@@ -376,7 +377,7 @@ public sealed class EmassExporter
 
   private static void WriteControlEvidenceIndex(
     string outputPath,
-    IReadOnlyList<ControlResult> results,
+    IReadOnlyList<VerifyControlResult> results,
     string evidenceDir,
     string scansDir,
     IReadOnlyDictionary<string, string> naMap)
@@ -428,7 +429,7 @@ public sealed class EmassExporter
     File.WriteAllText(outputPath, sb.ToString(), Encoding.UTF8);
   }
 
-  private static void WriteIndexHtml(string indexDir, IReadOnlyList<ControlResult> results)
+  private static void WriteIndexHtml(string indexDir, IReadOnlyList<VerifyControlResult> results)
   {
     var total = results.Count;
     var open = results.Count(r => ExportStatusMapper.IsOpenStatus(r.Status));
@@ -449,7 +450,7 @@ public sealed class EmassExporter
     File.WriteAllText(Path.Combine(indexDir, "index.html"), html.ToString(), Encoding.UTF8);
   }
 
-  private static void WriteManifest(string path, BundleManifestDto bundle, IReadOnlyList<ControlResult> results, ExportTrace exportTrace, DateTimeOffset exportStartTime, int fileCount, string packageHash, SubmissionReadiness submissionReadiness)
+  private static void WriteManifest(string path, BundleManifestDto bundle, IReadOnlyList<VerifyControlResult> results, ExportTrace exportTrace, DateTimeOffset exportStartTime, int fileCount, string packageHash, SubmissionReadiness submissionReadiness)
   {
     var manifest = new
     {
@@ -560,20 +561,20 @@ public sealed class EmassExporter
     return map;
   }
 
-  private static string ResolveNaReason(ControlResult sample, IReadOnlyDictionary<string, string> naMap)
+  private static string ResolveNaReason(VerifyControlResult sample, IReadOnlyDictionary<string, string> naMap)
   {
     var key = GetControlKey(sample);
     return naMap.TryGetValue(key, out var reason) ? reason : string.Empty;
   }
 
-  private static string GetControlKey(ControlResult r)
+  private static string GetControlKey(VerifyControlResult r)
   {
     if (!string.IsNullOrWhiteSpace(r.RuleId)) return "RULE:" + r.RuleId!.Trim();
     if (!string.IsNullOrWhiteSpace(r.VulnId)) return "VULN:" + r.VulnId!.Trim();
     return "TITLE:" + (r.Title ?? string.Empty).Trim();
   }
 
-  private static string ResolveEvidencePaths(string evidenceDir, ControlResult sample)
+  private static string ResolveEvidencePaths(string evidenceDir, VerifyControlResult sample)
   {
     if (!Directory.Exists(evidenceDir)) return string.Empty;
 
@@ -597,7 +598,7 @@ public sealed class EmassExporter
     return string.Join(";", files.OrderBy(f => f, StringComparer.OrdinalIgnoreCase));
   }
 
-  private static ExportTrace BuildExportTrace(string bundleRoot, IReadOnlyList<string> sourceReports, IReadOnlyList<ControlResult> consolidated)
+  private static ExportTrace BuildExportTrace(string bundleRoot, IReadOnlyList<string> sourceReports, IReadOnlyList<VerifyControlResult> consolidated)
   {
     var reportPaths = sourceReports
       .Select(path => RelOrFull(bundleRoot, path))
@@ -721,7 +722,7 @@ public sealed class EmassExporter
 
   private sealed class ConsolidatedLoadResult
   {
-    public List<ControlResult> Results { get; set; } = new();
+    public List<VerifyControlResult> Results { get; set; } = new();
 
     public List<string> SourceReports { get; set; } = new();
   }

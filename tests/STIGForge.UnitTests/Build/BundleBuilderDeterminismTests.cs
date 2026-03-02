@@ -80,7 +80,7 @@ public sealed class BundleBuilderDeterminismTests : IDisposable
         var manifestPath = Path.Combine(output, "Manifest", "manifest.json");
         File.Exists(manifestPath).Should().BeTrue();
 
-        var manifest = JsonSerializer.Deserialize<BundleManifest>(File.ReadAllText(manifestPath));
+        var manifest = JsonSerializer.Deserialize<STIGForge.Build.BundleManifest>(File.ReadAllText(manifestPath));
         manifest.Should().NotBeNull();
         manifest!.SchemaVersion.Should().Be(1,
             because: "BLD-01 requires schema version to be set for forward compatibility");

@@ -1,0 +1,47 @@
+name: windows-fastlane
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - "src/STIGForge.Core/**"
+      - "src/STIGForge.Cli/**"
+      - "src/STIGForge.Content/**"
+      - "src/STIGForge.Export/**"
+      - "src/STIGForge.Infrastructure/**"
+      - "tests/STIGForge.UnitTests/**"
+      - "tests/STIGForge.IntegrationTests/**"
+
+jobs:
+  fastlane:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+
+      - name: Restore
+        run: dotnet restore STIGForge.sln
+
+      - name: Build
+        run: dotnet build STIGForge.sln --configuration Release --no-restore
+
+      - name: Unit fast bucket
+        run: >-
+          dotnet test tests/STIGForge.UnitTests/STIGForge.UnitTests.csproj
+          --configuration Release
+          --no-build
+          --framework net8.0-windows
+          --filter "FullyQualifiedName~EmassPackageGeneratorTests|FullyQualifiedName~XccdfParserPerformanceTests|FullyQualifiedName~LocalWorkflowServiceTests|FullyQualifiedName~ScannerEvidenceMapperTests"
+
+      - name: Integration fast bucket
+        run: >-
+          dotnet test tests/STIGForge.IntegrationTests/STIGForge.IntegrationTests.csproj
+          --configuration Release
+          --no-build
+          --framework net8.0
+          --filter "FullyQualifiedName~PhaseCCommandFlowTests|FullyQualifiedName~EmassExporterIntegrationTests"
