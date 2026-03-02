@@ -99,6 +99,23 @@ jobs:
 
           Write-Host "Quarterly trend evidence validated for VM ${{ matrix.name }}." -ForegroundColor Green
 
+      - name: Run UI smoke tests
+        shell: pwsh
+        run: |
+          $outputRoot = '.\.artifacts\ui-smoke\${{ matrix.name }}'
+          New-Item -ItemType Directory -Force -Path $outputRoot | Out-Null
+          $logPath = Join-Path $outputRoot 'ui-smoke.log'
+
+          $runOutput = & dotnet test .\tests\STIGForge.App.UiTests\STIGForge.App.UiTests.csproj --configuration ${{ inputs.configuration }} --framework net8.0-windows --nologo --filter 'Category=UI' 2>&1
+          $exitCode = $LASTEXITCODE
+          $runOutput | Out-File -FilePath $logPath -Encoding UTF8
+
+          if ($exitCode -ne 0) {
+            throw "UI smoke tests failed on ${{ matrix.name }}. See log: $logPath"
+          }
+
+          Write-Host "UI smoke tests passed for VM ${{ matrix.name }}." -ForegroundColor Green
+
       - name: Evaluate VM stability budget
         shell: pwsh
         run: |
@@ -212,6 +229,7 @@ jobs:
           path: |
             ./.artifacts/release-gate/${{ matrix.name }}
             ./.artifacts/stability-budget/${{ matrix.name }}
+            ./.artifacts/ui-smoke/${{ matrix.name }}
           if-no-files-found: warn
 
   go-no-go:

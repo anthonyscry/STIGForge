@@ -147,6 +147,61 @@ public sealed class LocalWorkflowServiceTests : IDisposable
   }
 
   [Fact]
+  public async Task RunAsync_WithMissingToolRootAndEvaluateStigZip_StagesToolAndRuns()
+  {
+    var importRoot = Path.Combine(_tempRoot, "import-stage");
+    var outputRoot = Path.Combine(_tempRoot, "output-stage");
+    Directory.CreateDirectory(importRoot);
+    Directory.CreateDirectory(outputRoot);
+    await WriteImportZipAsync(importRoot, "SV-2100r1_rule");
+    await WriteEvaluateStigZipAsync(importRoot);
+
+    var consolidatedPath = Path.Combine(outputRoot, "consolidated-results.json");
+    VerifyReportWriter.WriteJson(consolidatedPath, new VerifyReport
+    {
+      Tool = "Evaluate-STIG",
+      OutputRoot = outputRoot,
+      Results =
+      [
+        new ControlResult { RuleId = "SV-2100r1_rule", Tool = "Evaluate-STIG", SourceFile = "source.ckl" }
+      ]
+    });
+
+    var verifyService = new FakeVerificationWorkflowService(new VerificationWorkflowResult
+    {
+      ConsolidatedJsonPath = consolidatedPath,
+      ToolRuns =
+      [
+        new VerificationToolRunResult
+        {
+          Tool = "Evaluate-STIG",
+          Executed = true,
+          ExitCode = 0
+        }
+      ]
+    });
+
+    var service = new LocalWorkflowService(
+      new ImportInboxScanner(new TestHashingService()),
+      new LocalSetupValidator(new TestPathBuilder(_tempRoot)),
+      verifyService,
+      new ScannerEvidenceMapper());
+
+    var missingToolRoot = Path.Combine(_tempRoot, "missing-tools-stage");
+    var result = await service.RunAsync(new LocalWorkflowRequest
+    {
+      ImportRoot = importRoot,
+      OutputRoot = outputRoot,
+      ToolRoot = missingToolRoot
+    }, CancellationToken.None);
+
+    verifyService.LastRequest.Should().NotBeNull();
+    verifyService.LastRequest!.EvaluateStig.ToolRoot.Should().Be(missingToolRoot);
+    File.Exists(Path.Combine(missingToolRoot, "Evaluate-STIG.ps1")).Should().BeTrue();
+    result.Mission.CanonicalChecklist.Should().NotBeEmpty();
+  }
+
+  [Fact]
   public async Task RunAsync_WithNonZeroEvaluateStigExitCode_ThrowsInvalidOperationException()
   {
     var importRoot = Path.Combine(_tempRoot, "import-nonzero");
@@ -344,6 +399,15 @@ public sealed class LocalWorkflowServiceTests : IDisposable
       + "<Benchmark xmlns=\"http://checklists.nist.gov/xccdf/1.2\" id=\"xccdf_org.test.benchmark\">"
       + "<Rule id=\"" + ruleId + "\" severity=\"medium\"><title>Rule</title></Rule>"
       + "</Benchmark>");
+  }
+
+  private static async Task WriteEvaluateStigZipAsync(string importRoot)
+  {
+    var zipPath = Path.Combine(importRoot, "Evaluate-STIG.zip");
+    using var archive = ZipFile.Open(zipPath, ZipArchiveMode.Create);
+    var entry = archive.CreateEntry("Evaluate-STIG/Evaluate-STIG/Evaluate-STIG.ps1");
+    await using var writer = new StreamWriter(entry.Open());
+    await writer.WriteAsync("# test");
   }
 
   private sealed class FakeVerificationWorkflowService : IVerificationWorkflowService

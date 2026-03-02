@@ -71,6 +71,13 @@ public class ApplyRunner
 
     var mode = request.ModeOverride ?? TryReadModeFromManifest(root) ?? HardeningMode.Safe;
 
+    if (request.DryRun)
+    {
+      mode = HardeningMode.AuditOnly;
+      _logger.LogInformation("Dry-run mode active - forcing HardeningMode.AuditOnly");
+    }
+    var dryRunCollector = request.DryRun ? new DryRun.DryRunCollector() : null;
+
     // Resolve effective run ID - generate one if not provided by orchestrator
     var runId = string.IsNullOrWhiteSpace(request.RunId) ? Guid.NewGuid().ToString() : request.RunId!;
     var priorRunId = request.PriorRunId;
@@ -249,6 +256,18 @@ public class ApplyRunner
       }
       else
       {
+        if (dryRunCollector != null)
+        {
+          dryRunCollector.Add(
+            "Script",
+            "Script execution with STIGFORGE_DRY_RUN=true",
+            null,
+            request.ScriptPath,
+            null,
+            "Script",
+            request.ScriptPath);
+        }
+
         var outcome = await RunScriptAsync(request.ScriptPath!, request.ScriptArgs, root, logsDir, snapshotsDir, mode, ct).ConfigureAwait(false);
         outcome = WriteStepEvidence(outcome, root, runId, priorStepSha256);
         steps.Add(outcome);
@@ -304,6 +323,14 @@ public class ApplyRunner
         {
           var outcome = await RunDscAsync(request.DscMofPath!, root, logsDir, snapshotsDir, mode, request.DscVerbose, ct).ConfigureAwait(false);
           outcome = WriteStepEvidence(outcome, root, runId, priorStepSha256);
+
+          if (dryRunCollector != null && File.Exists(outcome.StdOutPath))
+          {
+            var whatIfOutput = File.ReadAllText(outcome.StdOutPath);
+            var dscChanges = DryRun.DscWhatIfParser.Parse(whatIfOutput);
+            dryRunCollector.AddRange("DSC", dscChanges);
+          }
+
           steps.Add(outcome);
         }
 
@@ -347,6 +374,18 @@ public class ApplyRunner
       }
       else
       {
+        if (dryRunCollector != null)
+        {
+          dryRunCollector.Add(
+            "LGPO",
+            "LGPO policy would be applied: " + request.LgpoPolFilePath,
+            null,
+            request.LgpoPolFilePath,
+            null,
+            "GroupPolicy",
+            request.LgpoPolFilePath);
+        }
+
         var outcome = await RunLgpoAsync(request, root, logsDir, ct).ConfigureAwait(false);
         outcome = WriteStepEvidence(outcome, root, runId, priorStepSha256);
         steps.Add(outcome);
@@ -442,6 +481,28 @@ public class ApplyRunner
 
      var json = JsonSerializer.Serialize(summary, new JsonSerializerOptions { WriteIndented = true });
      File.WriteAllText(logPath, json);
+
+      if (dryRunCollector != null)
+      {
+        var report = dryRunCollector.Build(root, mode.ToString());
+        var reportJson = System.Text.Json.JsonSerializer.Serialize(report, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+        var reportPath = Path.Combine(root, "Apply", "dry_run_report.json");
+        Directory.CreateDirectory(Path.GetDirectoryName(reportPath)!);
+        File.WriteAllText(reportPath, reportJson);
+        _logger.LogInformation("Dry-run report written to {Path} with {Count} proposed changes", reportPath, report.TotalChanges);
+
+        return new ApplyResult
+        {
+          BundleRoot = root,
+          Mode = mode,
+          LogPath = logPath,
+          Steps = steps,
+          SnapshotId = string.Empty,
+          IsMissionComplete = false,
+          DryRunReport = report,
+          RunId = request.RunId
+        };
+      }
 
       var blockingFailures = new List<string>();
       var integrityVerified = false;

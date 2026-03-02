@@ -44,7 +44,7 @@ public sealed class LocalWorkflowService : ILocalWorkflowService
     Directory.CreateDirectory(request.OutputRoot);
 
     var diagnostics = new List<string>();
-    var resolvedToolRoot = _localSetupValidator.ValidateRequiredTools(request.ToolRoot);
+    var resolvedToolRoot = _localSetupValidator.ValidateRequiredTools(request.ToolRoot, request.ImportRoot);
 
     var importResult = await _importInboxScanner.ScanWithCanonicalChecklistAsync(request.ImportRoot, ct).ConfigureAwait(false);
     diagnostics.AddRange(importResult.Warnings);

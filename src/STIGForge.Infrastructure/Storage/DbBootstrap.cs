@@ -113,6 +113,52 @@ CREATE TABLE IF NOT EXISTS audit_trail (
   previous_hash TEXT NOT NULL,
   entry_hash TEXT NOT NULL
 );
+
+CREATE TABLE IF NOT EXISTS compliance_snapshots (
+  snapshot_id TEXT PRIMARY KEY,
+  bundle_root TEXT NOT NULL,
+  run_id TEXT NULL,
+  pack_id TEXT NULL,
+  captured_at TEXT NOT NULL,
+  pass_count INTEGER NOT NULL,
+  fail_count INTEGER NOT NULL,
+  error_count INTEGER NOT NULL,
+  not_applicable_count INTEGER NOT NULL,
+  not_reviewed_count INTEGER NOT NULL,
+  total_count INTEGER NOT NULL,
+  compliance_percent REAL NOT NULL,
+  tool TEXT NOT NULL
+);
+CREATE INDEX IF NOT EXISTS ix_compliance_snapshots_bundle ON compliance_snapshots(bundle_root, captured_at DESC);
+
+CREATE TABLE IF NOT EXISTS control_exceptions (
+  exception_id TEXT PRIMARY KEY,
+  bundle_root TEXT NOT NULL,
+  rule_id TEXT NOT NULL,
+  vuln_id TEXT NULL,
+  exception_type TEXT NOT NULL,
+  status TEXT NOT NULL DEFAULT 'Active',
+  risk_level TEXT NOT NULL,
+  approved_by TEXT NOT NULL,
+  justification TEXT NULL,
+  justification_doc TEXT NULL,
+  created_at TEXT NOT NULL,
+  expires_at TEXT NULL,
+  revoked_at TEXT NULL,
+  revoked_by TEXT NULL
+);
+CREATE INDEX IF NOT EXISTS ix_control_exceptions_bundle ON control_exceptions(bundle_root, rule_id);
+
+CREATE TABLE IF NOT EXISTS release_checks (
+  check_id TEXT PRIMARY KEY,
+  checked_at TEXT NOT NULL,
+  baseline_pack_id TEXT NOT NULL,
+  target_pack_id TEXT NULL,
+  status TEXT NOT NULL,
+  summary_json TEXT NULL,
+  release_notes_path TEXT NULL
+);
+CREATE INDEX IF NOT EXISTS ix_release_checks_baseline ON release_checks(baseline_pack_id, checked_at DESC);
 ";
     cmd.ExecuteNonQuery();
 

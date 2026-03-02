@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using FluentAssertions;
 using STIGForge.Core.Abstractions;
 using STIGForge.Infrastructure.Workflow;
@@ -76,6 +77,29 @@ public sealed class LocalSetupValidatorTests : IDisposable
     act.Should().Throw<InvalidOperationException>()
       .WithMessage("*Evaluate-STIG*")
       .WithMessage("*Evaluate-STIG.ps1*");
+  }
+
+  [Fact]
+  public void ValidateRequiredTools_StagesFromImportZip_WhenToolPathMissingAndImportProvided()
+  {
+    var paths = new TestPathBuilder(_tempRoot);
+    var validator = new LocalSetupValidator(paths);
+    var importRoot = paths.GetImportRoot();
+    Directory.CreateDirectory(importRoot);
+
+    var zipPath = Path.Combine(importRoot, "Evaluate-STIG.zip");
+    using (var archive = ZipFile.Open(zipPath, ZipArchiveMode.Create))
+    {
+      var entry = archive.CreateEntry("Evaluate-STIG/Evaluate-STIG/Evaluate-STIG.ps1");
+      using var writer = new StreamWriter(entry.Open());
+      writer.Write("# staged");
+    }
+
+    var explicitMissingRoot = Path.Combine(_tempRoot, "missing-tools-root");
+    var resolved = validator.ValidateRequiredTools(explicitMissingRoot, importRoot);
+
+    resolved.Should().Be(explicitMissingRoot);
+    File.Exists(Path.Combine(explicitMissingRoot, "Evaluate-STIG.ps1")).Should().BeTrue();
   }
 
   private sealed class TestPathBuilder : IPathBuilder

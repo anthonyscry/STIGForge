@@ -62,6 +62,21 @@ public sealed class ApplyRequest
    /// link to the prior run via lineage markers and deduplicate unchanged step evidence.
    /// </summary>
    public string? PriorRunId { get; set; }
+
+   /// <summary>
+   /// When true, simulates all apply steps without making changes and produces a dry-run report.
+   /// Forces HardeningMode.AuditOnly and passes -WhatIf to DSC steps.
+   /// </summary>
+   public bool DryRun { get; set; }
+
+   /// <summary>Optional filter: only apply controls matching these Rule IDs (e.g., SV-12345).</summary>
+   public IReadOnlyList<string>? FilterRuleIds { get; set; }
+
+   /// <summary>Optional filter: only apply controls matching these severities ("high","medium","low").</summary>
+   public IReadOnlyList<string>? FilterSeverities { get; set; }
+
+   /// <summary>Optional filter: only apply controls matching these categories.</summary>
+   public IReadOnlyList<string>? FilterCategories { get; set; }
 }
 
 public sealed class ApplyStepOutcome
@@ -112,6 +127,9 @@ public sealed class ApplyResult
 
    /// <summary>Convergence status of the apply cycle.</summary>
    public ConvergenceStatus ConvergenceStatus { get; set; } = ConvergenceStatus.NotApplicable;
+
+   /// <summary>Structured dry-run report when DryRun mode is used.</summary>
+   public DryRunReport? DryRunReport { get; set; }
 }
 
 public sealed class PreflightRequest

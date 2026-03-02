@@ -43,6 +43,18 @@ public sealed class OrchestrateRequest
   public string? ScapToolLabel { get; set; }
 
   public string? VerifyOutputRoot { get; set; }
+
+  /// <summary>When true, simulates apply phase without changes and produces a dry-run report.</summary>
+  public bool DryRun { get; set; }
+
+  /// <summary>Optional filter: only apply controls matching these Rule IDs (e.g., SV-12345).</summary>
+  public IReadOnlyList<string>? FilterRuleIds { get; set; }
+
+  /// <summary>Optional filter: only apply controls matching these severities ("high","medium","low").</summary>
+  public IReadOnlyList<string>? FilterSeverities { get; set; }
+
+  /// <summary>Optional filter: only apply controls matching these categories.</summary>
+  public IReadOnlyList<string>? FilterCategories { get; set; }
 }
 
 public sealed class BundleBuildResult

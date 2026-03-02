@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using STIGForge.Core.Abstractions;
 
 namespace STIGForge.Infrastructure.Workflow;
@@ -18,6 +19,11 @@ public sealed class LocalSetupValidator
 
   public string ValidateRequiredTools(string? evaluateStigToolRoot)
   {
+    return ValidateRequiredTools(evaluateStigToolRoot, null);
+  }
+
+  public string ValidateRequiredTools(string? evaluateStigToolRoot, string? importRoot)
+  {
     var candidates = ResolveCandidates(evaluateStigToolRoot);
 
     foreach (var candidate in candidates)
@@ -29,6 +35,9 @@ public sealed class LocalSetupValidator
       if (File.Exists(scriptPath))
         return candidate;
     }
+
+    if (TryStageEvaluateStigFromImport(importRoot, candidates, out var stagedPath))
+      return stagedPath;
 
     throw new InvalidOperationException(
       "Required Evaluate-STIG tool path is missing or invalid. " +
@@ -46,5 +55,98 @@ public sealed class LocalSetupValidator
       Path.Combine(toolsRoot, "Evaluate-STIG", "Evaluate-STIG"),
       Path.Combine(toolsRoot, "Evaluate-STIG")
     };
+  }
+
+  private bool TryStageEvaluateStigFromImport(string? importRoot, IReadOnlyList<string> candidates, out string stagedPath)
+  {
+    stagedPath = string.Empty;
+
+    if (string.IsNullOrWhiteSpace(importRoot) || !Directory.Exists(importRoot))
+      return false;
+
+    var evaluateStigZips = Directory.EnumerateFiles(importRoot, "*.zip", SearchOption.AllDirectories)
+      .Where(z => z.Contains("evaluate-stig", StringComparison.OrdinalIgnoreCase) || 
+                  z.Contains("evaluatestig", StringComparison.OrdinalIgnoreCase))
+      .OrderBy(z => z, StringComparer.OrdinalIgnoreCase)
+      .ToList();
+
+    if (evaluateStigZips.Count == 0)
+      return false;
+
+    var tempDir = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString());
+
+    try
+    {
+      foreach (var zipPath in evaluateStigZips)
+      {
+        try
+        {
+          var extractDir = Path.Combine(tempDir, Path.GetFileNameWithoutExtension(zipPath));
+          Directory.CreateDirectory(extractDir);
+          ZipFile.ExtractToDirectory(zipPath, extractDir);
+
+          var scriptFiles = Directory.EnumerateFiles(extractDir, "Evaluate-STIG.ps1", SearchOption.AllDirectories)
+            .OrderBy(f => f.Length)
+            .ThenBy(f => f, StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+          if (scriptFiles.Count == 0)
+            continue;
+
+          var scriptPath = scriptFiles[0];
+          var scriptDir = Path.GetDirectoryName(scriptPath);
+          if (string.IsNullOrWhiteSpace(scriptDir))
+            continue;
+
+          var targetCandidate = candidates[0];
+          Directory.CreateDirectory(targetCandidate);
+
+          CopyDirectory(scriptDir, targetCandidate);
+
+          var copiedScriptPath = Path.Combine(targetCandidate, "Evaluate-STIG.ps1");
+          if (File.Exists(copiedScriptPath))
+          {
+            stagedPath = targetCandidate;
+            return true;
+          }
+        }
+        catch
+        {
+          continue;
+        }
+      }
+
+      return false;
+    }
+    finally
+    {
+      try
+      {
+        if (Directory.Exists(tempDir))
+          Directory.Delete(tempDir, true);
+      }
+      catch
+      {
+      }
+    }
+  }
+
+  private void CopyDirectory(string sourceDir, string targetDir)
+  {
+    Directory.CreateDirectory(targetDir);
+
+    foreach (var file in Directory.EnumerateFiles(sourceDir))
+    {
+      var fileName = Path.GetFileName(file);
+      var targetPath = Path.Combine(targetDir, fileName);
+      File.Copy(file, targetPath, true);
+    }
+
+    foreach (var subDir in Directory.EnumerateDirectories(sourceDir))
+    {
+      var dirName = Path.GetFileName(subDir);
+      var targetSubDir = Path.Combine(targetDir, dirName);
+      CopyDirectory(subDir, targetSubDir);
+    }
   }
 }

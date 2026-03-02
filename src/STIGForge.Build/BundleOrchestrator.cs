@@ -19,6 +19,7 @@ public sealed class BundleOrchestrator
   private readonly VerificationArtifactAggregationService _artifactAggregation;
   private readonly MissionTracingService _tracing;
   private readonly PerformanceInstrumenter _performanceInstrumenter;
+  private readonly ControlFilterService? _controlFilter;
   private readonly IAuditTrailService? _audit;
   private readonly IMissionRunRepository? _missionRunRepository;
 
@@ -30,7 +31,8 @@ public sealed class BundleOrchestrator
       MissionTracingService tracing,
       PerformanceInstrumenter performanceInstrumenter,
       IAuditTrailService? audit = null,
-      IMissionRunRepository? missionRunRepository = null)
+      IMissionRunRepository? missionRunRepository = null,
+      ControlFilterService? _controlFilter = null)
   {
     _builder = builder;
     _apply = apply;
@@ -40,6 +42,7 @@ public sealed class BundleOrchestrator
     _performanceInstrumenter = performanceInstrumenter ?? throw new ArgumentNullException(nameof(performanceInstrumenter));
     _audit = audit;
     _missionRunRepository = missionRunRepository;
+    this._controlFilter = _controlFilter;
   }
 
   public async Task<BundleBuildResult> BuildBundleAsync(BundleBuildRequest request, CancellationToken ct)
@@ -115,6 +118,18 @@ public sealed class BundleOrchestrator
           .Where(c => !IsControlNotApplicable(c, notApplicableKeys))
           .ToList();
 
+        // GAP 3: Apply granular per-control filters (rule ID, severity, category)
+        if (request.FilterRuleIds != null || request.FilterSeverities != null || request.FilterCategories != null)
+        {
+          var filterService = _controlFilter ?? new ControlFilterService();
+          var beforeCount = filteredControls.Count;
+          filteredControls = filterService.Filter(filteredControls, request.FilterRuleIds, request.FilterSeverities, request.FilterCategories).ToList();
+          System.Diagnostics.Trace.TraceInformation(
+              "GAP 3 filter: {0} controls reduced to {1} (ruleIds={2}, severities={3}, categories={4})",
+              beforeCount, filteredControls.Count,
+              request.FilterRuleIds?.Count ?? 0, request.FilterSeverities?.Count ?? 0, request.FilterCategories?.Count ?? 0);
+        }
+
         var overrides = LoadBundlePowerStigOverrides(root);
 
         // Generate PowerStig data from filtered controls
@@ -147,6 +162,9 @@ public sealed class BundleOrchestrator
           PowerStigOutputPath = request.PowerStigOutputPath,
           PowerStigVerbose = request.PowerStigVerbose,
           PowerStigDataGeneratedPath = psd1Path,
+          FilterRuleIds = request.FilterRuleIds,
+          FilterSeverities = request.FilterSeverities,
+          FilterCategories = request.FilterCategories,
           RunId = runId
         }, ct).ConfigureAwait(false);
 
