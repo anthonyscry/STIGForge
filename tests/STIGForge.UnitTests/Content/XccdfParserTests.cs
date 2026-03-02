@@ -258,29 +258,35 @@ public class XccdfParserTests
         }
     }
 
-    [Theory]
-    [InlineData("CLASSIFIED", nameof(ScopeTag.ClassifiedOnly))]
-    [InlineData("UNCLASSIFIED", nameof(ScopeTag.UnclassifiedOnly))]
-    [InlineData("MIXED", nameof(ScopeTag.Both))]
-    [InlineData("BOTH", nameof(ScopeTag.Both))]
-    [InlineData("UNKNOWN_VALUE", nameof(ScopeTag.Unknown))]
-    public void ParseXccdf_MapsRearMatterClassificationToScope(string classification, string expectedScopeName)
+    [Fact]
+    public void ParseXccdf_MapsRearMatterClassificationToScope()
     {
-        var expectedScope = Enum.Parse<ScopeTag>(expectedScopeName, ignoreCase: true);
-        var rearMatter = $"classification:--:{classification}";
-        var xml = CreateXccdfWithMetadata(rearMatter: rearMatter);
-        var xmlPath = WriteTempXccdf(xml);
-
-        try
+        var cases = new (string Classification, ScopeTag ExpectedScope)[]
         {
-            var results = XccdfParser.Parse(xmlPath, "classification-map-pack");
+            ("CLASSIFIED", ScopeTag.ClassifiedOnly),
+            ("UNCLASSIFIED", ScopeTag.UnclassifiedOnly),
+            ("MIXED", ScopeTag.Both),
+            ("BOTH", ScopeTag.Both),
+            ("UNKNOWN_VALUE", ScopeTag.Unknown)
+        };
 
-            var control = Assert.Single(results);
-            Assert.Equal(expectedScope, control.Applicability.ClassificationScope);
-        }
-        finally
+        foreach (var testCase in cases)
         {
-            DeleteTempFile(xmlPath);
+            var rearMatter = $"classification:--:{testCase.Classification}";
+            var xml = CreateXccdfWithMetadata(rearMatter: rearMatter);
+            var xmlPath = WriteTempXccdf(xml);
+
+            try
+            {
+                var results = XccdfParser.Parse(xmlPath, "classification-map-pack");
+
+                var control = Assert.Single(results);
+                Assert.Equal(testCase.ExpectedScope, control.Applicability.ClassificationScope);
+            }
+            finally
+            {
+                DeleteTempFile(xmlPath);
+            }
         }
     }
 
