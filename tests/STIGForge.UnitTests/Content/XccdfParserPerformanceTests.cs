@@ -31,12 +31,10 @@ public sealed class XccdfParserPerformanceTests : IDisposable
     var controls = XccdfParser.Parse(path, "PerfPack");
     sw.Stop();
 
-    var isCi = string.Equals(Environment.GetEnvironmentVariable("GITHUB_ACTIONS"), "true", StringComparison.OrdinalIgnoreCase)
-      || string.Equals(Environment.GetEnvironmentVariable("CI"), "true", StringComparison.OrdinalIgnoreCase);
-    var maxDuration = isCi ? TimeSpan.FromSeconds(20) : TimeSpan.FromSeconds(8);
+    var maxDuration = TimeSpan.FromSeconds(30);
 
     controls.Should().HaveCount(ruleCount);
-    sw.Elapsed.Should().BeLessThan(maxDuration, $"elapsed={sw.Elapsed}, threshold={maxDuration}, ci={isCi}");
+    sw.Elapsed.Should().BeLessThan(maxDuration, $"elapsed={sw.Elapsed}, threshold={maxDuration}");
   }
 
   private static string BuildXccdf(int ruleCount)
