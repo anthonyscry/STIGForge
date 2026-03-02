@@ -9,13 +9,16 @@ Solo developer + Claude execution, phase-by-phase delivery with small executable
 - ✅ `v1.0` shipped on 2026-02-09
   - Archive: `.planning/milestones/v1.0-ROADMAP.md`
   - Requirements archive: `.planning/milestones/v1.0-REQUIREMENTS.md`
+- ✅ `v1.1` requirements completed on 2026-03-02
+  - All 10 requirements (UR-01..04, WP-01..03, QA-01..03) verified and closed
+  - Phase archive: `.planning/milestones/v1.1-phases/`
 
 ## Current Position
 
-- Current milestone: `v1.1` (execution active)
-- Starting phase index: `08`
+- Current milestone: `v1.1` (all requirements completed)
+- Phase range: `08`–`13` (6 phases, all completed)
 - Requirement source: `.planning/REQUIREMENTS.md`
-- Next action: plan and execute gap-closure phases starting at Phase 11
+- Next action: post-milestone ship-readiness work and v1.2 planning
 
 ---
 
@@ -93,16 +96,18 @@ Exit Criteria:
 
 ### Phase 12: WPF Parity Evidence Promotion and Verification
 
-**Status:** Planned
+**Status:** Completed (2026-02-28)
 **Goal:** Close WPF parity evidence gaps by adding explicit WPF workflow contract evidence to promotion artifacts and verification outputs.
 **Requirements:** `WP-01`, `WP-02`, `WP-03`
 **Gap Closure:** Requirement orphaning and integration/flow gaps for explicit WPF parity evidence promotion.
-**Plans:** 1 plan
+**Plans:** 3 plans (milestones track)
 
 Plans:
-- [ ] 12-01-PLAN.md - Seed Phase 12 parity-evidence promotion workflow with source-evidence intake, promotion wiring checks, and fail-closed three-source reconciliation for WP-01..WP-03.
+- [x] 12-wpf-parity-evidence-promotion-and-verification-01-PLAN.md - Source-evidence intake and promotion wiring checks for WP-01..WP-03.
+- [x] 12-wpf-parity-evidence-promotion-and-verification-02-PLAN.md - Fail-closed three-source reconciliation for WP requirement closure.
+- [x] 12-wpf-parity-evidence-promotion-and-verification-03-PLAN.md - Final WP closure promotion and handoff.
 
-**Immediate next plan:** Execute `12-01-PLAN.md` first to establish source-evidence intake, promotion wiring checks, and fail-closed three-source reconciliation before scheduling follow-on Phase 12 plans.
+**Milestone archive:** `.planning/milestones/v1.1-phases/12-wpf-parity-evidence-promotion-and-verification/`
 
 Exit Criteria:
 - Phase 09 verification artifact exists and maps WP requirement evidence.
@@ -113,11 +118,17 @@ Exit Criteria:
 
 ### Phase 13: Mandatory Release-Gate Enforcement and Verification
 
-**Status:** Planned
+**Status:** Completed (2026-02-17)
 **Goal:** Enforce fail-closed release-package behavior and restore QA requirement verification evidence for promotion paths.
 **Requirements:** `QA-01`, `QA-02`, `QA-03`
 **Gap Closure:** Requirement orphaning and integration/flow gaps for fail-closed release gate enforcement.
-**Plans:** 0 plans
+**Plans:** 2 plans (milestones track)
+
+Plans:
+- [x] 13-mandatory-release-gate-enforcement-and-verification-01-PLAN.md - Shared fail-closed evidence-contract validator with blocker categories wired into CI/release/VM workflows.
+- [x] 13-mandatory-release-gate-enforcement-and-verification-02-PLAN.md - Restore QA requirement verification evidence and three-source cross-check reconciliation.
+
+**Milestone archive:** `.planning/milestones/v1.1-phases/13-mandatory-release-gate-enforcement-and-verification/`
 
 Exit Criteria:
 - Phase 10 verification artifact exists and maps QA requirement evidence.

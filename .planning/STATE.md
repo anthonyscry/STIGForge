@@ -5,21 +5,21 @@
 See: `.planning/PROJECT.md` (updated 2026-02-28)
 
 **Core value:** Produce deterministic, defensible compliance outcomes with strict control mapping and complete evidence packaging, without requiring internet access.
-**Current focus:** Post-Phase 12 closure handoff and next-phase selection
+**Current focus:** Post v1.1 milestone — ship-readiness and feature work
 
 ## Current Position
 
-Phase: 12 of 15 (WPF Parity Evidence Promotion and Verification)
-Plan: Phase 12 closure merged (transitioning to next-phase planning)
-Status: Phase 12 completion work merged (next-phase readiness on deck)
-Last activity: 2026-02-28 - PR #6 merge completes Phase 12 closure and handoff
+Phase: v1.1 complete (all 10 requirements verified and closed)
+Plan: Post-milestone ship-readiness and feature work active
+Status: All v1.1 phases (08–13) completed; Phase 13 release-gate enforcement verified 2026-02-17
+Last activity: 2026-03-02 - Planning doc reconciliation (REQUIREMENTS, ROADMAP, STATE)
 
-Progress: [############__] Phase 12 closure merged; milestone summaries updated (phases 08-13)
+Progress: [################] v1.1 milestone complete (10/10 requirements closed)
 
 ## Performance Metrics
 
 **Velocity (v1.1 milestone):**
-- Total plans completed: 12
+- Total plans completed: 14 (12 milestone-track + 2 Phase 13 release-gate)
 - Average duration: 2 min (metadata-recorded plans only)
 - Total execution time: ~13 min recorded (6/12 plans include duration metadata)
 
@@ -64,22 +64,22 @@ Recent decisions affecting current work:
 
 ### Pending Todos
 
-- Active snapshot: `.planning/snapshots/v1.1-TODO-ACTIVE.md`
-- Immediate focus: Next-phase planning/readiness and WP selection inputs.
+- All v1.1 requirement TODOs are closed.
+- Remaining work is post-milestone: ship-readiness features (Phase B commits), UI automation, apply hardening.
 
 ### Blockers/Concerns
 
 None.
 
-### Handoff Snapshot (2026-02-28)
+### Handoff Snapshot (2026-03-02)
 
-- PR #4: docs(planning): reconcile phase 12 promotion wiring closure posture — merge commit 0ee8a76
-- PR #5: fix(release): enforce explicit upgrade/rebase contract stage gates — merge commit 30ff14c
-- PR #6: docs(planning): promote WP closure to completed status — merge commit 5acc6dc
-- WP-01..WP-03 Completed/closed with the fail-closed reversion guard remaining active
+- v1.1 milestone: All 10 requirements (UR-01..04, WP-01..03, QA-01..03) verified and closed
+- Phase 13 verification: 6/6 truths passed (2026-02-17) — fail-closed release gates enforced
+- Post-milestone work: Phase B ship-readiness (UI automation, DC auto-detect, LGPO staging, WPF theming, PowerSTIG dependency bundling)
+- Planning docs reconciled: REQUIREMENTS.md, ROADMAP.md, STATE.md, TODO-ACTIVE.md
 
 ## Session Continuity
 
-Last session: 2026-02-28 (Phase 12 closure work completed and merged)
-Stopped at: Phase 12 closure handoff and readiness checks for next-phase planning.
-Resume file: .planning/milestones/v1.1-phases/12-wpf-parity-evidence-promotion-and-verification/12-wpf-parity-evidence-promotion-and-verification-01-PLAN.md (use as anchor for next-phase planning)
+Last session: 2026-03-02 (v1.1 milestone planning reconciliation)
+Stopped at: All v1.1 planning docs reconciled. Post-milestone feature work continues.
+Resume file: .planning/ROADMAP.md (milestone history and post-milestone context)
