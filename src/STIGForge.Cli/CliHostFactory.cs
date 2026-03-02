@@ -13,6 +13,7 @@ using STIGForge.Infrastructure.Hashing;
 using STIGForge.Infrastructure.Paths;
 using STIGForge.Infrastructure.Storage;
 using STIGForge.Infrastructure.System;
+using STIGForge.Infrastructure.Telemetry;
 using STIGForge.Verify;
 
 namespace STIGForge.Cli;
@@ -78,6 +79,8 @@ public static class CliHostFactory
     services.AddSingleton<IProfileRepository>(sp => new SqliteJsonProfileRepository(sp.GetRequiredService<string>()));
     services.AddSingleton<IOverlayRepository>(sp => new SqliteJsonOverlayRepository(sp.GetRequiredService<string>()));
     services.AddSingleton<ContentPackImporter>();
+    services.AddSingleton<OverlayConflictDetector>();
+    services.AddSingleton<OverlayMergeService>();
     services.AddSingleton<BundleBuilder>();
     services.AddSingleton<SnapshotService>();
     services.AddSingleton<RollbackScriptGenerator>();
@@ -88,6 +91,8 @@ public static class CliHostFactory
     services.AddSingleton<ScapRunner>();
     services.AddSingleton<IVerificationWorkflowService, VerificationWorkflowService>();
     services.AddSingleton<VerificationArtifactAggregationService>();
+    services.AddSingleton<MissionTracingService>();
+    services.AddSingleton<PerformanceInstrumenter>();
     services.AddSingleton<BaselineDiffService>();
     services.AddSingleton<OverlayRebaseService>();
     services.AddSingleton<ManualAnswerService>();
