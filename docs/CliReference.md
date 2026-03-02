@@ -439,7 +439,7 @@ ckl-import --file <path> [--json]
 Export bundle controls into CKL format for STIG Viewer workflows.
 
 ```
-ckl-export --bundle <path> --output <path> [--host-name <name>] [--stig-title <title>]
+ckl-export --bundle <path> --output <path> [--host-name <name>] [--stig-title <title>] [--json]
 ```
 
 | Option | Required | Description |
@@ -448,12 +448,13 @@ ckl-export --bundle <path> --output <path> [--host-name <name>] [--stig-title <t
 | `--output` | Yes | Output `.ckl` path |
 | `--host-name` | No | Host name metadata (default: machine name) |
 | `--stig-title` | No | STIG title metadata |
+| `--json` | No | Output as JSON envelope |
 
 ### `emass-package`
 Generate eMASS submission package from a bundle.
 
 ```
-emass-package --bundle <path> --system-name <name> --system-acronym <acr> --output <path> [--previous-package <path>]
+emass-package --bundle <path> --system-name <name> --system-acronym <acr> --output <path> [--previous-package <path>] [--json]
 ```
 
 | Option | Required | Description |
@@ -463,27 +464,47 @@ emass-package --bundle <path> --system-name <name> --system-acronym <acr> --outp
 | `--system-acronym` | Yes | System acronym |
 | `--output` | Yes | Output directory |
 | `--previous-package` | No | Prior package root for change-log comparison |
+| `--json` | No | Output as JSON envelope |
 
 ### `agent-install`
 Install continuous compliance agent as a Windows service.
 
 ```
-agent-install [--service-name <name>] [--display-name <name>] [--executable <path>]
+agent-install [--service-name <name>] [--display-name <name>] [--executable <path>] [--json]
 ```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--service-name` | No | Windows service name |
+| `--display-name` | No | Windows service display name |
+| `--executable` | No | Service executable path |
+| `--json` | No | Output as JSON envelope |
 
 ### `agent-uninstall`
 Uninstall continuous compliance Windows service.
 
 ```
-agent-uninstall [--service-name <name>]
+agent-uninstall [--service-name <name>] [--json]
 ```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--service-name` | No | Windows service name |
+| `--json` | No | Output as JSON envelope |
 
 ### `agent-status`
 Query current continuous compliance Windows service status.
 
 ```
-agent-status [--service-name <name>]
+agent-status [--service-name <name>] [--json]
 ```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--service-name` | No | Windows service name |
+| `--json` | No | Output as JSON envelope |
+
+Phase C command exit code conventions: `0` success, `2` command failure, `4` action required (for example unmatched ACAS findings or unavailable service status).
 
 ### `overlay-edit`
 Add or remove rule overrides from an overlay.
