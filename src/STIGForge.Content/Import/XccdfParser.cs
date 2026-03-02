@@ -47,7 +47,6 @@ public static class XccdfParser
             {
                 var value = reader.ReadElementContentAsString().Trim();
                 benchmarkVersion = string.IsNullOrWhiteSpace(value) ? null : value;
-                continue;
             }
 
             if (string.Equals(reader.LocalName, "status", StringComparison.OrdinalIgnoreCase))
@@ -70,7 +69,6 @@ public static class XccdfParser
             {
                 var value = reader.ReadElementContentAsString();
                 rearMatter = string.IsNullOrWhiteSpace(value) ? null : value;
-                continue;
             }
 
             if (!string.Equals(reader.LocalName, "Rule", StringComparison.OrdinalIgnoreCase))
