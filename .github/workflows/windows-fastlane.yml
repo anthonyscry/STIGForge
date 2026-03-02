@@ -36,7 +36,7 @@ jobs:
           --configuration Release
           --no-build
           --framework net8.0-windows
-          --filter "FullyQualifiedName~EmassPackageGeneratorTests|FullyQualifiedName~XccdfParserPerformanceTests|FullyQualifiedName~LocalWorkflowServiceTests|FullyQualifiedName~ScannerEvidenceMapperTests"
+          --filter "FullyQualifiedName~EmassPackageGeneratorTests|FullyQualifiedName~XccdfParserPerformanceTests|FullyQualifiedName~XccdfParserTests|FullyQualifiedName~LocalWorkflowServiceTests|FullyQualifiedName~ScannerEvidenceMapperTests"
 
       - name: Integration fast bucket
         run: >-
