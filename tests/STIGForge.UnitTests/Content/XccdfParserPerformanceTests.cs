@@ -42,7 +42,6 @@ public sealed class XccdfParserPerformanceTests : IDisposable
     var sb = new StringBuilder();
     sb.AppendLine("<Benchmark id=\"B-1\" xmlns=\"http://checklists.nist.gov/xccdf/1.2\">");
     sb.AppendLine("  <title>Perf Benchmark</title>");
-    sb.AppendLine("  <version>1</version>");
     for (var i = 1; i <= ruleCount; i++)
     {
       sb.AppendLine($"  <Rule id=\"SV-{i}_rule\" severity=\"medium\">");
