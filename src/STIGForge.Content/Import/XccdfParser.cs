@@ -288,14 +288,28 @@ public static class XccdfParser
     {
         if (string.IsNullOrWhiteSpace(classification)) return ScopeTag.Unknown;
 
-        if (classification!.Equals("CLASSIFIED", StringComparison.OrdinalIgnoreCase))
+        var normalized = classification.Trim();
+
+        var separatorIndex = normalized.IndexOf(":--:", StringComparison.Ordinal);
+        if (separatorIndex >= 0)
+            normalized = normalized.Substring(separatorIndex + 4).Trim();
+
+        var tokenDelimiters = new[] { ' ', '\t', '\r', '\n', '/', '\\' };
+        var firstToken = normalized
+            .Split(tokenDelimiters, StringSplitOptions.RemoveEmptyEntries)
+            .FirstOrDefault();
+
+        if (string.IsNullOrWhiteSpace(firstToken))
+            return ScopeTag.Unknown;
+
+        if (firstToken.Equals("CLASSIFIED", StringComparison.OrdinalIgnoreCase))
             return ScopeTag.ClassifiedOnly;
 
-        if (classification.Equals("UNCLASSIFIED", StringComparison.OrdinalIgnoreCase))
+        if (firstToken.Equals("UNCLASSIFIED", StringComparison.OrdinalIgnoreCase))
             return ScopeTag.UnclassifiedOnly;
 
-        if (classification.Equals("MIXED", StringComparison.OrdinalIgnoreCase) ||
-            classification.Equals("BOTH", StringComparison.OrdinalIgnoreCase))
+        if (firstToken.Equals("MIXED", StringComparison.OrdinalIgnoreCase) ||
+            firstToken.Equals("BOTH", StringComparison.OrdinalIgnoreCase))
             return ScopeTag.Both;
 
         return ScopeTag.Unknown;
