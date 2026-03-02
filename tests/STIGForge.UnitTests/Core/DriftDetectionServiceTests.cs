@@ -164,7 +164,8 @@ public sealed class DriftDetectionServiceTests
 
     var finishedTask = await Task.WhenAny(completion.Task, Task.Delay(TimeSpan.FromSeconds(2)));
     finishedTask.Should().Be(completion.Task);
-    completion.Task.Result.Should().BeTrue();
+    var completed = await completion.Task;
+    completed.Should().BeTrue();
   }
 
   private sealed class TestClock : IClock

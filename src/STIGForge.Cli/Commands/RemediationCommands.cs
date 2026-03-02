@@ -60,7 +60,10 @@ internal static class RemediationCommands
       if (ruleIds != null && ruleIds.Length > 0)
       {
         var filterSet = new HashSet<string>(ruleIds, StringComparer.OrdinalIgnoreCase);
-        controlList = controlList.Where(c => filterSet.Contains(c.ExternalIds.RuleId)).ToList();
+        controlList = controlList
+          .Where(c => !string.IsNullOrWhiteSpace(c.ExternalIds.RuleId)
+            && filterSet.Contains(c.ExternalIds.RuleId))
+          .ToList();
       }
 
       logger.LogInformation("remediate started: bundle={Bundle}, mode={Mode}, dryRun={DryRun}", bundle, mode, dryRun);
