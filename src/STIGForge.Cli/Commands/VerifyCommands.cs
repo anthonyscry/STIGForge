@@ -53,7 +53,7 @@ internal static class VerifyCommands
         if (!string.IsNullOrWhiteSpace(evalRun.Error)) Console.Error.WriteLine(evalRun.Error);
 
         if (!string.IsNullOrWhiteSpace(logPath))
-          File.WriteAllText(logPath, evalRun.Output + Environment.NewLine + evalRun.Error);
+          await File.WriteAllTextAsync(logPath, evalRun.Output + Environment.NewLine + evalRun.Error).ConfigureAwait(false);
 
         Environment.ExitCode = evalRun.ExitCode;
       }
@@ -102,7 +102,7 @@ internal static class VerifyCommands
         if (!string.IsNullOrWhiteSpace(scapRun.Error)) Console.Error.WriteLine(scapRun.Error);
 
         if (!string.IsNullOrWhiteSpace(logPath))
-          File.WriteAllText(logPath, scapRun.Output + Environment.NewLine + scapRun.Error);
+          await File.WriteAllTextAsync(logPath, scapRun.Output + Environment.NewLine + scapRun.Error).ConfigureAwait(false);
 
         Environment.ExitCode = scapRun.ExitCode;
       }

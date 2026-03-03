@@ -161,7 +161,7 @@ public sealed class SupportBundleBuilder
     if (!Directory.Exists(sourceRoot)) return;
 
     var sourceRootPath = Path.GetFullPath(sourceRoot);
-    foreach (var sourcePath in Directory.GetFiles(sourceRootPath, "*", SearchOption.AllDirectories))
+    foreach (var sourcePath in Directory.EnumerateFiles(sourceRootPath, "*", SearchOption.AllDirectories))
     {
       if (!ShouldInclude(sourcePath)) continue;
       if (!request.IncludeSensitive && IsSensitivePath(sourcePath)) continue;

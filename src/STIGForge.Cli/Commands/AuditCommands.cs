@@ -50,7 +50,7 @@ internal static class AuditCommands
       if (json)
       {
         var text = JsonSerializer.Serialize(entries, new JsonSerializerOptions { WriteIndented = true });
-        if (!string.IsNullOrWhiteSpace(output)) { File.WriteAllText(output, text); Console.WriteLine("Wrote " + entries.Count + " entries to: " + output); }
+        if (!string.IsNullOrWhiteSpace(output)) { await File.WriteAllTextAsync(output, text).ConfigureAwait(false); Console.WriteLine("Wrote " + entries.Count + " entries to: " + output); }
         else Console.WriteLine(text);
       }
       else
@@ -72,7 +72,7 @@ internal static class AuditCommands
           sb.AppendLine("Timestamp,Action,Target,Result,User,Machine,Detail,EntryHash");
           foreach (var e in entries)
             sb.AppendLine(string.Join(",", Helpers.Csv(e.Timestamp.ToString("o")), Helpers.Csv(e.Action), Helpers.Csv(e.Target), Helpers.Csv(e.Result), Helpers.Csv(e.User), Helpers.Csv(e.Machine), Helpers.Csv(e.Detail), Helpers.Csv(e.EntryHash)));
-          File.WriteAllText(output, sb.ToString());
+          await File.WriteAllTextAsync(output, sb.ToString()).ConfigureAwait(false);
           Console.WriteLine("Wrote CSV to: " + output);
         }
       }

@@ -52,7 +52,7 @@ internal static class RemediationCommands
       if (!string.IsNullOrWhiteSpace(modeStr) && Enum.TryParse<HardeningMode>(modeStr, true, out var parsedMode))
         mode = parsedMode;
 
-      var manifestJson = File.ReadAllText(manifestPath);
+      var manifestJson = await File.ReadAllTextAsync(manifestPath).ConfigureAwait(false);
       using var doc = JsonDocument.Parse(manifestJson);
       var packId = doc.RootElement.GetProperty("Pack").GetProperty("PackId").GetString() ?? string.Empty;
       var controlList = await controls.ListControlsAsync(packId, CancellationToken.None);

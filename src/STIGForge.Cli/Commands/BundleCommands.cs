@@ -103,7 +103,7 @@ internal static class BundleCommands
       {
         if (!File.Exists(csvPath)) { Console.Error.WriteLine("CSV not found: " + csvPath); Environment.ExitCode = 3; return; }
         int saved = 0;
-        foreach (var line in File.ReadAllLines(csvPath))
+        foreach (var line in await File.ReadAllLinesAsync(csvPath).ConfigureAwait(false))
         {
           if (string.IsNullOrWhiteSpace(line) || line.StartsWith("RuleId", StringComparison.OrdinalIgnoreCase)) continue;
           var parts = Helpers.ParseCsvLine(line);

@@ -81,7 +81,7 @@ internal static class DiffRebaseCommands
       if (json)
       {
         var jsonText = JsonSerializer.Serialize(diff, new JsonSerializerOptions { WriteIndented = true });
-        if (!string.IsNullOrWhiteSpace(output)) { File.WriteAllText(output, jsonText); Console.WriteLine("JSON diff written to: " + output); }
+        if (!string.IsNullOrWhiteSpace(output)) { await File.WriteAllTextAsync(output, jsonText).ConfigureAwait(false); Console.WriteLine("JSON diff written to: " + output); }
         else Console.WriteLine(jsonText);
       }
       else
@@ -128,7 +128,7 @@ internal static class DiffRebaseCommands
           if (diff.RemovedControls.Count > 0) { md.AppendLine("## Removed Controls"); md.AppendLine(); foreach (var c in diff.RemovedControls) md.AppendLine($"- **{c.ControlKey}** \u2014 {c.BaselineControl?.Title}"); md.AppendLine(); }
           if (diff.ModifiedControls.Count > 0) { md.AppendLine("## Changed Controls"); md.AppendLine(); foreach (var c in diff.ModifiedControls) { md.AppendLine($"### {c.ControlKey}"); md.AppendLine(); md.AppendLine($"- Classification: **{(c.RequiresReview ? "review-required" : "changed")}**"); if (!string.IsNullOrWhiteSpace(c.ReviewReason)) md.AppendLine($"- Review reason: {c.ReviewReason}"); md.AppendLine(); md.AppendLine("| Field | Impact | Old | New |"); md.AppendLine("|-------|--------|-----|-----|"); foreach (var ch in c.Changes) md.AppendLine($"| {ch.FieldName} | {ch.Impact} | {Helpers.Truncate(ch.OldValue, 60)} | {Helpers.Truncate(ch.NewValue, 60)} |"); md.AppendLine(); } }
           if (diff.ReviewRequiredControls.Count > 0) { md.AppendLine("## Review Required Controls"); md.AppendLine(); foreach (var c in diff.ReviewRequiredControls) md.AppendLine($"- **{c.ControlKey}** - {c.ReviewReason}"); md.AppendLine(); }
-          File.WriteAllText(output, md.ToString());
+          await File.WriteAllTextAsync(output, md.ToString()).ConfigureAwait(false);
           Console.WriteLine("Markdown report written to: " + output);
         }
       }
@@ -169,7 +169,7 @@ internal static class DiffRebaseCommands
       if (json)
       {
         var text = JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true });
-        if (!string.IsNullOrWhiteSpace(output)) { File.WriteAllText(output, text); Console.WriteLine("JSON report written to: " + output); }
+        if (!string.IsNullOrWhiteSpace(output)) { await File.WriteAllTextAsync(output, text).ConfigureAwait(false); Console.WriteLine("JSON report written to: " + output); }
         else Console.WriteLine(text);
       }
       else
@@ -209,7 +209,7 @@ internal static class DiffRebaseCommands
           md.AppendLine();
           md.AppendLine("| Control | Action | Confidence | Requires Review | Blocking | Reason | Recommended Action |"); md.AppendLine("|---------|--------|------------|-----------------|----------|--------|--------------------|");
           foreach (var a in report.Actions) md.AppendLine($"| {a.OriginalControlKey} | {a.ActionType} | {a.Confidence:P0} | {(a.RequiresReview ? "Yes" : "No")} | {(a.IsBlockingConflict ? "Yes" : "No")} | {a.Reason} | {a.RecommendedAction} |");
-          File.WriteAllText(output, md.ToString());
+          await File.WriteAllTextAsync(output, md.ToString()).ConfigureAwait(false);
           Console.WriteLine("Markdown report written to: " + output);
         }
       }

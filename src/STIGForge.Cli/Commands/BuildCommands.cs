@@ -91,7 +91,7 @@ internal static class BuildCommands
       }
       else
       {
-        var json = File.ReadAllText(profileJson!);
+        var json = await File.ReadAllTextAsync(profileJson!).ConfigureAwait(false);
         profile = JsonSerializer.Deserialize<Profile>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? throw new ArgumentException("Invalid profile JSON.");
         if (string.IsNullOrWhiteSpace(profile.ProfileId)) profile.ProfileId = Guid.NewGuid().ToString("n");
         if (saveProfile) await profiles.SaveAsync(profile, CancellationToken.None);
@@ -632,7 +632,7 @@ internal static class BuildCommands
       if (!File.Exists(profileJson))
         throw new FileNotFoundException("Profile JSON not found", profileJson);
 
-      var json = File.ReadAllText(profileJson);
+      var json = await File.ReadAllTextAsync(profileJson, ct).ConfigureAwait(false);
       var profile = JsonSerializer.Deserialize<Profile>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
         ?? throw new ArgumentException("Invalid profile JSON.");
 
