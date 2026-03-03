@@ -234,9 +234,8 @@ public static class CklExporter
     if (!Directory.Exists(verifyRoot))
       return set;
 
-    var reports = Directory.GetFiles(verifyRoot, "consolidated-results.json", SearchOption.AllDirectories)
-      .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
-      .ToList();
+    var reports = Directory.EnumerateFiles(verifyRoot, "consolidated-results.json", SearchOption.AllDirectories)
+      .OrderBy(p => p, StringComparer.OrdinalIgnoreCase);
 
     var dedup = new Dictionary<string, ControlResult>(StringComparer.OrdinalIgnoreCase);
     foreach (var reportPath in reports)

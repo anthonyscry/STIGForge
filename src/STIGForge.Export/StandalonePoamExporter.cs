@@ -48,7 +48,7 @@ public static class StandalonePoamExporter
     var verifyRoot = Path.Combine(bundleRoot, "Verify");
     if (!Directory.Exists(verifyRoot)) return new List<NormalizedVerifyResult>();
 
-    var reports = Directory.GetFiles(verifyRoot, "consolidated-results.json", SearchOption.AllDirectories);
+    var reports = Directory.EnumerateFiles(verifyRoot, "consolidated-results.json", SearchOption.AllDirectories);
     var all = new List<NormalizedVerifyResult>();
     foreach (var reportPath in reports)
     {

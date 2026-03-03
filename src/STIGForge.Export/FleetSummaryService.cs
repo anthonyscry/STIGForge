@@ -28,7 +28,7 @@ public class FleetSummaryService
     var controlMatrix = new SortedDictionary<string, Dictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
     var allHosts = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
 
-    foreach (var hostDir in Directory.GetDirectories(fleetResultsRoot).OrderBy(d => Path.GetFileName(d), StringComparer.OrdinalIgnoreCase))
+    foreach (var hostDir in Directory.EnumerateDirectories(fleetResultsRoot).OrderBy(d => Path.GetFileName(d), StringComparer.OrdinalIgnoreCase))
     {
       var hostName = Path.GetFileName(hostDir);
       allHosts.Add(hostName);
@@ -134,7 +134,7 @@ public class FleetSummaryService
     var poamItems = new Dictionary<string, PoamItem>(StringComparer.OrdinalIgnoreCase);
     var hostsByControl = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
 
-    foreach (var hostDir in Directory.GetDirectories(fleetResultsRoot).OrderBy(d => Path.GetFileName(d), StringComparer.OrdinalIgnoreCase))
+    foreach (var hostDir in Directory.EnumerateDirectories(fleetResultsRoot).OrderBy(d => Path.GetFileName(d), StringComparer.OrdinalIgnoreCase))
     {
       var hostName = Path.GetFileName(hostDir);
       var results = LoadHostResults(hostDir);
@@ -225,13 +225,13 @@ public class FleetSummaryService
   {
     if (!Directory.Exists(fleetResultsRoot)) return;
 
-    foreach (var hostDir in Directory.GetDirectories(fleetResultsRoot))
+    foreach (var hostDir in Directory.EnumerateDirectories(fleetResultsRoot))
     {
       var verifyDir = Path.Combine(hostDir, "Verify");
       if (!Directory.Exists(verifyDir)) continue;
 
-      var consolidatedFiles = Directory.GetFiles(verifyDir, "consolidated-results.json", SearchOption.AllDirectories);
-      if (consolidatedFiles.Length == 0) continue;
+      var consolidatedFiles = Directory.EnumerateFiles(verifyDir, "consolidated-results.json", SearchOption.AllDirectories);
+      if (!consolidatedFiles.Any()) continue;
 
       var hostName = Path.GetFileName(hostDir);
       var exportDir = Path.Combine(hostDir, "Export");
@@ -321,9 +321,8 @@ public class FleetSummaryService
     if (!Directory.Exists(verifyDir))
       return new List<ControlResult>();
 
-    var reports = Directory.GetFiles(verifyDir, "consolidated-results.json", SearchOption.AllDirectories)
-      .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
-      .ToList();
+    var reports = Directory.EnumerateFiles(verifyDir, "consolidated-results.json", SearchOption.AllDirectories)
+      .OrderBy(p => p, StringComparer.OrdinalIgnoreCase);
 
     var dedup = new Dictionary<string, ControlResult>(StringComparer.OrdinalIgnoreCase);
     foreach (var reportPath in reports)

@@ -108,8 +108,8 @@ public sealed class EmassPackageValidator
     var scansDir = Path.Combine(root, "01_Scans");
     if (Directory.Exists(scansDir))
     {
-      var scanFiles = Directory.GetFiles(scansDir, "*", SearchOption.AllDirectories);
-      if (scanFiles.Length == 0)
+      var scanFiles = Directory.EnumerateFiles(scansDir, "*", SearchOption.AllDirectories);
+      if (!scanFiles.Any())
         warnings.Add("No scan output files found in 01_Scans/");
     }
 
@@ -117,8 +117,8 @@ public sealed class EmassPackageValidator
     var evidenceDir = Path.Combine(root, "04_Evidence");
     if (Directory.Exists(evidenceDir))
     {
-      var evidenceFiles = Directory.GetFiles(evidenceDir, "*", SearchOption.AllDirectories);
-      if (evidenceFiles.Length == 0)
+      var evidenceFiles = Directory.EnumerateFiles(evidenceDir, "*", SearchOption.AllDirectories);
+      if (!evidenceFiles.Any())
         warnings.Add("No evidence files found in 04_Evidence/ - ensure evidence is collected");
     }
   }
@@ -134,7 +134,7 @@ public sealed class EmassPackageValidator
 
     var manifestHashes = ParseHashManifest(hashManifestPath);
     metrics.HashManifestEntryCount = manifestHashes.Count;
-    var actualFiles = Directory.GetFiles(root, "*", SearchOption.AllDirectories)
+    var actualFiles = Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories)
       .Where(f => !string.Equals(f, hashManifestPath, StringComparison.OrdinalIgnoreCase))
       .Where(f => !IsValidationReportRelativePath(GetRelativePath(root, f)))
       .ToList();
