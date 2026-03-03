@@ -1,4 +1,5 @@
 using System.Xml.Linq;
+using System.Xml;
 
 namespace STIGForge.Verify;
 
@@ -6,7 +7,14 @@ public static class CklParser
 {
   public static IReadOnlyList<ControlResult> ParseFile(string path, string toolName)
   {
-    var doc = XDocument.Load(path);
+    var settings = new XmlReaderSettings
+    {
+      DtdProcessing = DtdProcessing.Prohibit,
+      XmlResolver = null,
+      MaxCharactersInDocument = 100_000_000
+    };
+    using var reader = XmlReader.Create(path, settings);
+    var doc = XDocument.Load(reader);
     var vulnNodes = doc.Descendants("VULN").ToList();
     var results = new List<ControlResult>(vulnNodes.Count);
 
