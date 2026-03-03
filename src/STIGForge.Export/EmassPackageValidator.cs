@@ -330,36 +330,36 @@ public sealed class EmassPackageValidator
   private static IReadOnlyList<PoamItem> LoadPoamItems(string poamPath, List<string> errors)
   {
     if (!File.Exists(poamPath))
-      return Array.Empty<PoamItem>();
+      return [];
 
     try
     {
       var json = File.ReadAllText(poamPath);
       var package = JsonSerializer.Deserialize<PoamPackage>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-      return package?.Items ?? Array.Empty<PoamItem>();
+      return package?.Items ?? [];
     }
     catch (Exception ex)
     {
       errors.Add("Unable to parse poam.json for cross-artifact validation: " + ex.Message);
-      return Array.Empty<PoamItem>();
+      return [];
     }
   }
 
   private static IReadOnlyList<AttestationRecord> LoadAttestations(string attestationPath, List<string> errors)
   {
     if (!File.Exists(attestationPath))
-      return Array.Empty<AttestationRecord>();
+      return [];
 
     try
     {
       var json = File.ReadAllText(attestationPath);
       var package = JsonSerializer.Deserialize<AttestationPackage>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-      return package?.Attestations ?? Array.Empty<AttestationRecord>();
+      return package?.Attestations ?? [];
     }
     catch (Exception ex)
     {
       errors.Add("Unable to parse attestations.json for cross-artifact validation: " + ex.Message);
-      return Array.Empty<AttestationRecord>();
+      return [];
     }
   }
 

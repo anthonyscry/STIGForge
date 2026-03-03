@@ -26,8 +26,8 @@ public sealed class OverlayMergeService
       return new OverlayMergeResult
       {
         MergedControls = mergedControls,
-        AppliedDecisions = Array.Empty<OverlayAppliedDecision>(),
-        Conflicts = Array.Empty<OverlayConflict>()
+        AppliedDecisions = [],
+        Conflicts = []
       };
     }
 
@@ -42,7 +42,7 @@ public sealed class OverlayMergeService
       var overlay = overlays[overlayIndex];
 
       // Order overrides deterministically within overlay
-      var orderedOverrides = (overlay.Overrides ?? Array.Empty<ControlOverride>())
+      var orderedOverrides = (overlay.Overrides ?? [])
         .Select((value, index) => new { Override = value, OriginalIndex = index })
         .Select(x => new
         {
@@ -211,9 +211,9 @@ public sealed class OverlayMergeService
 /// </summary>
 public sealed class OverlayMergeResult
 {
-  public IReadOnlyList<CompiledControl> MergedControls { get; init; } = Array.Empty<CompiledControl>();
-  public IReadOnlyList<OverlayAppliedDecision> AppliedDecisions { get; init; } = Array.Empty<OverlayAppliedDecision>();
-  public IReadOnlyList<OverlayConflict> Conflicts { get; init; } = Array.Empty<OverlayConflict>();
+  public IReadOnlyList<CompiledControl> MergedControls { get; init; } = [];
+  public IReadOnlyList<OverlayAppliedDecision> AppliedDecisions { get; init; } = [];
+  public IReadOnlyList<OverlayConflict> Conflicts { get; init; } = [];
 }
 
 /// <summary>

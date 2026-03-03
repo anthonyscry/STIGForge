@@ -143,7 +143,7 @@ public sealed class EmassPackageGenerator
   {
     var controlsPath = Path.Combine(bundleRoot, "Manifest", "pack_controls.json");
     if (!File.Exists(controlsPath))
-      return Array.Empty<ControlRecord>();
+      return [];
 
     var json = await File.ReadAllTextAsync(controlsPath, ct).ConfigureAwait(false);
     return JsonSerializer.Deserialize<List<ControlRecord>>(json) ?? new List<ControlRecord>();
@@ -528,8 +528,8 @@ public sealed class EmassPackage
   public ControlCorrelationMatrix ControlCorrelationMatrix { get; set; } = new();
   public SystemSecurityPlan SystemSecurityPlan { get; set; } = new();
   public PlanOfAction Poam { get; set; } = new();
-  public IReadOnlyList<EvidenceArtifact> EvidenceArtifacts { get; set; } = Array.Empty<EvidenceArtifact>();
-  public IReadOnlyList<ScanResult> ScanResults { get; set; } = Array.Empty<ScanResult>();
+  public IReadOnlyList<EvidenceArtifact> EvidenceArtifacts { get; set; } = [];
+  public IReadOnlyList<ScanResult> ScanResults { get; set; } = [];
   public ComplianceSummary ComplianceSummary { get; set; } = new();
   public string? ChangeLog { get; set; }
 }
@@ -578,7 +578,7 @@ public sealed class SspControlImplementation
   public string ControlId { get; set; } = string.Empty;
   public string ImplementationDescription { get; set; } = string.Empty;
   public string ImplementationStatus { get; set; } = string.Empty;
-  public IReadOnlyList<string> ResponsibleRoles { get; set; } = Array.Empty<string>();
+  public IReadOnlyList<string> ResponsibleRoles { get; set; } = [];
   public List<string> ImplementationEvidence { get; set; } = new();
 }
 

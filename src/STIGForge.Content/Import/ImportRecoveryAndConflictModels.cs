@@ -82,7 +82,7 @@ public sealed class ControlConflict
 
   public string NewPackId { get; set; } = string.Empty;
 
-  public IReadOnlyList<string> Differences { get; set; } = Array.Empty<string>();
+  public IReadOnlyList<string> Differences { get; set; } = [];
 }
 
 public sealed class ConflictDetector

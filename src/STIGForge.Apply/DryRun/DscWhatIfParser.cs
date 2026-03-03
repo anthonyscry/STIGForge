@@ -20,7 +20,7 @@ public static class DscWhatIfParser
     public static IReadOnlyList<DryRunChange> Parse(string? whatIfOutput)
     {
         if (string.IsNullOrWhiteSpace(whatIfOutput))
-            return Array.Empty<DryRunChange>();
+            return [];
 
         var changes = new List<DryRunChange>();
         var lines = whatIfOutput.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);

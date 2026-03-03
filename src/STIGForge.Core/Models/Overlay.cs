@@ -21,6 +21,6 @@ public sealed class Overlay
   public string OverlayId { get; set; } = string.Empty;
   public string Name { get; set; } = string.Empty;
   public DateTimeOffset UpdatedAt { get; set; }
-  public IReadOnlyList<ControlOverride> Overrides { get; set; } = Array.Empty<ControlOverride>();
-  public IReadOnlyList<PowerStigOverride> PowerStigOverrides { get; set; } = Array.Empty<PowerStigOverride>();
+  public IReadOnlyList<ControlOverride> Overrides { get; set; } = [];
+  public IReadOnlyList<PowerStigOverride> PowerStigOverrides { get; set; } = [];
 }

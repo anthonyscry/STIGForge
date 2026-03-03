@@ -10,8 +10,8 @@ public sealed class DryRunReport
     public string Mode { get; set; } = string.Empty;
     public DateTimeOffset GeneratedAt { get; set; }
     public int TotalChanges { get; set; }
-    public IReadOnlyList<DryRunChange> Changes { get; set; } = Array.Empty<DryRunChange>();
-    public IReadOnlyList<string> Diagnostics { get; set; } = Array.Empty<string>();
+    public IReadOnlyList<DryRunChange> Changes { get; set; } = [];
+    public IReadOnlyList<string> Diagnostics { get; set; } = [];
 }
 
 /// <summary>

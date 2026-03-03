@@ -53,5 +53,5 @@ public sealed class RemediationRunResult
     public int FailedCount { get; set; }
     public int ChangedCount { get; set; }
     public int SkippedCount { get; set; }
-    public IReadOnlyList<RemediationResult> Results { get; set; } = Array.Empty<RemediationResult>();
+    public IReadOnlyList<RemediationResult> Results { get; set; } = [];
 }

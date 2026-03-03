@@ -282,7 +282,7 @@ public sealed class RollbackService
   private async Task<IReadOnlyList<RollbackGpoSettingState>> CaptureGpoSettingsAsync(CancellationToken ct)
   {
     if (_processRunner == null)
-      return Array.Empty<RollbackGpoSettingState>();
+      return [];
 
     var startInfo = new ProcessStartInfo
     {
@@ -294,7 +294,7 @@ public sealed class RollbackService
 
     var result = await _processRunner.RunAsync(startInfo, ct).ConfigureAwait(false);
     if (result.ExitCode != 0)
-      return Array.Empty<RollbackGpoSettingState>();
+      return [];
 
     var names = ParseAppliedGpoNames(result.StandardOutput);
     return names
@@ -356,7 +356,7 @@ public sealed class RollbackService
   private static IReadOnlyList<string> ParseAppliedGpoNames(string output)
   {
     if (string.IsNullOrWhiteSpace(output))
-      return Array.Empty<string>();
+      return [];
 
     var names = new List<string>();
     using var reader = new StringReader(output);

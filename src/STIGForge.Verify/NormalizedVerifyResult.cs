@@ -46,7 +46,7 @@ public sealed class NormalizedVerifyResult
   public DateTimeOffset? VerifiedAt { get; set; }
 
   /// <summary>Paths to evidence files supporting this result</summary>
-  public IReadOnlyList<string> EvidencePaths { get; set; } = Array.Empty<string>();
+  public IReadOnlyList<string> EvidencePaths { get; set; } = [];
 
   /// <summary>Tool-specific metadata (e.g., SCAP check-content-ref, Evaluate-STIG test ID)</summary>
   public IReadOnlyDictionary<string, string> Metadata { get; set; } = new Dictionary<string, string>();
@@ -114,13 +114,13 @@ public sealed class NormalizedVerifyReport
   public string OutputRoot { get; set; } = string.Empty;
 
   /// <summary>All verification results</summary>
-  public IReadOnlyList<NormalizedVerifyResult> Results { get; set; } = Array.Empty<NormalizedVerifyResult>();
+  public IReadOnlyList<NormalizedVerifyResult> Results { get; set; } = [];
 
   /// <summary>Summary statistics</summary>
   public VerifySummary Summary { get; set; } = new VerifySummary();
 
   /// <summary>Errors/warnings encountered during verification</summary>
-  public IReadOnlyList<string> DiagnosticMessages { get; set; } = Array.Empty<string>();
+  public IReadOnlyList<string> DiagnosticMessages { get; set; } = [];
 
   /// <summary>
   /// Absolute path to the raw tool output file this report was parsed from.

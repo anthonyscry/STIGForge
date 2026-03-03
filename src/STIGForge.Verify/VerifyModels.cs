@@ -32,7 +32,7 @@ public sealed class VerifyReport
   public DateTimeOffset StartedAt { get; set; }
   public DateTimeOffset FinishedAt { get; set; }
   public string OutputRoot { get; set; } = string.Empty;
-  public IReadOnlyList<ControlResult> Results { get; set; } = Array.Empty<ControlResult>();
+  public IReadOnlyList<ControlResult> Results { get; set; } = [];
 }
 
 public sealed class CoverageSummary

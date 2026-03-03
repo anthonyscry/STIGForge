@@ -161,7 +161,7 @@ public static class XccdfParser
         {
             OsTarget = osTarget,
             // XCCDF 1.2 has no standard role element - parse custom metadata in v1.2
-            RoleTags = Array.Empty<RoleTemplate>(),
+            RoleTags = [],
             ClassificationScope = classificationScope,
             Confidence = confidence
         };

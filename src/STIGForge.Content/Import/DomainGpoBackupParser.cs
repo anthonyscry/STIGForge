@@ -234,7 +234,7 @@ public sealed class DomainGpoBackupInfo
 
 public sealed class DomainGpoParseResult
 {
-    public IReadOnlyList<ControlRecord> Controls { get; set; } = Array.Empty<ControlRecord>();
-    public IReadOnlyList<DomainGpoBackupInfo> Backups { get; set; } = Array.Empty<DomainGpoBackupInfo>();
+    public IReadOnlyList<ControlRecord> Controls { get; set; } = [];
+    public IReadOnlyList<DomainGpoBackupInfo> Backups { get; set; } = [];
     public List<string> Warnings { get; set; } = new();
 }

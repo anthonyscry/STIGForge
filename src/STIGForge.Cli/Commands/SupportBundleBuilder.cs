@@ -21,7 +21,7 @@ public sealed class SupportBundleResult
   public string BundleZipPath { get; init; } = string.Empty;
   public string ManifestPath { get; init; } = string.Empty;
   public int FileCount { get; init; }
-  public IReadOnlyList<string> Warnings { get; init; } = Array.Empty<string>();
+  public IReadOnlyList<string> Warnings { get; init; } = [];
 }
 
 public sealed class SupportBundleBuilder

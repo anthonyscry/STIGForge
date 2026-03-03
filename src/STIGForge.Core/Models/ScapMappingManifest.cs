@@ -27,8 +27,8 @@ public sealed class ScapMappingManifest
   public string StigName { get; set; } = string.Empty;
   public string? SelectedBenchmarkPackId { get; set; }
   public string? SelectedBenchmarkName { get; set; }
-  public IReadOnlyList<string> SelectionReasons { get; set; } = Array.Empty<string>();
-  public IReadOnlyList<ScapControlMapping> ControlMappings { get; set; } = Array.Empty<ScapControlMapping>();
+  public IReadOnlyList<string> SelectionReasons { get; set; } = [];
+  public IReadOnlyList<ScapControlMapping> ControlMappings { get; set; } = [];
   public DateTimeOffset GeneratedAt { get; set; }
 
   [JsonIgnore]

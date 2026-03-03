@@ -75,7 +75,7 @@ public sealed class WdacPolicyService : ISecurityFeatureService
             Detail = alreadyInExpectedState
                 ? $"WDAC is already in {expectedState} mode"
                 : $"WDAC is in {status.CurrentState} mode, expected {expectedState}",
-            Diagnostics = status.Detail == null ? Array.Empty<string>() : new[] { status.Detail }
+            Diagnostics = status.Detail == null ? [] : new[] { status.Detail }
         };
     }
 
@@ -128,7 +128,7 @@ public sealed class WdacPolicyService : ISecurityFeatureService
                 PreviousState = testResult.PreviousState,
                 NewState = modeLabel,
                 Detail = $"WDAC policy deployed in {modeLabel} mode",
-                Diagnostics = string.IsNullOrWhiteSpace(output) ? Array.Empty<string>() : new[] { output! }
+                Diagnostics = string.IsNullOrWhiteSpace(output) ? [] : new[] { output! }
             };
         }
         catch (Exception ex)

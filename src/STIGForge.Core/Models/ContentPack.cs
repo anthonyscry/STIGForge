@@ -14,13 +14,13 @@ public sealed class ContentPack
   /// List of SCAP benchmark IDs this pack maps to (e.g., ["Windows_10_STIG", "Windows_Server_2022_STIG"]).
   /// Populated at import time from parsed XCCDF/OVAL metadata.
   /// </summary>
-  public IReadOnlyList<string> BenchmarkIds { get; set; } = Array.Empty<string>();
+  public IReadOnlyList<string> BenchmarkIds { get; set; } = [];
 
   /// <summary>
   /// Flat string tags for downstream filtering and applicability matching
   /// (e.g., ["Win10", "Server2022", "MemberServer", "DomainController"]).
   /// </summary>
-  public IReadOnlyList<string> ApplicabilityTags { get; set; } = Array.Empty<string>();
+  public IReadOnlyList<string> ApplicabilityTags { get; set; } = [];
 
   /// <summary>
   /// Pack-level benchmark version string (e.g., "V2R7").

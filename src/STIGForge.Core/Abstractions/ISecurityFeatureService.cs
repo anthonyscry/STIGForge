@@ -40,7 +40,7 @@ public sealed class SecurityFeatureResult
     public string? NewState { get; set; }
     public string? ErrorMessage { get; set; }
     public string? Detail { get; set; }
-    public IReadOnlyList<string> Diagnostics { get; set; } = Array.Empty<string>();
+    public IReadOnlyList<string> Diagnostics { get; set; } = [];
 }
 
 public sealed class SecurityRunResult
@@ -51,5 +51,5 @@ public sealed class SecurityRunResult
     public int SuccessCount { get; set; }
     public int FailedCount { get; set; }
     public int ChangedCount { get; set; }
-    public IReadOnlyList<SecurityFeatureResult> Results { get; set; } = Array.Empty<SecurityFeatureResult>();
+    public IReadOnlyList<SecurityFeatureResult> Results { get; set; } = [];
 }

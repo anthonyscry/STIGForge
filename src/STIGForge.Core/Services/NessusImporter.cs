@@ -164,9 +164,9 @@ public sealed class NessusFinding
   public string SeeAlso { get; set; } = string.Empty;
   public double CvssScore { get; set; }
   public string CvssVector { get; set; } = string.Empty;
-  public IReadOnlyList<string> CveList { get; set; } = Array.Empty<string>();
-  public IReadOnlyList<string> CweList { get; set; } = Array.Empty<string>();
-  public IReadOnlyList<string> XrefList { get; set; } = Array.Empty<string>();
+  public IReadOnlyList<string> CveList { get; set; } = [];
+  public IReadOnlyList<string> CweList { get; set; } = [];
+  public IReadOnlyList<string> XrefList { get; set; } = [];
   public string? StigRuleId { get; set; }
   public string? StigVersion { get; set; }
   public string Output { get; set; } = string.Empty;

@@ -612,7 +612,7 @@ internal static class BuildCommands
         AutoApplyRequiresMapping = true,
         ReleaseDateSource = ReleaseDateSource.ContentPack
       },
-      OverlayIds = Array.Empty<string>()
+      OverlayIds = []
     };
   }
 
@@ -654,7 +654,7 @@ internal static class BuildCommands
   private static async Task<IReadOnlyList<Overlay>> LoadSelectedOverlaysAsync(IOverlayRepository overlaysRepo, Profile profile, CancellationToken ct)
   {
     var overlays = new List<Overlay>();
-    foreach (var overlayId in profile.OverlayIds ?? Array.Empty<string>())
+    foreach (var overlayId in profile.OverlayIds ?? [])
     {
       if (string.IsNullOrWhiteSpace(overlayId))
         continue;
@@ -827,11 +827,9 @@ internal static class BuildCommands
     using var response = await http.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
     response.EnsureSuccessStatusCode();
 
-    await using (var remote = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false))
-    await using (var local = new FileStream(destination, FileMode.Create, FileAccess.Write, FileShare.None))
-    {
-      await remote.CopyToAsync(local, ct).ConfigureAwait(false);
-    }
+    await using var remote = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
+    await using var local = new FileStream(destination, FileMode.Create, FileAccess.Write, FileShare.None);
+    await remote.CopyToAsync(local, ct).ConfigureAwait(false);
 
     return destination;
   }

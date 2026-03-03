@@ -67,7 +67,7 @@ public sealed class DpapiCredentialStore : ICredentialStore
   public IReadOnlyList<string> ListHosts()
   {
     if (!Directory.Exists(_credDir))
-      return Array.Empty<string>();
+      return [];
 
     var files = Directory.GetFiles(_credDir, "*.cred");
     var hosts = new List<string>(files.Length);

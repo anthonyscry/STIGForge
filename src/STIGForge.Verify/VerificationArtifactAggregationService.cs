@@ -36,7 +36,7 @@ public sealed class VerificationArtifactAggregationService
     Directory.CreateDirectory(reportsRoot);
 
     var allResults = new List<ControlResult>();
-    var inputList = inputs ?? Array.Empty<VerificationCoverageInput>();
+    var inputList = inputs ?? [];
 
     foreach (var input in inputList)
     {

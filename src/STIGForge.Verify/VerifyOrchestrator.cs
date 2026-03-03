@@ -244,7 +244,7 @@ public sealed class VerifyOrchestrator
         Status = VerifyStatus.NotReviewed,
         Tool = "Merged",
         SourceFile = string.Empty,
-        EvidencePaths = Array.Empty<string>(),
+        EvidencePaths = [],
         Metadata = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
       };
     }
@@ -467,11 +467,11 @@ public sealed class VerifyOrchestrator
 public sealed class ConsolidatedVerifyReport
 {
   public DateTimeOffset MergedAt { get; set; }
-  public IReadOnlyList<SourceReportInfo> SourceReports { get; set; } = Array.Empty<SourceReportInfo>();
-  public IReadOnlyList<NormalizedVerifyResult> Results { get; set; } = Array.Empty<NormalizedVerifyResult>();
+  public IReadOnlyList<SourceReportInfo> SourceReports { get; set; } = [];
+  public IReadOnlyList<NormalizedVerifyResult> Results { get; set; } = [];
   public VerifySummary Summary { get; set; } = new VerifySummary();
-  public IReadOnlyList<ResultConflict> Conflicts { get; set; } = Array.Empty<ResultConflict>();
-  public IReadOnlyList<string> DiagnosticMessages { get; set; } = Array.Empty<string>();
+  public IReadOnlyList<ResultConflict> Conflicts { get; set; } = [];
+  public IReadOnlyList<string> DiagnosticMessages { get; set; } = [];
 }
 
 public sealed class SourceReportInfo
@@ -486,7 +486,7 @@ public sealed class ResultConflict
 {
   public string ControlId { get; set; } = string.Empty;
   public VerifyStatus ResolvedStatus { get; set; }
-  public IReadOnlyList<ConflictingResult> ConflictingResults { get; set; } = Array.Empty<ConflictingResult>();
+  public IReadOnlyList<ConflictingResult> ConflictingResults { get; set; } = [];
   public string ResolutionReason { get; set; } = string.Empty;
 }
 

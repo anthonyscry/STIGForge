@@ -595,7 +595,7 @@ public sealed class FleetTarget
 
 public sealed class FleetRequest
 {
-  public IReadOnlyList<FleetTarget> Targets { get; set; } = Array.Empty<FleetTarget>();
+  public IReadOnlyList<FleetTarget> Targets { get; set; } = [];
   public string Operation { get; set; } = "orchestrate";
   public string? RemoteCliPath { get; set; }
   public string? RemoteBundleRoot { get; set; }
@@ -609,7 +609,7 @@ public sealed class FleetRequest
 
 public sealed class FleetResult
 {
-  public IReadOnlyList<FleetMachineResult> MachineResults { get; set; } = Array.Empty<FleetMachineResult>();
+  public IReadOnlyList<FleetMachineResult> MachineResults { get; set; } = [];
   public DateTimeOffset StartedAt { get; set; }
   public DateTimeOffset FinishedAt { get; set; }
   public int TotalMachines { get; set; }
@@ -632,7 +632,7 @@ public sealed class FleetMachineResult
 
 public sealed class FleetStatusResult
 {
-  public IReadOnlyList<FleetMachineStatus> MachineStatuses { get; set; } = Array.Empty<FleetMachineStatus>();
+  public IReadOnlyList<FleetMachineStatus> MachineStatuses { get; set; } = [];
   public int TotalMachines { get; set; }
   public int ReachableCount { get; set; }
   public int UnreachableCount { get; set; }
@@ -648,7 +648,7 @@ public sealed class FleetMachineStatus
 
 public sealed class FleetCollectionRequest
 {
-  public IReadOnlyList<FleetTarget> Targets { get; set; } = Array.Empty<FleetTarget>();
+  public IReadOnlyList<FleetTarget> Targets { get; set; } = [];
   public string? RemoteBundleRoot { get; set; }
   public string LocalResultsRoot { get; set; } = string.Empty;
   public int MaxConcurrency { get; set; } = 5;
@@ -657,7 +657,7 @@ public sealed class FleetCollectionRequest
 
 public sealed class FleetCollectionResult
 {
-  public IReadOnlyList<FleetHostCollectionResult> HostResults { get; set; } = Array.Empty<FleetHostCollectionResult>();
+  public IReadOnlyList<FleetHostCollectionResult> HostResults { get; set; } = [];
   public int TotalHosts { get; set; }
   public int SuccessCount { get; set; }
   public int FailureCount { get; set; }

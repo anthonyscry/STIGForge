@@ -39,5 +39,5 @@ public sealed class Profile
   public ClassificationMode ClassificationMode { get; set; }
   public NaPolicy NaPolicy { get; set; } = new();
   public AutomationPolicy AutomationPolicy { get; set; } = new();
-  public IReadOnlyList<string> OverlayIds { get; set; } = Array.Empty<string>();
+  public IReadOnlyList<string> OverlayIds { get; set; } = [];
 }

@@ -9,9 +9,9 @@ public sealed class PackApplicabilityInput
   public string Format { get; set; } = string.Empty;
   public OsTarget MachineOs { get; set; } = OsTarget.Unknown;
   public RoleTemplate MachineRole { get; set; } = RoleTemplate.Workstation;
-  public IReadOnlyList<string> InstalledFeatures { get; set; } = Array.Empty<string>();
-  public IReadOnlyList<OsTarget> ControlOsTargets { get; set; } = Array.Empty<OsTarget>();
-  public IReadOnlyList<string> HostSignals { get; set; } = Array.Empty<string>();
+  public IReadOnlyList<string> InstalledFeatures { get; set; } = [];
+  public IReadOnlyList<OsTarget> ControlOsTargets { get; set; } = [];
+  public IReadOnlyList<string> HostSignals { get; set; } = [];
 }
 
 public enum ApplicabilityState
@@ -32,7 +32,7 @@ public sealed class PackApplicabilityDecision
   public ApplicabilityState State { get; set; }
   public ApplicabilityConfidence Confidence { get; set; }
   public string ReasonCode { get; set; } = string.Empty;
-  public IReadOnlyList<string> Evidence { get; set; } = Array.Empty<string>();
+  public IReadOnlyList<string> Evidence { get; set; } = [];
 }
 
 public static class PackApplicabilityRules
@@ -195,7 +195,7 @@ public static class PackApplicabilityRules
           new[] { "Baseline feature tags did not match detected host features." });
     }
 
-    var explicitControlTargets = (input.ControlOsTargets ?? Array.Empty<OsTarget>())
+    var explicitControlTargets = (input.ControlOsTargets ?? [])
       .Where(t => t != OsTarget.Unknown)
       .Distinct()
       .ToList();

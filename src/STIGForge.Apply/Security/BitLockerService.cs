@@ -74,7 +74,7 @@ public sealed class BitLockerService : ISecurityFeatureService
             Detail = alreadyExpected
                 ? $"BitLocker is already {expectedState}"
                 : $"BitLocker is {status.CurrentState}, expected {expectedState}",
-            Diagnostics = status.Detail == null ? Array.Empty<string>() : new[] { status.Detail }
+            Diagnostics = status.Detail == null ? [] : new[] { status.Detail }
         };
     }
 

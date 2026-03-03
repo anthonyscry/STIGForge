@@ -12,7 +12,7 @@ public sealed class ProfileValidationResult
     Errors = errors;
   }
 
-  public static ProfileValidationResult Success => new(Array.Empty<string>());
+  public static ProfileValidationResult Success => new([]);
 }
 
 public sealed class ProfileValidator

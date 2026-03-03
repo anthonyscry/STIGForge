@@ -37,7 +37,7 @@ public static class CklExporter
       return new CklExportResult
       {
         OutputPath = string.Empty,
-        OutputPaths = Array.Empty<string>(),
+        OutputPaths = [],
         ControlCount = 0,
         Message = "No verification results found."
       };
@@ -462,7 +462,7 @@ public sealed class CklExportRequest
 public sealed class CklExportResult
 {
   public string OutputPath { get; set; } = string.Empty;
-  public IReadOnlyList<string> OutputPaths { get; set; } = Array.Empty<string>();
+  public IReadOnlyList<string> OutputPaths { get; set; } = [];
   public int ControlCount { get; set; }
   public string Message { get; set; } = string.Empty;
 }
@@ -472,5 +472,5 @@ internal sealed class BundleChecklistResultSet
   public string BundleRoot { get; set; } = string.Empty;
   public string PackId { get; set; } = string.Empty;
   public string PackName { get; set; } = string.Empty;
-  public IReadOnlyList<ControlResult> Results { get; set; } = Array.Empty<ControlResult>();
+  public IReadOnlyList<ControlResult> Results { get; set; } = [];
 }

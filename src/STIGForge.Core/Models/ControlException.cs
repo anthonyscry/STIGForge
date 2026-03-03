@@ -46,5 +46,5 @@ public sealed class ExceptionAuditReport
   public int RevokedCount { get; set; }
   public int ExpiringWithin30Days { get; set; }
   public int HighRiskActiveCount { get; set; }
-  public IReadOnlyList<ControlException> ExpiringExceptions { get; set; } = Array.Empty<ControlException>();
+  public IReadOnlyList<ControlException> ExpiringExceptions { get; set; } = [];
 }

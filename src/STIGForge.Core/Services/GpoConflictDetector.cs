@@ -39,11 +39,11 @@ public sealed class GpoConflictDetector
 
     var localSettings = LoadLocalStigSettings(bundleRoot);
     if (localSettings.Count == 0)
-      return Array.Empty<GpoConflict>();
+      return [];
 
     var appliedSettings = await LoadAppliedGpoSettingsAsync(localSettings.Keys, ct).ConfigureAwait(false);
     if (appliedSettings.Count == 0)
-      return Array.Empty<GpoConflict>();
+      return [];
 
     var conflicts = new List<GpoConflict>();
     foreach (var localSetting in localSettings)

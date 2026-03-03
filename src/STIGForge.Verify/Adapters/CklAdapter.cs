@@ -122,7 +122,7 @@ public sealed class CklAdapter : IVerifyResultAdapter
       SourceFile = sourcePath,
       RawArtifactPath = Path.GetFullPath(sourcePath),
       VerifiedAt = new DateTimeOffset(File.GetLastWriteTimeUtc(sourcePath), TimeSpan.Zero),
-      EvidencePaths = Array.Empty<string>(),
+      EvidencePaths = [],
       Metadata = metadata
     };
   }

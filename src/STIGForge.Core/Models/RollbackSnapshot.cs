@@ -6,10 +6,10 @@ public sealed class RollbackSnapshot
   public string BundleRoot { get; set; } = string.Empty;
   public string Description { get; set; } = string.Empty;
   public DateTimeOffset CreatedAt { get; set; }
-  public IReadOnlyList<RollbackRegistryKeyState> RegistryKeys { get; set; } = Array.Empty<RollbackRegistryKeyState>();
-  public IReadOnlyList<RollbackFilePathState> FilePaths { get; set; } = Array.Empty<RollbackFilePathState>();
-  public IReadOnlyList<RollbackServiceState> ServiceStates { get; set; } = Array.Empty<RollbackServiceState>();
-  public IReadOnlyList<RollbackGpoSettingState> GpoSettings { get; set; } = Array.Empty<RollbackGpoSettingState>();
+  public IReadOnlyList<RollbackRegistryKeyState> RegistryKeys { get; set; } = [];
+  public IReadOnlyList<RollbackFilePathState> FilePaths { get; set; } = [];
+  public IReadOnlyList<RollbackServiceState> ServiceStates { get; set; } = [];
+  public IReadOnlyList<RollbackGpoSettingState> GpoSettings { get; set; } = [];
   public string RollbackScriptPath { get; set; } = string.Empty;
 }
 

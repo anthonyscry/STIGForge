@@ -24,7 +24,7 @@ public sealed class DriftCheckResult
   public DateTimeOffset CheckedAt { get; set; }
   public int CurrentRuleCount { get; set; }
   public int BaselineRuleCount { get; set; }
-  public IReadOnlyList<DriftSnapshot> DriftEvents { get; set; } = Array.Empty<DriftSnapshot>();
-  public IReadOnlyList<string> AutoRemediatedRuleIds { get; set; } = Array.Empty<string>();
-  public IReadOnlyList<string> RemediationErrors { get; set; } = Array.Empty<string>();
+  public IReadOnlyList<DriftSnapshot> DriftEvents { get; set; } = [];
+  public IReadOnlyList<string> AutoRemediatedRuleIds { get; set; } = [];
+  public IReadOnlyList<string> RemediationErrors { get; set; } = [];
 }

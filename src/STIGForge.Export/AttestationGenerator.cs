@@ -162,7 +162,7 @@ public static class AttestationGenerator
 /// </summary>
 public sealed class AttestationPackage
 {
-  public IReadOnlyList<AttestationRecord> Attestations { get; set; } = Array.Empty<AttestationRecord>();
+  public IReadOnlyList<AttestationRecord> Attestations { get; set; } = [];
   public DateTimeOffset GeneratedAt { get; set; }
   public string SystemName { get; set; } = string.Empty;
 }

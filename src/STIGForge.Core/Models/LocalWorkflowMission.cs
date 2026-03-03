@@ -2,13 +2,13 @@ namespace STIGForge.Core.Models;
 
 public sealed class LocalWorkflowMission
 {
-  public IReadOnlyList<LocalWorkflowChecklistItem> CanonicalChecklist { get; set; } = Array.Empty<LocalWorkflowChecklistItem>();
+  public IReadOnlyList<LocalWorkflowChecklistItem> CanonicalChecklist { get; set; } = [];
 
-  public IReadOnlyList<LocalWorkflowScannerEvidence> ScannerEvidence { get; set; } = Array.Empty<LocalWorkflowScannerEvidence>();
+  public IReadOnlyList<LocalWorkflowScannerEvidence> ScannerEvidence { get; set; } = [];
 
-  public IReadOnlyList<LocalWorkflowUnmappedEvidence> Unmapped { get; set; } = Array.Empty<LocalWorkflowUnmappedEvidence>();
+  public IReadOnlyList<LocalWorkflowUnmappedEvidence> Unmapped { get; set; } = [];
 
-  public IReadOnlyList<string> Diagnostics { get; set; } = Array.Empty<string>();
+  public IReadOnlyList<string> Diagnostics { get; set; } = [];
 
   public LocalWorkflowStageMetadata StageMetadata { get; set; } = new();
 }

@@ -8,8 +8,8 @@ public sealed class CanonicalScapSelectionInput
   public string StigPackId { get; set; } = string.Empty;
   public string StigName { get; set; } = string.Empty;
   public DateTimeOffset StigImportedAt { get; set; }
-  public IReadOnlyCollection<string> StigBenchmarkIds { get; set; } = Array.Empty<string>();
-  public IReadOnlyList<CanonicalScapCandidate> Candidates { get; set; } = Array.Empty<CanonicalScapCandidate>();
+  public IReadOnlyCollection<string> StigBenchmarkIds { get; set; } = [];
+  public IReadOnlyList<CanonicalScapCandidate> Candidates { get; set; } = [];
 }
 
 public sealed class CanonicalScapCandidate
@@ -19,13 +19,13 @@ public sealed class CanonicalScapCandidate
   public string SourceLabel { get; set; } = string.Empty;
   public DateTimeOffset ImportedAt { get; set; }
   public DateTimeOffset? ReleaseDate { get; set; }
-  public IReadOnlyCollection<string> BenchmarkIds { get; set; } = Array.Empty<string>();
+  public IReadOnlyCollection<string> BenchmarkIds { get; set; } = [];
 }
 
 public sealed class CanonicalScapSelectionResult
 {
   public CanonicalScapCandidate? Winner { get; set; }
-  public IReadOnlyList<string> Reasons { get; set; } = Array.Empty<string>();
+  public IReadOnlyList<string> Reasons { get; set; } = [];
   public bool HasConflict { get; set; }
 }
 
@@ -38,7 +38,7 @@ public sealed class CanonicalScapSelector
     if (input == null)
       throw new ArgumentNullException(nameof(input));
 
-    var candidates = (input.Candidates ?? Array.Empty<CanonicalScapCandidate>())
+    var candidates = (input.Candidates ?? [])
       .Where(c => c != null)
       .ToList();
 

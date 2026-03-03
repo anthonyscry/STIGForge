@@ -42,14 +42,12 @@ public sealed class DebugBundleExporter
 
     var fileCount = 0;
 
-    using (var archive = ZipFile.Open(outputPath, ZipArchiveMode.Create))
-    {
-      AddLogsToArchive(archive, logsRoot, request.IncludeDaysOfLogs, ref fileCount);
-      AddBundleLogsToArchive(archive, request.BundleRoot, ref fileCount);
-      AddTracesToArchive(archive, logsRoot, ref fileCount);
-      AddSystemInfoToArchive(archive, ref fileCount);
-      AddManifestToArchive(archive, request, ref fileCount);
-    }
+    using var archive = ZipFile.Open(outputPath, ZipArchiveMode.Create);
+    AddLogsToArchive(archive, logsRoot, request.IncludeDaysOfLogs, ref fileCount);
+    AddBundleLogsToArchive(archive, request.BundleRoot, ref fileCount);
+    AddTracesToArchive(archive, logsRoot, ref fileCount);
+    AddSystemInfoToArchive(archive, ref fileCount);
+    AddManifestToArchive(archive, request, ref fileCount);
 
     return new DebugBundleResult
     {

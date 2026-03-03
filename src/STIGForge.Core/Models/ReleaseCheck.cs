@@ -26,7 +26,7 @@ public sealed class ReleaseNotes
   public int RemovedCount { get; set; }
   public int ModifiedCount { get; set; }
   public int SeverityChangedCount { get; set; }
-  public IReadOnlyList<string> HighlightedChanges { get; set; } = Array.Empty<string>();
+  public IReadOnlyList<string> HighlightedChanges { get; set; } = [];
   public ComplianceImpactEstimate? ComplianceImpact { get; set; }
 }
 

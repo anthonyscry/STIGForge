@@ -79,7 +79,7 @@ public sealed class BundleMissionSummaryService : IBundleMissionSummaryService
       return new MissionTimelineSummary
       {
         LatestRun = null,
-        Events = Array.Empty<MissionTimelineEvent>(),
+        Events = [],
         NextAction = "No mission runs recorded yet. Run orchestration to start a mission."
       };
     }
@@ -92,7 +92,7 @@ public sealed class BundleMissionSummaryService : IBundleMissionSummaryService
     catch (Exception ex)
     {
       System.Diagnostics.Trace.TraceWarning("BundleMissionSummaryService: failed to read timeline for run " + latestRun.RunId + ": " + ex.Message);
-      events = Array.Empty<MissionTimelineEvent>();
+      events = [];
     }
 
     var lastEvent = events.Count > 0 ? events[events.Count - 1] : null;
@@ -238,7 +238,7 @@ public sealed class BundleMissionSummaryService : IBundleMissionSummaryService
   {
     var controlsPath = Path.Combine(bundleRoot, "Manifest", "pack_controls.json");
     if (!File.Exists(controlsPath))
-      return Array.Empty<ControlRecord>();
+      return [];
 
     try
     {
@@ -252,7 +252,7 @@ public sealed class BundleMissionSummaryService : IBundleMissionSummaryService
     catch (Exception ex)
     {
       diagnostics.Add("Failed to parse pack_controls.json: " + ex.Message);
-      return Array.Empty<ControlRecord>();
+      return [];
     }
   }
 

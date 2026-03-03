@@ -46,16 +46,16 @@ public sealed class ImportScanSummary
   public int ImportedPackCount { get; set; }
   public int ImportedToolCount { get; set; }
   public Dictionary<string, int> ImportedByType { get; set; } = new(StringComparer.OrdinalIgnoreCase);
-  public IReadOnlyList<string> Warnings { get; set; } = Array.Empty<string>();
-  public IReadOnlyList<string> Failures { get; set; } = Array.Empty<string>();
-  public IReadOnlyList<string> ProcessedArtifactLedgerSnapshot { get; set; } = Array.Empty<string>();
+  public IReadOnlyList<string> Warnings { get; set; } = [];
+  public IReadOnlyList<string> Failures { get; set; } = [];
+  public IReadOnlyList<string> ProcessedArtifactLedgerSnapshot { get; set; } = [];
 
   /// <summary>
   /// Per-operation staged lifecycle outcomes.
   /// Each planned content import operation emits one row showing its
   /// deterministic staged transition result (Committed or Failed).
   /// </summary>
-  public IReadOnlyList<StagedOperationOutcome> StagedOutcomes { get; set; } = Array.Empty<StagedOperationOutcome>();
+  public IReadOnlyList<StagedOperationOutcome> StagedOutcomes { get; set; } = [];
 
   /// <summary>Count of operations that transitioned to Committed state.</summary>
   public int StagedCommittedCount { get; set; }

@@ -307,7 +307,7 @@ public sealed class EmassExporter
   private static IReadOnlyList<ManualAnswer> LoadManualAnswers(string bundleRoot)
   {
     var path = Path.Combine(bundleRoot, "Manual", "answers.json");
-    if (!File.Exists(path)) return Array.Empty<ManualAnswer>();
+    if (!File.Exists(path)) return [];
 
     var json = File.ReadAllText(path);
     var file = JsonSerializer.Deserialize<AnswerFile>(json, new JsonSerializerOptions
@@ -315,7 +315,7 @@ public sealed class EmassExporter
       PropertyNameCaseInsensitive = true
     });
 
-    if (file == null) return Array.Empty<ManualAnswer>();
+    if (file == null) return [];
     return file.Answers;
   }
 
@@ -729,7 +729,7 @@ public sealed class EmassExporter
 
   private sealed class ExportTrace
   {
-    public IReadOnlyList<string> SourceReports { get; set; } = Array.Empty<string>();
+    public IReadOnlyList<string> SourceReports { get; set; } = [];
 
     public IReadOnlyDictionary<string, int> ToolCounts { get; set; } = new Dictionary<string, int>();
 

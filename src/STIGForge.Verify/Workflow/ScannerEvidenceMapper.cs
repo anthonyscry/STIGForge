@@ -90,9 +90,9 @@ public sealed class ScannerEvidenceMapper
 
 public sealed class ScannerEvidenceMapResult
 {
-  public IReadOnlyList<LocalWorkflowScannerEvidence> ScannerEvidence { get; set; } = Array.Empty<LocalWorkflowScannerEvidence>();
+  public IReadOnlyList<LocalWorkflowScannerEvidence> ScannerEvidence { get; set; } = [];
 
-  public IReadOnlyList<LocalWorkflowUnmappedEvidence> Unmapped { get; set; } = Array.Empty<LocalWorkflowUnmappedEvidence>();
+  public IReadOnlyList<LocalWorkflowUnmappedEvidence> Unmapped { get; set; } = [];
 
-  public IReadOnlyList<string> Diagnostics { get; set; } = Array.Empty<string>();
+  public IReadOnlyList<string> Diagnostics { get; set; } = [];
 }

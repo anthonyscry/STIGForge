@@ -147,7 +147,7 @@ public sealed class EvaluateStigAdapter : IVerifyResultAdapter
       SourceFile = sourcePath,
       RawArtifactPath = Path.GetFullPath(sourcePath),
       VerifiedAt = ParseTimestamp(verifiedAtStr, verifiedAt),
-      EvidencePaths = Array.Empty<string>(),
+      EvidencePaths = [],
       Metadata = metadata
     };
   }
@@ -254,7 +254,7 @@ public sealed class EvaluateStigAdapter : IVerifyResultAdapter
       FinishedAt = endTime ?? timestamp,
       OutputRoot = Path.GetDirectoryName(outputPath) ?? string.Empty,
       RawArtifactPath = Path.GetFullPath(outputPath),
-      Results = Array.Empty<NormalizedVerifyResult>(),
+      Results = [],
       Summary = new VerifySummary(),
       DiagnosticMessages = diagnostics
     };

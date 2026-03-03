@@ -19,7 +19,7 @@ public sealed class RevisionInfo
 public sealed class Applicability
 {
   public OsTarget OsTarget { get; set; }
-  public IReadOnlyCollection<RoleTemplate> RoleTags { get; set; } = Array.Empty<RoleTemplate>();
+  public IReadOnlyCollection<RoleTemplate> RoleTags { get; set; } = [];
   public ScopeTag ClassificationScope { get; set; }
   public Confidence Confidence { get; set; }
 }

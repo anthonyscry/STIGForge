@@ -25,7 +25,7 @@ public sealed class ComplianceSnapshot
 /// </summary>
 public sealed class ComplianceTrend
 {
-  public IReadOnlyList<ComplianceSnapshot> Snapshots { get; set; } = Array.Empty<ComplianceSnapshot>();
+  public IReadOnlyList<ComplianceSnapshot> Snapshots { get; set; } = [];
   public double CurrentPercent { get; set; }
   public double PreviousPercent { get; set; }
   public double Delta { get; set; }

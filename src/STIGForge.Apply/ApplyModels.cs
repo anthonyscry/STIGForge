@@ -108,13 +108,13 @@ public sealed class ApplyResult
    public string BundleRoot { get; set; } = string.Empty;
    public HardeningMode Mode { get; set; }
    public string LogPath { get; set; } = string.Empty;
-   public IReadOnlyList<ApplyStepOutcome> Steps { get; set; } = Array.Empty<ApplyStepOutcome>();
+   public IReadOnlyList<ApplyStepOutcome> Steps { get; set; } = [];
    public string SnapshotId { get; set; } = string.Empty;
    public string RollbackScriptPath { get; set; } = string.Empty;
    public bool IsMissionComplete { get; set; }
    public bool IntegrityVerified { get; set; }
-   public IReadOnlyList<string> BlockingFailures { get; set; } = Array.Empty<string>();
-   public IReadOnlyList<string> RecoveryArtifactPaths { get; set; } = Array.Empty<string>();
+   public IReadOnlyList<string> BlockingFailures { get; set; } = [];
+   public IReadOnlyList<string> RecoveryArtifactPaths { get; set; } = [];
 
    /// <summary>The run ID this result belongs to (propagated from ApplyRequest.RunId if set).</summary>
    public string? RunId { get; set; }
@@ -144,7 +144,7 @@ public sealed class PreflightRequest
 public sealed class PreflightResult
 {
   public bool Ok { get; set; }
-  public IReadOnlyList<string> Issues { get; set; } = Array.Empty<string>();
+  public IReadOnlyList<string> Issues { get; set; } = [];
   public string Timestamp { get; set; } = string.Empty;
   public int ExitCode { get; set; }
 }

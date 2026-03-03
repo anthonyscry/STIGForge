@@ -15,7 +15,7 @@ public sealed class OverlayConflict
 
 public sealed class OverlayConflictReport
 {
-  public IReadOnlyList<OverlayConflict> Conflicts { get; init; } = Array.Empty<OverlayConflict>();
+  public IReadOnlyList<OverlayConflict> Conflicts { get; init; } = [];
   public bool HasBlockingConflicts => BlockingConflictCount > 0;
   public int BlockingConflictCount => Conflicts.Count(c => c.IsBlockingConflict);
 }

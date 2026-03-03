@@ -128,7 +128,7 @@ public static class PolFileParser
             return false;
         }
 
-        var entryData = dataSize > 0 ? new byte[dataSize] : Array.Empty<byte>();
+        var entryData = dataSize > 0 ? new byte[dataSize] : [];
         if (dataSize > 0)
         {
             Array.Copy(data, offset, entryData, 0, (int)dataSize);
@@ -238,7 +238,7 @@ public static class PolFileParser
             Applicability = new Applicability
             {
                 OsTarget = osTarget,
-                RoleTags = Array.Empty<RoleTemplate>(),
+                RoleTags = [],
                 ClassificationScope = ScopeTag.Unknown,
                 Confidence = Confidence.High
             },
@@ -273,14 +273,14 @@ public sealed class PolEntry
     public string Key { get; set; } = string.Empty;
     public string ValueName { get; set; } = string.Empty;
     public RegistryType RegType { get; set; }
-    public byte[] Data { get; set; } = Array.Empty<byte>();
+    public byte[] Data { get; set; } = [];
     public string DisplayValue { get; set; } = string.Empty;
 }
 
 public sealed class PolFileParseResult
 {
-    public IReadOnlyList<ControlRecord> Controls { get; set; } = Array.Empty<ControlRecord>();
-    public IReadOnlyList<PolEntry> Entries { get; set; } = Array.Empty<PolEntry>();
+    public IReadOnlyList<ControlRecord> Controls { get; set; } = [];
+    public IReadOnlyList<PolEntry> Entries { get; set; } = [];
     public string SourcePath { get; set; } = string.Empty;
     public List<string> Warnings { get; set; } = new();
 }

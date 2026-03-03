@@ -440,28 +440,28 @@ public sealed class BundleOrchestrator
   private static IReadOnlyList<STIGForge.Core.Models.ControlRecord> LoadBundleControls(string bundleRoot)
   {
     var packControlsPath = Path.Combine(bundleRoot, "Manifest", "pack_controls.json");
-    if (!File.Exists(packControlsPath)) return Array.Empty<STIGForge.Core.Models.ControlRecord>();
+    if (!File.Exists(packControlsPath)) return [];
 
     var json = File.ReadAllText(packControlsPath);
     var controls = System.Text.Json.JsonSerializer.Deserialize<List<STIGForge.Core.Models.ControlRecord>>(json,
       new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-    if (controls == null) return Array.Empty<STIGForge.Core.Models.ControlRecord>();
+    if (controls == null) return [];
     return controls;
   }
 
   private static IReadOnlyList<STIGForge.Core.Models.PowerStigOverride> LoadBundlePowerStigOverrides(string bundleRoot)
   {
     var overlaysPath = Path.Combine(bundleRoot, "Manifest", "overlays.json");
-    if (!File.Exists(overlaysPath)) return Array.Empty<STIGForge.Core.Models.PowerStigOverride>();
+    if (!File.Exists(overlaysPath)) return [];
 
     var json = File.ReadAllText(overlaysPath);
     var overlays = System.Text.Json.JsonSerializer.Deserialize<List<STIGForge.Core.Models.Overlay>>(json,
       new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
-    if (overlays == null) return Array.Empty<STIGForge.Core.Models.PowerStigOverride>();
+    if (overlays == null) return [];
 
     var list = new List<STIGForge.Core.Models.PowerStigOverride>();
     foreach (var o in overlays)
-      list.AddRange(o.PowerStigOverrides ?? Array.Empty<STIGForge.Core.Models.PowerStigOverride>());
+      list.AddRange(o.PowerStigOverrides ?? []);
 
     return list;
   }

@@ -163,7 +163,7 @@ public static class GpoParser
       Applicability = new Applicability
       {
         OsTarget = osTarget,
-        RoleTags = Array.Empty<RoleTemplate>(),
+        RoleTags = [],
         ClassificationScope = ScopeTag.Unknown,
         Confidence = Confidence.Medium
       },
@@ -216,9 +216,9 @@ public static class GpoParser
 
 public sealed class GpoFullParseResult
 {
-  public IReadOnlyList<ControlRecord> Controls { get; set; } = Array.Empty<ControlRecord>();
-  public IReadOnlyList<GpoOsScope> OsScopes { get; set; } = Array.Empty<GpoOsScope>();
-  public IReadOnlyList<DomainGpoBackupInfo> DomainGpoBackups { get; set; } = Array.Empty<DomainGpoBackupInfo>();
+  public IReadOnlyList<ControlRecord> Controls { get; set; } = [];
+  public IReadOnlyList<GpoOsScope> OsScopes { get; set; } = [];
+  public IReadOnlyList<DomainGpoBackupInfo> DomainGpoBackups { get; set; } = [];
   public List<string> Warnings { get; set; } = new();
   public int AdmxFileCount { get; set; }
   public int PolFileCount { get; set; }

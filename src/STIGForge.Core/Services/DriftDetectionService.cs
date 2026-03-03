@@ -18,7 +18,7 @@ public sealed class DriftDetectionService
   {
     _repo = repo ?? throw new ArgumentNullException(nameof(repo));
     _clock = clock ?? new SystemClock();
-    _remediationHandlers = (remediationHandlers ?? Array.Empty<IRemediationHandler>())
+    _remediationHandlers = (remediationHandlers ?? [])
       .GroupBy(h => h.RuleId, StringComparer.OrdinalIgnoreCase)
       .ToDictionary(g => g.Key, g => g.First(), StringComparer.OrdinalIgnoreCase);
   }

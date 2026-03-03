@@ -245,7 +245,7 @@ public static class PoamGenerator
 /// </summary>
 public sealed class PoamPackage
 {
-  public IReadOnlyList<PoamItem> Items { get; set; } = Array.Empty<PoamItem>();
+  public IReadOnlyList<PoamItem> Items { get; set; } = [];
   public PoamSummary Summary { get; set; } = new();
 }
 

@@ -48,14 +48,14 @@ public sealed class ImportInboxCandidate
 
 public sealed class ImportInboxScanResult
 {
-  public IReadOnlyList<ImportInboxCandidate> Candidates { get; set; } = Array.Empty<ImportInboxCandidate>();
-  public IReadOnlyList<string> Warnings { get; set; } = Array.Empty<string>();
-  public IReadOnlyList<LocalWorkflowChecklistItem> CanonicalChecklist { get; set; } = Array.Empty<LocalWorkflowChecklistItem>();
+  public IReadOnlyList<ImportInboxCandidate> Candidates { get; set; } = [];
+  public IReadOnlyList<string> Warnings { get; set; } = [];
+  public IReadOnlyList<LocalWorkflowChecklistItem> CanonicalChecklist { get; set; } = [];
 }
 
 public sealed class ImportDedupOutcome
 {
-  public IReadOnlyList<ImportInboxCandidate> Winners { get; set; } = Array.Empty<ImportInboxCandidate>();
-  public IReadOnlyList<ImportInboxCandidate> Suppressed { get; set; } = Array.Empty<ImportInboxCandidate>();
-  public IReadOnlyList<string> Decisions { get; set; } = Array.Empty<string>();
+  public IReadOnlyList<ImportInboxCandidate> Winners { get; set; } = [];
+  public IReadOnlyList<ImportInboxCandidate> Suppressed { get; set; } = [];
+  public IReadOnlyList<string> Decisions { get; set; } = [];
 }

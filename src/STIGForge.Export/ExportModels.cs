@@ -15,15 +15,15 @@ public sealed class ExportResult
   public string ValidationReportJsonPath { get; set; } = string.Empty;
   public ValidationResult? ValidationResult { get; set; }
   public bool IsReadyForSubmission { get; set; }
-  public IReadOnlyList<string> BlockingFailures { get; set; } = Array.Empty<string>();
-  public IReadOnlyList<string> Warnings { get; set; } = Array.Empty<string>();
+  public IReadOnlyList<string> BlockingFailures { get; set; } = [];
+  public IReadOnlyList<string> Warnings { get; set; } = [];
 }
 
 public sealed class ValidationResult
 {
   public bool IsValid { get; set; }
-  public IReadOnlyList<string> Errors { get; set; } = Array.Empty<string>();
-  public IReadOnlyList<string> Warnings { get; set; } = Array.Empty<string>();
+  public IReadOnlyList<string> Errors { get; set; } = [];
+  public IReadOnlyList<string> Warnings { get; set; } = [];
   public string PackageRoot { get; set; } = string.Empty;
   public DateTimeOffset ValidatedAt { get; set; }
   public ValidationMetrics Metrics { get; set; } = new();

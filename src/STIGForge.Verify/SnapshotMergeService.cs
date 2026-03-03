@@ -11,7 +11,7 @@ public static class SnapshotMergeService
   public static IReadOnlyList<ControlResult> Merge(IEnumerable<ControlResult> results, string assetId)
   {
     if (results is null)
-      return Array.Empty<ControlResult>();
+      return [];
 
     var normalizedResults = results
       .Select(result => new ResultWithAsset(result, NormalizeAssetId(result, assetId)))

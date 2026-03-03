@@ -32,9 +32,9 @@ public sealed class ImportSelectionPlanWarning
 
 public sealed class ImportSelectionPlan
 {
-  public IReadOnlyList<ImportSelectionPlanRow> Rows { get; set; } = Array.Empty<ImportSelectionPlanRow>();
-  public IReadOnlyList<ImportSelectionPlanWarning> Warnings { get; set; } = Array.Empty<ImportSelectionPlanWarning>();
-  public IReadOnlyList<string> WarningLines { get; set; } = Array.Empty<string>();
+  public IReadOnlyList<ImportSelectionPlanRow> Rows { get; set; } = [];
+  public IReadOnlyList<ImportSelectionPlanWarning> Warnings { get; set; } = [];
+  public IReadOnlyList<string> WarningLines { get; set; } = [];
   public ImportSelectionPlanCounts Counts { get; set; } = new();
   public string StatusSummaryText { get; set; } = string.Empty;
   public string Fingerprint { get; set; } = string.Empty;
@@ -71,7 +71,7 @@ public sealed class ImportSelectionOrchestrator
 
     var hasSelectedStig = rows.Any(x => x.ArtifactType == ImportSelectionArtifactType.Stig && x.IsSelected);
     if (!hasSelectedStig)
-      return BuildResult(rows, Array.Empty<ImportSelectionPlanWarning>(), normalizedCandidates);
+      return BuildResult(rows, [], normalizedCandidates);
 
     foreach (var row in rows)
     {
@@ -98,7 +98,7 @@ public sealed class ImportSelectionOrchestrator
         normalizedCandidates);
     }
 
-    return BuildResult(rows, Array.Empty<ImportSelectionPlanWarning>(), normalizedCandidates);
+    return BuildResult(rows, [], normalizedCandidates);
   }
 
   private static ImportSelectionPlan BuildResult(
@@ -129,7 +129,7 @@ public sealed class ImportSelectionOrchestrator
   private static IReadOnlyList<string> BuildWarningLines(IReadOnlyList<ImportSelectionPlanWarning> warnings)
   {
     if (warnings.Count == 0)
-      return Array.Empty<string>();
+      return [];
 
     var lines = new List<string>(warnings.Count);
     foreach (var warning in warnings

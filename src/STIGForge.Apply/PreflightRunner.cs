@@ -107,7 +107,7 @@ public sealed class PreflightRunner
       return new PreflightResult
       {
         Ok = exitCode == 0,
-        Issues = exitCode != 0 ? new[] { "Preflight produced no output" } : Array.Empty<string>(),
+        Issues = exitCode != 0 ? new[] { "Preflight produced no output" } : [],
         Timestamp = DateTimeOffset.UtcNow.ToString("o"),
         ExitCode = exitCode
       };

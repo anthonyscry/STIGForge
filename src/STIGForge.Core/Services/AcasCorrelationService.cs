@@ -43,7 +43,7 @@ public sealed class AcasCorrelationService
   private IReadOnlyList<ControlRecord> LoadControls(string? bundleRoot)
   {
     if (_controlRepo == null || string.IsNullOrWhiteSpace(bundleRoot))
-      return Array.Empty<ControlRecord>();
+      return [];
 
     return _controlRepo.ListControlsAsync(bundleRoot, CancellationToken.None).GetAwaiter().GetResult();
   }
@@ -157,8 +157,8 @@ public sealed class AcasCorrelationResult
   public int TotalFindings { get; set; }
   public int CorrelatedCount { get; set; }
   public int UnmatchedCount { get; set; }
-  public IReadOnlyList<AcasControlCorrelation> Correlations { get; set; } = Array.Empty<AcasControlCorrelation>();
-  public IReadOnlyList<NessusFinding> UnmatchedFindings { get; set; } = Array.Empty<NessusFinding>();
+  public IReadOnlyList<AcasControlCorrelation> Correlations { get; set; } = [];
+  public IReadOnlyList<NessusFinding> UnmatchedFindings { get; set; } = [];
 
   public int CriticalAndHigh => Correlations.Count(c => c.Finding.Severity >= 3);
   public int Mismatches => Correlations.Count(c => c.MismatchType != null);

@@ -5,7 +5,7 @@ public sealed class FirewallConfig
     public bool EnableAllProfiles { get; set; } = true;
     public string DefaultInboundAction { get; set; } = "Block";
     public string DefaultOutboundAction { get; set; } = "Allow";
-    public IReadOnlyList<FirewallRuleDefinition> RequiredRules { get; set; } = Array.Empty<FirewallRuleDefinition>();
+    public IReadOnlyList<FirewallRuleDefinition> RequiredRules { get; set; } = [];
 }
 
 public sealed class FirewallRuleDefinition

@@ -75,7 +75,7 @@ public sealed class FirewallRuleService : ISecurityFeatureService
             Detail = matchesExpected
                 ? $"Firewall is already in expected state ({expectedState})"
                 : $"Firewall is {status.CurrentState}, expected {expectedState}",
-            Diagnostics = status.Detail == null ? Array.Empty<string>() : new[] { status.Detail }
+            Diagnostics = status.Detail == null ? [] : new[] { status.Detail }
         };
     }
 
@@ -115,7 +115,7 @@ public sealed class FirewallRuleService : ISecurityFeatureService
                 PreviousState = testResult.PreviousState,
                 NewState = "Enabled",
                 Detail = "Windows Firewall profiles enabled with inbound block and outbound allow",
-                Diagnostics = string.IsNullOrWhiteSpace(output) ? Array.Empty<string>() : new[] { output! }
+                Diagnostics = string.IsNullOrWhiteSpace(output) ? [] : new[] { output! }
             };
         }
         catch (Exception ex)

@@ -8,8 +8,8 @@ public sealed class BundleBuildRequest
   public string BundleId { get; set; } = string.Empty;
   public ContentPack Pack { get; set; } = new();
   public Profile Profile { get; set; } = new();
-  public IReadOnlyList<ControlRecord> Controls { get; set; } = Array.Empty<ControlRecord>();
-  public IReadOnlyList<Overlay> Overlays { get; set; } = Array.Empty<Overlay>();
+  public IReadOnlyList<ControlRecord> Controls { get; set; } = [];
+  public IReadOnlyList<Overlay> Overlays { get; set; } = [];
   public string? OutputRoot { get; set; }
   public string ToolVersion { get; set; } = "dev";
   public bool ForceAutoApply { get; set; }

@@ -9,9 +9,9 @@ public sealed class ImportAutoProjectionRow
 
 public sealed class ImportAutoProjectionResult
 {
-  public IReadOnlyList<ImportAutoProjectionRow> AutoCommitted { get; set; } = Array.Empty<ImportAutoProjectionRow>();
+  public IReadOnlyList<ImportAutoProjectionRow> AutoCommitted { get; set; } = [];
 
-  public IReadOnlyList<ImportAutoProjectionRow> Exceptions { get; set; } = Array.Empty<ImportAutoProjectionRow>();
+  public IReadOnlyList<ImportAutoProjectionRow> Exceptions { get; set; } = [];
 }
 
 public static class ImportAutoQueueProjection

@@ -106,7 +106,7 @@ public static class GptTmplParser
             Applicability = new Applicability
             {
                 OsTarget = osTarget,
-                RoleTags = Array.Empty<RoleTemplate>(),
+                RoleTags = [],
                 ClassificationScope = ScopeTag.Unknown,
                 Confidence = Confidence.High
             },
@@ -215,7 +215,7 @@ public sealed class GptTmplSetting
 
 public sealed class GptTmplParseResult
 {
-    public IReadOnlyList<ControlRecord> Controls { get; set; } = Array.Empty<ControlRecord>();
-    public IReadOnlyList<GptTmplSetting> Settings { get; set; } = Array.Empty<GptTmplSetting>();
+    public IReadOnlyList<ControlRecord> Controls { get; set; } = [];
+    public IReadOnlyList<GptTmplSetting> Settings { get; set; } = [];
     public string SourcePath { get; set; } = string.Empty;
 }
