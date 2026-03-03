@@ -16,6 +16,9 @@
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="10.0.3" />
     <PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
     <PackageReference Include="Serilog.Sinks.File" Version="7.0.0" />
+    <!-- NOTE: System.CommandLine has been in beta since 2020 with no stable release ETA.
+         Beta API surface is frozen for our usage (RootCommand/Command/Option/Argument).
+         Re-evaluate when 2.0 GA ships or if breaking changes appear in a preview. -->
     <PackageReference Include="System.CommandLine" Version="2.0.0-beta4.22272.1" />
   </ItemGroup>
 
