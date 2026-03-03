@@ -16,6 +16,7 @@ public sealed class ContinuousComplianceAgent : BackgroundService
   private readonly TimeSpan _checkInterval;
   private readonly string _bundleRoot;
   private readonly bool _autoRemediate;
+  private readonly int _maxDriftEventsToForward;
 
   public ContinuousComplianceAgent(
     DriftDetectionService driftService,
@@ -23,6 +24,7 @@ public sealed class ContinuousComplianceAgent : BackgroundService
     string bundleRoot,
     TimeSpan? checkInterval = null,
     bool autoRemediate = false,
+    int maxDriftEventsToForward = 10,
     AuditLogForwarder? auditForwarder = null,
     IAuditTrailService? auditTrail = null)
   {
@@ -31,6 +33,7 @@ public sealed class ContinuousComplianceAgent : BackgroundService
     _bundleRoot = bundleRoot ?? throw new ArgumentNullException(nameof(bundleRoot));
     _checkInterval = checkInterval ?? TimeSpan.FromHours(24);
     _autoRemediate = autoRemediate;
+    _maxDriftEventsToForward = Math.Max(0, maxDriftEventsToForward);
     _auditForwarder = auditForwarder;
     _auditTrail = auditTrail;
   }
@@ -98,7 +101,7 @@ public sealed class ContinuousComplianceAgent : BackgroundService
 
     if (result.DriftEvents.Count > 0 && _auditForwarder != null)
     {
-      foreach (var drift in result.DriftEvents.Take(10))
+      foreach (var drift in result.DriftEvents.Take(_maxDriftEventsToForward))
       {
         await _auditForwarder.ForwardDriftEventAsync(
           _bundleRoot,
@@ -130,19 +133,32 @@ public sealed class ComplianceAgentFactory
     _services = services ?? throw new ArgumentNullException(nameof(services));
   }
 
-  public ContinuousComplianceAgent CreateAgent(string bundleRoot, TimeSpan? interval = null, bool autoRemediate = false)
+  public ContinuousComplianceAgent CreateAgent(string bundleRoot, TimeSpan? interval = null, bool autoRemediate = false, string? configPath = null)
   {
+    ComplianceAgentConfig? config = null;
+    if (!string.IsNullOrWhiteSpace(configPath))
+      config = ComplianceAgentConfig.LoadFromFileAsync(configPath).ConfigureAwait(false).GetAwaiter().GetResult();
+
+    var resolvedBundleRoot = config?.BundleRoot ?? bundleRoot;
+    var resolvedInterval = config != null
+      ? TimeSpan.FromMinutes(config.CheckIntervalMinutes)
+      : interval;
+    var resolvedAutoRemediate = config?.AutoRemediate ?? autoRemediate;
+    var enableAuditForwarding = config?.EnableAuditForwarding ?? true;
+    var maxDriftEventsToForward = config?.MaxDriftEventsToForward ?? 10;
+
     var driftService = _services.GetRequiredService<DriftDetectionService>();
     var logger = _services.GetRequiredService<ILogger<ContinuousComplianceAgent>>();
-    var auditForwarder = _services.GetService<AuditLogForwarder>();
+    var auditForwarder = enableAuditForwarding ? _services.GetService<AuditLogForwarder>() : null;
     var auditTrail = _services.GetService<IAuditTrailService>();
 
     return new ContinuousComplianceAgent(
       driftService,
       logger,
-      bundleRoot,
-      interval,
-      autoRemediate,
+      resolvedBundleRoot,
+      resolvedInterval,
+      resolvedAutoRemediate,
+      maxDriftEventsToForward,
       auditForwarder,
       auditTrail);
   }

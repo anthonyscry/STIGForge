@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using STIGForge.Core.Services;
+using STIGForge.Infrastructure.System;
 
 namespace STIGForge.Cli.Commands;
 
@@ -21,10 +22,12 @@ internal static class PhaseCExpansionCommands
     RegisterNessusImport(rootCmd, buildHost);
     RegisterCklImport(rootCmd, buildHost);
     RegisterCklExport(rootCmd, buildHost);
+    RegisterCklMerge(rootCmd, buildHost);
     RegisterEmassPackage(rootCmd, buildHost);
     RegisterAgentInstall(rootCmd, buildHost);
     RegisterAgentUninstall(rootCmd, buildHost);
     RegisterAgentStatus(rootCmd, buildHost);
+    RegisterAgentConfig(rootCmd, buildHost);
   }
 
   private static void RegisterAcasImport(RootCommand rootCmd, Func<IHost> buildHost)
@@ -198,6 +201,91 @@ internal static class PhaseCExpansionCommands
       catch (Exception ex)
       {
         HandleCommandFailure(ctx, logger, "ckl-export", ex, json);
+      }
+    });
+
+    rootCmd.AddCommand(cmd);
+  }
+
+  private static void RegisterCklMerge(RootCommand rootCmd, Func<IHost> buildHost)
+  {
+    var cmd = new Command("ckl-merge", "Merge imported CKL with bundle verification results and detect conflicts");
+    var cklFileOpt = new Option<string>("--ckl-file", "Path to imported .ckl file") { IsRequired = true };
+    var bundleOpt = new Option<string>("--bundle", "Bundle root path") { IsRequired = true };
+    var strategyOpt = new Option<string>("--strategy", () => CklConflictResolutionStrategy.MostRecent.ToString(), "Conflict strategy: CklWins|StigForgeWins|MostRecent|Manual");
+    var outputOpt = new Option<string?>("--output", () => null, "Optional output path for merged .ckl");
+    var jsonOpt = new Option<bool>("--json", () => false, "JSON output");
+    cmd.AddOption(cklFileOpt);
+    cmd.AddOption(bundleOpt);
+    cmd.AddOption(strategyOpt);
+    cmd.AddOption(outputOpt);
+    cmd.AddOption(jsonOpt);
+
+    cmd.SetHandler(async (InvocationContext ctx) =>
+    {
+      var cklFile = ctx.ParseResult.GetValueForOption(cklFileOpt) ?? string.Empty;
+      var bundle = ctx.ParseResult.GetValueForOption(bundleOpt) ?? string.Empty;
+      var strategyText = ctx.ParseResult.GetValueForOption(strategyOpt) ?? CklConflictResolutionStrategy.MostRecent.ToString();
+      var output = ctx.ParseResult.GetValueForOption(outputOpt);
+      var json = ctx.ParseResult.GetValueForOption(jsonOpt);
+
+      using var host = buildHost();
+      var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("ckl-merge");
+      var phaseC = host.Services.GetRequiredService<PhaseCCommandService>();
+      var cklExporter = host.Services.GetRequiredService<CklExporter>();
+
+      try
+      {
+        var strategy = ParseCklMergeStrategy(strategyText);
+        var result = await phaseC.CklMergeAsync(cklFile, bundle, strategy, ctx.GetCancellationToken()).ConfigureAwait(false);
+
+        string? exportPath = null;
+        if (!string.IsNullOrWhiteSpace(output))
+        {
+          exportPath = output;
+          var outputDirectory = Path.GetDirectoryName(output);
+          if (!string.IsNullOrWhiteSpace(outputDirectory))
+            Directory.CreateDirectory(outputDirectory);
+          cklExporter.Export(result.MergedChecklist, output);
+        }
+
+        var exitCode = strategy == CklConflictResolutionStrategy.Manual && result.Conflicts.Count > 0
+          ? ExitActionRequired
+          : ExitSuccess;
+
+        if (json)
+        {
+          WriteJsonEnvelope("ckl-merge", true, exitCode,
+            new
+            {
+              strategy = result.Strategy,
+              mergedFindings = result.MergedFindings.Count,
+              conflicts = result.Conflicts.Count,
+              manualResolutionRequired = exitCode == ExitActionRequired,
+              output = exportPath,
+              conflictDetails = result.Conflicts
+            },
+            exitCode == ExitActionRequired
+              ? "Merge completed with unresolved manual conflicts."
+              : "CKL merge completed.");
+        }
+        else
+        {
+          Console.WriteLine($"CKL merge complete: {cklFile}");
+          Console.WriteLine($"  Strategy: {result.Strategy}");
+          Console.WriteLine($"  Merged findings: {result.MergedFindings.Count}");
+          Console.WriteLine($"  Conflicts: {result.Conflicts.Count}");
+          if (!string.IsNullOrWhiteSpace(exportPath))
+            Console.WriteLine($"  Output: {exportPath}");
+          if (exitCode == ExitActionRequired)
+            Console.WriteLine("  Action: resolve conflicts manually or rerun with a non-manual strategy.");
+        }
+
+        ctx.ExitCode = exitCode;
+      }
+      catch (Exception ex)
+      {
+        HandleCommandFailure(ctx, logger, "ckl-merge", ex, json);
       }
     });
 
@@ -380,6 +468,120 @@ internal static class PhaseCExpansionCommands
     rootCmd.AddCommand(cmd);
   }
 
+  private static void RegisterAgentConfig(RootCommand rootCmd, Func<IHost> buildHost)
+  {
+    var cmd = new Command("agent-config", "Manage continuous compliance agent JSON configuration");
+    var configPathOpt = new Option<string>("--config", () => "agent-config.json", "Path to agent config file");
+    var initOpt = new Option<bool>("--init", () => false, "Initialize config file with defaults");
+    var showOpt = new Option<bool>("--show", () => false, "Show current configuration");
+    var bundleRootOpt = new Option<string?>("--bundle-root", () => null, "Set bundle root path");
+    var intervalOpt = new Option<int?>("--interval", () => null, "Set check interval in minutes");
+    var autoRemediateOpt = new Option<bool?>("--auto-remediate", () => null, "Set auto-remediation behavior");
+    var auditForwardingOpt = new Option<bool?>("--enable-audit-forwarding", () => null, "Set audit forwarding behavior");
+    var maxForwardOpt = new Option<int?>("--max-drift-events-to-forward", () => null, "Set max drift events forwarded each run");
+    var jsonOpt = new Option<bool>("--json", () => false, "JSON output");
+
+    cmd.AddOption(configPathOpt);
+    cmd.AddOption(initOpt);
+    cmd.AddOption(showOpt);
+    cmd.AddOption(bundleRootOpt);
+    cmd.AddOption(intervalOpt);
+    cmd.AddOption(autoRemediateOpt);
+    cmd.AddOption(auditForwardingOpt);
+    cmd.AddOption(maxForwardOpt);
+    cmd.AddOption(jsonOpt);
+
+    cmd.SetHandler(async (InvocationContext ctx) =>
+    {
+      var configPath = ctx.ParseResult.GetValueForOption(configPathOpt) ?? "agent-config.json";
+      var initialize = ctx.ParseResult.GetValueForOption(initOpt);
+      var show = ctx.ParseResult.GetValueForOption(showOpt);
+      var bundleRoot = ctx.ParseResult.GetValueForOption(bundleRootOpt);
+      var interval = ctx.ParseResult.GetValueForOption(intervalOpt);
+      var autoRemediate = ctx.ParseResult.GetValueForOption(autoRemediateOpt);
+      var enableAuditForwarding = ctx.ParseResult.GetValueForOption(auditForwardingOpt);
+      var maxForward = ctx.ParseResult.GetValueForOption(maxForwardOpt);
+      var json = ctx.ParseResult.GetValueForOption(jsonOpt);
+
+      using var host = buildHost();
+      var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("agent-config");
+
+      try
+      {
+        if (initialize)
+        {
+          var defaultConfig = new ComplianceAgentConfig
+          {
+            BundleRoot = bundleRoot ?? Environment.CurrentDirectory
+          };
+
+          await ComplianceAgentConfig.SaveToFileAsync(defaultConfig, configPath).ConfigureAwait(false);
+
+          if (json)
+            WriteJsonEnvelope("agent-config", true, ExitSuccess, new { configPath, config = defaultConfig }, "Agent config initialized.");
+          else
+            Console.WriteLine($"Initialized agent config: {configPath}");
+        }
+
+        var hasUpdates = !string.IsNullOrWhiteSpace(bundleRoot)
+          || interval.HasValue
+          || autoRemediate.HasValue
+          || enableAuditForwarding.HasValue
+          || maxForward.HasValue;
+
+        if (hasUpdates)
+        {
+          var config = File.Exists(configPath)
+            ? await ComplianceAgentConfig.LoadFromFileAsync(configPath).ConfigureAwait(false)
+            : new ComplianceAgentConfig { BundleRoot = bundleRoot ?? Environment.CurrentDirectory };
+
+          if (!string.IsNullOrWhiteSpace(bundleRoot))
+            config.BundleRoot = bundleRoot;
+          if (interval.HasValue)
+            config.CheckIntervalMinutes = interval.Value;
+          if (autoRemediate.HasValue)
+            config.AutoRemediate = autoRemediate.Value;
+          if (enableAuditForwarding.HasValue)
+            config.EnableAuditForwarding = enableAuditForwarding.Value;
+          if (maxForward.HasValue)
+            config.MaxDriftEventsToForward = maxForward.Value;
+
+          await ComplianceAgentConfig.SaveToFileAsync(config, configPath).ConfigureAwait(false);
+
+          if (json)
+            WriteJsonEnvelope("agent-config", true, ExitSuccess, new { configPath, config }, "Agent config updated.");
+          else
+            Console.WriteLine($"Updated agent config: {configPath}");
+        }
+
+        if (show || (!initialize && !hasUpdates))
+        {
+          var config = await ComplianceAgentConfig.LoadFromFileAsync(configPath).ConfigureAwait(false);
+
+          if (json)
+            WriteJsonEnvelope("agent-config", true, ExitSuccess, new { configPath, config }, "Agent config loaded.");
+          else
+          {
+            Console.WriteLine($"Config: {configPath}");
+            Console.WriteLine($"  BundleRoot: {config.BundleRoot}");
+            Console.WriteLine($"  CheckIntervalMinutes: {config.CheckIntervalMinutes}");
+            Console.WriteLine($"  AutoRemediate: {config.AutoRemediate}");
+            Console.WriteLine($"  EnableAuditForwarding: {config.EnableAuditForwarding}");
+            Console.WriteLine($"  MaxDriftEventsToForward: {config.MaxDriftEventsToForward}");
+          }
+        }
+
+        ctx.ExitCode = ExitSuccess;
+      }
+      catch (Exception ex)
+      {
+        HandleCommandFailure(ctx, logger, "agent-config", ex, json);
+      }
+    });
+
+    rootCmd.AddCommand(cmd);
+  }
+
   private static void HandleCommandFailure(InvocationContext ctx, ILogger logger, string command, Exception ex, bool json)
   {
     logger.LogError(ex, "{Command} failed", command);
@@ -408,6 +610,14 @@ internal static class PhaseCExpansionCommands
     };
 
     Console.WriteLine(JsonSerializer.Serialize(envelope, JsonOptions));
+  }
+
+  private static CklConflictResolutionStrategy ParseCklMergeStrategy(string value)
+  {
+    if (Enum.TryParse<CklConflictResolutionStrategy>(value, ignoreCase: true, out var parsed))
+      return parsed;
+
+    throw new ArgumentException("Invalid --strategy value. Allowed: CklWins, StigForgeWins, MostRecent, Manual.");
   }
 
   private sealed class CommandEnvelope

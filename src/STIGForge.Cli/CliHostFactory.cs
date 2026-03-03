@@ -148,7 +148,9 @@ public static class CliHostFactory
     services.AddSingleton<AcasCorrelationService>();
     services.AddSingleton<CklImporter>();
     services.AddSingleton<CklExporter>();
+    services.AddSingleton<CklMergeService>();
     services.AddSingleton<EmassPackageGenerator>();
+    services.AddSingleton(new ComplianceAgentConfig { BundleRoot = Directory.GetCurrentDirectory() });
     services.AddSingleton<ComplianceAgentFactory>();
     services.AddSingleton<PhaseCCommandService>();
   }

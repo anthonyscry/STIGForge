@@ -13,6 +13,7 @@ public sealed class PhaseCCommandService
   private readonly AcasCorrelationService? _acas;
   private readonly CklImporter? _cklImporter;
   private readonly CklExporter? _cklExporter;
+  private readonly CklMergeService? _cklMerge;
   private readonly EmassPackageGenerator? _emass;
 
   public PhaseCCommandService(
@@ -23,7 +24,8 @@ public sealed class PhaseCCommandService
     AcasCorrelationService? acas = null,
     CklImporter? cklImporter = null,
     CklExporter? cklExporter = null,
-    EmassPackageGenerator? emass = null)
+    EmassPackageGenerator? emass = null,
+    CklMergeService? cklMerge = null)
   {
     _drift = drift ?? throw new ArgumentNullException(nameof(drift));
     _rollback = rollback ?? throw new ArgumentNullException(nameof(rollback));
@@ -33,6 +35,7 @@ public sealed class PhaseCCommandService
     _cklImporter = cklImporter;
     _cklExporter = cklExporter;
     _emass = emass;
+    _cklMerge = cklMerge;
   }
 
   public Task<DriftCheckResult> DriftCheckAsync(string bundlePath, bool autoRemediate, CancellationToken ct)
@@ -115,6 +118,121 @@ public sealed class PhaseCCommandService
     var checklist = _cklExporter.FromControlResults(results, stigTitle, hostName);
     _cklExporter.Export(checklist, outputPath);
     return Task.FromResult(outputPath);
+  }
+
+  public Task<CklMergeResult> MergeAsync(
+    CklChecklist checklist,
+    IReadOnlyList<ControlResult> existingResults,
+    CklConflictResolutionStrategy strategy,
+    CancellationToken ct)
+  {
+    ct.ThrowIfCancellationRequested();
+    if (_cklMerge == null)
+      throw new InvalidOperationException("CklMergeService is not registered.");
+
+    return _cklMerge.MergeAsync(checklist, existingResults, strategy, ct);
+  }
+
+  public async Task<CklMergeResult> CklMergeAsync(
+    string cklFilePath,
+    string bundlePath,
+    CklConflictResolutionStrategy strategy,
+    CancellationToken ct)
+  {
+    ct.ThrowIfCancellationRequested();
+    if (_cklImporter == null)
+      throw new InvalidOperationException("CklImporter is not registered.");
+
+    var checklist = _cklImporter.Import(cklFilePath);
+    var existingResults = LoadVerifyControlResults(bundlePath);
+    return await MergeAsync(checklist, existingResults, strategy, ct).ConfigureAwait(false);
+  }
+
+  private static IReadOnlyList<ControlResult> LoadVerifyControlResults(string bundleRoot)
+  {
+    if (string.IsNullOrWhiteSpace(bundleRoot))
+      throw new ArgumentException("Value cannot be null or empty.", nameof(bundleRoot));
+
+    var verifyRoot = Path.Combine(bundleRoot, "Verify");
+    if (!Directory.Exists(verifyRoot))
+      throw new DirectoryNotFoundException("Verify output directory not found: " + verifyRoot);
+
+    var reportPath = Directory
+      .GetFiles(verifyRoot, "consolidated-results.json", SearchOption.AllDirectories)
+      .OrderByDescending(File.GetLastWriteTimeUtc)
+      .FirstOrDefault();
+
+    if (string.IsNullOrWhiteSpace(reportPath))
+      throw new FileNotFoundException("No consolidated verify report found under bundle Verify directory.", verifyRoot);
+
+    using var document = JsonDocument.Parse(File.ReadAllText(reportPath));
+    if (!TryGetPropertyCaseInsensitive(document.RootElement, "results", out var resultsElement)
+      || resultsElement.ValueKind != JsonValueKind.Array)
+    {
+      throw new InvalidOperationException("Verify report is missing a results array: " + reportPath);
+    }
+
+    var controlResults = new List<ControlResult>();
+    foreach (var item in resultsElement.EnumerateArray())
+    {
+      if (item.ValueKind != JsonValueKind.Object)
+        continue;
+
+      var ruleId = ReadStringProperty(item, "ruleId") ?? string.Empty;
+      var vulnId = ReadStringProperty(item, "vulnId");
+      var status = ReadStringProperty(item, "status") ?? "NotReviewed";
+
+      if (string.IsNullOrWhiteSpace(ruleId) && string.IsNullOrWhiteSpace(vulnId))
+        continue;
+
+      controlResults.Add(new ControlResult
+      {
+        RuleId = ruleId,
+        VulnId = vulnId,
+        Status = status,
+        Comments = ReadStringProperty(item, "comments"),
+        FindingDetails = ReadStringProperty(item, "findingDetails"),
+        Severity = ReadStringProperty(item, "severity"),
+        Title = ReadStringProperty(item, "title"),
+        SourceFile = reportPath
+      });
+    }
+
+    return controlResults;
+  }
+
+  private static string? ReadStringProperty(JsonElement element, string propertyName)
+  {
+    if (!TryGetPropertyCaseInsensitive(element, propertyName, out var value))
+      return null;
+
+    return value.ValueKind == JsonValueKind.String
+      ? value.GetString()
+      : null;
+  }
+
+  private static bool TryGetPropertyCaseInsensitive(JsonElement element, string propertyName, out JsonElement value)
+  {
+    if (element.ValueKind != JsonValueKind.Object)
+    {
+      value = default;
+      return false;
+    }
+
+    if (element.TryGetProperty(propertyName, out value))
+      return true;
+
+    foreach (var property in element.EnumerateObject())
+    {
+      if (string.Equals(property.Name, propertyName, StringComparison.OrdinalIgnoreCase))
+      {
+        value = property.Value;
+        return true;
+      }
+    }
+
+    value = default;
+    return false;
   }
 
   public async Task<EmassPackage> EmassPackageAsync(string bundlePath, string systemName, string systemAcronym, string outputDirectory, string? previousPackagePath, CancellationToken ct)
