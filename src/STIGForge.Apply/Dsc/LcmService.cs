@@ -37,7 +37,7 @@ public sealed class LcmService
             // Generate LCM meta.mof content (DMTF MOF format required by Set-DscLocalConfigurationManager)
             var mofContent = GenerateLcmMof(config);
             var mofPath = Path.Combine(tempDir, "localhost.meta.mof");
-            File.WriteAllText(mofPath, mofContent);
+            await File.WriteAllTextAsync(mofPath, mofContent, ct).ConfigureAwait(false);
 
             // -Path expects a directory containing localhost.meta.mof
             var command = $"Set-DscLocalConfigurationManager -Path \"{tempDir}\" -Force";

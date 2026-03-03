@@ -118,8 +118,8 @@ internal sealed class PolicyStepHandler
     };
 
     var result = await _lgpoRunner!.ApplyPolicyAsync(lgpoRequest, ct).ConfigureAwait(false);
-    File.WriteAllText(stdout, result.StdOut);
-    File.WriteAllText(stderr, result.StdErr);
+    await File.WriteAllTextAsync(stdout, result.StdOut, ct).ConfigureAwait(false);
+    await File.WriteAllTextAsync(stderr, result.StdErr, ct).ConfigureAwait(false);
 
     return new ApplyStepOutcome
     {
@@ -146,8 +146,8 @@ internal sealed class PolicyStepHandler
     try
     {
       var backupRoot = request.DomainGpoBackupPath!;
-      var gpoFolders = Directory.GetDirectories(backupRoot);
-      if (gpoFolders.Length == 0)
+      var gpoFolders = Directory.EnumerateDirectories(backupRoot).ToList();
+      if (gpoFolders.Count == 0)
         outBuilder.AppendLine("No GPO backup subfolders found in " + backupRoot);
 
       foreach (var gpoFolder in gpoFolders)

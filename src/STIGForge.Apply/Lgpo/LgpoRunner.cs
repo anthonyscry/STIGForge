@@ -129,7 +129,7 @@ public sealed class LgpoRunner
     var stdout = await process.StandardOutput.ReadToEndAsync(ct).ConfigureAwait(false);
     process.WaitForExit((int)DefaultTimeout.TotalMilliseconds);
 
-    File.WriteAllText(outputFile, stdout);
+    await File.WriteAllTextAsync(outputFile, stdout, ct).ConfigureAwait(false);
     _logger.LogInformation("Policy exported to {OutputFile}", outputFile);
 
     return outputFile;
