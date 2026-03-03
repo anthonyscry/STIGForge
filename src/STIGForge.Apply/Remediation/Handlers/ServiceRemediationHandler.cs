@@ -1,17 +1,12 @@
-using System.Diagnostics;
-using System.Text;
 using STIGForge.Core.Abstractions;
 
 namespace STIGForge.Apply.Remediation.Handlers;
 
-public sealed class ServiceRemediationHandler : IRemediationHandler
+public sealed class ServiceRemediationHandler : RemediationHandlerBase
 {
-    private readonly string _ruleId;
     private readonly string _serviceName;
     private readonly string _expectedStartType;
     private readonly string _expectedStatus;
-    private readonly string _description;
-    private readonly IProcessRunner? _processRunner;
 
     public ServiceRemediationHandler(
         string ruleId,
@@ -20,20 +15,14 @@ public sealed class ServiceRemediationHandler : IRemediationHandler
         string expectedStatus,
         string description,
         IProcessRunner? processRunner = null)
+        : base(ruleId, "Service", description, processRunner)
     {
-        _ruleId = ruleId;
         _serviceName = serviceName;
         _expectedStartType = expectedStartType;
         _expectedStatus = expectedStatus;
-        _description = description;
-        _processRunner = processRunner;
     }
 
-    public string RuleId => _ruleId;
-    public string Category => "Service";
-    public string Description => _description;
-
-    public async Task<RemediationResult> TestAsync(RemediationContext context, CancellationToken ct)
+    public override async Task<RemediationResult> TestAsync(RemediationContext context, CancellationToken ct)
     {
         var script = $@"
 $service = Get-Service -Name '{_serviceName}' -ErrorAction SilentlyContinue
@@ -43,18 +32,14 @@ else {{
     ""$startMode|$($service.Status)""
 }}";
 
-        var output = await RunPowerShellAsync(script, ct).ConfigureAwait(false);
+        var output = await RunPowerShellAsync(script, "PowerShell service command failed", ct).ConfigureAwait(false);
         if (string.IsNullOrWhiteSpace(output))
         {
-            return new RemediationResult
-            {
-                RuleId = _ruleId,
-                HandlerCategory = Category,
-                Success = false,
-                Changed = false,
-                ErrorMessage = $"Service '{_serviceName}' was not found.",
-                Detail = "Unable to test service compliance"
-            };
+            return BuildResult(
+                success: false,
+                changed: false,
+                detail: "Unable to test service compliance",
+                errorMessage: $"Service '{_serviceName}' was not found.");
         }
 
         var parts = output.Split('|', 2, StringSplitOptions.TrimEntries);
@@ -65,21 +50,17 @@ else {{
         var isCompliant = string.Equals(currentStartType, expectedStartType, StringComparison.OrdinalIgnoreCase)
             && string.Equals(currentStatus, expectedStatus, StringComparison.OrdinalIgnoreCase);
 
-        return new RemediationResult
-        {
-            RuleId = _ruleId,
-            HandlerCategory = Category,
-            Success = true,
-            Changed = false,
-            PreviousValue = $"StartType={currentStartType};Status={currentStatus}",
-            NewValue = isCompliant ? null : $"StartType={expectedStartType};Status={expectedStatus}",
-            Detail = isCompliant
+        return BuildResult(
+            success: true,
+            changed: false,
+            previousValue: $"StartType={currentStartType};Status={currentStatus}",
+            newValue: isCompliant ? null : $"StartType={expectedStartType};Status={expectedStatus}",
+            detail: isCompliant
                 ? "Already compliant"
-                : $"Non-compliant: current StartType={currentStartType}, Status={currentStatus}; expected StartType={expectedStartType}, Status={expectedStatus}"
-        };
+                : $"Non-compliant: current StartType={currentStartType}, Status={currentStatus}; expected StartType={expectedStartType}, Status={expectedStatus}");
     }
 
-    public async Task<RemediationResult> ApplyAsync(RemediationContext context, CancellationToken ct)
+    public override async Task<RemediationResult> ApplyAsync(RemediationContext context, CancellationToken ct)
     {
         if (context.DryRun)
         {
@@ -99,18 +80,14 @@ else {{
         }
 
         var script = BuildApplyScript();
-        await RunPowerShellAsync(script, ct).ConfigureAwait(false);
+        await RunPowerShellAsync(script, "PowerShell service command failed", ct).ConfigureAwait(false);
 
-        return new RemediationResult
-        {
-            RuleId = _ruleId,
-            HandlerCategory = Category,
-            Success = true,
-            Changed = true,
-            PreviousValue = testResult.PreviousValue,
-            NewValue = expectedValue,
-            Detail = $"Configured service '{_serviceName}' with StartType={NormalizeStartType(_expectedStartType)} and Status={NormalizeStatus(_expectedStatus)}"
-        };
+        return BuildResult(
+            success: true,
+            changed: true,
+            previousValue: testResult.PreviousValue,
+            newValue: expectedValue,
+            detail: $"Configured service '{_serviceName}' with StartType={NormalizeStartType(_expectedStartType)} and Status={NormalizeStatus(_expectedStatus)}");
     }
 
     private string BuildApplyScript()
@@ -150,33 +127,4 @@ Set-Service -Name '{_serviceName}' -StartupType {startType} -ErrorAction Stop
         };
     }
 
-    private async Task<string?> RunPowerShellAsync(string script, CancellationToken ct)
-    {
-        if (_processRunner == null)
-        {
-            return "[No process runner - simulation]";
-        }
-
-        var encodedCommand = Convert.ToBase64String(Encoding.Unicode.GetBytes(script));
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = "powershell.exe",
-            Arguments = $"-NoProfile -NonInteractive -ExecutionPolicy Bypass -EncodedCommand {encodedCommand}",
-            CreateNoWindow = true,
-            UseShellExecute = false
-        };
-
-        var result = await _processRunner.RunAsync(startInfo, ct).ConfigureAwait(false);
-        if (result.ExitCode != 0)
-        {
-            var stderr = string.IsNullOrWhiteSpace(result.StandardError)
-                ? result.StandardOutput.Trim()
-                : result.StandardError.Trim();
-            throw new InvalidOperationException($"PowerShell service command failed: {stderr}");
-        }
-
-        return string.IsNullOrWhiteSpace(result.StandardOutput)
-            ? result.StandardError.Trim()
-            : result.StandardOutput.Trim();
-    }
 }

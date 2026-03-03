@@ -41,8 +41,7 @@ public class ApplyRunner
     RebootCoordinator rebootCoordinator,
     IAuditTrailService? audit = null,
     EvidenceCollector? evidenceCollector = null,
-    Lgpo.LgpoRunner? lgpoRunner = null,
-    PreflightRunner? preflightRunner = null)
+    Lgpo.LgpoRunner? lgpoRunner = null)
   {
     _logger = logger ?? throw new ArgumentNullException(nameof(logger));
     _snapshotService = snapshotService ?? throw new ArgumentNullException(nameof(snapshotService));
@@ -50,7 +49,6 @@ public class ApplyRunner
     _lcmService = lcmService ?? throw new ArgumentNullException(nameof(lcmService));
     _rebootCoordinator = rebootCoordinator ?? throw new ArgumentNullException(nameof(rebootCoordinator));
     _audit = audit;
-    _ = preflightRunner;
 
     _powerStigStepHandler = new PowerStigStepHandler();
     _scriptStepHandler = new ScriptStepHandler();
