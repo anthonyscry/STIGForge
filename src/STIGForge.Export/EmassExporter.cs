@@ -52,23 +52,14 @@ public sealed class EmassExporter
           exportStartTime)
       : request.OutputRoot!;
 
-    Directory.CreateDirectory(exportRoot);
-
-    var manifestDir = Path.Combine(exportRoot, "00_Manifest");
-    var scansDir = Path.Combine(exportRoot, "01_Scans");
-    var checklistsDir = Path.Combine(exportRoot, "02_Checklists");
-    var poamDir = Path.Combine(exportRoot, "03_POAM");
-    var evidenceDir = Path.Combine(exportRoot, "04_Evidence");
-    var attestDir = Path.Combine(exportRoot, "05_Attestations");
-    var indexDir = Path.Combine(exportRoot, "06_Index");
-
-    Directory.CreateDirectory(manifestDir);
-    Directory.CreateDirectory(scansDir);
-    Directory.CreateDirectory(checklistsDir);
-    Directory.CreateDirectory(poamDir);
-    Directory.CreateDirectory(evidenceDir);
-    Directory.CreateDirectory(attestDir);
-    Directory.CreateDirectory(indexDir);
+    var directories = CreateExportDirectories(exportRoot);
+    var manifestDir = directories.ManifestDir;
+    var scansDir = directories.ScansDir;
+    var checklistsDir = directories.ChecklistsDir;
+    var poamDir = directories.PoamDir;
+    var evidenceDir = directories.EvidenceDir;
+    var attestDir = directories.AttestationsDir;
+    var indexDir = directories.IndexDir;
 
     CopyScans(bundleRoot, scansDir);
     CopyChecklists(bundleRoot, checklistsDir);
@@ -79,25 +70,8 @@ public sealed class EmassExporter
     var answers = LoadManualAnswers(bundleRoot);
     MergeManualAnswers(consolidated, answers);
     
-    // Generate POA&M using PoamGenerator
     var normalizedResults = ConvertToNormalizedResults(consolidated);
-    var poamPackage = PoamGenerator.GeneratePoam(
-      normalizedResults,
-      bundleManifest.Run.SystemName,
-      bundleManifest.BundleId);
-    PoamGenerator.WritePoamFiles(poamPackage, poamDir);
-    
-    // Generate attestations using AttestationGenerator
-    var manualControlIds = normalizedResults
-      .Where(r => r.Status == VerifyStatus.NotReviewed)
-      .Select(r => r.ControlId)
-      .Distinct()
-      .ToList();
-    var attestationPackage = AttestationGenerator.GenerateAttestations(
-      manualControlIds,
-      bundleManifest.Run.SystemName,
-      bundleManifest.BundleId);
-    AttestationGenerator.WriteAttestationFiles(attestationPackage, attestDir);
+    GeneratePoamAndAttestations(normalizedResults, bundleManifest, poamDir, attestDir);
 
     var naMap = LoadNaScopeReport(bundleRoot);
     var indexPath = Path.Combine(indexDir, "control_evidence_index.csv");
@@ -110,7 +84,7 @@ public sealed class EmassExporter
     WriteIndexHtml(indexDir, consolidated);
 
     var logPath = Path.Combine(manifestDir, "export_log.txt");
-    File.WriteAllText(logPath, "Exported: " + exportStartTime.ToString("o"), Encoding.UTF8);
+    await File.WriteAllTextAsync(logPath, "Exported: " + exportStartTime.ToString("o"), Encoding.UTF8, ct).ConfigureAwait(false);
 
     var readmePath = Path.Combine(exportRoot, "README_Submission.txt");
     WriteReadme(readmePath);
@@ -123,18 +97,115 @@ public sealed class EmassExporter
     var packageHash = await _hash.Sha256FileAsync(hashPath, ct).ConfigureAwait(false);
 
     // Count files in hash manifest
-    var hashLines = File.ReadAllLines(hashPath).Where(l => !string.IsNullOrWhiteSpace(l)).ToList();
-    var fileCount = hashLines.Count;
+    var fileCount = (await File.ReadAllLinesAsync(hashPath, ct).ConfigureAwait(false)).Count(l => !string.IsNullOrWhiteSpace(l));
 
     // Compute submission readiness
     var submissionReadiness = ComputeSubmissionReadiness(consolidated, evidenceDir, poamDir, attestDir);
 
-    // Write manifest with packageHash and submissionReadiness
     var manifestPath = Path.Combine(manifestDir, "manifest.json");
     var exportTrace = BuildExportTrace(bundleRoot, consolidatedLoad.SourceReports, consolidated);
-    WriteManifest(manifestPath, bundleManifest, consolidated, exportTrace, exportStartTime, fileCount, packageHash, submissionReadiness);
+    WriteExportManifest(manifestDir, bundleManifest, consolidated, exportTrace, exportStartTime, fileCount, packageHash, submissionReadiness);
 
-    // Validate package integrity
+    var auditResult = await ValidateAndRecordAudit(
+      exportRoot,
+      manifestDir,
+      bundleRoot,
+      consolidated,
+      exportStartTime,
+      submissionReadiness,
+      ct).ConfigureAwait(false);
+
+    var validationResult = auditResult.ValidationResult;
+    var validationReportPath = auditResult.ValidationReportPath;
+    var validationReportJsonPath = auditResult.ValidationReportJsonPath;
+    var blockingFailures = auditResult.BlockingFailures;
+    var warnings = auditResult.Warnings;
+
+    return new ExportResult
+    {
+      OutputRoot = exportRoot,
+      ManifestPath = manifestPath,
+      IndexPath = indexPath,
+      ValidationReportPath = validationReportPath,
+      ValidationReportJsonPath = validationReportJsonPath,
+      ValidationResult = validationResult,
+      IsReadyForSubmission = validationResult.IsValid && submissionReadiness.IsReady,
+      BlockingFailures = blockingFailures,
+      Warnings = warnings
+    };
+  }
+
+  private static ExportDirectories CreateExportDirectories(string exportRoot)
+  {
+    Directory.CreateDirectory(exportRoot);
+
+    var directories = new ExportDirectories(
+      Path.Combine(exportRoot, "00_Manifest"),
+      Path.Combine(exportRoot, "01_Scans"),
+      Path.Combine(exportRoot, "02_Checklists"),
+      Path.Combine(exportRoot, "03_POAM"),
+      Path.Combine(exportRoot, "04_Evidence"),
+      Path.Combine(exportRoot, "05_Attestations"),
+      Path.Combine(exportRoot, "06_Index"));
+
+    Directory.CreateDirectory(directories.ManifestDir);
+    Directory.CreateDirectory(directories.ScansDir);
+    Directory.CreateDirectory(directories.ChecklistsDir);
+    Directory.CreateDirectory(directories.PoamDir);
+    Directory.CreateDirectory(directories.EvidenceDir);
+    Directory.CreateDirectory(directories.AttestationsDir);
+    Directory.CreateDirectory(directories.IndexDir);
+
+    return directories;
+  }
+
+  private static void GeneratePoamAndAttestations(
+    List<NormalizedVerifyResult> normalizedResults,
+    BundleManifestDto bundleManifest,
+    string poamDir,
+    string attestDir)
+  {
+    var poamPackage = PoamGenerator.GeneratePoam(
+      normalizedResults,
+      bundleManifest.Run.SystemName,
+      bundleManifest.BundleId);
+    PoamGenerator.WritePoamFiles(poamPackage, poamDir);
+
+    var manualControlIds = normalizedResults
+      .Where(r => r.Status == VerifyStatus.NotReviewed)
+      .Select(r => r.ControlId)
+      .Distinct()
+      .ToList();
+    var attestationPackage = AttestationGenerator.GenerateAttestations(
+      manualControlIds,
+      bundleManifest.Run.SystemName,
+      bundleManifest.BundleId);
+    AttestationGenerator.WriteAttestationFiles(attestationPackage, attestDir);
+  }
+
+  private static void WriteExportManifest(
+    string manifestDir,
+    BundleManifestDto bundleManifest,
+    IReadOnlyList<VerifyControlResult> consolidated,
+    ExportTrace exportTrace,
+    DateTimeOffset exportStartTime,
+    int fileCount,
+    string packageHash,
+    SubmissionReadiness submissionReadiness)
+  {
+    var manifestPath = Path.Combine(manifestDir, "manifest.json");
+    WriteManifest(manifestPath, bundleManifest, consolidated, exportTrace, exportStartTime, fileCount, packageHash, submissionReadiness);
+  }
+
+  private async Task<AuditValidationResult> ValidateAndRecordAudit(
+    string exportRoot,
+    string manifestDir,
+    string bundleRoot,
+    IReadOnlyList<VerifyControlResult> consolidated,
+    DateTimeOffset exportStartTime,
+    SubmissionReadiness submissionReadiness,
+    CancellationToken ct)
+  {
     var validator = new EmassPackageValidator();
     var validationResult = validator.ValidatePackage(exportRoot);
     var validationReportPath = Path.Combine(manifestDir, "validation_report.txt");
@@ -145,6 +216,10 @@ public sealed class EmassExporter
 
     var blockingFailures = validationResult.Errors.ToList();
     var warnings = validationResult.Warnings.ToList();
+    var packageHash = string.Empty;
+    var hashPath = Path.Combine(manifestDir, "file_hashes.sha256");
+    if (File.Exists(hashPath))
+      packageHash = await _hash.Sha256FileAsync(hashPath, ct).ConfigureAwait(false);
 
     if (_audit != null)
     {
@@ -167,15 +242,11 @@ public sealed class EmassExporter
       }
     }
 
-    return new ExportResult
+    return new AuditValidationResult
     {
-      OutputRoot = exportRoot,
-      ManifestPath = manifestPath,
-      IndexPath = indexPath,
+      ValidationResult = validationResult,
       ValidationReportPath = validationReportPath,
       ValidationReportJsonPath = validationReportJsonPath,
-      ValidationResult = validationResult,
-      IsReadyForSubmission = validationResult.IsValid && submissionReadiness.IsReady,
       BlockingFailures = blockingFailures,
       Warnings = warnings
     };
@@ -193,7 +264,7 @@ public sealed class EmassExporter
 
     // evidencePresent: evidence directory has files
     var evidencePresent = Directory.Exists(evidenceDir) &&
-      Directory.GetFiles(evidenceDir, "*", SearchOption.AllDirectories).Length > 0;
+      Directory.EnumerateFiles(evidenceDir, "*", SearchOption.AllDirectories).Any();
 
     // poamComplete: poam.json exists and has items
     var poamPath = Path.Combine(poamDir, "poam.json");
@@ -249,7 +320,7 @@ public sealed class EmassExporter
     var verify = Path.Combine(bundleRoot, "Verify");
     if (Directory.Exists(verify))
     {
-      foreach (var ckl in Directory.GetFiles(verify, "*.ckl", SearchOption.AllDirectories))
+      foreach (var ckl in Directory.EnumerateFiles(verify, "*.ckl", SearchOption.AllDirectories))
       {
         var dest = Path.Combine(checklistsDir, Path.GetFileName(ckl));
         File.Copy(ckl, dest, true);
@@ -287,7 +358,7 @@ public sealed class EmassExporter
       };
     }
 
-    var reports = Directory.GetFiles(verifyRoot, "consolidated-results.json", SearchOption.AllDirectories)
+    var reports = Directory.EnumerateFiles(verifyRoot, "consolidated-results.json", SearchOption.AllDirectories)
       .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
       .ToList();
     var all = new List<VerifyControlResult>();
@@ -496,7 +567,7 @@ public sealed class EmassExporter
 
   private async Task WriteHashManifestAsync(string root, string outputPath, CancellationToken ct)
   {
-    var files = Directory.GetFiles(root, "*", SearchOption.AllDirectories)
+    var files = Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories)
       .Where(p => !string.Equals(p, outputPath, StringComparison.OrdinalIgnoreCase))
       .Where(p => !IsValidationReportFile(root, p))
       .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
@@ -510,7 +581,7 @@ public sealed class EmassExporter
       sb.AppendLine(hash + "  " + rel);
     }
 
-    File.WriteAllText(outputPath, sb.ToString(), Encoding.UTF8);
+    await File.WriteAllTextAsync(outputPath, sb.ToString(), Encoding.UTF8, ct).ConfigureAwait(false);
   }
 
   private static void WriteValidationReportJson(string outputPath, ValidationResult validationResult)
@@ -590,7 +661,7 @@ public sealed class EmassExporter
       var dir = Path.Combine(evidenceDir, "by_control", c);
       if (Directory.Exists(dir))
       {
-        foreach (var file in Directory.GetFiles(dir, "*", SearchOption.AllDirectories))
+        foreach (var file in Directory.EnumerateFiles(dir, "*", SearchOption.AllDirectories))
           files.Add(RelOrFull(evidenceDir, file));
       }
     }
@@ -635,13 +706,13 @@ public sealed class EmassExporter
   private static void CopyDirectory(string source, string dest)
   {
     Directory.CreateDirectory(dest);
-    foreach (var dir in Directory.GetDirectories(source, "*", SearchOption.AllDirectories))
+    foreach (var dir in Directory.EnumerateDirectories(source, "*", SearchOption.AllDirectories))
     {
       var rel = GetRelativePath(source, dir);
       Directory.CreateDirectory(Path.Combine(dest, rel));
     }
 
-    foreach (var file in Directory.GetFiles(source, "*", SearchOption.AllDirectories))
+    foreach (var file in Directory.EnumerateFiles(source, "*", SearchOption.AllDirectories))
     {
       var rel = GetRelativePath(source, file);
       var target = Path.Combine(dest, rel);
@@ -712,6 +783,28 @@ public sealed class EmassExporter
     }
     list.Add(sb.ToString());
     return list.ToArray();
+  }
+
+  private sealed record ExportDirectories(
+    string ManifestDir,
+    string ScansDir,
+    string ChecklistsDir,
+    string PoamDir,
+    string EvidenceDir,
+    string AttestationsDir,
+    string IndexDir);
+
+  private sealed class AuditValidationResult
+  {
+    public ValidationResult ValidationResult { get; set; } = new();
+
+    public string ValidationReportPath { get; set; } = string.Empty;
+
+    public string ValidationReportJsonPath { get; set; } = string.Empty;
+
+    public List<string> BlockingFailures { get; set; } = new();
+
+    public List<string> Warnings { get; set; } = new();
   }
 
   private sealed class BundleManifestDto
