@@ -7,9 +7,8 @@ public static class VerifyReportWriter
 {
   public static VerifyReport BuildFromCkls(string outputRoot, string toolName)
   {
-    var cklFiles = Directory.GetFiles(outputRoot, "*.ckl", SearchOption.AllDirectories)
-      .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
-      .ToList();
+    var cklFiles = Directory.EnumerateFiles(outputRoot, "*.ckl", SearchOption.AllDirectories)
+      .OrderBy(p => p, StringComparer.OrdinalIgnoreCase);
 
     var results = new List<ControlResult>();
     foreach (var ckl in cklFiles)

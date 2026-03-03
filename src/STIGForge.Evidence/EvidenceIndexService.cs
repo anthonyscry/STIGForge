@@ -33,13 +33,13 @@ public sealed class EvidenceIndexService
       return index;
     }
 
-    var controlDirs = Directory.GetDirectories(byControlDir);
+    var controlDirs = Directory.EnumerateDirectories(byControlDir);
     foreach (var controlDir in controlDirs)
     {
       ct.ThrowIfCancellationRequested();
 
       var controlKey = Path.GetFileName(controlDir);
-      var metadataFiles = Directory.GetFiles(controlDir, "*.json")
+      var metadataFiles = Directory.EnumerateFiles(controlDir, "*.json")
         .Where(f => !Path.GetFileName(f).StartsWith("_")) // skip summary files
         .ToArray();
 
@@ -58,7 +58,7 @@ public sealed class EvidenceIndexService
           var baseName = Path.GetFileNameWithoutExtension(metaFile);
 
           // Find the sibling evidence file (same basename, different extension)
-          var siblingFiles = Directory.GetFiles(controlDir, baseName + ".*")
+          var siblingFiles = Directory.EnumerateFiles(controlDir, baseName + ".*")
             .Where(f => !f.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
             .ToArray();
 
