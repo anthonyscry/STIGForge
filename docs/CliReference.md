@@ -1,6 +1,6 @@
 # STIGForge CLI Reference
 
-44 commands organized by workflow phase.
+46 commands organized by workflow phase.
 
 **Usage**: `dotnet run --project src\STIGForge.Cli\STIGForge.Cli.csproj -- <command> [options]`
 
@@ -466,6 +466,27 @@ emass-package --bundle <path> --system-name <name> --system-acronym <acr> --outp
 | `--previous-package` | No | Prior package root for change-log comparison |
 | `--json` | No | Output as JSON envelope |
 
+### `ckl-merge`
+Merge imported CKL checklist with bundle verification results and detect conflicts.
+
+```
+ckl-merge --ckl-file <path> --bundle <path> [--strategy <strategy>] [--output <path>] [--json]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--ckl-file` | Yes | Path to imported `.ckl` file |
+| `--bundle` | Yes | Bundle root path for STIGForge verification results |
+| `--strategy` | No | Conflict resolution strategy: `CklWins`, `StigForgeWins`, `MostRecent` (default), `Manual` |
+| `--output` | No | Output path for merged `.ckl` file |
+| `--json` | No | Output as JSON envelope |
+
+**Strategies:**
+- `CklWins` — Imported CKL status takes precedence on conflict
+- `StigForgeWins` — STIGForge verification status takes precedence
+- `MostRecent` — Most recently timestamped status wins (default)
+- `Manual` — Conflicts flagged for manual resolution (exit code 4)
+
 ### `agent-install`
 Install continuous compliance agent as a Windows service.
 
@@ -503,6 +524,30 @@ agent-status [--service-name <name>] [--json]
 |--------|----------|-------------|
 | `--service-name` | No | Windows service name |
 | `--json` | No | Output as JSON envelope |
+
+### `agent-config`
+Manage continuous compliance agent JSON configuration.
+
+```
+agent-config [--config <path>] [--init] [--show] [--bundle-root <path>] [--interval <minutes>] [--auto-remediate] [--enable-audit-forwarding] [--max-drift-events-to-forward <n>] [--json]
+```
+
+| Option | Required | Description |
+|--------|----------|-------------|
+| `--config` | No | Config file path (default: `agent-config.json`) |
+| `--init` | No | Create config file with defaults |
+| `--show` | No | Display current configuration |
+| `--bundle-root` | No | Set bundle root path |
+| `--interval` | No | Check interval in minutes (default: 1440 = 24h) |
+| `--auto-remediate` | No | Enable/disable auto-remediation |
+| `--enable-audit-forwarding` | No | Enable/disable audit log forwarding |
+| `--max-drift-events-to-forward` | No | Max drift events forwarded per check (default: 10) |
+| `--json` | No | Output as JSON envelope |
+
+**Modes:**
+- No flags (or `--show`) — Display current config from file
+- `--init` — Create default config file
+- Setting flags — Update config values in-place
 
 Phase C command exit code conventions: `0` success, `2` command failure, `4` action required (for example unmatched ACAS findings or unavailable service status).
 

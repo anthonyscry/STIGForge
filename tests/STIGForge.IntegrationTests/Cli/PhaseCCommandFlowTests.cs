@@ -6,6 +6,7 @@ using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
 using STIGForge.Core.Services;
 using STIGForge.Infrastructure.Storage;
+using STIGForge.Infrastructure.System;
 
 namespace STIGForge.IntegrationTests.Cli;
 
@@ -231,6 +232,106 @@ public sealed class PhaseCCommandFlowTests : IDisposable
     File.Exists(outputPath).Should().BeTrue();
   }
 
+  #pragma warning disable xUnit1030
+
+  [Fact]
+  public async Task CklMerge_ServiceFlow_DetectsConflictsAndMerges()
+  {
+    var dbPath = Path.Combine(_tempRoot, "phasec-ckl-merge.db");
+    var cs = "Data Source=" + dbPath;
+    DbBootstrap.EnsureCreated(cs);
+
+    var bundleRoot = CreateBundleRoot("bundle-ckl-merge");
+    WriteVerifyResults(bundleRoot, new object[]
+    {
+      new
+      {
+        ruleId = "SV-CKL-1",
+        vulnId = "V-CKL-1",
+        status = "Open",
+        comments = "verify comments",
+        findingDetails = "verify details"
+      }
+    });
+
+    var verifyPath = Path.Combine(bundleRoot, "Verify", "run-1", "consolidated-results.json");
+    File.SetLastWriteTimeUtc(verifyPath, DateTime.UtcNow.AddMinutes(1));
+
+    var cklPath = Path.Combine(_tempRoot, "merge-input.ckl");
+    await File.WriteAllTextAsync(cklPath,
+      """
+      <CHECKLIST>
+        <ASSET>
+          <ASSET_NAME>HOST2</ASSET_NAME>
+          <HOST_NAME>HOST2</HOST_NAME>
+        </ASSET>
+        <STIGS>
+          <iSTIG>
+            <STIG_INFO>
+              <title>Win11 STIG</title>
+              <version>1</version>
+              <releaseinfo>R1</releaseinfo>
+            </STIG_INFO>
+            <VULN>
+              <STIG_DATA><VULN_ATTRIBUTE>Vuln_Num</VULN_ATTRIBUTE><ATTRIBUTE_DATA>V-CKL-1</ATTRIBUTE_DATA></STIG_DATA>
+              <STIG_DATA><VULN_ATTRIBUTE>Rule_Ver</VULN_ATTRIBUTE><ATTRIBUTE_DATA>SV-CKL-1</ATTRIBUTE_DATA></STIG_DATA>
+              <STIG_DATA><VULN_ATTRIBUTE>Rule_Title</VULN_ATTRIBUTE><ATTRIBUTE_DATA>Merged control</ATTRIBUTE_DATA></STIG_DATA>
+              <STIG_DATA><VULN_ATTRIBUTE>Severity</VULN_ATTRIBUTE><ATTRIBUTE_DATA>medium</ATTRIBUTE_DATA></STIG_DATA>
+              <STATUS>NotAFinding</STATUS>
+              <COMMENTS>ckl comments</COMMENTS>
+              <FINDING_DETAILS>ckl details</FINDING_DETAILS>
+            </VULN>
+          </iSTIG>
+        </STIGS>
+      </CHECKLIST>
+      """).ConfigureAwait(false);
+
+    var commands = CreateCommandService(cs, new TestProcessRunner("<Rsop />"));
+
+    var mostRecent = await commands.CklMergeAsync(
+      cklPath,
+      bundleRoot,
+      CklConflictResolutionStrategy.MostRecent,
+      CancellationToken.None).ConfigureAwait(false);
+    mostRecent.Conflicts.Should().NotBeEmpty();
+    mostRecent.MergedFindings.Should().NotBeEmpty();
+    mostRecent.MergedFindings.Should().ContainSingle(f => f.RuleId == "SV-CKL-1" && f.Status == "Open");
+
+    var cklWins = await commands.CklMergeAsync(
+      cklPath,
+      bundleRoot,
+      CklConflictResolutionStrategy.CklWins,
+      CancellationToken.None).ConfigureAwait(false);
+    cklWins.Conflicts.Should().NotBeEmpty();
+    cklWins.MergedFindings.Should().NotBeEmpty();
+    cklWins.MergedFindings.Should().ContainSingle(f => f.RuleId == "SV-CKL-1" && f.Status == "NotAFinding");
+  }
+
+  [Fact]
+  public async Task AgentConfig_RoundTrip_PersistsAndLoads()
+  {
+    var configPath = Path.Combine(_tempRoot, "agent", "compliance-agent.json");
+    var expected = new ComplianceAgentConfig
+    {
+      BundleRoot = Path.Combine(_tempRoot, "bundle-agent"),
+      CheckIntervalMinutes = 30,
+      AutoRemediate = true,
+      EnableAuditForwarding = false,
+      MaxDriftEventsToForward = 25
+    };
+
+    await ComplianceAgentConfig.SaveToFileAsync(expected, configPath).ConfigureAwait(false);
+    var loaded = await ComplianceAgentConfig.LoadFromFileAsync(configPath).ConfigureAwait(false);
+
+    loaded.BundleRoot.Should().Be(expected.BundleRoot);
+    loaded.CheckIntervalMinutes.Should().Be(expected.CheckIntervalMinutes);
+    loaded.AutoRemediate.Should().Be(expected.AutoRemediate);
+    loaded.EnableAuditForwarding.Should().Be(expected.EnableAuditForwarding);
+    loaded.MaxDriftEventsToForward.Should().Be(expected.MaxDriftEventsToForward);
+  }
+
+  #pragma warning restore xUnit1030
+
   private PhaseCCommandService CreateCommandService(string cs, IProcessRunner runner)
   {
     var driftRepo = new SqliteDriftRepository(cs);
@@ -243,8 +344,9 @@ public sealed class PhaseCCommandFlowTests : IDisposable
     var acas = new AcasCorrelationService(nessus, controlRepo);
     var cklImporter = new CklImporter();
     var cklExporter = new CklExporter();
+    var cklMerge = new CklMergeService();
     var emass = new EmassPackageGenerator();
-    return new PhaseCCommandService(drift, rollback, gpo, nessus, acas, cklImporter, cklExporter, emass);
+    return new PhaseCCommandService(drift, rollback, gpo, nessus, acas, cklImporter, cklExporter, emass, cklMerge);
   }
 
   private string CreateBundleRoot(string name)
