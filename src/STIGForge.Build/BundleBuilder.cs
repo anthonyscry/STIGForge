@@ -36,21 +36,11 @@ public sealed class BundleBuilder
       ? _paths.GetBundleRoot(bundleId)
       : request.OutputRoot!;
 
-    Directory.CreateDirectory(root);
-
-    var applyDir = Path.Combine(root, "Apply");
-    var verifyDir = Path.Combine(root, "Verify");
-    var manualDir = Path.Combine(root, "Manual");
-    var evidenceDir = Path.Combine(root, "Evidence");
-    var reportsDir = Path.Combine(root, "Reports");
-    var manifestDir = Path.Combine(root, "Manifest");
-
-    Directory.CreateDirectory(applyDir);
-    Directory.CreateDirectory(verifyDir);
-    Directory.CreateDirectory(manualDir);
-    Directory.CreateDirectory(evidenceDir);
-    Directory.CreateDirectory(reportsDir);
-    Directory.CreateDirectory(manifestDir);
+    var directories = CreateBundleDirectories(root);
+    var applyDir = directories.ApplyDir;
+    var manualDir = directories.ManualDir;
+    var reportsDir = directories.ReportsDir;
+    var manifestDir = directories.ManifestDir;
 
     var templatesCopied = CopyApplyTemplates(applyDir);
     ValidateApplyTemplates(applyDir, templatesCopied);
@@ -73,32 +63,8 @@ public sealed class BundleBuilder
     WriteNaScopeReport(Path.Combine(reportsDir, "na_scope_filter_report.csv"), overlayResult.MergedControls);
     WriteReviewQueue(Path.Combine(reportsDir, "review_required.csv"), reviewQueue);
 
-    // Write overlay merge artifacts
-    WriteOverlayConflictsCsv(Path.Combine(reportsDir, "overlay_conflicts.csv"), overlayResult.Conflicts);
-    WriteOverlayDecisionsJson(Path.Combine(reportsDir, "overlay_decisions.json"), overlayResult.AppliedDecisions);
-
-    // Generate conflict report for blocking conflicts
     var conflictReport = _conflictDetector.DetectConflicts(request.Overlays);
-    WriteOverlayConflictReport(Path.Combine(reportsDir, "overlay_conflict_report.csv"), conflictReport);
-
-    if (conflictReport.HasBlockingConflicts && !request.ForceAutoApply)
-    {
-      var blockingDetails = string.Join("; ", conflictReport.Conflicts
-        .Where(c => c.IsBlockingConflict)
-        .Select(c => $"{c.ControlKey} (overlays {c.WinningOverlayId} vs {c.OverriddenOverlayId})"));
-      throw new InvalidOperationException($"Overlay conflicts block build: {blockingDetails}");
-    }
-
-    var automationNote = new
-    {
-      forceAutoApply = request.ForceAutoApply,
-      releaseDate = request.Pack.ReleaseDate,
-      graceDays = request.Profile.AutomationPolicy.NewRuleGraceDays,
-      autoApplyAllowed = request.ForceAutoApply || _releaseGate.ShouldAutoApply(request.Profile, request.Pack)
-    };
-    File.WriteAllText(Path.Combine(reportsDir, "automation_gate.json"),
-      JsonSerializer.Serialize(automationNote, new JsonSerializerOptions { WriteIndented = true }),
-      Encoding.UTF8);
+    await WriteOverlayArtifacts(reportsDir, overlayResult, conflictReport, request, ct).ConfigureAwait(false);
 
     WriteAnswerTemplate(Path.Combine(manualDir, "answerfile.template.json"), request);
 
@@ -116,54 +82,8 @@ public sealed class BundleBuilder
       ToolVersion = request.ToolVersion
     };
 
-    var manifest = new BundleManifest
-    {
-      BundleId = bundleId,
-      BundleRoot = root,
-      Run = run,
-      Pack = request.Pack,
-      Profile = request.Profile,
-      TotalControls = request.Controls.Count,
-      AutoNaCount = overlayResult.MergedControls.Count(c => c.Status == ControlStatus.NotApplicable),
-      ReviewQueueCount = reviewQueue.Count
-    };
-
-    var manifestPath = Path.Combine(manifestDir, "manifest.json");
-    var manifestJson = JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true });
-    File.WriteAllText(manifestPath, manifestJson, Encoding.UTF8);
-
-    var controlsPath = Path.Combine(manifestDir, "pack_controls.json");
-    var controlsJson = JsonSerializer.Serialize(request.Controls, new JsonSerializerOptions { WriteIndented = true });
-    File.WriteAllText(controlsPath, controlsJson, Encoding.UTF8);
-
-    var overlaysPath = Path.Combine(manifestDir, "overlays.json");
-    var overlaysJson = JsonSerializer.Serialize(request.Overlays, new JsonSerializerOptions { WriteIndented = true });
-    File.WriteAllText(overlaysPath, overlaysJson, Encoding.UTF8);
-
-    var runLogPath = Path.Combine(manifestDir, "run_log.txt");
-    File.WriteAllText(runLogPath, "Bundle created: " + BuildTime.Now.ToString("o"), Encoding.UTF8);
-
-    string? scapMappingManifestPath = null;
-    if (_scapSelector != null && request.ScapCandidates != null)
-    {
-      var scapInput = new STIGForge.Core.Services.CanonicalScapSelectionInput
-      {
-        StigPackId = request.Pack.PackId,
-        StigName = request.Pack.Name,
-        StigImportedAt = request.Pack.ImportedAt,
-        StigBenchmarkIds = request.Controls
-          .Select(c => c.ExternalIds.BenchmarkId)
-          .Where(id => !string.IsNullOrWhiteSpace(id))
-          .Distinct(StringComparer.OrdinalIgnoreCase)
-          .ToArray()!,
-        Candidates = request.ScapCandidates
-      };
-
-      var scapManifest = _scapSelector.BuildMappingManifest(scapInput, request.Controls);
-      scapMappingManifestPath = Path.Combine(manifestDir, "scap_mapping_manifest.json");
-      var scapManifestJson = JsonSerializer.Serialize(scapManifest, new JsonSerializerOptions { WriteIndented = true });
-      File.WriteAllText(scapMappingManifestPath, scapManifestJson, Encoding.UTF8);
-    }
+    var manifestPath = await WriteBundleManifest(manifestDir, bundleId, root, run, request, overlayResult, reviewQueue, ct).ConfigureAwait(false);
+    var scapMappingManifestPath = await WriteScapMapping(manifestDir, request, ct).ConfigureAwait(false);
 
     await WriteHashManifestAsync(root, Path.Combine(manifestDir, "file_hashes.sha256"), ct).ConfigureAwait(false);
 
@@ -196,7 +116,7 @@ public sealed class BundleBuilder
     if (!Directory.Exists(applyDir))
       throw new InvalidOperationException($"Apply templates are incomplete: Apply directory does not exist at {applyDir}");
 
-    var hasApplyScripts = Directory.GetFiles(applyDir, "*.ps1", SearchOption.AllDirectories).Length > 0;
+    var hasApplyScripts = Directory.EnumerateFiles(applyDir, "*.ps1", SearchOption.AllDirectories).Any();
     if (!hasApplyScripts)
       throw new InvalidOperationException($"Apply templates are incomplete: no apply scripts found in {applyDir}");
   }
@@ -217,13 +137,13 @@ public sealed class BundleBuilder
   private static void CopyDirectory(string source, string dest)
   {
     Directory.CreateDirectory(dest);
-    foreach (var dir in Directory.GetDirectories(source, "*", SearchOption.AllDirectories))
+    foreach (var dir in Directory.EnumerateDirectories(source, "*", SearchOption.AllDirectories))
     {
       var rel = GetRelativePath(source, dir);
       Directory.CreateDirectory(Path.Combine(dest, rel));
     }
 
-    foreach (var file in Directory.GetFiles(source, "*", SearchOption.AllDirectories))
+    foreach (var file in Directory.EnumerateFiles(source, "*", SearchOption.AllDirectories))
     {
       var rel = GetRelativePath(source, file);
       var target = Path.Combine(dest, rel);
@@ -246,6 +166,126 @@ public sealed class BundleBuilder
 
     var json = JsonSerializer.Serialize(template, new JsonSerializerOptions { WriteIndented = true });
     File.WriteAllText(path, json, Encoding.UTF8);
+  }
+
+  private static BundleDirectories CreateBundleDirectories(string root)
+  {
+    Directory.CreateDirectory(root);
+
+    var directories = new BundleDirectories(
+      Path.Combine(root, "Apply"),
+      Path.Combine(root, "Verify"),
+      Path.Combine(root, "Manual"),
+      Path.Combine(root, "Evidence"),
+      Path.Combine(root, "Reports"),
+      Path.Combine(root, "Manifest"));
+
+    Directory.CreateDirectory(directories.ApplyDir);
+    Directory.CreateDirectory(directories.VerifyDir);
+    Directory.CreateDirectory(directories.ManualDir);
+    Directory.CreateDirectory(directories.EvidenceDir);
+    Directory.CreateDirectory(directories.ReportsDir);
+    Directory.CreateDirectory(directories.ManifestDir);
+
+    return directories;
+  }
+
+  private async Task WriteOverlayArtifacts(
+    string reportsDir,
+    OverlayMergeResult overlayResult,
+    STIGForge.Core.Services.OverlayConflictReport conflictReport,
+    BundleBuildRequest request,
+    CancellationToken ct)
+  {
+    WriteOverlayConflictsCsv(Path.Combine(reportsDir, "overlay_conflicts.csv"), overlayResult.Conflicts);
+    WriteOverlayDecisionsJson(Path.Combine(reportsDir, "overlay_decisions.json"), overlayResult.AppliedDecisions);
+    WriteOverlayConflictReport(Path.Combine(reportsDir, "overlay_conflict_report.csv"), conflictReport);
+
+    if (conflictReport.HasBlockingConflicts && !request.ForceAutoApply)
+    {
+      var blockingDetails = string.Join("; ", conflictReport.Conflicts
+        .Where(c => c.IsBlockingConflict)
+        .Select(c => $"{c.ControlKey} (overlays {c.WinningOverlayId} vs {c.OverriddenOverlayId})"));
+      throw new InvalidOperationException($"Overlay conflicts block build: {blockingDetails}");
+    }
+
+    var automationNote = new
+    {
+      forceAutoApply = request.ForceAutoApply,
+      releaseDate = request.Pack.ReleaseDate,
+      graceDays = request.Profile.AutomationPolicy.NewRuleGraceDays,
+      autoApplyAllowed = request.ForceAutoApply || _releaseGate.ShouldAutoApply(request.Profile, request.Pack)
+    };
+    await File.WriteAllTextAsync(
+      Path.Combine(reportsDir, "automation_gate.json"),
+      JsonSerializer.Serialize(automationNote, new JsonSerializerOptions { WriteIndented = true }),
+      Encoding.UTF8,
+      ct).ConfigureAwait(false);
+  }
+
+  private static async Task<string> WriteBundleManifest(
+    string manifestDir,
+    string bundleId,
+    string root,
+    RunManifest run,
+    BundleBuildRequest request,
+    OverlayMergeResult overlayResult,
+    IReadOnlyList<CompiledControl> reviewQueue,
+    CancellationToken ct)
+  {
+    var manifest = new BundleManifest
+    {
+      BundleId = bundleId,
+      BundleRoot = root,
+      Run = run,
+      Pack = request.Pack,
+      Profile = request.Profile,
+      TotalControls = request.Controls.Count,
+      AutoNaCount = overlayResult.MergedControls.Count(c => c.Status == ControlStatus.NotApplicable),
+      ReviewQueueCount = reviewQueue.Count
+    };
+
+    var manifestPath = Path.Combine(manifestDir, "manifest.json");
+    var manifestJson = JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true });
+    await File.WriteAllTextAsync(manifestPath, manifestJson, Encoding.UTF8, ct).ConfigureAwait(false);
+
+    var controlsPath = Path.Combine(manifestDir, "pack_controls.json");
+    var controlsJson = JsonSerializer.Serialize(request.Controls, new JsonSerializerOptions { WriteIndented = true });
+    await File.WriteAllTextAsync(controlsPath, controlsJson, Encoding.UTF8, ct).ConfigureAwait(false);
+
+    var overlaysPath = Path.Combine(manifestDir, "overlays.json");
+    var overlaysJson = JsonSerializer.Serialize(request.Overlays, new JsonSerializerOptions { WriteIndented = true });
+    await File.WriteAllTextAsync(overlaysPath, overlaysJson, Encoding.UTF8, ct).ConfigureAwait(false);
+
+    var runLogPath = Path.Combine(manifestDir, "run_log.txt");
+    await File.WriteAllTextAsync(runLogPath, "Bundle created: " + BuildTime.Now.ToString("o"), Encoding.UTF8, ct).ConfigureAwait(false);
+
+    return manifestPath;
+  }
+
+  private async Task<string?> WriteScapMapping(string manifestDir, BundleBuildRequest request, CancellationToken ct)
+  {
+    if (_scapSelector == null || request.ScapCandidates == null)
+      return null;
+
+    var scapInput = new STIGForge.Core.Services.CanonicalScapSelectionInput
+    {
+      StigPackId = request.Pack.PackId,
+      StigName = request.Pack.Name,
+      StigImportedAt = request.Pack.ImportedAt,
+      StigBenchmarkIds = request.Controls
+        .Select(c => c.ExternalIds.BenchmarkId)
+        .Where(id => !string.IsNullOrWhiteSpace(id))
+        .Distinct(StringComparer.OrdinalIgnoreCase)
+        .ToArray()!,
+      Candidates = request.ScapCandidates
+    };
+
+    var scapManifest = _scapSelector.BuildMappingManifest(scapInput, request.Controls);
+    var scapMappingManifestPath = Path.Combine(manifestDir, "scap_mapping_manifest.json");
+    var scapManifestJson = JsonSerializer.Serialize(scapManifest, new JsonSerializerOptions { WriteIndented = true });
+    await File.WriteAllTextAsync(scapMappingManifestPath, scapManifestJson, Encoding.UTF8, ct).ConfigureAwait(false);
+    return scapMappingManifestPath;
   }
 
   private static void WriteNaScopeReport(string path, IReadOnlyList<CompiledControl> controls)
@@ -344,7 +384,7 @@ public sealed class BundleBuilder
 
   private async Task WriteHashManifestAsync(string root, string outputPath, CancellationToken ct)
   {
-    var files = Directory.GetFiles(root, "*", SearchOption.AllDirectories)
+    var files = Directory.EnumerateFiles(root, "*", SearchOption.AllDirectories)
       .Where(p => !string.Equals(p, outputPath, StringComparison.OrdinalIgnoreCase))
       .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
       .ToList();
@@ -357,7 +397,7 @@ public sealed class BundleBuilder
       sb.AppendLine(hash + "  " + rel);
     }
 
-    File.WriteAllText(outputPath, sb.ToString(), Encoding.UTF8);
+    await File.WriteAllTextAsync(outputPath, sb.ToString(), Encoding.UTF8, ct).ConfigureAwait(false);
   }
 
   private static void WriteOverlayConflictReport(string path, STIGForge.Core.Services.OverlayConflictReport report)
@@ -380,6 +420,14 @@ public sealed class BundleBuilder
 
     File.WriteAllText(path, sb.ToString(), Encoding.UTF8);
   }
+
+  private sealed record BundleDirectories(
+    string ApplyDir,
+    string VerifyDir,
+    string ManualDir,
+    string EvidenceDir,
+    string ReportsDir,
+    string ManifestDir);
 
   private static string Csv(string? value)
   {
