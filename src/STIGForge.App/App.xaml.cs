@@ -5,6 +5,7 @@ using System.Windows;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Serilog;
+using STIGForge.Apply.Remediation;
 using STIGForge.Build;
 using STIGForge.Content.Import;
 using STIGForge.Core.Abstractions;
@@ -112,16 +113,16 @@ public partial class App : Application
             TraceStartup("Connection string factory calling DbBootstrap.EnsureCreated: " + dbPath);
             DbBootstrap.EnsureCreated(cs);
             TraceStartup("Connection string factory EnsureCreated complete");
-            return cs;
+            return new DbConnectionString(cs);
           });
 
-          services.AddSingleton<IContentPackRepository>(sp => new SqliteContentPackRepository(sp.GetRequiredService<string>()));
-          services.AddSingleton<IControlRepository>(sp => new SqliteJsonControlRepository(sp.GetRequiredService<string>()));
-          services.AddSingleton<IProfileRepository>(sp => new SqliteJsonProfileRepository(sp.GetRequiredService<string>()));
-          services.AddSingleton<IOverlayRepository>(sp => new SqliteJsonOverlayRepository(sp.GetRequiredService<string>()));
-          services.AddSingleton<IMissionRunRepository>(sp => new MissionRunRepository(sp.GetRequiredService<string>()));
-          services.AddSingleton<IDriftRepository>(sp => new SqliteDriftRepository(sp.GetRequiredService<string>()));
-          services.AddSingleton<IRollbackRepository>(sp => new SqliteRollbackRepository(sp.GetRequiredService<string>()));
+          services.AddSingleton<IContentPackRepository>(sp => new SqliteContentPackRepository(sp.GetRequiredService<DbConnectionString>()));
+          services.AddSingleton<IControlRepository>(sp => new SqliteJsonControlRepository(sp.GetRequiredService<DbConnectionString>()));
+          services.AddSingleton<IProfileRepository>(sp => new SqliteJsonProfileRepository(sp.GetRequiredService<DbConnectionString>()));
+          services.AddSingleton<IOverlayRepository>(sp => new SqliteJsonOverlayRepository(sp.GetRequiredService<DbConnectionString>()));
+          services.AddSingleton<IMissionRunRepository>(sp => new MissionRunRepository(sp.GetRequiredService<DbConnectionString>().Value));
+          services.AddSingleton<IDriftRepository>(sp => new SqliteDriftRepository(sp.GetRequiredService<DbConnectionString>()));
+          services.AddSingleton<IRollbackRepository>(sp => new SqliteRollbackRepository(sp.GetRequiredService<DbConnectionString>()));
 
           services.AddSingleton<ImportInboxScanner>();
           services.AddSingleton<ContentPackImporter>();
@@ -139,7 +140,11 @@ public partial class App : Application
           services.AddSingleton<VerificationArtifactAggregationService>();
           services.AddSingleton<MissionTracingService>();
           services.AddSingleton<PerformanceInstrumenter>();
-          services.AddSingleton<DriftDetectionService>();
+          services.AddSingleton<DriftDetectionService>(sp =>
+            new DriftDetectionService(
+              sp.GetRequiredService<IDriftRepository>(),
+              RemediationHandlerRegistry.CreateHandlers(sp.GetRequiredService<IProcessRunner>()),
+              sp.GetRequiredService<IClock>()));
           services.AddSingleton<RollbackService>();
           services.AddSingleton<GpoConflictDetector>();
           services.AddSingleton<NessusImporter>();
@@ -155,7 +160,7 @@ public partial class App : Application
           services.AddSingleton<STIGForge.Export.EmassExporter>();
           services.AddSingleton<STIGForge.Evidence.EvidenceCollector>();
           services.AddSingleton<IAuditTrailService>(sp =>
-            new AuditTrailService(sp.GetRequiredService<string>(), sp.GetRequiredService<IClock>()));
+            new AuditTrailService(sp.GetRequiredService<DbConnectionString>(), sp.GetRequiredService<IClock>()));
           services.AddSingleton<ICredentialStore>(sp =>
             new DpapiCredentialStore(sp.GetRequiredService<IPathBuilder>()));
           services.AddSingleton<ScheduledTaskService>();

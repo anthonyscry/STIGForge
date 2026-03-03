@@ -9,10 +9,11 @@ public sealed class SqliteDriftRepository : IDriftRepository
 {
   private readonly string _cs;
 
-  public SqliteDriftRepository(string connectionString)
+  public SqliteDriftRepository(DbConnectionString connectionString)
   {
-    if (string.IsNullOrEmpty(connectionString)) throw new ArgumentException("Value cannot be null or empty.", nameof(connectionString));
-    _cs = connectionString;
+    ArgumentNullException.ThrowIfNull(connectionString);
+    if (string.IsNullOrEmpty(connectionString.Value)) throw new ArgumentException("Value cannot be null or empty.", nameof(connectionString));
+    _cs = connectionString.Value;
   }
 
   public async Task SaveAsync(DriftSnapshot snapshot, CancellationToken ct)
@@ -43,6 +44,43 @@ ON CONFLICT(snapshot_id) DO UPDATE SET
         DetectedAt = snapshot.DetectedAt.ToString("o")
       },
       cancellationToken: ct)).ConfigureAwait(false);
+  }
+
+  public async Task SaveBatchAsync(IReadOnlyList<DriftSnapshot> snapshots, CancellationToken ct)
+  {
+    if (snapshots is null) throw new ArgumentNullException(nameof(snapshots));
+    if (snapshots.Count == 0)
+      return;
+
+    const string sql = @"
+INSERT INTO drift_snapshots(snapshot_id, bundle_root, rule_id, previous_state, current_state, change_type, detected_at)
+VALUES(@SnapshotId, @BundleRoot, @RuleId, @PreviousState, @CurrentState, @ChangeType, @DetectedAt)
+ON CONFLICT(snapshot_id) DO UPDATE SET
+  previous_state=excluded.previous_state,
+  current_state=excluded.current_state,
+  change_type=excluded.change_type,
+  detected_at=excluded.detected_at;";
+
+    var parameters = snapshots.Select(snapshot => new
+    {
+      snapshot.SnapshotId,
+      snapshot.BundleRoot,
+      snapshot.RuleId,
+      snapshot.PreviousState,
+      snapshot.CurrentState,
+      snapshot.ChangeType,
+      DetectedAt = snapshot.DetectedAt.ToString("o")
+    }).ToList();
+
+    using var conn = new SqliteConnection(_cs);
+    await conn.OpenAsync(ct).ConfigureAwait(false);
+    using var tx = conn.BeginTransaction();
+    await conn.ExecuteAsync(new CommandDefinition(
+      sql,
+      parameters,
+      transaction: tx,
+      cancellationToken: ct)).ConfigureAwait(false);
+    tx.Commit();
   }
 
   public async Task<IReadOnlyList<DriftSnapshot>> GetDriftHistoryAsync(string bundleRoot, string? ruleId, int limit, CancellationToken ct)
@@ -79,6 +117,31 @@ WHERE bundle_root=@bundleRoot";
 
     var history = await GetDriftHistoryAsync(bundleRoot, ruleId, 1, ct).ConfigureAwait(false);
     return history.Count > 0 ? history[0] : null;
+  }
+
+  public async Task<IReadOnlyList<DriftSnapshot>> GetLatestByRuleAsync(string bundleRoot, CancellationToken ct)
+  {
+    if (string.IsNullOrEmpty(bundleRoot)) throw new ArgumentException("Value cannot be null or empty.", nameof(bundleRoot));
+
+    const string sql = @"
+WITH ranked AS (
+  SELECT snapshot_id SnapshotId, bundle_root BundleRoot, rule_id RuleId,
+    previous_state PreviousState, current_state CurrentState,
+    change_type ChangeType, detected_at DetectedAt,
+    ROW_NUMBER() OVER (PARTITION BY rule_id ORDER BY detected_at DESC, snapshot_id DESC) AS row_num
+  FROM drift_snapshots
+  WHERE bundle_root=@bundleRoot
+)
+SELECT SnapshotId, BundleRoot, RuleId, PreviousState, CurrentState, ChangeType, DetectedAt
+FROM ranked
+WHERE row_num=1
+ORDER BY RuleId COLLATE NOCASE;";
+
+    using var conn = new SqliteConnection(_cs);
+    await conn.OpenAsync(ct).ConfigureAwait(false);
+    var rows = await conn.QueryAsync<DriftSnapshotRow>(
+      new CommandDefinition(sql, new { bundleRoot }, cancellationToken: ct)).ConfigureAwait(false);
+    return rows.Select(MapSnapshot).ToList();
   }
 
   private static readonly global::System.Globalization.DateTimeStyles RoundtripStyle =

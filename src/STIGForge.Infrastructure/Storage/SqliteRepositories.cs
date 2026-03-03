@@ -10,7 +10,11 @@ public sealed class SqliteContentPackRepository : IContentPackRepository
 {
   private readonly string _cs;
   private static readonly JsonSerializerOptions J = new();
-  public SqliteContentPackRepository(string connectionString) => _cs = connectionString;
+  public SqliteContentPackRepository(DbConnectionString connectionString)
+  {
+    ArgumentNullException.ThrowIfNull(connectionString);
+    _cs = connectionString.Value;
+  }
 
   public async Task SaveAsync(ContentPack pack, CancellationToken ct)
   {
@@ -109,7 +113,11 @@ public sealed class SqliteJsonProfileRepository : IProfileRepository
   private readonly string _cs;
   private static readonly JsonSerializerOptions J = new();
 
-  public SqliteJsonProfileRepository(string connectionString) => _cs = connectionString;
+  public SqliteJsonProfileRepository(DbConnectionString connectionString)
+  {
+    ArgumentNullException.ThrowIfNull(connectionString);
+    _cs = connectionString.Value;
+  }
 
   public async Task SaveAsync(Profile profile, CancellationToken ct)
   {
@@ -148,7 +156,11 @@ public sealed class SqliteJsonOverlayRepository : IOverlayRepository
   private readonly string _cs;
   private static readonly JsonSerializerOptions J = new();
 
-  public SqliteJsonOverlayRepository(string connectionString) => _cs = connectionString;
+  public SqliteJsonOverlayRepository(DbConnectionString connectionString)
+  {
+    ArgumentNullException.ThrowIfNull(connectionString);
+    _cs = connectionString.Value;
+  }
 
   public async Task SaveAsync(Overlay overlay, CancellationToken ct)
   {
@@ -181,7 +193,11 @@ public sealed class SqliteJsonControlRepository : IControlRepository
   private readonly string _cs;
   private static readonly JsonSerializerOptions J = new();
 
-  public SqliteJsonControlRepository(string connectionString) => _cs = connectionString;
+  public SqliteJsonControlRepository(DbConnectionString connectionString)
+  {
+    ArgumentNullException.ThrowIfNull(connectionString);
+    _cs = connectionString.Value;
+  }
 
   public async Task SaveControlsAsync(string packId, IReadOnlyList<ControlRecord> controls, CancellationToken ct)
   {

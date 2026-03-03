@@ -71,13 +71,13 @@ public static class CliHostFactory
       Directory.CreateDirectory(Path.GetDirectoryName(dbPath)!);
       var cs = "Data Source=" + dbPath;
       DbBootstrap.EnsureCreated(cs);
-      return cs;
+      return new DbConnectionString(cs);
     });
 
-    services.AddSingleton<IContentPackRepository>(sp => new SqliteContentPackRepository(sp.GetRequiredService<string>()));
-    services.AddSingleton<IControlRepository>(sp => new SqliteJsonControlRepository(sp.GetRequiredService<string>()));
-    services.AddSingleton<IProfileRepository>(sp => new SqliteJsonProfileRepository(sp.GetRequiredService<string>()));
-    services.AddSingleton<IOverlayRepository>(sp => new SqliteJsonOverlayRepository(sp.GetRequiredService<string>()));
+    services.AddSingleton<IContentPackRepository>(sp => new SqliteContentPackRepository(sp.GetRequiredService<DbConnectionString>()));
+    services.AddSingleton<IControlRepository>(sp => new SqliteJsonControlRepository(sp.GetRequiredService<DbConnectionString>()));
+    services.AddSingleton<IProfileRepository>(sp => new SqliteJsonProfileRepository(sp.GetRequiredService<DbConnectionString>()));
+    services.AddSingleton<IOverlayRepository>(sp => new SqliteJsonOverlayRepository(sp.GetRequiredService<DbConnectionString>()));
     services.AddSingleton<ContentPackImporter>();
     services.AddSingleton<OverlayConflictDetector>();
     services.AddSingleton<OverlayMergeService>();
@@ -101,7 +101,7 @@ public static class CliHostFactory
     services.AddSingleton<BundleOrchestrator>();
     services.AddSingleton<STIGForge.Export.EmassExporter>();
     services.AddSingleton<IAuditTrailService>(sp =>
-      new AuditTrailService(sp.GetRequiredService<string>(), sp.GetRequiredService<IClock>()));
+      new AuditTrailService(sp.GetRequiredService<DbConnectionString>(), sp.GetRequiredService<IClock>()));
 #pragma warning disable CA1416
     services.AddSingleton<ICredentialStore>(sp =>
       new DpapiCredentialStore(sp.GetRequiredService<IPathBuilder>()));
@@ -110,15 +110,15 @@ public static class CliHostFactory
     services.AddSingleton<ControlFilterService>();
 
     services.AddSingleton<IComplianceTrendRepository>(sp =>
-      new SqliteComplianceTrendRepository(sp.GetRequiredService<string>()));
+      new SqliteComplianceTrendRepository(sp.GetRequiredService<DbConnectionString>()));
     services.AddSingleton<ComplianceTrendService>();
 
     services.AddSingleton<IExceptionRepository>(sp =>
-      new SqliteExceptionRepository(sp.GetRequiredService<string>()));
+      new SqliteExceptionRepository(sp.GetRequiredService<DbConnectionString>()));
     services.AddSingleton<ExceptionWorkflowService>();
 
     services.AddSingleton<IReleaseCheckRepository>(sp =>
-      new SqliteReleaseCheckRepository(sp.GetRequiredService<string>()));
+      new SqliteReleaseCheckRepository(sp.GetRequiredService<DbConnectionString>()));
     services.AddSingleton<StigReleaseMonitorService>();
 
     services.AddSingleton(sp =>
@@ -136,11 +136,15 @@ public static class CliHostFactory
         sp.GetRequiredService<FirewallRuleService>()
       }));
     services.AddSingleton<IDriftRepository>(sp =>
-      new SqliteDriftRepository(sp.GetRequiredService<string>()));
-    services.AddSingleton<DriftDetectionService>();
+      new SqliteDriftRepository(sp.GetRequiredService<DbConnectionString>()));
+    services.AddSingleton<DriftDetectionService>(sp =>
+      new DriftDetectionService(
+        sp.GetRequiredService<IDriftRepository>(),
+        RemediationHandlerRegistry.CreateHandlers(sp.GetRequiredService<IProcessRunner>()),
+        sp.GetRequiredService<IClock>()));
 
     services.AddSingleton<IRollbackRepository>(sp =>
-      new SqliteRollbackRepository(sp.GetRequiredService<string>()));
+      new SqliteRollbackRepository(sp.GetRequiredService<DbConnectionString>()));
     services.AddSingleton<RollbackService>();
 
     services.AddSingleton<GpoConflictDetector>();

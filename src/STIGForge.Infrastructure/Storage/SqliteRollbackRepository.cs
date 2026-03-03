@@ -11,10 +11,11 @@ public sealed class SqliteRollbackRepository : IRollbackRepository
   private readonly string _cs;
   private static readonly JsonSerializerOptions J = new();
 
-  public SqliteRollbackRepository(string connectionString)
+  public SqliteRollbackRepository(DbConnectionString connectionString)
   {
-    if (string.IsNullOrWhiteSpace(connectionString)) throw new ArgumentException("Value cannot be null or empty.", nameof(connectionString));
-    _cs = connectionString;
+    ArgumentNullException.ThrowIfNull(connectionString);
+    if (string.IsNullOrWhiteSpace(connectionString.Value)) throw new ArgumentException("Value cannot be null or empty.", nameof(connectionString));
+    _cs = connectionString.Value;
   }
 
   public async Task SaveAsync(RollbackSnapshot snapshot, CancellationToken ct)

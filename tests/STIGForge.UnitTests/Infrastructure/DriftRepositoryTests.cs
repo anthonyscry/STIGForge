@@ -26,7 +26,7 @@ public sealed class DriftRepositoryTests : IDisposable
     _keepAlive.Open();
 
     DbBootstrap.EnsureCreated(_cs);
-    _repo = new SqliteDriftRepository(_cs);
+    _repo = new SqliteDriftRepository(new DbConnectionString(_cs));
   }
 
   public void Dispose()

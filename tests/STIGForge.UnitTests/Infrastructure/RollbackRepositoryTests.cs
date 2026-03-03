@@ -26,7 +26,7 @@ public sealed class RollbackRepositoryTests : IDisposable
     _keepAlive.Open();
 
     DbBootstrap.EnsureCreated(_cs);
-    _repo = new SqliteRollbackRepository(_cs);
+    _repo = new SqliteRollbackRepository(new DbConnectionString(_cs));
   }
 
   public void Dispose()

@@ -17,7 +17,7 @@ public sealed class ExceptionRepositoryTests : IDisposable
     _keeper = new SqliteConnection(_cs);
     _keeper.Open();
     DbBootstrap.EnsureCreated(_cs);
-    _repo = new SqliteExceptionRepository(_cs);
+    _repo = new SqliteExceptionRepository(new DbConnectionString(_cs));
   }
 
   public void Dispose()

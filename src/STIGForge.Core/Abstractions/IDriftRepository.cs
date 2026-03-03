@@ -9,6 +9,8 @@ namespace STIGForge.Core.Abstractions;
 public interface IDriftRepository
 {
   Task SaveAsync(DriftSnapshot snapshot, CancellationToken ct);
+  Task SaveBatchAsync(IReadOnlyList<DriftSnapshot> snapshots, CancellationToken ct);
   Task<IReadOnlyList<DriftSnapshot>> GetDriftHistoryAsync(string bundleRoot, string? ruleId, int limit, CancellationToken ct);
+  Task<IReadOnlyList<DriftSnapshot>> GetLatestByRuleAsync(string bundleRoot, CancellationToken ct);
   Task<DriftSnapshot?> GetLatestSnapshotAsync(string bundleRoot, string ruleId, CancellationToken ct);
 }

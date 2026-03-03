@@ -33,8 +33,8 @@ public sealed class ContentPackImporterDirectoryHashTests
         var cs = new SqliteConnectionStringBuilder { DataSource = dbPath }.ToString();
         DbBootstrap.EnsureCreated(cs);
 
-        _packs = new SqliteContentPackRepository(cs);
-        _controls = new SqliteJsonControlRepository(cs);
+        _packs = new SqliteContentPackRepository(new DbConnectionString(cs));
+        _controls = new SqliteJsonControlRepository(new DbConnectionString(cs));
     }
 
     [Fact]

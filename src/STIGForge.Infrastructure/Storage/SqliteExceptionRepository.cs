@@ -9,10 +9,11 @@ public sealed class SqliteExceptionRepository : IExceptionRepository
 {
   private readonly string _cs;
 
-  public SqliteExceptionRepository(string connectionString)
+  public SqliteExceptionRepository(DbConnectionString connectionString)
   {
-    if (string.IsNullOrEmpty(connectionString)) throw new ArgumentException("Value cannot be null or empty.", nameof(connectionString));
-    _cs = connectionString;
+    ArgumentNullException.ThrowIfNull(connectionString);
+    if (string.IsNullOrEmpty(connectionString.Value)) throw new ArgumentException("Value cannot be null or empty.", nameof(connectionString));
+    _cs = connectionString.Value;
   }
 
   public async Task SaveAsync(ControlException exception, CancellationToken ct)

@@ -9,10 +9,11 @@ public sealed class SqliteReleaseCheckRepository : IReleaseCheckRepository
 {
   private readonly string _cs;
 
-  public SqliteReleaseCheckRepository(string connectionString)
+  public SqliteReleaseCheckRepository(DbConnectionString connectionString)
   {
-    if (string.IsNullOrEmpty(connectionString)) throw new ArgumentException("Value cannot be null or empty.", nameof(connectionString));
-    _cs = connectionString;
+    ArgumentNullException.ThrowIfNull(connectionString);
+    if (string.IsNullOrEmpty(connectionString.Value)) throw new ArgumentException("Value cannot be null or empty.", nameof(connectionString));
+    _cs = connectionString.Value;
   }
 
   public async Task SaveAsync(ReleaseCheck check, CancellationToken ct)

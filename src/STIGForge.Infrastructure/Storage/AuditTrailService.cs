@@ -15,9 +15,10 @@ public sealed class AuditTrailService : IAuditTrailService
   private readonly string _connectionString;
   private readonly IClock _clock;
 
-  public AuditTrailService(string connectionString, IClock clock)
+  public AuditTrailService(DbConnectionString connectionString, IClock clock)
   {
-    _connectionString = connectionString;
+    ArgumentNullException.ThrowIfNull(connectionString);
+    _connectionString = connectionString.Value;
     _clock = clock;
   }
 
@@ -35,16 +36,20 @@ public sealed class AuditTrailService : IAuditTrailService
 
     // Get previous hash for chaining
     var previousHash = await conn.QueryFirstOrDefaultAsync<string>(
-      "SELECT entry_hash FROM audit_trail ORDER BY id DESC LIMIT 1"
+      new CommandDefinition(
+        "SELECT entry_hash FROM audit_trail ORDER BY id DESC LIMIT 1",
+        cancellationToken: ct)
     ).ConfigureAwait(false) ?? "genesis";
 
     entry.PreviousHash = previousHash;
     entry.EntryHash = ComputeEntryHash(entry);
 
     await conn.ExecuteAsync(
-      @"INSERT INTO audit_trail (timestamp, user, machine, action, target, result, detail, previous_hash, entry_hash)
-        VALUES (@Timestamp, @User, @Machine, @Action, @Target, @Result, @Detail, @PreviousHash, @EntryHash)",
-      entry
+      new CommandDefinition(
+        @"INSERT INTO audit_trail (timestamp, user, machine, action, target, result, detail, previous_hash, entry_hash)
+          VALUES (@Timestamp, @User, @Machine, @Action, @Target, @Result, @Detail, @PreviousHash, @EntryHash)",
+        entry,
+        cancellationToken: ct)
     ).ConfigureAwait(false);
   }
 

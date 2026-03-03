@@ -26,7 +26,7 @@ public sealed class ReleaseCheckRepositoryTests : IDisposable
     _keepAlive.Open();
 
     DbBootstrap.EnsureCreated(_cs);
-    _repo = new SqliteReleaseCheckRepository(_cs);
+    _repo = new SqliteReleaseCheckRepository(new DbConnectionString(_cs));
   }
 
   public void Dispose()

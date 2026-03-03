@@ -101,7 +101,7 @@ public class CliCommandTests : IDisposable
   [Fact]
   public async Task ListPacks_WithPacks_ReturnsAll()
   {
-    var repo = new SqliteContentPackRepository(_cs);
+    var repo = new SqliteContentPackRepository(new DbConnectionString(_cs));
     await repo.SaveAsync(MakePack("pack-a", "Pack A"), CancellationToken.None);
     await repo.SaveAsync(MakePack("pack-b", "Pack B"), CancellationToken.None);
 
@@ -118,7 +118,7 @@ public class CliCommandTests : IDisposable
   [Fact]
   public async Task ListOverlays_EmptyDb_ReturnsEmpty()
   {
-    var repo = new SqliteJsonOverlayRepository(_cs);
+    var repo = new SqliteJsonOverlayRepository(new DbConnectionString(_cs));
 
     var list = await repo.ListAsync(CancellationToken.None);
 
@@ -128,7 +128,7 @@ public class CliCommandTests : IDisposable
   [Fact]
   public async Task ListOverlays_WithOverlays_ReturnsAll()
   {
-    var repo = new SqliteJsonOverlayRepository(_cs);
+    var repo = new SqliteJsonOverlayRepository(new DbConnectionString(_cs));
     await repo.SaveAsync(MakeOverlay("ov-a", "Overlay A"), CancellationToken.None);
     await repo.SaveAsync(MakeOverlay("ov-b", "Overlay B",
       new ControlOverride { RuleId = "SV-1_rule", VulnId = "V-1", StatusOverride = ControlStatus.NotApplicable }
@@ -145,8 +145,8 @@ public class CliCommandTests : IDisposable
   [Fact]
   public async Task DiffPacks_IdenticalPacks_NoChanges()
   {
-    var packRepo = new SqliteContentPackRepository(_cs);
-    var controlRepo = new SqliteJsonControlRepository(_cs);
+    var packRepo = new SqliteContentPackRepository(new DbConnectionString(_cs));
+    var controlRepo = new SqliteJsonControlRepository(new DbConnectionString(_cs));
 
     await packRepo.SaveAsync(MakePack("baseline", "Baseline"), CancellationToken.None);
     await packRepo.SaveAsync(MakePack("target", "Target"), CancellationToken.None);
@@ -167,8 +167,8 @@ public class CliCommandTests : IDisposable
   [Fact]
   public async Task DiffPacks_DifferentPacks_DetectsChanges()
   {
-    var packRepo = new SqliteContentPackRepository(_cs);
-    var controlRepo = new SqliteJsonControlRepository(_cs);
+    var packRepo = new SqliteContentPackRepository(new DbConnectionString(_cs));
+    var controlRepo = new SqliteJsonControlRepository(new DbConnectionString(_cs));
 
     await packRepo.SaveAsync(MakePack("base2", "Baseline 2"), CancellationToken.None);
     await packRepo.SaveAsync(MakePack("tgt2", "Target 2"), CancellationToken.None);
@@ -192,7 +192,7 @@ public class CliCommandTests : IDisposable
   [Fact]
   public async Task DiffPacks_NoControlsInPack_ReturnsEmptyDiff()
   {
-    var controlRepo = new SqliteJsonControlRepository(_cs);
+    var controlRepo = new SqliteJsonControlRepository(new DbConnectionString(_cs));
 
     var diffService = new BaselineDiffService(controlRepo);
     var diff = await diffService.ComparePacksAsync("nonexistent-a", "nonexistent-b");
@@ -208,8 +208,8 @@ public class CliCommandTests : IDisposable
   [Fact]
   public async Task RebaseOverlay_UnchangedControls_AllKept()
   {
-    var controlRepo = new SqliteJsonControlRepository(_cs);
-    var overlayRepo = new SqliteJsonOverlayRepository(_cs);
+    var controlRepo = new SqliteJsonControlRepository(new DbConnectionString(_cs));
+    var overlayRepo = new SqliteJsonOverlayRepository(new DbConnectionString(_cs));
 
     var controls = new List<ControlRecord> { MakeControl("C1"), MakeControl("C2") };
     await controlRepo.SaveControlsAsync("rb-base", controls, CancellationToken.None);
@@ -233,8 +233,8 @@ public class CliCommandTests : IDisposable
   [Fact]
   public async Task RebaseOverlay_RemovedControl_MarkedForRemoval()
   {
-    var controlRepo = new SqliteJsonControlRepository(_cs);
-    var overlayRepo = new SqliteJsonOverlayRepository(_cs);
+    var controlRepo = new SqliteJsonControlRepository(new DbConnectionString(_cs));
+    var overlayRepo = new SqliteJsonOverlayRepository(new DbConnectionString(_cs));
 
     var baseline = new List<ControlRecord> { MakeControl("C1"), MakeControl("C2") };
     var target = new List<ControlRecord> { MakeControl("C1") }; // C2 removed
@@ -262,8 +262,8 @@ public class CliCommandTests : IDisposable
   [Fact]
   public async Task RebaseOverlay_ApplyRebase_CreatesNewOverlay()
   {
-    var controlRepo = new SqliteJsonControlRepository(_cs);
-    var overlayRepo = new SqliteJsonOverlayRepository(_cs);
+    var controlRepo = new SqliteJsonControlRepository(new DbConnectionString(_cs));
+    var overlayRepo = new SqliteJsonOverlayRepository(new DbConnectionString(_cs));
 
     var controls = new List<ControlRecord> { MakeControl("C1") };
     await controlRepo.SaveControlsAsync("ap-base", controls, CancellationToken.None);
@@ -298,8 +298,8 @@ public class CliCommandTests : IDisposable
   [Fact]
   public async Task RebaseOverlay_ApplyRebase_WithBlockingConflicts_Fails()
   {
-    var controlRepo = new SqliteJsonControlRepository(_cs);
-    var overlayRepo = new SqliteJsonOverlayRepository(_cs);
+    var controlRepo = new SqliteJsonControlRepository(new DbConnectionString(_cs));
+    var overlayRepo = new SqliteJsonOverlayRepository(new DbConnectionString(_cs));
 
     var baseline = new List<ControlRecord> { MakeControl("C1"), MakeControl("C2") };
     var target = new List<ControlRecord> { MakeControl("C1") };
@@ -325,8 +325,8 @@ public class CliCommandTests : IDisposable
   [Fact]
   public async Task RebaseOverlay_OverlayNotFound_ReturnsFailure()
   {
-    var controlRepo = new SqliteJsonControlRepository(_cs);
-    var overlayRepo = new SqliteJsonOverlayRepository(_cs);
+    var controlRepo = new SqliteJsonControlRepository(new DbConnectionString(_cs));
+    var overlayRepo = new SqliteJsonOverlayRepository(new DbConnectionString(_cs));
 
     // Save some controls so diff doesn't fail
     await controlRepo.SaveControlsAsync("nf-base", new List<ControlRecord>(), CancellationToken.None);

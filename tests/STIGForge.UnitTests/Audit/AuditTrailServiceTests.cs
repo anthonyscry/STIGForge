@@ -17,7 +17,7 @@ public sealed class AuditTrailServiceTests : IDisposable
     _dbPath = Path.Combine(Path.GetTempPath(), "stigforge_audit_test_" + Guid.NewGuid().ToString("n") + ".db");
     _connectionString = "Data Source=" + _dbPath;
     DbBootstrap.EnsureCreated(_connectionString);
-    _sut = new AuditTrailService(_connectionString, new SystemClock());
+    _sut = new AuditTrailService(new DbConnectionString(_connectionString), new SystemClock());
   }
 
   public void Dispose()

@@ -39,8 +39,8 @@ public sealed class DriftDetectionService
     if (currentComplianceState is null) throw new ArgumentNullException(nameof(currentComplianceState));
 
     var normalizedCurrent = NormalizeStateMap(currentComplianceState);
-    var history = await _repo.GetDriftHistoryAsync(bundleRoot, null, int.MaxValue, ct).ConfigureAwait(false);
-    var latestByRule = BuildLatestByRule(history);
+    var latestByRule = (await _repo.GetLatestByRuleAsync(bundleRoot, ct).ConfigureAwait(false))
+      .ToDictionary(s => s.RuleId, s => s, StringComparer.OrdinalIgnoreCase);
 
     var detectedAt = _clock.Now;
     var driftEvents = new List<DriftSnapshot>();
@@ -96,8 +96,8 @@ public sealed class DriftDetectionService
       });
     }
 
-    foreach (var driftEvent in driftEvents)
-      await _repo.SaveAsync(driftEvent, ct).ConfigureAwait(false);
+    if (driftEvents.Count > 0)
+      await _repo.SaveBatchAsync(driftEvents, ct).ConfigureAwait(false);
 
     var remediatedRules = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
     var remediationErrors = new List<string>();
@@ -191,21 +191,6 @@ public sealed class DriftDetectionService
         Severity = "unknown"
       }
     };
-  }
-
-  private static Dictionary<string, DriftSnapshot> BuildLatestByRule(IReadOnlyList<DriftSnapshot> history)
-  {
-    var map = new Dictionary<string, DriftSnapshot>(StringComparer.OrdinalIgnoreCase);
-    foreach (var snapshot in history)
-    {
-      if (string.IsNullOrWhiteSpace(snapshot.RuleId))
-        continue;
-
-      if (!map.ContainsKey(snapshot.RuleId))
-        map[snapshot.RuleId] = snapshot;
-    }
-
-    return map;
   }
 
   private static IReadOnlyDictionary<string, string> NormalizeStateMap(IReadOnlyDictionary<string, string> map)

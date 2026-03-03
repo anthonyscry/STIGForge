@@ -237,6 +237,23 @@ public sealed class DriftDetectionServiceTests
       return Task.CompletedTask;
     }
 
+    public Task SaveBatchAsync(IReadOnlyList<DriftSnapshot> snapshots, CancellationToken ct)
+    {
+      lock (_sync)
+      {
+        foreach (var snapshot in snapshots)
+        {
+          var existing = _snapshots.FindIndex(s => string.Equals(s.SnapshotId, snapshot.SnapshotId, StringComparison.OrdinalIgnoreCase));
+          if (existing >= 0)
+            _snapshots[existing] = snapshot;
+          else
+            _snapshots.Add(snapshot);
+        }
+      }
+
+      return Task.CompletedTask;
+    }
+
     public Task<IReadOnlyList<DriftSnapshot>> GetDriftHistoryAsync(string bundleRoot, string? ruleId, int limit, CancellationToken ct)
     {
       lock (_sync)
@@ -261,6 +278,22 @@ public sealed class DriftDetectionServiceTests
     {
       var rows = await GetDriftHistoryAsync(bundleRoot, ruleId, 1, ct);
       return rows.Count > 0 ? rows[0] : null;
+    }
+
+    public Task<IReadOnlyList<DriftSnapshot>> GetLatestByRuleAsync(string bundleRoot, CancellationToken ct)
+    {
+      lock (_sync)
+      {
+        var rows = _snapshots
+          .Where(s => string.Equals(s.BundleRoot, bundleRoot, StringComparison.OrdinalIgnoreCase))
+          .OrderByDescending(s => s.DetectedAt)
+          .ThenByDescending(s => s.SnapshotId, StringComparer.OrdinalIgnoreCase)
+          .GroupBy(s => s.RuleId, StringComparer.OrdinalIgnoreCase)
+          .Select(g => g.First())
+          .ToList();
+
+        return Task.FromResult<IReadOnlyList<DriftSnapshot>>(rows);
+      }
     }
   }
 }

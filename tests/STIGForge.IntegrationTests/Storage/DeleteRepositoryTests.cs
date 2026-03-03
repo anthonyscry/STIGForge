@@ -26,7 +26,7 @@ public class DeleteRepositoryTests : IDisposable
   [Fact]
   public async Task DeletePack_RemovesPack()
   {
-    var repo = new SqliteContentPackRepository(_cs);
+    var repo = new SqliteContentPackRepository(new DbConnectionString(_cs));
     var pack = new ContentPack
     {
       PackId = "pack-del-1",
@@ -60,8 +60,8 @@ public class DeleteRepositoryTests : IDisposable
   [Fact]
   public async Task DeletePack_CascadesControls()
   {
-    var packRepo = new SqliteContentPackRepository(_cs);
-    var controlRepo = new SqliteJsonControlRepository(_cs);
+    var packRepo = new SqliteContentPackRepository(new DbConnectionString(_cs));
+    var controlRepo = new SqliteJsonControlRepository(new DbConnectionString(_cs));
 
     var pack = new ContentPack
     {
@@ -102,7 +102,7 @@ public class DeleteRepositoryTests : IDisposable
   [Fact]
   public async Task DeleteProfile_RemovesProfile()
   {
-    var repo = new SqliteJsonProfileRepository(_cs);
+    var repo = new SqliteJsonProfileRepository(new DbConnectionString(_cs));
     var profile = new Profile
     {
       ProfileId = "prof-del-1",
@@ -137,7 +137,7 @@ public class DeleteRepositoryTests : IDisposable
   [Fact]
   public async Task DeletePack_NonExistent_DoesNotThrow()
   {
-    var repo = new SqliteContentPackRepository(_cs);
+    var repo = new SqliteContentPackRepository(new DbConnectionString(_cs));
 
     var act = () => repo.DeleteAsync("nonexistent-pack", CancellationToken.None);
 

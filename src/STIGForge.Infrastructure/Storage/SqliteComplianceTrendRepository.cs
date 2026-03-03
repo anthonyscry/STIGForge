@@ -9,10 +9,11 @@ public sealed class SqliteComplianceTrendRepository : IComplianceTrendRepository
 {
   private readonly string _cs;
 
-  public SqliteComplianceTrendRepository(string connectionString)
+  public SqliteComplianceTrendRepository(DbConnectionString connectionString)
   {
-    if (string.IsNullOrEmpty(connectionString)) throw new ArgumentException("Value cannot be null or empty.", nameof(connectionString));
-    _cs = connectionString;
+    ArgumentNullException.ThrowIfNull(connectionString);
+    if (string.IsNullOrEmpty(connectionString.Value)) throw new ArgumentException("Value cannot be null or empty.", nameof(connectionString));
+    _cs = connectionString.Value;
   }
 
   public async Task SaveSnapshotAsync(ComplianceSnapshot snapshot, CancellationToken ct)

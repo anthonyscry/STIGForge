@@ -148,7 +148,7 @@ public sealed class PhaseCCommandFlowTests : IDisposable
         Revision = new RevisionInfo()
       }
     };
-    await new SqliteJsonControlRepository(cs).SaveControlsAsync(bundleRoot, controls, CancellationToken.None);
+    await new SqliteJsonControlRepository(new DbConnectionString(cs)).SaveControlsAsync(bundleRoot, controls, CancellationToken.None);
 
     var nessusPath = Path.Combine(_tempRoot, "sample.nessus");
     await File.WriteAllTextAsync(nessusPath,
@@ -334,9 +334,9 @@ public sealed class PhaseCCommandFlowTests : IDisposable
 
   private PhaseCCommandService CreateCommandService(string cs, IProcessRunner runner)
   {
-    var driftRepo = new SqliteDriftRepository(cs);
-    var rollbackRepo = new SqliteRollbackRepository(cs);
-    var controlRepo = new SqliteJsonControlRepository(cs);
+    var driftRepo = new SqliteDriftRepository(new DbConnectionString(cs));
+    var rollbackRepo = new SqliteRollbackRepository(new DbConnectionString(cs));
+    var controlRepo = new SqliteJsonControlRepository(new DbConnectionString(cs));
     var drift = new DriftDetectionService(driftRepo);
     var rollback = new RollbackService(rollbackRepo, runner);
     var gpo = new GpoConflictDetector(runner);

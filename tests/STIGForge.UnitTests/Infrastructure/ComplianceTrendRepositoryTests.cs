@@ -26,7 +26,7 @@ public sealed class ComplianceTrendRepositoryTests : IDisposable
     _keepAlive.Open();
 
     DbBootstrap.EnsureCreated(_cs);
-    _repo = new SqliteComplianceTrendRepository(_cs);
+    _repo = new SqliteComplianceTrendRepository(new DbConnectionString(_cs));
   }
 
   public void Dispose()

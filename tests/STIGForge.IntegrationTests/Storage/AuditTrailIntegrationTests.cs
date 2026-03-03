@@ -30,7 +30,7 @@ public class AuditTrailIntegrationTests : IDisposable
     public async Task RecordAndQuery_RoundTrip()
     {
         var clock = new FakeClock();
-        var svc = new AuditTrailService(_cs, clock);
+        var svc = new AuditTrailService(new DbConnectionString(_cs), clock);
 
         var entry = new AuditEntry
         {
@@ -58,7 +58,7 @@ public class AuditTrailIntegrationTests : IDisposable
     public async Task VerifyIntegrity_ValidChain_ReturnsTrue()
     {
         var clock = new FakeClock();
-        var svc = new AuditTrailService(_cs, clock);
+        var svc = new AuditTrailService(new DbConnectionString(_cs), clock);
 
         await svc.RecordAsync(new AuditEntry { Action = "apply", Target = "t1", Result = "ok" }, CancellationToken.None);
         await svc.RecordAsync(new AuditEntry { Action = "verify", Target = "t2", Result = "ok" }, CancellationToken.None);
@@ -73,7 +73,7 @@ public class AuditTrailIntegrationTests : IDisposable
     public async Task VerifyIntegrity_EmptyTrail_ReturnsTrue()
     {
         var clock = new FakeClock();
-        var svc = new AuditTrailService(_cs, clock);
+        var svc = new AuditTrailService(new DbConnectionString(_cs), clock);
 
         var valid = await svc.VerifyIntegrityAsync(CancellationToken.None);
 
@@ -84,7 +84,7 @@ public class AuditTrailIntegrationTests : IDisposable
     public async Task Query_FilterByAction_ReturnsOnlyMatching()
     {
         var clock = new FakeClock();
-        var svc = new AuditTrailService(_cs, clock);
+        var svc = new AuditTrailService(new DbConnectionString(_cs), clock);
 
         await svc.RecordAsync(new AuditEntry { Action = "apply", Target = "t1", Result = "ok" }, CancellationToken.None);
         await svc.RecordAsync(new AuditEntry { Action = "verify", Target = "t2", Result = "ok" }, CancellationToken.None);
@@ -100,7 +100,7 @@ public class AuditTrailIntegrationTests : IDisposable
     public async Task Query_FilterByTarget_ReturnsOnlyMatching()
     {
         var clock = new FakeClock();
-        var svc = new AuditTrailService(_cs, clock);
+        var svc = new AuditTrailService(new DbConnectionString(_cs), clock);
 
         await svc.RecordAsync(new AuditEntry { Action = "apply", Target = "bundle-alpha", Result = "ok" }, CancellationToken.None);
         await svc.RecordAsync(new AuditEntry { Action = "apply", Target = "bundle-beta", Result = "ok" }, CancellationToken.None);
