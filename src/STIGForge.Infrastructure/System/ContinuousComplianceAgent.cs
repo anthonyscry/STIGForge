@@ -133,11 +133,11 @@ public sealed class ComplianceAgentFactory
     _services = services ?? throw new ArgumentNullException(nameof(services));
   }
 
-  public ContinuousComplianceAgent CreateAgent(string bundleRoot, TimeSpan? interval = null, bool autoRemediate = false, string? configPath = null)
+  public async Task<ContinuousComplianceAgent> CreateAgentAsync(string bundleRoot, TimeSpan? interval = null, bool autoRemediate = false, string? configPath = null)
   {
     ComplianceAgentConfig? config = null;
     if (!string.IsNullOrWhiteSpace(configPath))
-      config = ComplianceAgentConfig.LoadFromFileAsync(configPath).ConfigureAwait(false).GetAwaiter().GetResult();
+      config = await ComplianceAgentConfig.LoadFromFileAsync(configPath).ConfigureAwait(false);
 
     var resolvedBundleRoot = config?.BundleRoot ?? bundleRoot;
     var resolvedInterval = config != null
@@ -168,39 +168,11 @@ public static class WindowsServiceInstaller
 {
   public static void InstallService(string serviceName, string displayName, string executablePath)
   {
-    if (OperatingSystem.IsWindows())
-    {
-      var psi = new ProcessStartInfo
-      {
-        FileName = "sc.exe",
-        Arguments = $"create {serviceName} binPath= \"{executablePath}\" displayName= \"{displayName}\" start= auto",
-        RedirectStandardOutput = true,
-        RedirectStandardError = true,
-        UseShellExecute = false,
-        CreateNoWindow = true
-      };
-
-      using var process = Process.Start(psi);
-      process?.WaitForExit();
-    }
+    WindowsServiceCommandHelper.InstallService(serviceName, displayName, executablePath);
   }
 
   public static void UninstallService(string serviceName)
   {
-    if (OperatingSystem.IsWindows())
-    {
-      var psi = new ProcessStartInfo
-      {
-        FileName = "sc.exe",
-        Arguments = $"delete {serviceName}",
-        RedirectStandardOutput = true,
-        RedirectStandardError = true,
-        UseShellExecute = false,
-        CreateNoWindow = true
-      };
-
-      using var process = Process.Start(psi);
-      process?.WaitForExit();
-    }
+    WindowsServiceCommandHelper.UninstallService(serviceName);
   }
 }

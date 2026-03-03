@@ -1,5 +1,4 @@
 using STIGForge.Core.Models;
-using System.Diagnostics;
 using System.Text.Json;
 
 namespace STIGForge.Core.Services;
@@ -116,6 +115,9 @@ public sealed class PhaseCCommandService
     }).ToList();
 
     var checklist = _cklExporter.FromControlResults(results, stigTitle, hostName);
+    var outputDir = Path.GetDirectoryName(outputPath);
+    if (!string.IsNullOrWhiteSpace(outputDir))
+      Directory.CreateDirectory(outputDir);
     _cklExporter.Export(checklist, outputPath);
     return Task.FromResult(outputPath);
   }
@@ -248,61 +250,20 @@ public sealed class PhaseCCommandService
   public Task AgentInstallAsync(string serviceName, string displayName, string executablePath, CancellationToken ct)
   {
     ct.ThrowIfCancellationRequested();
-    if (!OperatingSystem.IsWindows())
-      return Task.CompletedTask;
-
-    var psi = new ProcessStartInfo
-    {
-      FileName = "sc.exe",
-      Arguments = $"create {serviceName} binPath= \"{executablePath}\" displayName= \"{displayName}\" start= auto",
-      RedirectStandardOutput = true,
-      RedirectStandardError = true,
-      UseShellExecute = false,
-      CreateNoWindow = true
-    };
-    using var process = Process.Start(psi);
-    process?.WaitForExit();
+    WindowsServiceCommandHelper.InstallService(serviceName, displayName, executablePath);
     return Task.CompletedTask;
   }
 
   public Task AgentUninstallAsync(string serviceName, CancellationToken ct)
   {
     ct.ThrowIfCancellationRequested();
-    if (!OperatingSystem.IsWindows())
-      return Task.CompletedTask;
-
-    var psi = new ProcessStartInfo
-    {
-      FileName = "sc.exe",
-      Arguments = $"delete {serviceName}",
-      RedirectStandardOutput = true,
-      RedirectStandardError = true,
-      UseShellExecute = false,
-      CreateNoWindow = true
-    };
-    using var process = Process.Start(psi);
-    process?.WaitForExit();
+    WindowsServiceCommandHelper.UninstallService(serviceName);
     return Task.CompletedTask;
   }
 
   public Task<string> AgentStatusAsync(string serviceName, CancellationToken ct)
   {
     ct.ThrowIfCancellationRequested();
-    if (!OperatingSystem.IsWindows())
-      return Task.FromResult("Unsupported on non-Windows host");
-
-    var psi = new ProcessStartInfo
-    {
-      FileName = "sc.exe",
-      Arguments = $"query {serviceName}",
-      RedirectStandardOutput = true,
-      RedirectStandardError = true,
-      UseShellExecute = false,
-      CreateNoWindow = true
-    };
-
-    using var process = Process.Start(psi);
-    process?.WaitForExit();
-    return Task.FromResult((process?.StandardOutput.ReadToEnd() ?? string.Empty).Trim());
+    return Task.FromResult(WindowsServiceCommandHelper.QueryServiceStatus(serviceName));
   }
 }
