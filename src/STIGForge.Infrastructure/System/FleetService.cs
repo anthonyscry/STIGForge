@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Text;
+using System.Text.RegularExpressions;
 using STIGForge.Core.Abstractions;
 
 namespace STIGForge.Infrastructure.System;
@@ -10,6 +11,8 @@ namespace STIGForge.Infrastructure.System;
 /// </summary>
 public sealed class FleetService
 {
+  private static readonly Regex HostIdentifierRegex = new("^[A-Za-z0-9._:-]+$", RegexOptions.Compiled);
+
   private readonly ICredentialStore? _credentialStore;
   private readonly IAuditTrailService? _audit;
 
@@ -264,24 +267,23 @@ public sealed class FleetService
   private static async Task<(int ExitCode, string Output, string Error)> RunPowerShellRemoteAsync(
     FleetTarget target, string remoteScript, int timeoutSeconds, CancellationToken ct)
   {
-    var connectionTarget = !string.IsNullOrWhiteSpace(target.IpAddress) ? target.IpAddress : target.HostName;
+    var validatedHostName = ValidateHostIdentifier(target.HostName);
+    var validatedIpAddress = string.IsNullOrWhiteSpace(target.IpAddress) ? null : ValidateHostIdentifier(target.IpAddress);
+    var connectionTarget = !string.IsNullOrWhiteSpace(validatedIpAddress) ? validatedIpAddress : validatedHostName;
 
     var psScript = new StringBuilder();
     psScript.Append("$computerName = ").Append(ToPowerShellSingleQuoted(connectionTarget)).Append("; ");
     psScript.Append("$remoteScript = ").Append(ToPowerShellSingleQuoted(remoteScript)).Append("; ");
 
-    if (!string.IsNullOrWhiteSpace(target.CredentialUser))
-    {
-      psScript.Append("$fleetUser = ").Append(ToPowerShellSingleQuoted(target.CredentialUser)).Append("; ");
-      psScript.Append("$fleetPass = ").Append(ToPowerShellSingleQuoted(target.CredentialPassword)).Append("; ");
-      psScript.Append("$fleetSecure = ConvertTo-SecureString $fleetPass -AsPlainText -Force; ");
-      psScript.Append("$fleetCredential = New-Object System.Management.Automation.PSCredential($fleetUser, $fleetSecure); ");
-      psScript.Append("$result = Invoke-Command -ComputerName $computerName -Credential $fleetCredential -ScriptBlock ([ScriptBlock]::Create($remoteScript)) -ErrorAction Stop; ");
-    }
-    else
-    {
-      psScript.Append("$result = Invoke-Command -ComputerName $computerName -ScriptBlock ([ScriptBlock]::Create($remoteScript)) -ErrorAction Stop; ");
-    }
+    psScript.Append("$fleetUser = $env:STIGFORGE_FLEET_USER; ");
+    psScript.Append("$fleetPass = $env:STIGFORGE_FLEET_PASS; ");
+    psScript.Append("if (-not [string]::IsNullOrWhiteSpace($fleetUser)) { ");
+    psScript.Append("$fleetSecure = ConvertTo-SecureString $fleetPass -AsPlainText -Force; ");
+    psScript.Append("$fleetCredential = New-Object System.Management.Automation.PSCredential($fleetUser, $fleetSecure); ");
+    psScript.Append("$result = Invoke-Command -ComputerName $computerName -Credential $fleetCredential -ScriptBlock ([ScriptBlock]::Create($remoteScript)) -ErrorAction Stop; ");
+    psScript.Append("} else { ");
+    psScript.Append("$result = Invoke-Command -ComputerName $computerName -ScriptBlock ([ScriptBlock]::Create($remoteScript)) -ErrorAction Stop; ");
+    psScript.Append("} ");
 
     psScript.Append("$result");
 
@@ -295,6 +297,12 @@ public sealed class FleetService
       UseShellExecute = false,
       CreateNoWindow = true
     };
+
+    if (!string.IsNullOrWhiteSpace(target.CredentialUser))
+    {
+      psi.Environment["STIGFORGE_FLEET_USER"] = target.CredentialUser;
+      psi.Environment["STIGFORGE_FLEET_PASS"] = target.CredentialPassword ?? string.Empty;
+    }
 
     using var proc = global::System.Diagnostics.Process.Start(psi);
     if (proc == null) return (-1, string.Empty, "Failed to start PowerShell");
@@ -364,7 +372,9 @@ public sealed class FleetService
   private async Task<FleetMachineStatus> TestConnectionAsync(FleetTarget target, CancellationToken ct)
   {
     target = ResolveCredentials(target);
-    var connectionTarget = !string.IsNullOrWhiteSpace(target.IpAddress) ? target.IpAddress : target.HostName;
+    var validatedHostName = ValidateHostIdentifier(target.HostName);
+    var validatedIpAddress = string.IsNullOrWhiteSpace(target.IpAddress) ? null : ValidateHostIdentifier(target.IpAddress);
+    var connectionTarget = !string.IsNullOrWhiteSpace(validatedIpAddress) ? validatedIpAddress : validatedHostName;
 
     try
     {
@@ -576,6 +586,18 @@ public sealed class FleetService
       CredentialUser = cred.Value.Username,
       CredentialPassword = cred.Value.Password
     };
+  }
+
+  private static string ValidateHostIdentifier(string value)
+  {
+    if (string.IsNullOrWhiteSpace(value))
+      throw new ArgumentException("Host identifier is required.", nameof(value));
+
+    var trimmed = value.Trim();
+    if (!HostIdentifierRegex.IsMatch(trimmed))
+      throw new ArgumentException($"Invalid host identifier '{value}'.", nameof(value));
+
+    return trimmed;
   }
 }
 
