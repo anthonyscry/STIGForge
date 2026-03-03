@@ -46,6 +46,8 @@ public static class DbBootstrap
     using var cmd = conn.CreateCommand();
     cmd.CommandText = @"
 PRAGMA journal_mode=WAL;
+PRAGMA foreign_keys=ON;
+PRAGMA busy_timeout=5000;
 
 CREATE TABLE IF NOT EXISTS mission_runs (
   run_id TEXT PRIMARY KEY,
@@ -187,57 +189,27 @@ CREATE INDEX IF NOT EXISTS ix_release_checks_baseline ON release_checks(baseline
 ";
     cmd.ExecuteNonQuery();
 
-    // Migrations: Add new columns to content_packs if they don't exist
-    try
+    const int targetUserVersion = 1;
+    var userVersion = conn.ExecuteScalar<int>("PRAGMA user_version;");
+    if (userVersion < targetUserVersion)
     {
-      using var alterCmd = conn.CreateCommand();
-      alterCmd.CommandText = @"
-ALTER TABLE content_packs ADD COLUMN benchmark_ids_json TEXT NOT NULL DEFAULT '[]';
-";
-      alterCmd.ExecuteNonQuery();
-    }
-    catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.Message.Contains("duplicate column name"))
-    {
-      // Column already exists, ignore
-    }
+      var existingColumns = new HashSet<string>(
+        conn.Query<string>("SELECT name FROM pragma_table_info('content_packs')"),
+        StringComparer.OrdinalIgnoreCase);
 
-    try
-    {
-      using var alterCmd = conn.CreateCommand();
-      alterCmd.CommandText = @"
-ALTER TABLE content_packs ADD COLUMN applicability_tags_json TEXT NOT NULL DEFAULT '[]';
-";
-      alterCmd.ExecuteNonQuery();
-    }
-    catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.Message.Contains("duplicate column name"))
-    {
-      // Column already exists, ignore
-    }
+      if (!existingColumns.Contains("benchmark_ids_json"))
+        conn.Execute("ALTER TABLE content_packs ADD COLUMN benchmark_ids_json TEXT NOT NULL DEFAULT '[]'");
 
-    try
-    {
-      using var alterCmd = conn.CreateCommand();
-      alterCmd.CommandText = @"
-ALTER TABLE content_packs ADD COLUMN version TEXT NOT NULL DEFAULT '';
-";
-      alterCmd.ExecuteNonQuery();
-    }
-    catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.Message.Contains("duplicate column name"))
-    {
-      // Column already exists, ignore
-    }
+      if (!existingColumns.Contains("applicability_tags_json"))
+        conn.Execute("ALTER TABLE content_packs ADD COLUMN applicability_tags_json TEXT NOT NULL DEFAULT '[]'");
 
-    try
-    {
-      using var alterCmd = conn.CreateCommand();
-      alterCmd.CommandText = @"
-ALTER TABLE content_packs ADD COLUMN release TEXT NOT NULL DEFAULT '';
-";
-      alterCmd.ExecuteNonQuery();
-    }
-    catch (Microsoft.Data.Sqlite.SqliteException ex) when (ex.Message.Contains("duplicate column name"))
-    {
-      // Column already exists, ignore
+      if (!existingColumns.Contains("version"))
+        conn.Execute("ALTER TABLE content_packs ADD COLUMN version TEXT NOT NULL DEFAULT ''");
+
+      if (!existingColumns.Contains("release"))
+        conn.Execute("ALTER TABLE content_packs ADD COLUMN release TEXT NOT NULL DEFAULT ''");
+
+      conn.Execute($"PRAGMA user_version={targetUserVersion};");
     }
   }
 }

@@ -1,5 +1,6 @@
 using System.CommandLine;
 using STIGForge.Cli.Commands;
+using STIGForge.Core.Errors;
 
 var rootCmd = new RootCommand("STIGForge CLI (offline-first)");
 
@@ -30,6 +31,11 @@ static async Task<int> InvokeWithErrorHandlingAsync(RootCommand command, string[
   try
   {
     return await command.InvokeAsync(argv);
+  }
+  catch (StigForgeException ex)
+  {
+    Console.Error.WriteLine($"[{ex.ErrorCode}] ({ex.Component}) {ex.Message}");
+    return 2;
   }
   catch (ArgumentException ex)
   {
