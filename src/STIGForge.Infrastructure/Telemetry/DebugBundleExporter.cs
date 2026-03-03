@@ -72,7 +72,7 @@ public sealed class DebugBundleExporter
 
     try
     {
-      foreach (var file in Directory.GetFiles(logsRoot, "*.log", SearchOption.AllDirectories))
+      foreach (var file in Directory.EnumerateFiles(logsRoot, "*.log", SearchOption.AllDirectories))
       {
         try
         {
@@ -117,7 +117,7 @@ public sealed class DebugBundleExporter
     {
       try
       {
-        foreach (var file in Directory.GetFiles(verifyRoot, "*.json", SearchOption.AllDirectories))
+        foreach (var file in Directory.EnumerateFiles(verifyRoot, "*.json", SearchOption.AllDirectories))
         {
           try
           {
@@ -235,7 +235,7 @@ public sealed class DebugBundleExporter
 
     try
     {
-      foreach (var file in Directory.GetFiles(directoryPath, "*", SearchOption.AllDirectories))
+      foreach (var file in Directory.EnumerateFiles(directoryPath, "*", SearchOption.AllDirectories))
       {
         try
         {

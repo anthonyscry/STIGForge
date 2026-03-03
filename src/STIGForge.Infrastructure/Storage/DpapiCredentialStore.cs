@@ -69,8 +69,8 @@ public sealed class DpapiCredentialStore : ICredentialStore
     if (!Directory.Exists(_credDir))
       return [];
 
-    var files = Directory.GetFiles(_credDir, "*.cred");
-    var hosts = new List<string>(files.Length);
+    var files = Directory.EnumerateFiles(_credDir, "*.cred");
+    var hosts = new List<string>();
     foreach (var file in files)
       hosts.Add(Path.GetFileNameWithoutExtension(file));
     return hosts;
