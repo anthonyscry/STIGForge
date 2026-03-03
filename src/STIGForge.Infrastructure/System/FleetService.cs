@@ -272,8 +272,8 @@ public sealed class FleetService
 
     if (!string.IsNullOrWhiteSpace(target.CredentialUser))
     {
-      psScript.Append("$fleetUser = $env:STIGFORGE_FLEET_USER; ");
-      psScript.Append("$fleetPass = $env:STIGFORGE_FLEET_PASS; ");
+      psScript.Append("$fleetUser = ").Append(ToPowerShellSingleQuoted(target.CredentialUser)).Append("; ");
+      psScript.Append("$fleetPass = ").Append(ToPowerShellSingleQuoted(target.CredentialPassword)).Append("; ");
       psScript.Append("$fleetSecure = ConvertTo-SecureString $fleetPass -AsPlainText -Force; ");
       psScript.Append("$fleetCredential = New-Object System.Management.Automation.PSCredential($fleetUser, $fleetSecure); ");
       psScript.Append("$result = Invoke-Command -ComputerName $computerName -Credential $fleetCredential -ScriptBlock ([ScriptBlock]::Create($remoteScript)) -ErrorAction Stop; ");
@@ -295,12 +295,6 @@ public sealed class FleetService
       UseShellExecute = false,
       CreateNoWindow = true
     };
-
-    if (!string.IsNullOrWhiteSpace(target.CredentialUser))
-    {
-      psi.Environment["STIGFORGE_FLEET_USER"] = target.CredentialUser;
-      psi.Environment["STIGFORGE_FLEET_PASS"] = target.CredentialPassword ?? string.Empty;
-    }
 
     using var proc = global::System.Diagnostics.Process.Start(psi);
     if (proc == null) return (-1, string.Empty, "Failed to start PowerShell");
@@ -490,8 +484,8 @@ public sealed class FleetService
 
       if (!string.IsNullOrWhiteSpace(target.CredentialUser))
       {
-        script.Append("$fleetUser = $env:STIGFORGE_FLEET_USER; ");
-        script.Append("$fleetPass = $env:STIGFORGE_FLEET_PASS; ");
+        script.Append("$fleetUser = ").Append(ToPowerShellSingleQuoted(target.CredentialUser)).Append("; ");
+        script.Append("$fleetPass = ").Append(ToPowerShellSingleQuoted(target.CredentialPassword)).Append("; ");
         script.Append("$fleetSecure = ConvertTo-SecureString $fleetPass -AsPlainText -Force; ");
         script.Append("$fleetCredential = New-Object System.Management.Automation.PSCredential($fleetUser, $fleetSecure); ");
         script.Append("$session = New-PSSession -ComputerName $computerName -Credential $fleetCredential; ");
