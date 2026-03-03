@@ -2,6 +2,9 @@ using STIGForge.Core.Models;
 
 namespace STIGForge.Core.Abstractions;
 
+/// <summary>
+/// Persists and retrieves content packs (imported STIG/SCAP/GPO archives).
+/// </summary>
 public interface IContentPackRepository
 {
   Task SaveAsync(ContentPack pack, CancellationToken ct);
@@ -10,6 +13,9 @@ public interface IContentPackRepository
   Task DeleteAsync(string packId, CancellationToken ct);
 }
 
+/// <summary>
+/// Persists and retrieves individual STIG control records within a content pack.
+/// </summary>
 public interface IControlRepository
 {
   Task SaveControlsAsync(string packId, IReadOnlyList<ControlRecord> controls, CancellationToken ct);
@@ -23,6 +29,9 @@ public interface IControlRepository
   Task<bool> VerifySchemaAsync(CancellationToken ct);
 }
 
+/// <summary>
+/// Persists and retrieves hardening profiles that define which controls to apply.
+/// </summary>
 public interface IProfileRepository
 {
   Task SaveAsync(Profile profile, CancellationToken ct);
@@ -31,6 +40,9 @@ public interface IProfileRepository
   Task DeleteAsync(string profileId, CancellationToken ct);
 }
 
+/// <summary>
+/// Persists and retrieves overlays that override control statuses and comments.
+/// </summary>
 public interface IOverlayRepository
 {
   Task SaveAsync(Overlay overlay, CancellationToken ct);

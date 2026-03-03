@@ -2,6 +2,10 @@ using STIGForge.Core.Models;
 
 namespace STIGForge.Core.Abstractions;
 
+/// <summary>
+/// Persists and retrieves control exceptions (waivers/deviations) that temporarily
+/// exempt specific rules from compliance enforcement within a bundle.
+/// </summary>
 public interface IExceptionRepository
 {
   Task SaveAsync(ControlException exception, CancellationToken ct);

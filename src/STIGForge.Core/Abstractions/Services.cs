@@ -48,6 +48,9 @@ public interface IMissionRunRepository
   Task<IReadOnlyList<MissionTimelineEvent>> GetTimelineAsync(string runId, CancellationToken ct);
 }
 
+/// <summary>
+/// Provides the current wall-clock time. Abstracted for deterministic testing.
+/// </summary>
 public interface IClock
 {
   DateTimeOffset Now { get; }
@@ -87,12 +90,20 @@ public sealed class AuditQuery
   public int Limit { get; set; } = 100;
 }
 
+/// <summary>
+/// Computes SHA-256 hashes for files and text content.
+/// Used for integrity verification, audit chain hashing, and evidence checksums.
+/// </summary>
 public interface IHashingService
 {
   Task<string> Sha256FileAsync(string path, CancellationToken ct);
   Task<string> Sha256TextAsync(string content, CancellationToken ct);
 }
 
+/// <summary>
+/// Builds well-known filesystem paths for application data, content packs, bundles, logs,
+/// imports, and export directories. Centralises path conventions for the entire platform.
+/// </summary>
 public interface IPathBuilder
 {
   string GetAppDataRoot();
@@ -107,6 +118,10 @@ public interface IPathBuilder
   string GetEmassExportRoot(string systemName, string os, string role, string profileName, string packName, DateTimeOffset ts);
 }
 
+/// <summary>
+/// Compiles a profile and its control records into a classified control set,
+/// resolving overlay overrides and identifying controls that require manual review.
+/// </summary>
 public interface IClassificationScopeService
 {
   CompiledControls Compile(Profile profile, IReadOnlyList<ControlRecord> controls);
@@ -154,11 +169,19 @@ public interface ICredentialStore
   IReadOnlyList<string> ListHosts();
 }
 
+/// <summary>
+/// Orchestrates the verification workflow (Evaluate-STIG and/or SCAP tool execution),
+/// consolidates results, and produces coverage summaries.
+/// </summary>
 public interface IVerificationWorkflowService
 {
   Task<VerificationWorkflowResult> RunAsync(VerificationWorkflowRequest request, CancellationToken ct);
 }
 
+/// <summary>
+/// Runs the local mission workflow (Setup → Import → Scan) for offline hardening scenarios.
+/// Produces a mission.json artifact summarising the workflow outcome.
+/// </summary>
 public interface ILocalWorkflowService
 {
   Task<LocalWorkflowResult> RunAsync(LocalWorkflowRequest request, CancellationToken ct);
@@ -177,7 +200,7 @@ public sealed class LocalWorkflowResult
 {
   public LocalWorkflowMission Mission { get; set; } = new();
 
-  public IReadOnlyList<string> Diagnostics { get; set; } = Array.Empty<string>();
+  public IReadOnlyList<string> Diagnostics { get; set; } = [];
 }
 
 public sealed class VerificationWorkflowRequest
@@ -251,9 +274,9 @@ public sealed class VerificationWorkflowResult
 
   public int CatIIICount { get; set; }
 
-  public IReadOnlyList<VerificationToolRunResult> ToolRuns { get; set; } = Array.Empty<VerificationToolRunResult>();
+  public IReadOnlyList<VerificationToolRunResult> ToolRuns { get; set; } = [];
 
-  public IReadOnlyList<string> Diagnostics { get; set; } = Array.Empty<string>();
+  public IReadOnlyList<string> Diagnostics { get; set; } = [];
 }
 
 public sealed class VerificationToolRunResult
@@ -273,6 +296,10 @@ public sealed class VerificationToolRunResult
   public string Error { get; set; } = string.Empty;
 }
 
+/// <summary>
+/// Loads and computes summary statistics for a bundle's mission state,
+/// including verification results, manual answer progress, and timeline projections.
+/// </summary>
 public interface IBundleMissionSummaryService
 {
   BundleMissionSummary LoadSummary(string bundleRoot);
@@ -304,7 +331,7 @@ public sealed class BundleMissionSummary
 
   public BundleManualSummary Manual { get; set; } = new();
 
-  public IReadOnlyList<string> Diagnostics { get; set; } = Array.Empty<string>();
+  public IReadOnlyList<string> Diagnostics { get; set; } = [];
 }
 
 public sealed class BundleVerifySummary
@@ -351,7 +378,7 @@ public sealed class MissionTimelineSummary
   public MissionRun? LatestRun { get; set; }
 
   /// <summary>Deterministically ordered timeline events for the latest run (Seq ascending).</summary>
-  public IReadOnlyList<MissionTimelineEvent> Events { get; set; } = Array.Empty<MissionTimelineEvent>();
+  public IReadOnlyList<MissionTimelineEvent> Events { get; set; } = [];
 
   /// <summary>Last phase reached in the latest run (derived from events), or null if no events.</summary>
   public MissionPhase? LastPhase { get; set; }

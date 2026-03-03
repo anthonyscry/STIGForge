@@ -2,6 +2,10 @@ using STIGForge.Core.Models;
 
 namespace STIGForge.Core.Abstractions;
 
+/// <summary>
+/// Persists and retrieves release-check records that track quarterly STIG update
+/// evaluations against a baseline content pack.
+/// </summary>
 public interface IReleaseCheckRepository
 {
   Task SaveAsync(ReleaseCheck check, CancellationToken ct);
