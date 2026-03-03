@@ -24,9 +24,11 @@ internal sealed class ScriptStepHandler
     var stdout = Path.Combine(logsDir, "apply_script_" + stepId + ".out.log");
     var stderr = Path.Combine(logsDir, "apply_script_" + stepId + ".err.log");
 
-    var arguments = "-NoProfile -ExecutionPolicy Bypass -File \"" + scriptPath + "\"";
+    var command = "& " + ApplyProcessHelpers.ToPowerShellSingleQuoted(scriptPath);
     if (!string.IsNullOrWhiteSpace(args))
-      arguments += " " + args;
+      command += " " + args;
+
+    var arguments = ApplyProcessHelpers.BuildEncodedCommandArgs(command);
 
     var psi = new ProcessStartInfo
     {
@@ -77,6 +79,11 @@ internal sealed class ScriptStepHandler
 
 internal static class ApplyProcessHelpers
 {
+  public static string ToPowerShellSingleQuoted(string? value)
+  {
+    return "'" + (value ?? string.Empty).Replace("'", "''") + "'";
+  }
+
   public static string BuildEncodedCommandArgs(string command)
   {
     var bytes = Encoding.Unicode.GetBytes(command);

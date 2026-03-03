@@ -36,12 +36,12 @@ internal sealed class DscStepHandler
       {
         var modName = Path.GetFileName(modDir);
         copyModulesBlock.AppendLine(
-          $"Copy-Item -Path '{modDir.Replace("'", "''")}' -Destination \"$env:ProgramFiles\\WindowsPowerShell\\Modules\\{modName}\" -Recurse -Force; " +
-          $"Get-ChildItem \"$env:ProgramFiles\\WindowsPowerShell\\Modules\\{modName}\" -Recurse -File | Unblock-File;");
+          "Copy-Item -Path " + ApplyProcessHelpers.ToPowerShellSingleQuoted(modDir) + " -Destination \"$env:ProgramFiles\\WindowsPowerShell\\Modules\\" + modName + "\" -Recurse -Force; " +
+          "Get-ChildItem \"$env:ProgramFiles\\WindowsPowerShell\\Modules\\" + modName + "\" -Recurse -File | Unblock-File;");
       }
     }
 
-    var command = copyModulesBlock + "Start-DscConfiguration -Path \"" + mofPath + "\" -Wait -Force" + whatIf + v;
+    var command = copyModulesBlock + "Start-DscConfiguration -Path " + ApplyProcessHelpers.ToPowerShellSingleQuoted(mofPath) + " -Wait -Force" + whatIf + v;
     var scriptPath = Path.Combine(logsDir, "apply_dsc_" + stepId + ".ps1");
     File.WriteAllText(scriptPath, command);
 

@@ -74,15 +74,15 @@ internal sealed class PowerStigStepHandler
     if (target != null)
     {
       var configScript = PowerStigTechnologyMap.BuildDscConfigurationScript(target, outputPath, dataFile, powerStigVersion);
-      command = "Import-Module \"" + effectiveModulePath + "\"; " + configScript + v + ";";
+      command = "Import-Module " + ApplyProcessHelpers.ToPowerShellSingleQuoted(effectiveModulePath) + "; " + configScript + v + ";";
     }
     else
     {
-      var dataArg = string.IsNullOrWhiteSpace(dataFile) ? string.Empty : " -StigDataFile \"" + dataFile + "\"";
+      var dataArg = string.IsNullOrWhiteSpace(dataFile) ? string.Empty : " -StigDataFile " + ApplyProcessHelpers.ToPowerShellSingleQuoted(dataFile);
       command =
-        "Import-Module \"" + effectiveModulePath + "\"; " +
+        "Import-Module " + ApplyProcessHelpers.ToPowerShellSingleQuoted(effectiveModulePath) + "; " +
         "$ErrorActionPreference='Stop'; " +
-        "New-StigDscConfiguration" + dataArg + " -OutputPath \"" + outputPath + "\"" + v + ";";
+        "New-StigDscConfiguration" + dataArg + " -OutputPath " + ApplyProcessHelpers.ToPowerShellSingleQuoted(outputPath) + v + ";";
     }
 
     var scriptPath = Path.Combine(logsDir, "powerstig_compile_" + stepId + ".ps1");
