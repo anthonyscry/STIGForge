@@ -15,7 +15,7 @@ internal sealed class FormatDetector
 {
     internal SourceArtifactStats CountSourceArtifacts(string extractedRoot)
     {
-        var xmlPaths = Directory.GetFiles(extractedRoot, "*.xml", SearchOption.AllDirectories)
+        var xmlPaths = Directory.EnumerateFiles(extractedRoot, "*.xml", SearchOption.AllDirectories)
             .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
             .ToList();
 
@@ -29,7 +29,7 @@ internal sealed class FormatDetector
         var scapDataStreams = xmlPaths.Count(path =>
             TryReadXmlRootLocalName(path, out var rootLocalName)
             && string.Equals(rootLocalName, "data-stream-collection", StringComparison.OrdinalIgnoreCase));
-        var admx = Directory.GetFiles(extractedRoot, "*.admx", SearchOption.AllDirectories).Length;
+        var admx = Directory.EnumerateFiles(extractedRoot, "*.admx", SearchOption.AllDirectories).Count();
 
         return new SourceArtifactStats
         {
@@ -43,7 +43,7 @@ internal sealed class FormatDetector
 
     internal IReadOnlyList<string> GetXccdfCandidateXmlFiles(string root)
     {
-        return Directory.GetFiles(root, "*.xml", SearchOption.AllDirectories)
+        return Directory.EnumerateFiles(root, "*.xml", SearchOption.AllDirectories)
             .Where(path =>
             {
                 var fileName = Path.GetFileName(path);

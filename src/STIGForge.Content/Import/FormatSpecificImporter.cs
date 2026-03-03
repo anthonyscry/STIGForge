@@ -82,7 +82,7 @@ internal sealed class FormatSpecificImporter
             }
         }
 
-        var ovalFiles = Directory.GetFiles(rawRoot, "*.xml", SearchOption.AllDirectories)
+        var ovalFiles = Directory.EnumerateFiles(rawRoot, "*.xml", SearchOption.AllDirectories)
             .Where(p => Path.GetFileName(p).IndexOf("oval", StringComparison.OrdinalIgnoreCase) >= 0)
             .ToList();
 

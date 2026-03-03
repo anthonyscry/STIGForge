@@ -65,7 +65,7 @@ public sealed class ContentPackImporter
         if (!Directory.Exists(packsRoot))
             return incomplete;
 
-        var packDirs = Directory.GetDirectories(packsRoot);
+        var packDirs = Directory.EnumerateDirectories(packsRoot);
         foreach (var packDir in packDirs)
         {
             var checkpoint = ImportCheckpoint.Load(packDir);
@@ -119,7 +119,7 @@ public sealed class ContentPackImporter
             _zipHandler.ExtractZipSafely(consolidatedZipPath, extractionRoot, ct);
 
             var nestedZipPaths = Directory
-                .GetFiles(extractionRoot, "*.zip", SearchOption.AllDirectories)
+                .EnumerateFiles(extractionRoot, "*.zip", SearchOption.AllDirectories)
                 .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
@@ -172,7 +172,7 @@ public sealed class ContentPackImporter
 
                 if (xccdfFiles.Count > 1)
                 {
-                    var allXmlFiles = Directory.GetFiles(extractionRoot, "*.xml", SearchOption.AllDirectories)
+                    var allXmlFiles = Directory.EnumerateFiles(extractionRoot, "*.xml", SearchOption.AllDirectories)
                         .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
                         .ToList();
 
@@ -267,7 +267,7 @@ public sealed class ContentPackImporter
             _zipHandler.ExtractZipSafely(zipPath, extractionRoot, ct);
             _zipHandler.ExpandNestedZipArchives(extractionRoot, maxPasses: 2, ct);
 
-            var admxGroups = Directory.GetFiles(extractionRoot, "*.admx", SearchOption.AllDirectories)
+            var admxGroups = Directory.EnumerateFiles(extractionRoot, "*.admx", SearchOption.AllDirectories)
                 .Select(path => new
                 {
                     FullPath = path,
@@ -357,7 +357,7 @@ public sealed class ContentPackImporter
         try
         {
             var extractedDirFull = Path.GetFullPath(extractedDir);
-            foreach (var file in Directory.GetFiles(extractedDir, "*", SearchOption.AllDirectories))
+            foreach (var file in Directory.EnumerateFiles(extractedDir, "*", SearchOption.AllDirectories))
             {
                 ct.ThrowIfCancellationRequested();
                 var fileFull = Path.GetFullPath(file);
@@ -409,14 +409,16 @@ public sealed class ContentPackImporter
                 parsedControls = processing.ParsedCount,
                 timestamp = DateTimeOffset.Now
             };
-            File.WriteAllText(
+            await File.WriteAllTextAsync(
                 Path.Combine(packRoot, "import_note.json"),
-                JsonSerializer.Serialize(note, new JsonSerializerOptions { WriteIndented = true }));
+                JsonSerializer.Serialize(note, new JsonSerializerOptions { WriteIndented = true }),
+                ct).ConfigureAwait(false);
 
             var compatibility = processing.Compatibility;
-            File.WriteAllText(
+            await File.WriteAllTextAsync(
                 Path.Combine(packRoot, "compatibility_matrix.json"),
-                JsonSerializer.Serialize(compatibility, new JsonSerializerOptions { WriteIndented = true }));
+                JsonSerializer.Serialize(compatibility, new JsonSerializerOptions { WriteIndented = true }),
+                ct).ConfigureAwait(false);
 
             checkpoint.Stage = ImportStage.Complete;
             checkpoint.CompletedAt = DateTimeOffset.Now;
@@ -513,11 +515,11 @@ public sealed class ContentPackImporter
 
             var notePath = Path.Combine(packRoot, "import_note.json");
             Directory.CreateDirectory(packRoot);
-            File.WriteAllText(notePath, JsonSerializer.Serialize(note, new JsonSerializerOptions { WriteIndented = true }));
+            await File.WriteAllTextAsync(notePath, JsonSerializer.Serialize(note, new JsonSerializerOptions { WriteIndented = true }), ct).ConfigureAwait(false);
 
             var compatibility = processing.Compatibility;
             var compatibilityPath = Path.Combine(packRoot, "compatibility_matrix.json");
-            File.WriteAllText(compatibilityPath, JsonSerializer.Serialize(compatibility, new JsonSerializerOptions { WriteIndented = true }));
+            await File.WriteAllTextAsync(compatibilityPath, JsonSerializer.Serialize(compatibility, new JsonSerializerOptions { WriteIndented = true }), ct).ConfigureAwait(false);
 
             checkpoint.Stage = ImportStage.Complete;
             checkpoint.CompletedAt = DateTimeOffset.Now;

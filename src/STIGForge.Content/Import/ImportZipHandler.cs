@@ -60,7 +60,7 @@ internal sealed class ImportZipHandler
         {
             ct.ThrowIfCancellationRequested();
 
-            var nestedArchives = Directory.GetFiles(extractionRoot, "*.zip", SearchOption.AllDirectories)
+            var nestedArchives = Directory.EnumerateFiles(extractionRoot, "*.zip", SearchOption.AllDirectories)
                 .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
                 .ToList();
 
@@ -97,7 +97,7 @@ internal sealed class ImportZipHandler
         var localByScope = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         var domainByScope = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
 
-        var files = Directory.GetFiles(extractionRoot, "*", SearchOption.AllDirectories)
+        var files = Directory.EnumerateFiles(extractionRoot, "*", SearchOption.AllDirectories)
             .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
             .ToList();
 

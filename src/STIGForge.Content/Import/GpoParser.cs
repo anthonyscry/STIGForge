@@ -19,7 +19,7 @@ public static class GpoParser
     var osScopes = GpoPackageExtractor.DetectOsScopes(extractedRoot);
 
     // Parse ADMX files
-    var admxFiles = Directory.GetFiles(extractedRoot, "*.admx", SearchOption.AllDirectories);
+    var admxFiles = Directory.EnumerateFiles(extractedRoot, "*.admx", SearchOption.AllDirectories).ToList();
     foreach (var admxFile in admxFiles.OrderBy(f => f, StringComparer.OrdinalIgnoreCase))
     {
       try
@@ -34,7 +34,7 @@ public static class GpoParser
     }
 
     // Parse Registry.pol files
-    var polFiles = Directory.GetFiles(extractedRoot, "*.pol", SearchOption.AllDirectories);
+    var polFiles = Directory.EnumerateFiles(extractedRoot, "*.pol", SearchOption.AllDirectories).ToList();
     foreach (var polFile in polFiles.OrderBy(f => f, StringComparer.OrdinalIgnoreCase))
     {
       try
@@ -51,7 +51,7 @@ public static class GpoParser
     }
 
     // Parse GptTmpl.inf security templates
-    var infFiles = Directory.GetFiles(extractedRoot, "GptTmpl.inf", SearchOption.AllDirectories);
+    var infFiles = Directory.EnumerateFiles(extractedRoot, "GptTmpl.inf", SearchOption.AllDirectories).ToList();
     foreach (var infFile in infFiles.OrderBy(f => f, StringComparer.OrdinalIgnoreCase))
     {
       try
@@ -76,9 +76,9 @@ public static class GpoParser
       Controls = allControls,
       OsScopes = osScopes,
       Warnings = warnings,
-      AdmxFileCount = admxFiles.Length,
-      PolFileCount = polFiles.Length,
-      InfFileCount = infFiles.Length,
+      AdmxFileCount = admxFiles.Count,
+      PolFileCount = polFiles.Count,
+      InfFileCount = infFiles.Count,
       DomainGpoBackups = domainGpoResult.Backups
     };
   }

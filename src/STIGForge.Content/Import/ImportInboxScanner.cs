@@ -85,7 +85,7 @@ public sealed class ImportInboxScanner
 
       try
       {
-        var files = Directory.GetFiles(current, "*", SearchOption.TopDirectoryOnly)
+        var files = Directory.EnumerateFiles(current, "*", SearchOption.TopDirectoryOnly)
           .Where(path => path.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
           .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
           .ToList();
@@ -98,7 +98,7 @@ public sealed class ImportInboxScanner
 
       try
       {
-        var children = Directory.GetDirectories(current, "*", SearchOption.TopDirectoryOnly)
+        var children = Directory.EnumerateDirectories(current, "*", SearchOption.TopDirectoryOnly)
           .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
           .ToList();
         for (var i = children.Count - 1; i >= 0; i--)
