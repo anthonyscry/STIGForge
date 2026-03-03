@@ -14,7 +14,7 @@ public sealed class VerificationWorkflowService : IVerificationWorkflowService
     _scapRunner = scapRunner;
   }
 
-  public Task<VerificationWorkflowResult> RunAsync(VerificationWorkflowRequest request, CancellationToken ct)
+  public async Task<VerificationWorkflowResult> RunAsync(VerificationWorkflowRequest request, CancellationToken ct)
   {
     if (request == null)
       throw new ArgumentNullException(nameof(request));
@@ -30,8 +30,8 @@ public sealed class VerificationWorkflowService : IVerificationWorkflowService
     var diagnostics = new List<string>();
     var toolRuns = new List<VerificationToolRunResult>(2);
 
-    toolRuns.Add(RunEvaluateStigIfConfigured(request, diagnostics));
-    toolRuns.Add(RunScapIfConfigured(request, diagnostics));
+    toolRuns.Add(await RunEvaluateStigIfConfiguredAsync(request, diagnostics, ct).ConfigureAwait(false));
+    toolRuns.Add(await RunScapIfConfiguredAsync(request, diagnostics, ct).ConfigureAwait(false));
 
     var artifacts = BuildArtifactPaths(request.OutputRoot);
     var toolLabel = ResolveConsolidatedToolLabel(request, toolRuns);
@@ -55,7 +55,7 @@ public sealed class VerificationWorkflowService : IVerificationWorkflowService
     var workflowFinishedAt = DateTimeOffset.Now;
     var resultSummary = BuildResultSummary(mergedResults);
 
-    return Task.FromResult(new VerificationWorkflowResult
+    return new VerificationWorkflowResult
     {
       StartedAt = report.StartedAt,
       FinishedAt = workflowFinishedAt > report.FinishedAt ? workflowFinishedAt : report.FinishedAt,
@@ -75,10 +75,10 @@ public sealed class VerificationWorkflowService : IVerificationWorkflowService
       CatIIICount = resultSummary.CatIIICount,
       ToolRuns = toolRuns,
       Diagnostics = diagnostics
-    });
+    };
   }
 
-  private VerificationToolRunResult RunEvaluateStigIfConfigured(VerificationWorkflowRequest request, List<string> diagnostics)
+  private async Task<VerificationToolRunResult> RunEvaluateStigIfConfiguredAsync(VerificationWorkflowRequest request, List<string> diagnostics, CancellationToken ct)
   {
     var now = DateTimeOffset.Now;
 
@@ -95,10 +95,12 @@ public sealed class VerificationWorkflowService : IVerificationWorkflowService
 
     try
     {
-      var runResult = _evaluateStigRunner.Run(
+      var runResult = await _evaluateStigRunner.RunAsync(
         request.EvaluateStig.ToolRoot,
         request.EvaluateStig.Arguments,
-        string.IsNullOrWhiteSpace(request.EvaluateStig.WorkingDirectory) ? null : request.EvaluateStig.WorkingDirectory);
+        string.IsNullOrWhiteSpace(request.EvaluateStig.WorkingDirectory) ? null : request.EvaluateStig.WorkingDirectory,
+        request.EvaluateStig.TimeoutSeconds,
+        ct).ConfigureAwait(false);
 
       if (runResult.ExitCode != 0)
         diagnostics.Add($"Evaluate-STIG exited with code {runResult.ExitCode}.");
@@ -130,7 +132,7 @@ public sealed class VerificationWorkflowService : IVerificationWorkflowService
     }
   }
 
-  private VerificationToolRunResult RunScapIfConfigured(VerificationWorkflowRequest request, List<string> diagnostics)
+  private async Task<VerificationToolRunResult> RunScapIfConfiguredAsync(VerificationWorkflowRequest request, List<string> diagnostics, CancellationToken ct)
   {
     var toolName = string.IsNullOrWhiteSpace(request.Scap.ToolLabel) ? "SCAP" : request.Scap.ToolLabel.Trim();
     var now = DateTimeOffset.Now;
@@ -156,11 +158,12 @@ public sealed class VerificationWorkflowService : IVerificationWorkflowService
 
     try
     {
-      var runResult = _scapRunner.Run(
+      var runResult = await _scapRunner.RunAsync(
         request.Scap.CommandPath,
         request.Scap.Arguments,
         string.IsNullOrWhiteSpace(request.Scap.WorkingDirectory) ? null : request.Scap.WorkingDirectory,
-        request.Scap.TimeoutSeconds);
+        request.Scap.TimeoutSeconds,
+        ct).ConfigureAwait(false);
 
       if (runResult.ExitCode != 0)
         diagnostics.Add($"{toolName} exited with code {runResult.ExitCode}.");

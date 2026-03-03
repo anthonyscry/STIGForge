@@ -6,7 +6,7 @@ public sealed class ScapRunner
 {
   private const int DefaultTimeoutSeconds = 300;
 
-  public VerifyRunResult Run(string commandPath, string arguments, string? workingDirectory, int timeoutSeconds = DefaultTimeoutSeconds)
+  public async Task<VerifyRunResult> RunAsync(string commandPath, string arguments, string? workingDirectory, int timeoutSeconds = DefaultTimeoutSeconds, CancellationToken ct = default)
   {
     var resolvedCommandPath = ResolveCommandPath(commandPath);
     var resolvedWorkingDirectory = string.IsNullOrWhiteSpace(workingDirectory)
@@ -32,13 +32,24 @@ public sealed class ScapRunner
     if (process == null)
       throw new InvalidOperationException("Failed to start SCAP command.");
 
-    var output = process.StandardOutput.ReadToEnd();
-    var error = process.StandardError.ReadToEnd();
-    if (!process.WaitForExit(timeoutMilliseconds))
+    var outputTask = process.StandardOutput.ReadToEndAsync();
+    var errorTask = process.StandardError.ReadToEndAsync();
+
+    using var timeoutCts = new CancellationTokenSource(timeoutMilliseconds);
+    using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutCts.Token);
+
+    try
     {
-      process.Kill();
+      await process.WaitForExitAsync(linkedCts.Token).ConfigureAwait(false);
+    }
+    catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+    {
+      TryKill(process);
       throw new TimeoutException($"Process did not exit within {effectiveTimeoutSeconds} seconds.");
     }
+
+    var output = await outputTask.ConfigureAwait(false);
+    var error = await errorTask.ConfigureAwait(false);
 
     return new VerifyRunResult
     {
@@ -48,6 +59,18 @@ public sealed class ScapRunner
       StartedAt = started,
       FinishedAt = DateTimeOffset.Now
     };
+  }
+
+  private static void TryKill(Process process)
+  {
+    try
+    {
+      if (!process.HasExited)
+        process.Kill();
+    }
+    catch
+    {
+    }
   }
 
   private static string ResolveCommandPath(string commandPath)

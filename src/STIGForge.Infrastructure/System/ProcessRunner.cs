@@ -20,20 +20,21 @@ public sealed class ProcessRunner : IProcessRunner
         process.OutputDataReceived += (_, e) => { if (e.Data != null) stdout.AppendLine(e.Data); };
         process.ErrorDataReceived += (_, e) => { if (e.Data != null) stderr.AppendLine(e.Data); };
 
+        var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+        process.Exited += (_, _) => tcs.TrySetResult(true);
+
         if (!process.Start())
         {
             throw new InvalidOperationException($"Failed to start process: {startInfo.FileName}");
         }
 
+        if (process.HasExited)
+        {
+            tcs.TrySetResult(true);
+        }
+
         process.BeginOutputReadLine();
         process.BeginErrorReadLine();
-
-        // WaitForExitAsync logic for .NET 4.8 compatibility if needed, 
-        // but here we are likely targeting .NET 8+. 
-        // However, existing code used manual TaskCompletionSource, so I'll stick to that to be safe.
-        
-        var tcs = new TaskCompletionSource<bool>();
-        process.Exited += (_, _) => tcs.TrySetResult(true);
 
         if (ct.CanBeCanceled)
         {
@@ -55,11 +56,7 @@ public sealed class ProcessRunner : IProcessRunner
             await tcs.Task.ConfigureAwait(false);
         }
 
-        if (!process.WaitForExit(30000))
-        {
-            process.Kill();
-            throw new TimeoutException("Process did not exit within 30 seconds.");
-        }
+        process.WaitForExit();
 
         return new ProcessResult
         {

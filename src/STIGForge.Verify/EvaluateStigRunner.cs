@@ -4,7 +4,9 @@ namespace STIGForge.Verify;
 
 public sealed class EvaluateStigRunner
 {
-  public VerifyRunResult Run(string toolRoot, string arguments, string? workingDirectory)
+  private const int DefaultTimeoutSeconds = 30;
+
+  public async Task<VerifyRunResult> RunAsync(string toolRoot, string arguments, string? workingDirectory, int timeoutSeconds = DefaultTimeoutSeconds, CancellationToken ct = default)
   {
     var scriptPath = ResolveScriptPath(toolRoot);
     var resolvedToolRoot = Path.GetDirectoryName(scriptPath) ?? toolRoot;
@@ -29,13 +31,25 @@ public sealed class EvaluateStigRunner
     if (process == null)
       throw new InvalidOperationException("Failed to start Evaluate-STIG process.");
 
-    var output = process.StandardOutput.ReadToEnd();
-    var error = process.StandardError.ReadToEnd();
-    if (!process.WaitForExit(30000))
+    var outputTask = process.StandardOutput.ReadToEndAsync();
+    var errorTask = process.StandardError.ReadToEndAsync();
+
+    var effectiveTimeoutSeconds = timeoutSeconds <= 0 ? DefaultTimeoutSeconds : timeoutSeconds;
+    using var timeoutCts = new CancellationTokenSource(checked(effectiveTimeoutSeconds * 1000));
+    using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutCts.Token);
+
+    try
     {
-      process.Kill();
-      throw new TimeoutException("Process did not exit within 30 seconds.");
+      await process.WaitForExitAsync(linkedCts.Token).ConfigureAwait(false);
     }
+    catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+    {
+      TryKill(process);
+      throw new TimeoutException($"Process did not exit within {effectiveTimeoutSeconds} seconds.");
+    }
+
+    var output = await outputTask.ConfigureAwait(false);
+    var error = await errorTask.ConfigureAwait(false);
 
     return new VerifyRunResult
     {
@@ -45,6 +59,18 @@ public sealed class EvaluateStigRunner
       StartedAt = started,
       FinishedAt = DateTimeOffset.Now
     };
+  }
+
+  private static void TryKill(Process process)
+  {
+    try
+    {
+      if (!process.HasExited)
+        process.Kill();
+    }
+    catch
+    {
+    }
   }
 
   private static string ResolveScriptPath(string toolRoot)

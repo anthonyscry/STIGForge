@@ -21,7 +21,7 @@ public sealed class RunnerPathResolutionTests : IDisposable
   }
 
   [Fact]
-  public void EvaluateStigRunner_Run_ResolvesNestedEvaluateStigFolder()
+  public async Task EvaluateStigRunner_RunAsync_ResolvesNestedEvaluateStigFolder()
   {
     if (OperatingSystem.IsWindows())
       return;
@@ -39,14 +39,14 @@ public sealed class RunnerPathResolutionTests : IDisposable
     PrependPath(fakePowerShellDir);
 
     var runner = new EvaluateStigRunner();
-    var result = runner.Run(toolParent, "-AnswerFile ./AnswerFile.xml", workingDirectory: null);
+    var result = await runner.RunAsync(toolParent, "-AnswerFile ./AnswerFile.xml", workingDirectory: null);
 
     Assert.Equal(0, result.ExitCode);
     Assert.Contains("Evaluate-STIG.ps1", result.Output, StringComparison.OrdinalIgnoreCase);
   }
 
   [Fact]
-  public void ScapRunner_Run_ResolvesDirectoryToNestedCsccExecutable()
+  public async Task ScapRunner_RunAsync_ResolvesDirectoryToNestedCsccExecutable()
   {
     if (OperatingSystem.IsWindows())
       return;
@@ -60,14 +60,14 @@ public sealed class RunnerPathResolutionTests : IDisposable
     MakeExecutable(csccExePath);
 
     var runner = new ScapRunner();
-    var result = runner.Run(sccRoot, string.Empty, workingDirectory: null);
+    var result = await runner.RunAsync(sccRoot, string.Empty, workingDirectory: null);
 
     Assert.Equal(0, result.ExitCode);
     Assert.Contains("CSCC_OK", result.Output, StringComparison.Ordinal);
   }
 
   [Fact]
-  public void ScapRunner_Run_PrefersCsccOverSccGuiBinary()
+  public async Task ScapRunner_RunAsync_PrefersCsccOverSccGuiBinary()
   {
     if (OperatingSystem.IsWindows())
       return;
@@ -84,7 +84,7 @@ public sealed class RunnerPathResolutionTests : IDisposable
     MakeExecutable(csccRemotePath);
 
     var runner = new ScapRunner();
-    var result = runner.Run(sccRoot, string.Empty, workingDirectory: null);
+    var result = await runner.RunAsync(sccRoot, string.Empty, workingDirectory: null);
 
     Assert.Equal(0, result.ExitCode);
     Assert.Contains("CSCC_REMOTE_OK", result.Output, StringComparison.Ordinal);
@@ -92,7 +92,7 @@ public sealed class RunnerPathResolutionTests : IDisposable
   }
 
   [Fact]
-  public void ScapRunner_Run_WithOnlySccGuiBinary_ThrowsGuidanceError()
+  public async Task ScapRunner_RunAsync_WithOnlySccGuiBinary_ThrowsGuidanceError()
   {
     if (OperatingSystem.IsWindows())
       return;
@@ -105,7 +105,7 @@ public sealed class RunnerPathResolutionTests : IDisposable
     MakeExecutable(sccGuiPath);
 
     var runner = new ScapRunner();
-    var ex = Assert.Throws<InvalidOperationException>(() => runner.Run(sccRoot, string.Empty, workingDirectory: null));
+    var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => runner.RunAsync(sccRoot, string.Empty, workingDirectory: null));
     Assert.Contains("cscc", ex.Message, StringComparison.OrdinalIgnoreCase);
   }
 
