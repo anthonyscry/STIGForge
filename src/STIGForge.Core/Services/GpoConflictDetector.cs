@@ -115,7 +115,7 @@ public sealed class GpoConflictDetector
 
       if (rsopResult.ExitCode == 0 && File.Exists(rsopPath))
       {
-        var xml = File.ReadAllText(rsopPath);
+        var xml = await File.ReadAllTextAsync(rsopPath, ct).ConfigureAwait(false);
         var parsed = ParseRsopXml(xml, targetPaths);
         if (parsed.Count > 0)
           return parsed;

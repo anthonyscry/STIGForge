@@ -166,7 +166,7 @@ public sealed class BundleMissionSummaryService : IBundleMissionSummaryService
     if (!Directory.Exists(verifyRoot))
       return new BundleVerifySummary();
 
-    var reportPaths = Directory.GetFiles(verifyRoot, "consolidated-results.json", SearchOption.AllDirectories)
+    var reportPaths = Directory.EnumerateFiles(verifyRoot, "consolidated-results.json", SearchOption.AllDirectories)
       .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
       .ToList();
 
