@@ -15,6 +15,64 @@ public static class AttestationImporter
   /// </summary>
   public static AttestationImportResult ImportAttestations(string packageRoot, string csvFilePath, IAuditTrailService? audit = null)
   {
+    var result = ImportAttestationsCore(packageRoot, csvFilePath);
+
+    if (audit != null)
+    {
+      _ = Task.Run(async () =>
+      {
+        try
+        {
+          await audit.RecordAsync(new AuditEntry
+          {
+            Action = "import-attestations",
+            Target = packageRoot,
+            Result = "success",
+            Detail = $"Updated={result.Updated}, Skipped={result.Skipped}, NotFound={result.NotFound}",
+            User = Environment.UserName,
+            Machine = Environment.MachineName,
+            Timestamp = DateTimeOffset.Now
+          }, CancellationToken.None).ConfigureAwait(false);
+        }
+        catch
+        {
+        }
+      });
+    }
+
+    return result;
+  }
+
+  public static async Task<AttestationImportResult> ImportAttestationsAsync(string packageRoot, string csvFilePath, IAuditTrailService? audit = null, CancellationToken ct = default)
+  {
+    ct.ThrowIfCancellationRequested();
+    var result = ImportAttestationsCore(packageRoot, csvFilePath);
+
+    if (audit != null)
+    {
+      try
+      {
+        await audit.RecordAsync(new AuditEntry
+        {
+          Action = "import-attestations",
+          Target = packageRoot,
+          Result = "success",
+          Detail = $"Updated={result.Updated}, Skipped={result.Skipped}, NotFound={result.NotFound}",
+          User = Environment.UserName,
+          Machine = Environment.MachineName,
+          Timestamp = DateTimeOffset.Now
+        }, ct).ConfigureAwait(false);
+      }
+      catch
+      {
+      }
+    }
+
+    return result;
+  }
+
+  private static AttestationImportResult ImportAttestationsCore(string packageRoot, string csvFilePath)
+  {
     if (!Directory.Exists(packageRoot))
       throw new DirectoryNotFoundException("Package root not found: " + packageRoot);
     if (!File.Exists(csvFilePath))
@@ -101,25 +159,6 @@ public static class AttestationImporter
       PropertyNamingPolicy = JsonNamingPolicy.CamelCase
     });
     File.WriteAllText(attestPath, updatedJson, Encoding.UTF8);
-
-    // Record audit entry
-    if (audit != null)
-    {
-      try
-      {
-        audit.RecordAsync(new AuditEntry
-        {
-          Action = "import-attestations",
-          Target = packageRoot,
-          Result = "success",
-          Detail = $"Updated={updated}, Skipped={skipped}, NotFound={notFound}",
-          User = Environment.UserName,
-          Machine = Environment.MachineName,
-          Timestamp = DateTimeOffset.Now
-        }, CancellationToken.None).GetAwaiter().GetResult();
-      }
-      catch { /* Audit failure should not block import */ }
-    }
 
     return new AttestationImportResult
     {

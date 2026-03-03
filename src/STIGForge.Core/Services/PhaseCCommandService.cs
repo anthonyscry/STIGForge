@@ -73,12 +73,12 @@ public sealed class PhaseCCommandService
     return Task.FromResult(_nessus.Import(nessusFilePath));
   }
 
-  public Task<AcasCorrelationResult> AcasImportAsync(string nessusFilePath, string? bundlePath, CancellationToken ct)
+  public async Task<AcasCorrelationResult> AcasImportAsync(string nessusFilePath, string? bundlePath, CancellationToken ct)
   {
     ct.ThrowIfCancellationRequested();
     if (_acas == null)
       throw new InvalidOperationException("AcasCorrelationService is not registered.");
-    return Task.FromResult(_acas.Correlate(nessusFilePath, bundlePath));
+    return await _acas.CorrelateAsync(nessusFilePath, bundlePath, ct).ConfigureAwait(false);
   }
 
   public Task<CklChecklist> CklImportAsync(string cklFilePath, CancellationToken ct)

@@ -40,12 +40,48 @@ public sealed class AcasCorrelationService
     };
   }
 
+  public async Task<AcasCorrelationResult> CorrelateAsync(string nessusFilePath, string? bundleRoot, CancellationToken ct)
+  {
+    ct.ThrowIfCancellationRequested();
+    var findings = _nessusImporter.Import(nessusFilePath);
+    var correlations = new List<AcasControlCorrelation>();
+    var unmatched = new List<NessusFinding>();
+    var controls = await LoadControlsAsync(bundleRoot, ct).ConfigureAwait(false);
+
+    foreach (var finding in findings)
+    {
+      ct.ThrowIfCancellationRequested();
+      var correlation = CorrelateFinding(finding, controls);
+      if (correlation != null)
+        correlations.Add(correlation);
+      else
+        unmatched.Add(finding);
+    }
+
+    return new AcasCorrelationResult
+    {
+      TotalFindings = findings.Count,
+      CorrelatedCount = correlations.Count,
+      UnmatchedCount = unmatched.Count,
+      Correlations = correlations.OrderByDescending(c => c.Finding.Severity).ToList(),
+      UnmatchedFindings = unmatched.OrderByDescending(f => f.Severity).ToList()
+    };
+  }
+
   private IReadOnlyList<ControlRecord> LoadControls(string? bundleRoot)
   {
     if (_controlRepo == null || string.IsNullOrWhiteSpace(bundleRoot))
       return [];
 
-    return _controlRepo.ListControlsAsync(bundleRoot, CancellationToken.None).GetAwaiter().GetResult();
+    return Task.Run(() => _controlRepo.ListControlsAsync(bundleRoot, CancellationToken.None)).Result;
+  }
+
+  private async Task<IReadOnlyList<ControlRecord>> LoadControlsAsync(string? bundleRoot, CancellationToken ct)
+  {
+    if (_controlRepo == null || string.IsNullOrWhiteSpace(bundleRoot))
+      return [];
+
+    return await _controlRepo.ListControlsAsync(bundleRoot, ct).ConfigureAwait(false);
   }
 
   private AcasControlCorrelation? CorrelateFinding(NessusFinding finding, IReadOnlyList<ControlRecord> controls)

@@ -392,7 +392,7 @@ public partial class App : Application
 
       if (_host != null)
       {
-        _host.StopAsync().GetAwaiter().GetResult();
+        Task.Run(async () => await _host.StopAsync()).Wait(TimeSpan.FromSeconds(5));
         _host.Dispose();
         TraceStartup("Host stopped and disposed");
       }
