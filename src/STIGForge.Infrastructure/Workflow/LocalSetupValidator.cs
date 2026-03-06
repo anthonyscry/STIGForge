@@ -110,7 +110,7 @@ public sealed class LocalSetupValidator
             return true;
           }
         }
-        catch
+        catch (Exception)
         {
           continue;
         }
@@ -125,7 +125,7 @@ public sealed class LocalSetupValidator
         if (Directory.Exists(tempDir))
           Directory.Delete(tempDir, true);
       }
-      catch
+      catch (Exception)
       {
       }
     }

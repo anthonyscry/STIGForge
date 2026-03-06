@@ -94,23 +94,32 @@ public sealed class AuditTrailService : IAuditTrailService
     using var conn = new SqliteConnection(_connectionString);
     await conn.OpenAsync(ct).ConfigureAwait(false);
 
-    var entries = (await conn.QueryAsync<AuditEntry>(
-      "SELECT id as Id, timestamp as Timestamp, user as User, machine as Machine, action as Action, target as Target, result as Result, detail as Detail, previous_hash as PreviousHash, entry_hash as EntryHash FROM audit_trail ORDER BY id ASC"
-    ).ConfigureAwait(false)).ToList();
-
-    if (entries.Count == 0) return true;
-
+    const int batchSize = 1000;
+    long lastId = 0;
     string expectedPrevious = "genesis";
-    foreach (var entry in entries)
+
+    while (true)
     {
-      if (entry.PreviousHash != expectedPrevious)
-        return false;
+      ct.ThrowIfCancellationRequested();
+      var entries = (await conn.QueryAsync<AuditEntry>(new CommandDefinition(
+        "SELECT id as Id, timestamp as Timestamp, user as User, machine as Machine, action as Action, target as Target, result as Result, detail as Detail, previous_hash as PreviousHash, entry_hash as EntryHash FROM audit_trail WHERE id > @lastId ORDER BY id ASC LIMIT @batchSize",
+        new { lastId, batchSize }, cancellationToken: ct)
+      ).ConfigureAwait(false)).ToList();
 
-      var computed = ComputeEntryHash(entry);
-      if (entry.EntryHash != computed)
-        return false;
+      if (entries.Count == 0) break;
 
-      expectedPrevious = entry.EntryHash;
+      foreach (var entry in entries)
+      {
+        if (entry.PreviousHash != expectedPrevious)
+          return false;
+
+        var computed = ComputeEntryHash(entry);
+        if (entry.EntryHash != computed)
+          return false;
+
+        expectedPrevious = entry.EntryHash;
+        lastId = entry.Id;
+      }
     }
 
     return true;
@@ -128,8 +137,7 @@ public sealed class AuditTrailService : IAuditTrailService
       entry.Detail,
       entry.PreviousHash);
 
-    using var sha = SHA256.Create();
-    var bytes = sha.ComputeHash(Encoding.UTF8.GetBytes(payload));
-    return BitConverter.ToString(bytes).Replace("-", string.Empty).ToLowerInvariant();
+    var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(payload));
+    return Convert.ToHexString(bytes).ToLowerInvariant();
   }
 }

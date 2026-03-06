@@ -11,6 +11,7 @@ public sealed class ScheduledTaskService
 {
   private const string TaskFolderName = "STIGForge";
   private static readonly Regex TaskNameRegex = new("^[A-Za-z0-9_.-]+$", RegexOptions.Compiled);
+  private static readonly Regex StartTimeRegex = new("^[0-2][0-9]:[0-5][0-9]$", RegexOptions.Compiled);
   private static readonly HashSet<string> ValidDaysOfWeek = new(StringComparer.OrdinalIgnoreCase)
   {
     "MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"
@@ -36,6 +37,8 @@ public sealed class ScheduledTaskService
     // Build schtasks.exe command
     var frequency = MapFrequency(request.Frequency);
     var time = request.StartTime ?? "06:00";
+    if (!StartTimeRegex.IsMatch(time))
+      throw new ArgumentException("StartTime must be in HH:mm format (e.g. '06:00').", nameof(request));
 
     var taskRunCommand = BuildTaskRunCommand(cliPath, args);
 
@@ -156,10 +159,10 @@ public sealed class ScheduledTaskService
     sb.AppendLine($"# Bundle: {request.BundleRoot}");
     sb.AppendLine($"# Generated: {DateTimeOffset.Now:o}");
     sb.AppendLine();
-    sb.AppendLine("$cliPath = \"" + EscapeDoubleQuotes(cliPath) + "\"");
-    sb.AppendLine($"$logDir = Join-Path $env:ProgramData 'STIGForge' 'logs'");
+    sb.AppendLine("$cliPath = '" + cliPath.Replace("'", "''") + "'");
+    sb.AppendLine("$logDir = Join-Path $env:ProgramData 'STIGForge' 'logs'");
     sb.AppendLine("if (-not (Test-Path $logDir)) { New-Item -Path $logDir -ItemType Directory -Force | Out-Null }");
-    sb.AppendLine("$logFile = Join-Path $logDir (\"scheduled-verify-" + EscapeDoubleQuotes(request.TaskName) + "-\" + (Get-Date -Format 'yyyyMMdd-HHmmss') + '.log')");
+    sb.AppendLine("$logFile = Join-Path $logDir ('scheduled-verify-" + request.TaskName.Replace("'", "''") + "-' + (Get-Date -Format 'yyyyMMdd-HHmmss') + '.log')");
     sb.AppendLine();
     sb.AppendLine($"& $cliPath {args} 2>&1 | Tee-Object -FilePath $logFile");
     sb.AppendLine("exit $LASTEXITCODE");

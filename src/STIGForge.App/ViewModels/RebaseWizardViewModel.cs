@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
+using STIGForge.Core;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
 using STIGForge.Core.Services;
@@ -21,6 +22,7 @@ public partial class RebaseWizardViewModel : ObservableObject
   private readonly IControlRepository _controls;
   private readonly IOverlayRepository _overlays;
   private readonly OverlayRebaseService _rebaseService;
+  private readonly CancellationTokenSource _cts = new();
   private RebaseReport? _report;
 
   public event Action? CloseRequested;
@@ -96,7 +98,7 @@ public partial class RebaseWizardViewModel : ObservableObject
         SelectedOverlay.OverlayId,
         SelectedBaselinePack.PackId,
         SelectedTargetPack.PackId,
-        CancellationToken.None);
+        _cts.Token);
 
       // Convert report to display models
       TotalOverrides = _report.Actions.Count;
@@ -161,7 +163,7 @@ public partial class RebaseWizardViewModel : ObservableObject
         return;
       }
 
-      var rebasedOverlay = await _rebaseService.ApplyRebaseAsync(SelectedOverlay.OverlayId, _report, CancellationToken.None);
+      var rebasedOverlay = await _rebaseService.ApplyRebaseAsync(SelectedOverlay.OverlayId, _report, _cts.Token);
 
       NewOverlayId = rebasedOverlay.OverlayId;
       AnalysisStatus = "Rebase apply completed successfully.";
@@ -254,7 +256,7 @@ public partial class RebaseWizardViewModel : ObservableObject
 
     try
     {
-      var json = JsonSerializer.Serialize(_report, new JsonSerializerOptions { WriteIndented = true });
+      var json = JsonSerializer.Serialize(_report, JsonOptions.Indented);
       await File.WriteAllTextAsync(dialog.FileName, json, Encoding.UTF8);
       AnalysisStatus = "Rebase JSON report exported: " + dialog.FileName;
     }

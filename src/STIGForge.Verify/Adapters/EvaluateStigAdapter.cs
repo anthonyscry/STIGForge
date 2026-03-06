@@ -32,7 +32,7 @@ public sealed class EvaluateStigAdapter : IVerifyResultAdapter
              || root?.Descendants("STIGCheck").Any() == true
              || root?.Descendants("Finding").Any() == true;
     }
-    catch
+    catch (Exception)
     {
       return false;
     }

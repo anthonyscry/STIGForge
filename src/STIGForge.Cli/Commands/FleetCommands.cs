@@ -4,6 +4,7 @@ using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using STIGForge.Core;
 using STIGForge.Core.Abstractions;
 using STIGForge.Infrastructure.System;
 
@@ -47,8 +48,11 @@ internal static class FleetCommands
       };
 
       logger.LogInformation("fleet-apply started: {Count} targets, mode={Mode}", targets.Count, request.ApplyMode);
-      var svc = new FleetService();
-      var result = await svc.ExecuteAsync(request, CancellationToken.None);
+      var ct = ctx.GetCancellationToken();
+      var credStore = host.Services.GetService<ICredentialStore>();
+      var audit = host.Services.GetService<IAuditTrailService>();
+      var svc = new FleetService(credStore, audit);
+      var result = await svc.ExecuteAsync(request, ct);
       WriteFleetResult(result, ctx.ParseResult.GetValueForOption(jsonOpt), logger);
       await host.StopAsync();
     });
@@ -86,8 +90,11 @@ internal static class FleetCommands
       };
 
       logger.LogInformation("fleet-verify started: {Count} targets", targets.Count);
-      var svc = new FleetService();
-      var result = await svc.ExecuteAsync(request, CancellationToken.None);
+      var ct = ctx.GetCancellationToken();
+      var credStore = host.Services.GetService<ICredentialStore>();
+      var audit = host.Services.GetService<IAuditTrailService>();
+      var svc = new FleetService(credStore, audit);
+      var result = await svc.ExecuteAsync(request, ct);
       WriteFleetResult(result, ctx.ParseResult.GetValueForOption(jsonOpt), logger);
       await host.StopAsync();
     });
@@ -102,20 +109,26 @@ internal static class FleetCommands
     var jsonOpt = new Option<bool>("--json", "Output as JSON");
     cmd.AddOption(targetsOpt); cmd.AddOption(jsonOpt);
 
-    cmd.SetHandler(async (targets, json) =>
+    cmd.SetHandler(async (InvocationContext ctx) =>
     {
+      var targets = ctx.ParseResult.GetValueForOption(targetsOpt) ?? string.Empty;
+      var json = ctx.ParseResult.GetValueForOption(jsonOpt);
+      var ct = ctx.GetCancellationToken();
+
       using var host = buildHost();
       await host.StartAsync();
       var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("FleetCommands");
       var targetList = ParseTargets(targets);
 
       logger.LogInformation("fleet-status: checking {Count} targets", targetList.Count);
-      var svc = new FleetService();
-      var result = await svc.CheckStatusAsync(targetList, CancellationToken.None);
+      var credStore = host.Services.GetService<ICredentialStore>();
+      var audit = host.Services.GetService<IAuditTrailService>();
+      var svc = new FleetService(credStore, audit);
+      var result = await svc.CheckStatusAsync(targetList, ct);
 
       if (json)
       {
-        Console.WriteLine(JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true }));
+        Console.WriteLine(JsonSerializer.Serialize(result, JsonOptions.Indented));
       }
       else
       {
@@ -129,7 +142,7 @@ internal static class FleetCommands
 
       logger.LogInformation("fleet-status completed: {Reachable}/{Total} reachable", result.ReachableCount, result.TotalMachines);
       await host.StopAsync();
-    }, targetsOpt, jsonOpt);
+    });
 
     rootCmd.AddCommand(cmd);
   }
@@ -142,15 +155,18 @@ internal static class FleetCommands
     var passOpt = new Option<string>("--password", "Password") { IsRequired = true };
     cmd.AddOption(hostOpt); cmd.AddOption(userOpt); cmd.AddOption(passOpt);
 
-    cmd.SetHandler(async (host, user, password) =>
+    cmd.SetHandler(async (InvocationContext ctx) =>
     {
+      var host = ctx.ParseResult.GetValueForOption(hostOpt) ?? string.Empty;
+      var user = ctx.ParseResult.GetValueForOption(userOpt) ?? string.Empty;
+      var password = ctx.ParseResult.GetValueForOption(passOpt) ?? string.Empty;
       using var h = buildHost();
       await h.StartAsync().ConfigureAwait(false);
       var store = h.Services.GetRequiredService<ICredentialStore>();
       store.Save(host, user, password);
       Console.WriteLine($"Credential saved for '{host}'.");
       await h.StopAsync().ConfigureAwait(false);
-    }, hostOpt, userOpt, passOpt);
+    });
 
     rootCmd.AddCommand(cmd);
   }
@@ -159,7 +175,7 @@ internal static class FleetCommands
   {
     var cmd = new Command("fleet-credential-list", "List all stored fleet credentials");
 
-    cmd.SetHandler(async () =>
+    cmd.SetHandler(async (InvocationContext ctx) =>
     {
       using var h = buildHost();
       await h.StartAsync().ConfigureAwait(false);
@@ -188,15 +204,16 @@ internal static class FleetCommands
     var hostOpt = new Option<string>("--host", "Target hostname") { IsRequired = true };
     cmd.AddOption(hostOpt);
 
-    cmd.SetHandler(async (host) =>
+    cmd.SetHandler(async (InvocationContext ctx) =>
     {
+      var host = ctx.ParseResult.GetValueForOption(hostOpt) ?? string.Empty;
       using var h = buildHost();
       await h.StartAsync().ConfigureAwait(false);
       var store = h.Services.GetRequiredService<ICredentialStore>();
       var removed = store.Remove(host);
       Console.WriteLine(removed ? $"Credential removed for '{host}'." : $"No credential found for '{host}'.");
       await h.StopAsync().ConfigureAwait(false);
-    }, hostOpt);
+    });
 
     rootCmd.AddCommand(cmd);
   }
@@ -247,7 +264,7 @@ internal static class FleetCommands
   {
     if (json)
     {
-      Console.WriteLine(JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true }));
+      Console.WriteLine(JsonSerializer.Serialize(result, JsonOptions.Indented));
     }
     else
     {

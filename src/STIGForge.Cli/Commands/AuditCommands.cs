@@ -1,8 +1,10 @@
 using System.CommandLine;
+using System.CommandLine.Invocation;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using STIGForge.Core;
 using STIGForge.Core.Abstractions;
 
 namespace STIGForge.Cli.Commands;
@@ -28,8 +30,17 @@ internal static class AuditCommands
     cmd.AddOption(actionOpt); cmd.AddOption(targetOpt); cmd.AddOption(fromOpt);
     cmd.AddOption(toOpt); cmd.AddOption(limitOpt); cmd.AddOption(jsonOpt); cmd.AddOption(outputOpt);
 
-    cmd.SetHandler(async (action, target, from, to, limit, json, output) =>
+    cmd.SetHandler(async (InvocationContext ctx) =>
     {
+      var action = ctx.ParseResult.GetValueForOption(actionOpt) ?? string.Empty;
+      var target = ctx.ParseResult.GetValueForOption(targetOpt) ?? string.Empty;
+      var from = ctx.ParseResult.GetValueForOption(fromOpt) ?? string.Empty;
+      var to = ctx.ParseResult.GetValueForOption(toOpt) ?? string.Empty;
+      var limit = ctx.ParseResult.GetValueForOption(limitOpt);
+      var json = ctx.ParseResult.GetValueForOption(jsonOpt);
+      var output = ctx.ParseResult.GetValueForOption(outputOpt) ?? string.Empty;
+      var ct = ctx.GetCancellationToken();
+
       using var host = buildHost();
       await host.StartAsync();
       var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("AuditCommands");
@@ -45,11 +56,11 @@ internal static class AuditCommands
       };
 
       logger.LogInformation("audit-log query: action={Action}, target={Target}, limit={Limit}", query.Action, query.Target, query.Limit);
-      var entries = await audit.QueryAsync(query, CancellationToken.None);
+      var entries = await audit.QueryAsync(query, ct);
 
       if (json)
       {
-        var text = JsonSerializer.Serialize(entries, new JsonSerializerOptions { WriteIndented = true });
+        var text = JsonSerializer.Serialize(entries, JsonOptions.Indented);
         if (!string.IsNullOrWhiteSpace(output)) { await File.WriteAllTextAsync(output, text).ConfigureAwait(false); Console.WriteLine("Wrote " + entries.Count + " entries to: " + output); }
         else Console.WriteLine(text);
       }
@@ -77,7 +88,7 @@ internal static class AuditCommands
         }
       }
       await host.StopAsync();
-    }, actionOpt, targetOpt, fromOpt, toOpt, limitOpt, jsonOpt, outputOpt);
+    });
 
     rootCmd.AddCommand(cmd);
   }
@@ -86,15 +97,16 @@ internal static class AuditCommands
   {
     var cmd = new Command("audit-verify", "Verify integrity of the audit trail chain");
 
-    cmd.SetHandler(async () =>
+    cmd.SetHandler(async (InvocationContext ctx) =>
     {
+      var ct = ctx.GetCancellationToken();
       using var host = buildHost();
       await host.StartAsync();
       var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("AuditCommands");
       var audit = host.Services.GetRequiredService<IAuditTrailService>();
 
       logger.LogInformation("audit-verify started");
-      var isValid = await audit.VerifyIntegrityAsync(CancellationToken.None);
+      var isValid = await audit.VerifyIntegrityAsync(ct);
 
       if (isValid)
       {

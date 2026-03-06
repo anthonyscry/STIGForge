@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using STIGForge.Apply.Security;
+using STIGForge.Core;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
 
@@ -26,6 +27,7 @@ internal static class SecurityCommands
 
     cmd.SetHandler(async (InvocationContext ctx) =>
     {
+      var ct = ctx.GetCancellationToken();
       var json = ctx.ParseResult.GetValueForOption(jsonOpt);
 
       using var host = buildHost();
@@ -36,15 +38,15 @@ internal static class SecurityCommands
       var bitlocker = host.Services.GetRequiredService<BitLockerService>();
       var firewall = host.Services.GetRequiredService<FirewallRuleService>();
       var statuses = new List<SecurityFeatureStatus>();
-      statuses.Add(await wdac.GetStatusAsync(CancellationToken.None));
-      statuses.Add(await bitlocker.GetStatusAsync(CancellationToken.None));
-      statuses.Add(await firewall.GetStatusAsync(CancellationToken.None));
+      statuses.Add(await wdac.GetStatusAsync(ct));
+      statuses.Add(await bitlocker.GetStatusAsync(ct));
+      statuses.Add(await firewall.GetStatusAsync(ct));
 
       logger.LogInformation("security-status completed");
 
       if (json)
       {
-        Console.WriteLine(JsonSerializer.Serialize(statuses, new JsonSerializerOptions { WriteIndented = true }));
+        Console.WriteLine(JsonSerializer.Serialize(statuses, JsonOptions.Indented));
       }
       else
       {
@@ -75,6 +77,7 @@ internal static class SecurityCommands
 
     cmd.SetHandler(async (InvocationContext ctx) =>
     {
+      var ct = ctx.GetCancellationToken();
       var bundle = ctx.ParseResult.GetValueForOption(bundleOpt) ?? string.Empty;
       var modeStr = ctx.ParseResult.GetValueForOption(modeOpt) ?? "Safe";
       var dryRun = ctx.ParseResult.GetValueForOption(dryRunOpt);
@@ -97,11 +100,11 @@ internal static class SecurityCommands
         DryRun = dryRun,
         Mode = mode,
         ConfigPath = string.IsNullOrWhiteSpace(config) ? null : config
-      }, CancellationToken.None);
+      }, ct);
 
       if (json)
       {
-        Console.WriteLine(JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true }));
+        Console.WriteLine(JsonSerializer.Serialize(result, JsonOptions.Indented));
       }
       else
       {

@@ -32,6 +32,7 @@ public partial class WorkflowViewModel : ObservableObject
     private readonly Func<ApplyRequest, CancellationToken, Task<ApplyResult>>? _runApply;
     private readonly Func<string?> _autoScanRootResolver;
     private readonly Func<bool> _isElevatedResolver;
+    private CancellationTokenSource _cts = new();
 
     public WorkflowViewModel(
         ImportInboxScanner? importScanner = null,

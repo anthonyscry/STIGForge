@@ -56,7 +56,7 @@ public sealed class LgpoRunner
       var completed = process.WaitForExit((int)DefaultTimeout.TotalMilliseconds);
       if (!completed)
       {
-        try { process.Kill(); } catch { /* best effort */ }
+        try { process.Kill(); } catch (Exception) { /* best effort */ }
         return new LgpoApplyResult
         {
           Success = false,

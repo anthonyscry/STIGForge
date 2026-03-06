@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using STIGForge.Core;
 
 namespace STIGForge.Evidence;
 
@@ -64,7 +65,7 @@ public sealed class EvidenceCollector
       SupersedesEvidenceId = request.SupersedesEvidenceId
     };
 
-    var json = JsonSerializer.Serialize(metadata, new JsonSerializerOptions { WriteIndented = true });
+    var json = JsonSerializer.Serialize(metadata, JsonOptions.Indented);
     File.WriteAllText(metadataPath, json, Encoding.UTF8);
 
     return new EvidenceWriteResult
@@ -100,9 +101,8 @@ public sealed class EvidenceCollector
   private static string ComputeSha256(string path)
   {
     using var stream = File.OpenRead(path);
-    using var sha = SHA256.Create();
-    var hash = sha.ComputeHash(stream);
-    return BitConverter.ToString(hash).Replace("-", string.Empty).ToLowerInvariant();
+    var hash = SHA256.HashData(stream);
+    return Convert.ToHexString(hash).ToLowerInvariant();
   }
 
   private static string Sanitize(string value)

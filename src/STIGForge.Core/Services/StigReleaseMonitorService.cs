@@ -157,7 +157,7 @@ public sealed class StigReleaseMonitorService
   public async Task<ReleaseCheck> ImportAndDiffAsync(string currentPackId, string newPackId, CancellationToken ct)
   {
     var notes = await GenerateReleaseNotesAsync(currentPackId, newPackId, ct).ConfigureAwait(false);
-    var notesJson = JsonSerializer.Serialize(notes, new JsonSerializerOptions { WriteIndented = true });
+    var notesJson = JsonSerializer.Serialize(notes, JsonOptions.Indented);
 
     var check = new ReleaseCheck
     {

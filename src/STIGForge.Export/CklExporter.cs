@@ -396,7 +396,7 @@ public static class CklExporter
       if (run.TryGetProperty("packName", out var packNameElement) && packNameElement.ValueKind == JsonValueKind.String)
         packName = packNameElement.GetString() ?? string.Empty;
     }
-    catch
+    catch (Exception)
     {
       packId = string.Empty;
       packName = string.Empty;

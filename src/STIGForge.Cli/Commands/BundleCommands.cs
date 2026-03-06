@@ -3,6 +3,7 @@ using System.CommandLine.Invocation;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using STIGForge.Core;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
 using STIGForge.Core.Services;
@@ -40,7 +41,7 @@ internal static class BundleCommands
       var controlsPath = Path.Combine(bundle, "Manifest", "pack_controls.json");
       if (!File.Exists(controlsPath)) { Console.Error.WriteLine("No pack_controls.json found."); Environment.ExitCode = 2; return; }
 
-      var allControls = JsonSerializer.Deserialize<List<ControlRecord>>(File.ReadAllText(controlsPath), new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? new List<ControlRecord>();
+      var allControls = JsonSerializer.Deserialize<List<ControlRecord>>(File.ReadAllText(controlsPath), JsonOptions.CaseInsensitive) ?? new List<ControlRecord>();
       var manualControls = allControls.Where(c => c.IsManual).ToList();
       var svc = new ManualAnswerService();
       var answerFile = svc.LoadAnswerFile(bundle);
@@ -214,7 +215,7 @@ internal static class BundleCommands
             open = summary.Manual.OpenCount,
             percentComplete = summary.Manual.PercentComplete
           }
-        }, new JsonSerializerOptions { WriteIndented = true }));
+        }, JsonOptions.Indented));
       }
       else
       {
@@ -244,6 +245,7 @@ internal static class BundleCommands
 
     cmd.SetHandler(async (InvocationContext ctx) =>
     {
+      var ct = ctx.GetCancellationToken();
       var overlayId = ctx.ParseResult.GetValueForOption(overlayOpt) ?? string.Empty;
       var addRule = ctx.ParseResult.GetValueForOption(addOpt) ?? string.Empty;
       var removeRule = ctx.ParseResult.GetValueForOption(removeOpt) ?? string.Empty;
@@ -253,7 +255,7 @@ internal static class BundleCommands
       using var host = buildHost();
       await host.StartAsync();
       var repo = host.Services.GetRequiredService<IOverlayRepository>();
-      var overlay = await repo.GetAsync(overlayId, CancellationToken.None);
+      var overlay = await repo.GetAsync(overlayId, ct);
       if (overlay == null) { Console.Error.WriteLine("Overlay not found: " + overlayId); Environment.ExitCode = 2; await host.StopAsync(); return; }
 
       var overrides = overlay.Overrides.ToList();
@@ -271,7 +273,7 @@ internal static class BundleCommands
       }
       else { Console.Error.WriteLine("Provide --add-rule or --remove-rule."); Environment.ExitCode = 2; await host.StopAsync(); return; }
 
-      await repo.SaveAsync(new Overlay { OverlayId = overlay.OverlayId, Name = overlay.Name, UpdatedAt = DateTimeOffset.Now, Overrides = overrides, PowerStigOverrides = overlay.PowerStigOverrides.ToList() }, CancellationToken.None);
+      await repo.SaveAsync(new Overlay { OverlayId = overlay.OverlayId, Name = overlay.Name, UpdatedAt = DateTimeOffset.Now, Overrides = overrides, PowerStigOverrides = overlay.PowerStigOverrides.ToList() }, ct);
       Console.WriteLine($"Overlay {overlayId} saved ({overrides.Count} overrides).");
       await host.StopAsync();
     });
@@ -295,8 +297,15 @@ internal static class BundleCommands
     cmd.AddOption(sensitiveReasonOpt);
     cmd.AddOption(maxLogsOpt);
 
-    cmd.SetHandler(async (output, bundle, includeDb, includeSensitive, sensitiveReason, maxLogFiles) =>
+    cmd.SetHandler(async (InvocationContext ctx) =>
     {
+      var output = ctx.ParseResult.GetValueForOption(outputOpt) ?? Environment.CurrentDirectory;
+      var bundle = ctx.ParseResult.GetValueForOption(bundleOpt) ?? string.Empty;
+      var includeDb = ctx.ParseResult.GetValueForOption(includeDbOpt);
+      var includeSensitive = ctx.ParseResult.GetValueForOption(includeSensitiveOpt);
+      var sensitiveReason = ctx.ParseResult.GetValueForOption(sensitiveReasonOpt) ?? string.Empty;
+      var maxLogFiles = ctx.ParseResult.GetValueForOption(maxLogsOpt);
+
       var sensitiveValidationError = ValidateSensitiveBundleArguments(includeDb, includeSensitive, sensitiveReason);
       if (sensitiveValidationError != null)
         throw new ArgumentException(sensitiveValidationError);
@@ -329,7 +338,7 @@ internal static class BundleCommands
       }
 
       await host.StopAsync();
-    }, outputOpt, bundleOpt, includeDbOpt, includeSensitiveOpt, sensitiveReasonOpt, maxLogsOpt);
+    });
 
     rootCmd.AddCommand(cmd);
   }

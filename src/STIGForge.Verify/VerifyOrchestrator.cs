@@ -1,4 +1,5 @@
 using System.Text.Json;
+using STIGForge.Core;
 using STIGForge.Core.Models;
 using STIGForge.Verify.Adapters;
 
@@ -404,11 +405,7 @@ public sealed class VerifyOrchestrator
   /// </summary>
   public void SaveReport(ConsolidatedVerifyReport report, string outputPath)
   {
-    var json = JsonSerializer.Serialize(report, new JsonSerializerOptions
-    {
-      WriteIndented = true,
-      PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-    });
+    var json = JsonSerializer.Serialize(report, JsonOptions.IndentedCamelCase);
 
     File.WriteAllText(outputPath, json);
   }

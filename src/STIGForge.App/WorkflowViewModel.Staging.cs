@@ -164,7 +164,7 @@ public partial class WorkflowViewModel
             {
                 Directory.Delete(tempDir, true);
             }
-            catch
+            catch (Exception)
             {
             }
         }
@@ -199,7 +199,7 @@ public partial class WorkflowViewModel
                         {
                             Directory.Delete(tempDir, true);
                         }
-                        catch
+                        catch (Exception)
                         {
                         }
                     }
@@ -250,7 +250,7 @@ public partial class WorkflowViewModel
                         {
                             Directory.Delete(tempDir, true);
                         }
-                        catch
+                        catch (Exception)
                         {
                         }
                     }
@@ -278,7 +278,7 @@ public partial class WorkflowViewModel
                         {
                             Directory.Delete(tempDir, true);
                         }
-                        catch
+                        catch (Exception)
                         {
                         }
                     }

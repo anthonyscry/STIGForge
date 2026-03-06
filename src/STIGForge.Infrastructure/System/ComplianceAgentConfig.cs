@@ -1,15 +1,10 @@
 using System.Text.Json;
+using STIGForge.Core;
 
 namespace STIGForge.Infrastructure.System;
 
 public sealed class ComplianceAgentConfig
 {
-  private static readonly JsonSerializerOptions JsonOptions = new()
-  {
-    PropertyNameCaseInsensitive = true,
-    WriteIndented = true
-  };
-
   public string BundleRoot { get; set; } = string.Empty;
   public int CheckIntervalMinutes { get; set; } = 1440;
   public bool AutoRemediate { get; set; }
@@ -24,7 +19,7 @@ public sealed class ComplianceAgentConfig
       throw new FileNotFoundException("Compliance agent config file not found.", configPath);
 
     await using var stream = File.OpenRead(configPath);
-    var config = await JsonSerializer.DeserializeAsync<ComplianceAgentConfig>(stream, JsonOptions).ConfigureAwait(false);
+    var config = await JsonSerializer.DeserializeAsync<ComplianceAgentConfig>(stream, JsonOptions.IndentedCaseInsensitive).ConfigureAwait(false);
     if (config == null)
       throw new InvalidOperationException("Compliance agent config payload is empty.");
 
@@ -45,7 +40,7 @@ public sealed class ComplianceAgentConfig
       Directory.CreateDirectory(directory);
 
     await using var stream = File.Create(path);
-    await JsonSerializer.SerializeAsync(stream, config, JsonOptions).ConfigureAwait(false);
+    await JsonSerializer.SerializeAsync(stream, config, JsonOptions.IndentedCaseInsensitive).ConfigureAwait(false);
   }
 
   private static void Validate(ComplianceAgentConfig config, string configPath)

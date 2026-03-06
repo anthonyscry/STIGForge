@@ -29,15 +29,14 @@ internal sealed class NullableDateTimeOffsetHandler : SqlMapper.TypeHandler<Date
 
 public static class DbBootstrap
 {
-  private static bool _handlersRegistered;
+  private static int _handlersRegistered;
 
   public static void EnsureCreated(string connectionString)
   {
-    if (!_handlersRegistered)
+    if (Interlocked.CompareExchange(ref _handlersRegistered, 1, 0) == 0)
     {
       SqlMapper.AddTypeHandler(new DateTimeOffsetHandler());
       SqlMapper.AddTypeHandler(new NullableDateTimeOffsetHandler());
-      _handlersRegistered = true;
     }
 
     using var conn = new SqliteConnection(connectionString);
@@ -85,6 +84,7 @@ CREATE TABLE IF NOT EXISTS content_packs (
   hash_algorithm TEXT NOT NULL,
   manifest_sha256 TEXT NOT NULL
 );
+CREATE INDEX IF NOT EXISTS ix_content_packs_manifest_sha256 ON content_packs(manifest_sha256);
 
 CREATE TABLE IF NOT EXISTS profiles (
   profile_id TEXT PRIMARY KEY,

@@ -226,7 +226,7 @@ public static class GpoPackageExtractor
             return Directory.EnumerateDirectories(extractedRoot, "Local Policies", SearchOption.AllDirectories)
                 .FirstOrDefault();
         }
-        catch
+        catch (Exception)
         {
             return null;
         }
@@ -241,7 +241,7 @@ public static class GpoPackageExtractor
                 ?? Directory.EnumerateDirectories(root, "*", SearchOption.TopDirectoryOnly)
                     .FirstOrDefault(d => string.Equals(Path.GetFileName(d), folderName, StringComparison.OrdinalIgnoreCase));
         }
-        catch
+        catch (Exception)
         {
             return null;
         }

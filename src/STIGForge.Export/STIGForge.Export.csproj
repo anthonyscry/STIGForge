@@ -3,8 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\STIGForge.Core\STIGForge.Core.csproj" />
     <ProjectReference Include="..\STIGForge.Infrastructure\STIGForge.Infrastructure.csproj" />
-    <ProjectReference Include="..\STIGForge.Reporting\STIGForge.Reporting.csproj" />
-    <ProjectReference Include="..\STIGForge.Verify\STIGForge.Verify.csproj" />
+<ProjectReference Include="..\STIGForge.Verify\STIGForge.Verify.csproj" />
   </ItemGroup>
 
   <PropertyGroup>

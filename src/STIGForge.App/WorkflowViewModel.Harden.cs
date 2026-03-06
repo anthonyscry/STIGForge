@@ -44,7 +44,7 @@ public partial class WorkflowViewModel
                 return false;
             }
 
-            var result = await _runApply(request, CancellationToken.None);
+            var result = await _runApply(request, _cts.Token);
 
             if (!result.IsMissionComplete)
             {
@@ -172,7 +172,7 @@ public partial class WorkflowViewModel
 
             return (osTarget, roleTemplate);
         }
-        catch
+        catch (Exception)
         {
             return (null, null);
         }
@@ -301,7 +301,7 @@ public partial class WorkflowViewModel
                 null);
             return value as string;
         }
-        catch
+        catch (Exception)
         {
             return null;
         }

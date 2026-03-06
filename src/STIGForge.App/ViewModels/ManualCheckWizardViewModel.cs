@@ -3,6 +3,7 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
 using System.Windows.Media;
+using STIGForge.Core;
 using STIGForge.Core.Models;
 using STIGForge.Core.Services;
 using STIGForge.Evidence;
@@ -15,6 +16,7 @@ public partial class ManualCheckWizardViewModel : ObservableObject
   private readonly List<ControlRecord> _controls;
   private readonly ManualAnswerService _answerService;
   private readonly EvidenceAutopilot _evidenceAutopilot;
+  private readonly CancellationTokenSource _cts = new();
   private int _currentIndex = -1;
 
   [ObservableProperty] private WizardScreen _currentScreen = WizardScreen.Welcome;
@@ -156,7 +158,7 @@ public partial class ManualCheckWizardViewModel : ObservableObject
       var control = _controls[_currentIndex];
       EvidenceStatus = "Collecting evidence...";
 
-      var result = await _evidenceAutopilot.CollectEvidenceAsync(control, CancellationToken.None);
+      var result = await _evidenceAutopilot.CollectEvidenceAsync(control, _cts.Token);
       var controlDir = GetControlEvidenceDirectory(control);
 
       var status = "Collected " + result.EvidenceFiles.Count + " file(s).";
@@ -279,7 +281,7 @@ public partial class ManualCheckWizardViewModel : ObservableObject
 
     var json = File.ReadAllText(controlsPath);
     var allControls = System.Text.Json.JsonSerializer.Deserialize<List<ControlRecord>>(json,
-      new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true }) 
+      JsonOptions.CaseInsensitive)
       ?? new List<ControlRecord>();
 
     return allControls.Where(c => c.IsManual).ToList();
@@ -298,7 +300,7 @@ public partial class ManualCheckWizardViewModel : ObservableObject
         var profileName = doc.RootElement.GetProperty("run").GetProperty("profileName").GetString();
         BundleInfo = $"System: {systemName}\nProfile: {profileName}";
       }
-      catch
+      catch (Exception)
       {
         BundleInfo = "Bundle information not available.";
       }

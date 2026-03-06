@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Win32;
+using STIGForge.Core;
 
 namespace STIGForge.Apply.Reboot;
 
@@ -298,7 +299,7 @@ public sealed class RebootCoordinator
         Directory.CreateDirectory(applyDir);
 
         // Serialize context to JSON
-        var json = JsonSerializer.Serialize(context, new JsonSerializerOptions { WriteIndented = true });
+        var json = JsonSerializer.Serialize(context, JsonOptions.Indented);
         await File.WriteAllTextAsync(markerPath, json, cancellationToken).ConfigureAwait(false);
 
         _logger.LogDebug("Resume marker written to {MarkerPath}", markerPath);

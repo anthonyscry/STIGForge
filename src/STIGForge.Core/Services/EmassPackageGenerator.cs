@@ -71,22 +71,22 @@ public sealed class EmassPackageGenerator
 
     await File.WriteAllTextAsync(
       Path.Combine(packageDir, "package-manifest.json"),
-      JsonSerializer.Serialize(package, new JsonSerializerOptions { WriteIndented = true }),
+      JsonSerializer.Serialize(package, JsonOptions.Indented),
       ct).ConfigureAwait(false);
 
     await File.WriteAllTextAsync(
       Path.Combine(packageDir, "control-correlation-matrix.json"),
-      JsonSerializer.Serialize(package.ControlCorrelationMatrix, new JsonSerializerOptions { WriteIndented = true }),
+      JsonSerializer.Serialize(package.ControlCorrelationMatrix, JsonOptions.Indented),
       ct).ConfigureAwait(false);
 
     await File.WriteAllTextAsync(
       Path.Combine(packageDir, "system-security-plan.json"),
-      JsonSerializer.Serialize(package.SystemSecurityPlan, new JsonSerializerOptions { WriteIndented = true }),
+      JsonSerializer.Serialize(package.SystemSecurityPlan, JsonOptions.Indented),
       ct).ConfigureAwait(false);
 
     await File.WriteAllTextAsync(
       Path.Combine(packageDir, "poam.json"),
-      JsonSerializer.Serialize(package.Poam, new JsonSerializerOptions { WriteIndented = true }),
+      JsonSerializer.Serialize(package.Poam, JsonOptions.Indented),
       ct).ConfigureAwait(false);
 
     var evidenceDir = Path.Combine(packageDir, "evidence");
@@ -395,7 +395,7 @@ public sealed class EmassPackageGenerator
       var json = File.ReadAllText(manifestPath);
       return JsonSerializer.Deserialize<EmassPackage>(json);
     }
-    catch
+    catch (Exception)
     {
       return null;
     }

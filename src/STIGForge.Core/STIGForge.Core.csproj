@@ -1,10 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-  <ItemGroup>
-    <ProjectReference Include="..\STIGForge.Shared\STIGForge.Shared.csproj" />
-  </ItemGroup>
-
-  <PropertyGroup>
+<PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>

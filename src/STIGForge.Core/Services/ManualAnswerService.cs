@@ -92,10 +92,7 @@ public sealed class ManualAnswerService
     try
     {
       var json = File.ReadAllText(path);
-      var file = JsonSerializer.Deserialize<AnswerFile>(json, new JsonSerializerOptions
-      {
-        PropertyNameCaseInsensitive = true
-      });
+      var file = JsonSerializer.Deserialize<AnswerFile>(json, JsonOptions.CaseInsensitive);
 
       if (file == null)
         return CreateEmptyAnswerFile(bundleRoot);
@@ -103,7 +100,7 @@ public sealed class ManualAnswerService
       NormalizeAnswerFile(file);
       return file;
     }
-    catch
+    catch (Exception)
     {
       return CreateEmptyAnswerFile(bundleRoot);
     }
@@ -121,11 +118,7 @@ public sealed class ManualAnswerService
     if (!string.IsNullOrEmpty(dir))
       Directory.CreateDirectory(dir);
 
-    var json = JsonSerializer.Serialize(answerFile, new JsonSerializerOptions
-    {
-      WriteIndented = true,
-      PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-    });
+    var json = JsonSerializer.Serialize(answerFile, JsonOptions.IndentedCamelCase);
 
     File.WriteAllText(path, json, Encoding.UTF8);
   }
@@ -362,7 +355,7 @@ public sealed class ManualAnswerService
         profileId = doc.RootElement.GetProperty("run").GetProperty("profileName").GetString();
         packId = doc.RootElement.GetProperty("run").GetProperty("packName").GetString();
       }
-      catch
+      catch (Exception)
       {
         // Ignore parse errors
       }
@@ -401,11 +394,7 @@ public sealed class ManualAnswerService
     if (!string.IsNullOrEmpty(dir))
       Directory.CreateDirectory(dir);
 
-    var json = JsonSerializer.Serialize(export, new JsonSerializerOptions
-    {
-      WriteIndented = true,
-      PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-    });
+    var json = JsonSerializer.Serialize(export, JsonOptions.IndentedCamelCase);
 
     File.WriteAllText(outputPath, json, Encoding.UTF8);
   }
@@ -416,10 +405,7 @@ public sealed class ManualAnswerService
   public AnswerFileExport ReadExportFile(string filePath)
   {
     var json = File.ReadAllText(filePath);
-    var export = JsonSerializer.Deserialize<AnswerFileExport>(json, new JsonSerializerOptions
-    {
-      PropertyNameCaseInsensitive = true
-    });
+    var export = JsonSerializer.Deserialize<AnswerFileExport>(json, JsonOptions.CaseInsensitive);
 
     return export ?? new AnswerFileExport();
   }

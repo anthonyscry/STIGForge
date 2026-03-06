@@ -12,14 +12,14 @@ public class ScapBundleParserTests
     }
 
     [Fact]
-    public void ParseBundle_FindsXccdfFiles()
+    public async Task ParseBundle_FindsXccdfFiles()
     {
         // Arrange
         var bundlePath = GetFixturePath("test-scap-bundle.zip");
         var packName = "test-pack";
 
         // Act
-        var results = ScapBundleParser.Parse(bundlePath, packName);
+        var results = await ScapBundleParser.ParseAsync(bundlePath, packName);
 
         // Assert
         Assert.NotNull(results);
@@ -28,14 +28,14 @@ public class ScapBundleParserTests
     }
 
     [Fact]
-    public void ParseBundle_ExtractsControlFromXccdf()
+    public async Task ParseBundle_ExtractsControlFromXccdf()
     {
         // Arrange
         var bundlePath = GetFixturePath("test-scap-bundle.zip");
         var packName = "test-pack";
 
         // Act
-        var results = ScapBundleParser.Parse(bundlePath, packName);
+        var results = await ScapBundleParser.ParseAsync(bundlePath, packName);
 
         // Assert
         var control = results.First();
@@ -45,18 +45,18 @@ public class ScapBundleParserTests
     }
 
     [Fact]
-    public void ParseBundle_HandlesNonExistentFile()
+    public async Task ParseBundle_HandlesNonExistentFile()
     {
         // Arrange
         var bundlePath = "nonexistent.zip";
         var packName = "test-pack";
 
         // Act & Assert
-        Assert.Throws<FileNotFoundException>(() => ScapBundleParser.Parse(bundlePath, packName));
+        await Assert.ThrowsAsync<FileNotFoundException>(() => ScapBundleParser.ParseAsync(bundlePath, packName));
     }
 
     [Fact]
-    public void ParseBundle_RejectsPathTraversalEntry()
+    public async Task ParseBundle_RejectsPathTraversalEntry()
     {
         var tempZip = Path.Combine(Path.GetTempPath(), "scap-traversal-" + Guid.NewGuid().ToString("N") + ".zip");
 
@@ -69,7 +69,7 @@ public class ScapBundleParserTests
                 writer.Write("blocked");
             }
 
-            var ex = Assert.Throws<STIGForge.Content.Models.ParsingException>(() => ScapBundleParser.Parse(tempZip, "test-pack"));
+            var ex = await Assert.ThrowsAsync<STIGForge.Content.Models.ParsingException>(() => ScapBundleParser.ParseAsync(tempZip, "test-pack"));
             Assert.Contains("SCAP-ARCHIVE-002", ex.Message, StringComparison.Ordinal);
         }
         finally

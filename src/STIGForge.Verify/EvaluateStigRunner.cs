@@ -68,7 +68,7 @@ public sealed class EvaluateStigRunner
       if (!process.HasExited)
         process.Kill();
     }
-    catch
+    catch (Exception)
     {
     }
   }

@@ -74,6 +74,31 @@ release=excluded.release;";
     };
   }
 
+  public async Task<ContentPack?> GetByManifestHashAsync(string manifestSha256, CancellationToken ct)
+  {
+    using var conn = new SqliteConnection(_cs);
+    var row = await conn.QuerySingleOrDefaultAsync(new CommandDefinition(
+      "SELECT pack_id PackId, name Name, imported_at ImportedAt, release_date ReleaseDate, source_label SourceLabel, hash_algorithm HashAlgorithm, manifest_sha256 ManifestSha256, benchmark_ids_json BenchmarkIdsJson, applicability_tags_json ApplicabilityTagsJson, version Version, release Release FROM content_packs WHERE manifest_sha256=@manifestSha256 COLLATE NOCASE LIMIT 1",
+      new { manifestSha256 }, cancellationToken: ct)).ConfigureAwait(false);
+
+    if (row is null) return null;
+
+    return new ContentPack
+    {
+      PackId = row.PackId,
+      Name = row.Name,
+      ImportedAt = row.ImportedAt is DateTimeOffset dto ? dto : DateTimeOffset.Parse(row.ImportedAt.ToString()!),
+      ReleaseDate = row.ReleaseDate is DateTimeOffset rd ? rd : row.ReleaseDate != null ? DateTimeOffset.Parse(row.ReleaseDate.ToString()!) : null,
+      SourceLabel = row.SourceLabel,
+      HashAlgorithm = row.HashAlgorithm,
+      ManifestSha256 = row.ManifestSha256,
+      BenchmarkIds = JsonSerializer.Deserialize<List<string>>(row.BenchmarkIdsJson ?? "[]", J) ?? new List<string>(),
+      ApplicabilityTags = JsonSerializer.Deserialize<List<string>>(row.ApplicabilityTagsJson ?? "[]", J) ?? new List<string>(),
+      Version = row.Version ?? string.Empty,
+      Release = row.Release ?? string.Empty
+    };
+  }
+
   public async Task<IReadOnlyList<ContentPack>> ListAsync(CancellationToken ct)
   {
     using var conn = new SqliteConnection(_cs);
@@ -204,15 +229,15 @@ public sealed class SqliteJsonControlRepository : IControlRepository
     const string sql = @"INSERT INTO controls(pack_id,control_id,json) VALUES(@packId,@controlId,@json)
 ON CONFLICT(pack_id,control_id) DO UPDATE SET json=excluded.json;";
     using var conn = new SqliteConnection(_cs);
-    conn.Open();
+    await conn.OpenAsync(ct).ConfigureAwait(false);
     using var tx = conn.BeginTransaction();
-    foreach (var c in controls)
+    var parameters = controls.Select(c => new
     {
-      var json = JsonSerializer.Serialize(c, J);
-      await conn.ExecuteAsync(new CommandDefinition(sql,
-        new { packId, controlId = c.ControlId, json },
-        transaction: tx, cancellationToken: ct)).ConfigureAwait(false);
-    }
+      packId,
+      controlId = c.ControlId,
+      json = JsonSerializer.Serialize(c, J)
+    });
+    await conn.ExecuteAsync(new CommandDefinition(sql, parameters, transaction: tx, cancellationToken: ct)).ConfigureAwait(false);
     tx.Commit();
   }
 

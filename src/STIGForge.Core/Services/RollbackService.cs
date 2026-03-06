@@ -403,9 +403,8 @@ public sealed class RollbackService
   private static string ComputeSha256(string path)
   {
     using var stream = File.OpenRead(path);
-    using var sha = SHA256.Create();
-    var hash = sha.ComputeHash(stream);
-    return BitConverter.ToString(hash).Replace("-", string.Empty).ToLowerInvariant();
+    var hash = SHA256.HashData(stream);
+    return Convert.ToHexString(hash).ToLowerInvariant();
   }
 
   private static string NormalizeStartupType(string? startupType)

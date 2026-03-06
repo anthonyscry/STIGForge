@@ -242,10 +242,7 @@ public sealed class BundleMissionSummaryService : IBundleMissionSummaryService
 
     try
     {
-      var controls = JsonSerializer.Deserialize<List<ControlRecord>>(File.ReadAllText(controlsPath), new JsonSerializerOptions
-      {
-        PropertyNameCaseInsensitive = true
-      });
+      var controls = JsonSerializer.Deserialize<List<ControlRecord>>(File.ReadAllText(controlsPath), JsonOptions.CaseInsensitive);
 
       return controls ?? new List<ControlRecord>();
     }

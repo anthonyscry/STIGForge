@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Text.Json;
+using STIGForge.Core;
 
 namespace STIGForge.App;
 
@@ -22,8 +23,6 @@ public class WorkflowSettings
     public bool ExportCsv { get; set; }
     public bool ExportXccdf { get; set; }
 
-    private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
-
     public static string DefaultPath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
         "STIGForge", "workflow-settings.json");
@@ -43,7 +42,7 @@ public class WorkflowSettings
         var dir = Path.GetDirectoryName(path);
         if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
             Directory.CreateDirectory(dir);
-        var json = JsonSerializer.Serialize(settings, JsonOptions);
+        var json = JsonSerializer.Serialize(settings, JsonOptions.Indented);
         File.WriteAllText(path, json);
     }
 }

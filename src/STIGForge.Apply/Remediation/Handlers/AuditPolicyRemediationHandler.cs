@@ -1,3 +1,4 @@
+using STIGForge.Apply.Steps;
 using STIGForge.Core.Abstractions;
 
 namespace STIGForge.Apply.Remediation.Handlers;
@@ -21,7 +22,8 @@ public sealed class AuditPolicyRemediationHandler : RemediationHandlerBase
 
     public override async Task<RemediationResult> TestAsync(RemediationContext context, CancellationToken ct)
     {
-        var output = await RunAuditPolAsync($"/get /subcategory:\"{_subcategory}\"", ct).ConfigureAwait(false);
+        var safeSubcategory = _subcategory.Replace("\"", "");
+        var output = await RunAuditPolAsync($"/get /subcategory:\"{safeSubcategory}\"", ct).ConfigureAwait(false);
         if (string.IsNullOrWhiteSpace(output))
         {
             return BuildResult(
@@ -87,13 +89,14 @@ public sealed class AuditPolicyRemediationHandler : RemediationHandlerBase
 
     private static string? BuildSetArguments(string subcategory, string expectedSetting)
     {
+        var safeSubcategory = subcategory.Replace("\"", "");
         var normalized = NormalizeSetting(expectedSetting);
         return normalized switch
         {
-            "successandfailure" => $"/set /subcategory:\"{subcategory}\" /success:enable /failure:enable",
-            "success" => $"/set /subcategory:\"{subcategory}\" /success:enable /failure:disable",
-            "failure" => $"/set /subcategory:\"{subcategory}\" /success:disable /failure:enable",
-            "noauditing" => $"/set /subcategory:\"{subcategory}\" /success:disable /failure:disable",
+            "successandfailure" => $"/set /subcategory:\"{safeSubcategory}\" /success:enable /failure:enable",
+            "success" => $"/set /subcategory:\"{safeSubcategory}\" /success:enable /failure:disable",
+            "failure" => $"/set /subcategory:\"{safeSubcategory}\" /success:disable /failure:enable",
+            "noauditing" => $"/set /subcategory:\"{safeSubcategory}\" /success:disable /failure:disable",
             _ => null
         };
     }

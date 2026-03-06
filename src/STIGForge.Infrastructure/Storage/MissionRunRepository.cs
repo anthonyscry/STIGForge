@@ -14,10 +14,10 @@ public sealed class MissionRunRepository : IMissionRunRepository
 {
   private readonly string _cs;
 
-  public MissionRunRepository(string connectionString)
+  public MissionRunRepository(DbConnectionString connectionString)
   {
-    ArgumentException.ThrowIfNullOrEmpty(connectionString);
-    _cs = connectionString;
+    ArgumentNullException.ThrowIfNull(connectionString);
+    _cs = connectionString.Value;
   }
 
   // ---------- Run operations ----------

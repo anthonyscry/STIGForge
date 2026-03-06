@@ -102,7 +102,7 @@ internal sealed class StepEvidenceWriter
 
       return result;
     }
-    catch
+    catch (Exception)
     {
       return new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
     }
@@ -111,8 +111,7 @@ internal sealed class StepEvidenceWriter
   private static string ComputeSha256(string path)
   {
     using var stream = File.OpenRead(path);
-    using var sha = System.Security.Cryptography.SHA256.Create();
-    var hash = sha.ComputeHash(stream);
-    return BitConverter.ToString(hash).Replace("-", string.Empty).ToLowerInvariant();
+    var hash = System.Security.Cryptography.SHA256.HashData(stream);
+    return Convert.ToHexString(hash).ToLowerInvariant();
   }
 }

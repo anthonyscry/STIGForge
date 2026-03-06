@@ -107,7 +107,7 @@ public sealed class CanonicalChecklistProjector
         .Descendants()
         .FirstOrDefault(e => string.Equals(e.Name.LocalName, "Benchmark", StringComparison.OrdinalIgnoreCase));
     }
-    catch
+    catch (Exception)
     {
       return null;
     }

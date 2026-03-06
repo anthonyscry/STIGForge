@@ -4,6 +4,7 @@ using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using STIGForge.Core;
 using STIGForge.Core.Services;
 
 namespace STIGForge.Cli.Commands;
@@ -41,6 +42,7 @@ internal static class ComplianceCommands
 
     cmd.SetHandler(async (InvocationContext ctx) =>
     {
+      var ct = ctx.GetCancellationToken();
       var bundle = ctx.ParseResult.GetValueForOption(bundleOpt) ?? string.Empty;
       var pass = ctx.ParseResult.GetValueForOption(passOpt);
       var fail = ctx.ParseResult.GetValueForOption(failOpt);
@@ -57,7 +59,7 @@ internal static class ComplianceCommands
       var service = host.Services.GetRequiredService<ComplianceTrendService>();
 
       logger.LogInformation("compliance-score started: bundle={Bundle}", bundle);
-      await service.RecordSnapshotAsync(pass, fail, error, notApplicable, notReviewed, bundle, runId, packId, tool, CancellationToken.None);
+      await service.RecordSnapshotAsync(pass, fail, error, notApplicable, notReviewed, bundle, runId, packId, tool, ct);
       Console.WriteLine("Compliance snapshot recorded.");
       await host.StopAsync();
     });
@@ -80,6 +82,7 @@ internal static class ComplianceCommands
 
     cmd.SetHandler(async (InvocationContext ctx) =>
     {
+      var ct = ctx.GetCancellationToken();
       var bundle = ctx.ParseResult.GetValueForOption(bundleOpt) ?? string.Empty;
       var limit = ctx.ParseResult.GetValueForOption(limitOpt);
       var json = ctx.ParseResult.GetValueForOption(jsonOpt);
@@ -91,10 +94,10 @@ internal static class ComplianceCommands
       var service = host.Services.GetRequiredService<ComplianceTrendService>();
 
       logger.LogInformation("compliance-trend started: bundle={Bundle}, limit={Limit}", bundle, limit);
-      var trend = await service.GetTrendAsync(bundle, limit, CancellationToken.None);
+      var trend = await service.GetTrendAsync(bundle, limit, ct);
       if (json)
       {
-        Console.WriteLine(JsonSerializer.Serialize(trend, new JsonSerializerOptions { WriteIndented = true }));
+        Console.WriteLine(JsonSerializer.Serialize(trend, JsonOptions.Indented));
       }
       else
       {

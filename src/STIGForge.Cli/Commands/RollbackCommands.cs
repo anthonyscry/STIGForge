@@ -4,6 +4,7 @@ using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using STIGForge.Core;
 using STIGForge.Core.Services;
 
 namespace STIGForge.Cli.Commands;
@@ -44,7 +45,7 @@ internal class RollbackCommands
 
         if (json)
         {
-          Console.WriteLine(JsonSerializer.Serialize(snapshot, new JsonSerializerOptions { WriteIndented = true }));
+          Console.WriteLine(JsonSerializer.Serialize(snapshot, JsonOptions.Indented));
         }
         else
         {
@@ -96,7 +97,7 @@ internal class RollbackCommands
 
         if (json)
         {
-          Console.WriteLine(JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true }));
+          Console.WriteLine(JsonSerializer.Serialize(result, JsonOptions.Indented));
         }
         else
         {
@@ -159,7 +160,7 @@ internal class RollbackCommands
 
         if (json)
         {
-          Console.WriteLine(JsonSerializer.Serialize(snapshots, new JsonSerializerOptions { WriteIndented = true }));
+          Console.WriteLine(JsonSerializer.Serialize(snapshots, JsonOptions.Indented));
         }
         else
         {

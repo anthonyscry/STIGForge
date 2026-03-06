@@ -24,26 +24,35 @@ public sealed class ScheduledTaskServiceTests
   [Fact]
   public void Register_ReturnsResultWithTaskName()
   {
-    // This will fail on CI (no admin rights), but validates the code path
-    var svc = new ScheduledTaskService();
-    var result = svc.Register(new ScheduledTaskRequest
+    // Create a temp file to act as the CLI exe (NormalizeCliPath validates existence)
+    var tempCli = Path.Combine(Path.GetTempPath(), "stigforge-test-cli-" + Guid.NewGuid().ToString("N") + ".exe");
+    File.WriteAllText(tempCli, "");
+    try
     {
-      TaskName = "STIGForge_UnitTest_" + Guid.NewGuid().ToString("n").Substring(0, 8),
-      BundleRoot = "C:\\test\\bundle",
-      Frequency = "ONCE",
-      StartTime = "23:59",
-      CliPath = "echo"  // Use echo to avoid needing actual CLI
-    });
+      var svc = new ScheduledTaskService();
+      var result = svc.Register(new ScheduledTaskRequest
+      {
+        TaskName = "STIGForge_UnitTest_" + Guid.NewGuid().ToString("n").Substring(0, 8),
+        BundleRoot = "C:\\test\\bundle",
+        Frequency = "ONCE",
+        StartTime = "23:59",
+        CliPath = tempCli
+      });
 
-    // Task name should always be set regardless of success/failure
-    result.TaskName.Should().Contain("STIGForge");
-    result.ScriptPath.Should().NotBeNullOrWhiteSpace();
+      // Task name should always be set regardless of success/failure
+      result.TaskName.Should().Contain("STIGForge");
+      result.ScriptPath.Should().NotBeNullOrWhiteSpace();
 
-    // Cleanup: try to remove the task if it was created
-    if (result.Success)
+      // Cleanup: try to remove the task if it was created
+      if (result.Success)
+      {
+        var taskName = result.TaskName.Replace("STIGForge\\", "");
+        svc.Unregister(taskName);
+      }
+    }
+    finally
     {
-      var taskName = result.TaskName.Replace("STIGForge\\", "");
-      svc.Unregister(taskName);
+      File.Delete(tempCli);
     }
   }
 }

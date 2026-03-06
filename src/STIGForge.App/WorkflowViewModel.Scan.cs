@@ -3,6 +3,7 @@ using System.IO;
 using System.Text;
 using System.Text.Json;
 using CommunityToolkit.Mvvm.Input;
+using STIGForge.Core;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
 
@@ -569,8 +570,8 @@ public partial class WorkflowViewModel
             };
 
             var result = await Task.Run(
-                () => _verifyService.RunAsync(request, CancellationToken.None),
-                CancellationToken.None);
+                () => _verifyService.RunAsync(request, _cts.Token),
+                _cts.Token);
 
             var baselineOpenFindings = result.FailCount + result.ErrorCount;
             BaselineFindingsCount = baselineOpenFindings;
@@ -707,8 +708,8 @@ public partial class WorkflowViewModel
             };
 
             var result = await Task.Run(
-                () => _verifyService.RunAsync(request, CancellationToken.None),
-                CancellationToken.None);
+                () => _verifyService.RunAsync(request, _cts.Token),
+                _cts.Token);
 
             UpdateComplianceMetrics(result);
 
@@ -726,7 +727,7 @@ public partial class WorkflowViewModel
             {
                 StatusText = "Verification did not complete: SCC ran without usable arguments/output.";
                 CurrentFailureCard = CreateVerifyScapNoOutputCard();
-                await WriteMissionJsonAsync(result, CancellationToken.None, CurrentFailureCard, "Verify");
+                await WriteMissionJsonAsync(result, _cts.Token, CurrentFailureCard, "Verify");
                 return false;
             }
 
@@ -745,13 +746,13 @@ public partial class WorkflowViewModel
                     CurrentFailureCard = null;
                 }
 
-                await WriteMissionJsonAsync(result, CancellationToken.None, missionFailureCard, "Verify");
+                await WriteMissionJsonAsync(result, _cts.Token, missionFailureCard, "Verify");
                 return !isFailure;
             }
 
             StatusText = $"Verification complete: {VerifyFindingsCount} remaining ({FixedCount} fixed)";
             CurrentFailureCard = null;
-            await WriteMissionJsonAsync(result, CancellationToken.None, null, "Verify");
+            await WriteMissionJsonAsync(result, _cts.Token, null, "Verify");
             return true;
         }
         catch (Exception ex)
@@ -846,10 +847,7 @@ public partial class WorkflowViewModel
             }
         };
 
-        var json = JsonSerializer.Serialize(mission, new JsonSerializerOptions
-        {
-            WriteIndented = true
-        });
+        var json = JsonSerializer.Serialize(mission, JsonOptions.Indented);
 
         await File.WriteAllTextAsync(missionPath, json, ct).ConfigureAwait(false);
         MissionJsonPath = missionPath;
@@ -1028,8 +1026,8 @@ public partial class WorkflowViewModel
             };
 
             var result = await Task.Run(
-                () => _verifyService.RunAsync(request, CancellationToken.None),
-                CancellationToken.None);
+                () => _verifyService.RunAsync(request, _cts.Token),
+                _cts.Token);
 
             var scapRun = result.ToolRuns?.FirstOrDefault(run =>
                 string.Equals(run.Tool, "SCC", StringComparison.OrdinalIgnoreCase)

@@ -8,7 +8,7 @@ internal sealed class ImportZipHandler
     private const int MaxArchiveEntryCount = 4096;
     private const long MaxExtractedBytes = 512L * 1024L * 1024L;
 
-    internal void ExtractZipSafely(string zipPath, string destinationRoot, CancellationToken ct)
+    internal async Task ExtractZipSafelyAsync(string zipPath, string destinationRoot, CancellationToken ct)
     {
         var destinationRootFullPath = Path.GetFullPath(destinationRoot);
         var destinationRootPrefix = destinationRootFullPath.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal)
@@ -49,12 +49,12 @@ internal sealed class ImportZipHandler
                 Directory.CreateDirectory(directory);
 
             using var entryStream = entry.Open();
-            using var outputStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None);
-            entryStream.CopyTo(outputStream);
+            using var outputStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true);
+            await entryStream.CopyToAsync(outputStream, ct).ConfigureAwait(false);
         }
     }
 
-    internal void ExpandNestedZipArchives(string extractionRoot, int maxPasses, CancellationToken ct)
+    internal async Task ExpandNestedZipArchivesAsync(string extractionRoot, int maxPasses, CancellationToken ct)
     {
         for (var pass = 0; pass < maxPasses; pass++)
         {
@@ -83,7 +83,7 @@ internal sealed class ImportZipHandler
                 }
 
                 Directory.CreateDirectory(nestedExtractRoot);
-                ExtractZipSafely(nestedArchive, nestedExtractRoot, ct);
+                await ExtractZipSafelyAsync(nestedArchive, nestedExtractRoot, ct).ConfigureAwait(false);
                 extractedAny = true;
             }
 

@@ -155,13 +155,15 @@ internal sealed class PolicyStepHandler
         var folderName = Path.GetFileName(gpoFolder);
         outBuilder.AppendLine("Importing GPO: " + folderName);
 
+        var qFolder = ApplyProcessHelpers.ToPowerShellSingleQuoted(folderName);
+        var qRoot = ApplyProcessHelpers.ToPowerShellSingleQuoted(backupRoot);
         var script = "Import-Module GroupPolicy; " +
-          $"Import-GPO -BackupGpoName '{folderName}' -Path '{backupRoot}' -TargetName '{folderName}' -CreateIfNeeded";
+          $"Import-GPO -BackupGpoName {qFolder} -Path {qRoot} -TargetName {qFolder} -CreateIfNeeded";
 
         var psi = new ProcessStartInfo
         {
           FileName = "powershell.exe",
-          Arguments = $"-NoProfile -NonInteractive -Command \"{script}\"",
+          Arguments = ApplyProcessHelpers.BuildEncodedCommandArgs(script),
           RedirectStandardOutput = true,
           RedirectStandardError = true,
           UseShellExecute = false,
@@ -266,7 +268,7 @@ internal sealed class PolicyStepHandler
           "ProductName",
           null) as string ?? string.Empty;
     }
-    catch
+    catch (Exception)
     {
       productName = string.Empty;
     }

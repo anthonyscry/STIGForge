@@ -213,7 +213,7 @@ public static class PolFileParser
                     : "(empty)"
             };
         }
-        catch
+        catch (Exception)
         {
             return data.Length > 0 ? $"({data.Length} bytes)" : "(empty)";
         }

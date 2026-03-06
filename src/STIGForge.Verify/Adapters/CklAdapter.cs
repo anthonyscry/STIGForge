@@ -25,7 +25,7 @@ public sealed class CklAdapter : IVerifyResultAdapter
       var doc = LoadSecureXml(filePath);
       return doc.Root?.Name.LocalName == "CHECKLIST";
     }
-    catch
+    catch (Exception)
     {
       return false;
     }

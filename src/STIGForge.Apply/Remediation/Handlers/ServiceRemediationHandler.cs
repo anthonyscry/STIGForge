@@ -1,3 +1,4 @@
+using STIGForge.Apply.Steps;
 using STIGForge.Core.Abstractions;
 
 namespace STIGForge.Apply.Remediation.Handlers;
@@ -24,11 +25,13 @@ public sealed class ServiceRemediationHandler : RemediationHandlerBase
 
     public override async Task<RemediationResult> TestAsync(RemediationContext context, CancellationToken ct)
     {
+        var qSvc = ApplyProcessHelpers.ToPowerShellSingleQuoted(_serviceName);
         var script = $@"
-$service = Get-Service -Name '{_serviceName}' -ErrorAction SilentlyContinue
+$service = Get-Service -Name {qSvc} -ErrorAction SilentlyContinue
 if ($null -eq $service) {{ '' }}
 else {{
-    $startMode = (Get-CimInstance -ClassName Win32_Service -Filter ""Name='{_serviceName}'"" -ErrorAction SilentlyContinue).StartMode
+    $svcName = {qSvc}
+    $startMode = (Get-CimInstance -ClassName Win32_Service -Filter ""Name='$svcName'"" -ErrorAction SilentlyContinue).StartMode
     ""$startMode|$($service.Status)""
 }}";
 
@@ -94,13 +97,14 @@ else {{
     {
         var startType = NormalizeStartType(_expectedStartType);
         var status = NormalizeStatus(_expectedStatus);
+        var qSvc = ApplyProcessHelpers.ToPowerShellSingleQuoted(_serviceName);
         var statusScript = status.Equals("Stopped", StringComparison.OrdinalIgnoreCase)
-            ? $"if ($service.Status -ne 'Stopped') {{ Stop-Service -Name '{_serviceName}' -Force -ErrorAction Stop }}"
-            : $"if ($service.Status -ne 'Running') {{ Start-Service -Name '{_serviceName}' -ErrorAction Stop }}";
+            ? $"if ($service.Status -ne 'Stopped') {{ Stop-Service -Name {qSvc} -Force -ErrorAction Stop }}"
+            : $"if ($service.Status -ne 'Running') {{ Start-Service -Name {qSvc} -ErrorAction Stop }}";
 
         return $@"
-$service = Get-Service -Name '{_serviceName}' -ErrorAction Stop
-Set-Service -Name '{_serviceName}' -StartupType {startType} -ErrorAction Stop
+$service = Get-Service -Name {qSvc} -ErrorAction Stop
+Set-Service -Name {qSvc} -StartupType {ApplyProcessHelpers.ToPowerShellSingleQuoted(startType)} -ErrorAction Stop
 {statusScript}";
     }
 

@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using System.Diagnostics;
+using STIGForge.Core;
 using STIGForge.Apply;
 using STIGForge.Apply.PowerStig;
 using STIGForge.Core.Abstractions;
@@ -362,10 +363,10 @@ public sealed class BundleOrchestrator
     {
       var json = File.ReadAllText(decisionsPath, Encoding.UTF8);
       var decisions = JsonSerializer.Deserialize<List<OverlayDecisionDto>>(json,
-        new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        JsonOptions.CaseInsensitive);
       return decisions ?? new List<OverlayDecisionDto>();
     }
-    catch
+    catch (Exception)
     {
       // If deserialization fails, return empty list
       return new List<OverlayDecisionDto>();
@@ -444,7 +445,7 @@ public sealed class BundleOrchestrator
 
     var json = File.ReadAllText(packControlsPath);
     var controls = System.Text.Json.JsonSerializer.Deserialize<List<STIGForge.Core.Models.ControlRecord>>(json,
-      new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+      JsonOptions.CaseInsensitive);
     if (controls == null) return [];
     return controls;
   }
@@ -456,7 +457,7 @@ public sealed class BundleOrchestrator
 
     var json = File.ReadAllText(overlaysPath);
     var overlays = System.Text.Json.JsonSerializer.Deserialize<List<STIGForge.Core.Models.Overlay>>(json,
-      new System.Text.Json.JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+      JsonOptions.CaseInsensitive);
     if (overlays == null) return [];
 
     var list = new List<STIGForge.Core.Models.PowerStigOverride>();

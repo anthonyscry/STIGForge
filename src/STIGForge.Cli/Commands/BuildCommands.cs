@@ -9,6 +9,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using STIGForge.Build;
 using STIGForge.Content.Import;
+using STIGForge.Core;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
 using STIGForge.Core.Services;
@@ -47,6 +48,7 @@ internal static class BuildCommands
 
     cmd.SetHandler(async (InvocationContext ctx) =>
     {
+      var ct = ctx.GetCancellationToken();
       var packId = ctx.ParseResult.GetValueForOption(packIdOpt) ?? string.Empty;
       var profileId = ctx.ParseResult.GetValueForOption(profileIdOpt) ?? string.Empty;
       var profileJson = ctx.ParseResult.GetValueForOption(profileJsonOpt) ?? string.Empty;
@@ -82,28 +84,28 @@ internal static class BuildCommands
       var builder = host.Services.GetRequiredService<BundleBuilder>();
       var audit = host.Services.GetService<IAuditTrailService>();
 
-      var pack = await packs.GetAsync(packId, CancellationToken.None) ?? throw new ArgumentException("Pack not found: " + packId);
+      var pack = await packs.GetAsync(packId, ct) ?? throw new ArgumentException("Pack not found: " + packId);
 
       Profile profile;
       if (!string.IsNullOrWhiteSpace(profileId))
       {
-        profile = await profiles.GetAsync(profileId, CancellationToken.None) ?? throw new ArgumentException("Profile not found: " + profileId);
+        profile = await profiles.GetAsync(profileId, ct) ?? throw new ArgumentException("Profile not found: " + profileId);
       }
       else
       {
         var json = await File.ReadAllTextAsync(profileJson!).ConfigureAwait(false);
-        profile = JsonSerializer.Deserialize<Profile>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true }) ?? throw new ArgumentException("Invalid profile JSON.");
+        profile = JsonSerializer.Deserialize<Profile>(json, JsonOptions.CaseInsensitive) ?? throw new ArgumentException("Invalid profile JSON.");
         if (string.IsNullOrWhiteSpace(profile.ProfileId)) profile.ProfileId = Guid.NewGuid().ToString("n");
-        if (saveProfile) await profiles.SaveAsync(profile, CancellationToken.None);
+        if (saveProfile) await profiles.SaveAsync(profile, ct);
       }
 
-      var list = await controls.ListControlsAsync(pack.PackId, CancellationToken.None);
+      var list = await controls.ListControlsAsync(pack.PackId, ct);
       var overlays = new List<Overlay>();
       if (profile.OverlayIds != null && profile.OverlayIds.Count > 0)
         foreach (var oid in profile.OverlayIds)
         {
           if (string.IsNullOrWhiteSpace(oid)) continue;
-          var ov = await overlaysRepo.GetAsync(oid, CancellationToken.None);
+          var ov = await overlaysRepo.GetAsync(oid, ct);
           if (ov != null) overlays.Add(ov);
         }
 
@@ -113,7 +115,7 @@ internal static class BuildCommands
         OutputRoot = string.IsNullOrWhiteSpace(output) ? null : output,
         Pack = pack, Profile = profile, Controls = list, Overlays = overlays,
         ToolVersion = "0.1.0-dev", ForceAutoApply = forceAutoApply
-      }, CancellationToken.None);
+      }, ct);
 
       await RecordBreakGlassAuditAsync(
         audit,
@@ -122,7 +124,7 @@ internal static class BuildCommands
         result.BundleRoot,
         "force-auto-apply",
         breakGlassReason,
-        CancellationToken.None);
+        ct);
 
       logger.LogInformation("build-bundle completed: bundleRoot={BundleRoot}", result.BundleRoot);
       Console.WriteLine("Bundle created: " + result.BundleRoot);
@@ -163,6 +165,7 @@ internal static class BuildCommands
 
     cmd.SetHandler(async (InvocationContext ctx) =>
     {
+      var ct = ctx.GetCancellationToken();
       var bundle = ctx.ParseResult.GetValueForOption(bOpt) ?? string.Empty;
       var skipSnapshot = ctx.ParseResult.GetValueForOption(skipSnapOpt);
       var breakGlassAck = ctx.ParseResult.GetValueForOption(breakGlassAckOpt);
@@ -201,7 +204,7 @@ internal static class BuildCommands
         EvaluateStigRoot = NullIfEmpty(ctx, evalOpt), EvaluateStigArgs = NullIfEmpty(ctx, evalArgsOpt),
         ScapCommandPath = NullIfEmpty(ctx, scapOpt), ScapArgs = NullIfEmpty(ctx, scapArgsOpt),
         ScapToolLabel = NullIfEmpty(ctx, scapLabelOpt)
-      }, CancellationToken.None);
+      }, ct);
       logger.LogInformation("orchestrate completed: bundle={Bundle}", bundle);
       await host.StopAsync();
     });
@@ -235,6 +238,7 @@ internal static class BuildCommands
 
     cmd.SetHandler(async (InvocationContext ctx) =>
     {
+      var ct = ctx.GetCancellationToken();
       var bundle = ctx.ParseResult.GetValueForOption(bOpt) ?? string.Empty;
       var mode = ctx.ParseResult.GetValueForOption(modeOpt) ?? string.Empty;
       HardeningMode? parsedMode = null;
@@ -268,7 +272,7 @@ internal static class BuildCommands
         bundle,
         "skip-snapshot",
         breakGlassReason,
-        CancellationToken.None);
+        ct);
 
       var runner = host.Services.GetRequiredService<STIGForge.Apply.ApplyRunner>();
       var result = await runner.RunAsync(new STIGForge.Apply.ApplyRequest
@@ -283,7 +287,7 @@ internal static class BuildCommands
         FilterCategories = filterCategories,
         PowerStigModulePath = NullIfEmpty(ctx, psModOpt), PowerStigDataFile = NullIfEmpty(ctx, psDataOpt),
         PowerStigOutputPath = NullIfEmpty(ctx, psOutOpt), PowerStigVerbose = ctx.ParseResult.GetValueForOption(psVOpt)
-      }, CancellationToken.None);
+      }, ct);
       logger.LogInformation("apply-run completed: log={LogPath}", result.LogPath);
       Console.WriteLine("Apply completed. Log: " + result.LogPath);
       if (dryRun && result.DryRunReport != null)
@@ -353,6 +357,7 @@ internal static class BuildCommands
 
     cmd.SetHandler(async (InvocationContext ctx) =>
     {
+      var ct = ctx.GetCancellationToken();
       var niwcZip = ctx.ParseResult.GetValueForOption(niwcZipOpt) ?? string.Empty;
       var niwcSourceUrl = ctx.ParseResult.GetValueForOption(niwcSourceUrlOpt) ?? "https://github.com/niwc-atlantic/scap-content-library";
       var disaStigUrl = ctx.ParseResult.GetValueForOption(disaStigUrlOpt) ?? string.Empty;
@@ -421,19 +426,19 @@ internal static class BuildCommands
           ? "NIWC_Enhanced_" + Path.GetFileNameWithoutExtension(niwcZip)
           : packName;
 
-        var imported = await importer.ImportZipAsync(niwcZip, effectivePackName, sourceLabel, CancellationToken.None);
+        var imported = await importer.ImportZipAsync(niwcZip, effectivePackName, sourceLabel, ct);
         effectivePackId = imported.PackId;
         Console.WriteLine("Imported NIWC enhanced SCAP pack: " + imported.Name + " (" + imported.PackId + ")");
       }
 
       if (string.IsNullOrWhiteSpace(effectivePackId) && !string.IsNullOrWhiteSpace(disaStigUrl))
       {
-        var downloadedDisaZip = await DownloadSourceZipAsync(disaStigUrl, "disa-stig", airGapTransferRoot, CancellationToken.None);
+        var downloadedDisaZip = await DownloadSourceZipAsync(disaStigUrl, "disa-stig", airGapTransferRoot, ct);
         downloadedArtifacts.Add(downloadedDisaZip);
         var disaPackName = string.IsNullOrWhiteSpace(packName)
           ? "DISA_STIG_" + Path.GetFileNameWithoutExtension(downloadedDisaZip)
           : packName;
-        var imported = await importer.ImportZipAsync(downloadedDisaZip, disaPackName, "disa_stig_library", CancellationToken.None);
+        var imported = await importer.ImportZipAsync(downloadedDisaZip, disaPackName, "disa_stig_library", ct);
         effectivePackId = imported.PackId;
         Console.WriteLine("Imported DISA STIG pack: " + imported.Name + " (" + imported.PackId + ")");
         Console.WriteLine("Saved DISA source archive: " + downloadedDisaZip);
@@ -441,12 +446,12 @@ internal static class BuildCommands
 
       if (string.IsNullOrWhiteSpace(effectivePackId) && allowRemoteDownloads)
       {
-        var downloadedNiwcZip = await DownloadSourceZipAsync(niwcSourceUrl, "niwc-enhanced", airGapTransferRoot, CancellationToken.None);
+        var downloadedNiwcZip = await DownloadSourceZipAsync(niwcSourceUrl, "niwc-enhanced", airGapTransferRoot, ct);
         downloadedArtifacts.Add(downloadedNiwcZip);
         var effectivePackName = string.IsNullOrWhiteSpace(packName)
           ? "NIWC_Enhanced_" + DateTimeOffset.UtcNow.ToString("yyyyMMdd_HHmm")
           : packName;
-        var imported = await importer.ImportZipAsync(downloadedNiwcZip, effectivePackName, sourceLabel, CancellationToken.None);
+        var imported = await importer.ImportZipAsync(downloadedNiwcZip, effectivePackName, sourceLabel, ct);
         effectivePackId = imported.PackId;
         Console.WriteLine("Downloaded and imported NIWC enhanced SCAP pack: " + imported.Name + " (" + imported.PackId + ")");
         Console.WriteLine("Saved NIWC source archive: " + downloadedNiwcZip);
@@ -455,7 +460,7 @@ internal static class BuildCommands
       if (string.IsNullOrWhiteSpace(effectivePackId))
         throw new ArgumentException("Unable to resolve a content pack. Provide --pack-id, --niwc-enhanced-zip, --disa-stig-url, or enable --allow-remote-downloads.");
 
-      var pack = await packs.GetAsync(effectivePackId, CancellationToken.None)
+      var pack = await packs.GetAsync(effectivePackId, ct)
         ?? throw new ArgumentException("Pack not found: " + effectivePackId);
 
       var generatedProfile = BuildGeneratedProfile(
@@ -467,10 +472,10 @@ internal static class BuildCommands
         generatedAutoNa,
         generatedNaConfidence,
         generatedNaComment);
-      var profile = await ResolveProfileAsync(profiles, profileId, profileJson, generatedProfile, saveProfile, CancellationToken.None);
+      var profile = await ResolveProfileAsync(profiles, profileId, profileJson, generatedProfile, saveProfile, ct);
 
-      var controlList = await controlsRepo.ListControlsAsync(pack.PackId, CancellationToken.None);
-      var overlays = await LoadSelectedOverlaysAsync(overlaysRepo, profile, CancellationToken.None);
+      var controlList = await controlsRepo.ListControlsAsync(pack.PackId, ct);
+      var overlays = await LoadSelectedOverlaysAsync(overlaysRepo, profile, ct);
 
       var buildResult = await builder.BuildAsync(new BundleBuildRequest
       {
@@ -481,7 +486,7 @@ internal static class BuildCommands
         Controls = controlList,
         Overlays = overlays,
         ToolVersion = "0.1.0-dev"
-      }, CancellationToken.None);
+      }, ct);
 
       var autoNaSeeded = SeedAutoNaAnswers(scope, manualAnswers, buildResult.BundleRoot, pack, profile, controlList);
 
@@ -499,7 +504,7 @@ internal static class BuildCommands
 
       if (string.IsNullOrWhiteSpace(powerStigModulePath) && allowRemoteDownloads)
       {
-        var powerStigRemote = await DownloadAndExtractPowerStigModuleAsync(powerStigSourceUrl, airGapTransferRoot, CancellationToken.None);
+        var powerStigRemote = await DownloadAndExtractPowerStigModuleAsync(powerStigSourceUrl, airGapTransferRoot, ct);
         powerStigModulePath = powerStigRemote.ModulePath;
         if (!string.IsNullOrWhiteSpace(powerStigRemote.ArchivePath)) downloadedArtifacts.Add(powerStigRemote.ArchivePath);
         if (!string.IsNullOrWhiteSpace(powerStigModulePath))
@@ -518,7 +523,7 @@ internal static class BuildCommands
         buildResult.BundleRoot,
         "skip-snapshot",
         breakGlassReason,
-        CancellationToken.None);
+        ct);
 
       await orchestrator.OrchestrateAsync(new OrchestrateRequest
       {
@@ -535,7 +540,7 @@ internal static class BuildCommands
         ScapCommandPath = scapCommandPath,
         ScapArgs = NullIfEmpty(ctx, scapArgsOpt) ?? string.Empty,
         ScapToolLabel = NullIfEmpty(ctx, scapLabelOpt)
-      }, CancellationToken.None);
+      }, ct);
 
       var manualTemplatePath = Path.Combine(buildResult.BundleRoot, "Manual", "answerfile.template.json");
       var manualAnswersPath = Path.Combine(buildResult.BundleRoot, "Manual", "answers.json");
@@ -633,7 +638,7 @@ internal static class BuildCommands
         throw new FileNotFoundException("Profile JSON not found", profileJson);
 
       var json = await File.ReadAllTextAsync(profileJson, ct).ConfigureAwait(false);
-      var profile = JsonSerializer.Deserialize<Profile>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+      var profile = JsonSerializer.Deserialize<Profile>(json, JsonOptions.CaseInsensitive)
         ?? throw new ArgumentException("Invalid profile JSON.");
 
       if (string.IsNullOrWhiteSpace(profile.ProfileId))

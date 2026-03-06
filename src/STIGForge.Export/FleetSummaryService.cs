@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using STIGForge.Core;
 using STIGForge.Verify;
 
 namespace STIGForge.Export;
@@ -10,12 +11,6 @@ namespace STIGForge.Export;
 /// </summary>
 public class FleetSummaryService
 {
-  private static readonly JsonSerializerOptions JsonOptions = new()
-  {
-    WriteIndented = true,
-    PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-  };
-
   /// <summary>
   /// Generate fleet summary from collected per-host results.
   /// </summary>
@@ -206,7 +201,7 @@ public class FleetSummaryService
 
     // JSON
     var jsonPath = Path.Combine(outputDir, "fleet_summary.json");
-    File.WriteAllText(jsonPath, JsonSerializer.Serialize(summary, JsonOptions), Encoding.UTF8);
+    File.WriteAllText(jsonPath, JsonSerializer.Serialize(summary, JsonOptions.IndentedCamelCase), Encoding.UTF8);
 
     // CSV - rows = controls, columns = hosts
     var csvPath = Path.Combine(outputDir, "fleet_summary.csv");
@@ -246,7 +241,7 @@ public class FleetSummaryService
           FileFormat = CklFileFormat.Ckl
         });
       }
-      catch
+      catch (Exception)
       {
         // Best-effort: continue with other hosts
       }
@@ -337,7 +332,7 @@ public class FleetSummaryService
             dedup[key] = result;
         }
       }
-      catch
+      catch (Exception)
       {
         // Skip corrupt report files
       }

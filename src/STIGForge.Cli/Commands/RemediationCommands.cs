@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using STIGForge.Apply.Remediation;
+using STIGForge.Core;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
 
@@ -35,6 +36,7 @@ internal static class RemediationCommands
 
     cmd.SetHandler(async (InvocationContext ctx) =>
     {
+      var ct = ctx.GetCancellationToken();
       var bundle = ctx.ParseResult.GetValueForOption(bundleOpt) ?? string.Empty;
       var modeStr = ctx.ParseResult.GetValueForOption(modeOpt) ?? "Safe";
       var dryRun = ctx.ParseResult.GetValueForOption(dryRunOpt);
@@ -55,7 +57,7 @@ internal static class RemediationCommands
       var manifestJson = await File.ReadAllTextAsync(manifestPath).ConfigureAwait(false);
       using var doc = JsonDocument.Parse(manifestJson);
       var packId = doc.RootElement.GetProperty("Pack").GetProperty("PackId").GetString() ?? string.Empty;
-      var controlList = await controls.ListControlsAsync(packId, CancellationToken.None);
+      var controlList = await controls.ListControlsAsync(packId, ct);
 
       if (ruleIds != null && ruleIds.Length > 0)
       {
@@ -72,11 +74,11 @@ internal static class RemediationCommands
         BundleRoot = bundle,
         Mode = mode,
         DryRun = dryRun
-      }, CancellationToken.None);
+      }, ct);
 
       if (json)
       {
-        Console.WriteLine(JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true }));
+        Console.WriteLine(JsonSerializer.Serialize(result, JsonOptions.Indented));
       }
       else
       {
@@ -93,7 +95,7 @@ internal static class RemediationCommands
   {
     var cmd = new Command("remediate-list", "List supported remediation rules");
 
-    cmd.SetHandler(async () =>
+    cmd.SetHandler(async (InvocationContext ctx) =>
     {
       using var host = buildHost();
       await host.StartAsync();

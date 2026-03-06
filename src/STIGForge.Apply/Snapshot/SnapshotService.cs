@@ -176,7 +176,7 @@ public sealed class SnapshotService
                 }
             }
         }
-        catch
+        catch (Exception)
         {
         }
 

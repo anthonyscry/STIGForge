@@ -26,7 +26,11 @@ internal sealed class ScriptStepHandler
 
     var command = "& " + ApplyProcessHelpers.ToPowerShellSingleQuoted(scriptPath);
     if (!string.IsNullOrWhiteSpace(args))
-      command += " " + args;
+    {
+      // Split and individually quote each argument to prevent injection via metacharacters
+      var argParts = args.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+      command += " " + string.Join(" ", argParts.Select(ApplyProcessHelpers.ToPowerShellSingleQuoted));
+    }
 
     var arguments = ApplyProcessHelpers.BuildEncodedCommandArgs(command);
 

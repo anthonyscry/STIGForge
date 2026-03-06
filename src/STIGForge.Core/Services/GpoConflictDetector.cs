@@ -81,7 +81,7 @@ public sealed class GpoConflictDetector
 
     var controls = JsonSerializer.Deserialize<List<ControlRecord>>(
       File.ReadAllText(controlsPath),
-      new JsonSerializerOptions { PropertyNameCaseInsensitive = true })
+      JsonOptions.CaseInsensitive)
       ?? new List<ControlRecord>();
 
     var settings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
@@ -138,7 +138,7 @@ public sealed class GpoConflictDetector
         if (File.Exists(rsopPath))
           File.Delete(rsopPath);
       }
-      catch
+      catch (Exception)
       {
       }
     }
@@ -158,8 +158,9 @@ public sealed class GpoConflictDetector
     {
       doc = XDocument.Parse(xml);
     }
-    catch
+    catch (Exception)
     {
+      // RSoP XML may be malformed or empty — treat as no results.
       return results;
     }
 

@@ -2,6 +2,7 @@ using System.IO.Compression;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text.Json;
+using STIGForge.Core;
 
 namespace STIGForge.Cli.Commands;
 
@@ -236,7 +237,7 @@ public sealed class SupportBundleBuilder
       commandLine = request.IncludeSensitive ? Environment.CommandLine : "[redacted]"
     };
 
-    File.WriteAllText(systemInfoPath, JsonSerializer.Serialize(metadata, new JsonSerializerOptions { WriteIndented = true }));
+    File.WriteAllText(systemInfoPath, JsonSerializer.Serialize(metadata, JsonOptions.Indented));
     files.Add(new BundleFile
     {
       ArchivePath = systemInfoPath,
@@ -276,15 +277,14 @@ public sealed class SupportBundleBuilder
       }).OrderBy(f => f.path, StringComparer.OrdinalIgnoreCase).ToList()
     };
 
-    File.WriteAllText(manifestPath, JsonSerializer.Serialize(payload, new JsonSerializerOptions { WriteIndented = true }));
+    File.WriteAllText(manifestPath, JsonSerializer.Serialize(payload, JsonOptions.Indented));
     return manifestPath;
   }
 
   private static string ComputeSha256(string filePath)
   {
     using var stream = File.OpenRead(filePath);
-    using var sha = SHA256.Create();
-    var hash = sha.ComputeHash(stream);
+    var hash = SHA256.HashData(stream);
     return Convert.ToHexString(hash).ToLowerInvariant();
   }
 

@@ -4,6 +4,7 @@ using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using STIGForge.Core;
 using STIGForge.Core.Services;
 using STIGForge.Infrastructure.System;
 
@@ -14,7 +15,6 @@ internal static class PhaseCExpansionCommands
   private const int ExitSuccess = 0;
   private const int ExitFailure = 2;
   private const int ExitActionRequired = 4;
-  private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = true };
 
   public static void Register(RootCommand rootCmd, Func<IHost> buildHost)
   {
@@ -609,7 +609,7 @@ internal static class PhaseCExpansionCommands
       Data = data
     };
 
-    Console.WriteLine(JsonSerializer.Serialize(envelope, JsonOptions));
+    Console.WriteLine(JsonSerializer.Serialize(envelope, JsonOptions.Indented));
   }
 
   private static CklConflictResolutionStrategy ParseCklMergeStrategy(string value)

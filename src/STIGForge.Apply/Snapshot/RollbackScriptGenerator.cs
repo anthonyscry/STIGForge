@@ -58,21 +58,24 @@ public sealed class RollbackScriptGenerator
         sb.AppendLine();
 
         // Restore security policy
+        var qSecPol = snapshot.SecurityPolicyPath.Replace("'", "''");
         sb.AppendLine("Write-Host 'Restoring security policy...'");
-        sb.AppendLine($"secedit /configure /cfg \"{snapshot.SecurityPolicyPath}\" /db secedit.sdb /overwrite /quiet");
+        sb.AppendLine($"secedit /configure /cfg '{qSecPol}' /db secedit.sdb /overwrite /quiet");
         sb.AppendLine();
 
         // Restore audit policy
+        var qAuditPol = snapshot.AuditPolicyPath.Replace("'", "''");
         sb.AppendLine("Write-Host 'Restoring audit policy...'");
-        sb.AppendLine($"auditpol /restore /file:\"{snapshot.AuditPolicyPath}\"");
+        sb.AppendLine($"auditpol /restore /file:'{qAuditPol}'");
         sb.AppendLine();
 
         // Restore LGPO state (optional)
         if (!string.IsNullOrWhiteSpace(snapshot.LgpoStatePath) && File.Exists(snapshot.LgpoStatePath))
         {
-            sb.AppendLine("if (Test-Path \"" + snapshot.LgpoStatePath + "\") {");
+            var qLgpo = snapshot.LgpoStatePath.Replace("'", "''");
+            sb.AppendLine("if (Test-Path '" + qLgpo + "') {");
             sb.AppendLine("    Write-Host 'Restoring LGPO state...'");
-            sb.AppendLine($"    & \"LGPO.exe\" /restore \"{snapshot.LgpoStatePath}\"");
+            sb.AppendLine($"    & 'LGPO.exe' /restore '{qLgpo}'");
             sb.AppendLine("}");
             sb.AppendLine();
         }

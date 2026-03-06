@@ -4,6 +4,7 @@ using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using STIGForge.Core;
 using STIGForge.Core.Services;
 
 namespace STIGForge.Cli.Commands;
@@ -27,6 +28,7 @@ internal static class ReleaseCommands
 
     cmd.SetHandler(async (InvocationContext ctx) =>
     {
+      var ct = ctx.GetCancellationToken();
       var packId = ctx.ParseResult.GetValueForOption(packIdOpt) ?? string.Empty;
       var json = ctx.ParseResult.GetValueForOption(jsonOpt);
 
@@ -36,11 +38,11 @@ internal static class ReleaseCommands
       var service = host.Services.GetRequiredService<StigReleaseMonitorService>();
 
       logger.LogInformation("check-release started: packId={PackId}", packId);
-      var check = await service.CheckForNewReleasesAsync(packId, CancellationToken.None);
+      var check = await service.CheckForNewReleasesAsync(packId, ct);
 
       if (json)
       {
-        Console.WriteLine(JsonSerializer.Serialize(check, new JsonSerializerOptions { WriteIndented = true }));
+        Console.WriteLine(JsonSerializer.Serialize(check, JsonOptions.Indented));
       }
       else
       {
@@ -71,6 +73,7 @@ internal static class ReleaseCommands
 
     cmd.SetHandler(async (InvocationContext ctx) =>
     {
+      var ct = ctx.GetCancellationToken();
       var baseline = ctx.ParseResult.GetValueForOption(baselineOpt) ?? string.Empty;
       var target = ctx.ParseResult.GetValueForOption(targetOpt) ?? string.Empty;
       var json = ctx.ParseResult.GetValueForOption(jsonOpt);
@@ -81,11 +84,11 @@ internal static class ReleaseCommands
       var service = host.Services.GetRequiredService<StigReleaseMonitorService>();
 
       logger.LogInformation("release-notes started: baseline={Baseline}, target={Target}", baseline, target);
-      var notes = await service.GenerateReleaseNotesAsync(baseline, target, CancellationToken.None);
+      var notes = await service.GenerateReleaseNotesAsync(baseline, target, ct);
 
       if (json)
       {
-        Console.WriteLine(JsonSerializer.Serialize(notes, new JsonSerializerOptions { WriteIndented = true }));
+        Console.WriteLine(JsonSerializer.Serialize(notes, JsonOptions.Indented));
       }
       else
       {

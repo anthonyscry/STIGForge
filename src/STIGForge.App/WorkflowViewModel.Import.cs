@@ -23,7 +23,7 @@ public partial class WorkflowViewModel
 
         try
         {
-            var result = await _importScanner.ScanAsync(ImportFolderPath, CancellationToken.None);
+            var result = await _importScanner.ScanAsync(ImportFolderPath, _cts.Token);
             _lastImportCandidates = result.Candidates;
 
             var packs = result.Candidates

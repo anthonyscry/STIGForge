@@ -21,7 +21,7 @@ public class MissionRunRepositoryTests : IDisposable
     var dbFile = Path.Combine(Path.GetTempPath(), $"missionrun_test_{Guid.NewGuid():N}.db");
     _cs = $"Data Source={dbFile}";
     DbBootstrap.EnsureCreated(_cs);
-    _repo = new MissionRunRepository(_cs);
+    _repo = new MissionRunRepository(new DbConnectionString(_cs));
   }
 
   public void Dispose()

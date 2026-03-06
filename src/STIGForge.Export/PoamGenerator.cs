@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using STIGForge.Core;
 using STIGForge.Verify;
 
 namespace STIGForge.Export;
@@ -79,11 +80,7 @@ public static class PoamGenerator
 
     // JSON export (structured data for tooling)
     var jsonPath = Path.Combine(outputDir, "poam.json");
-    var json = JsonSerializer.Serialize(package, new JsonSerializerOptions
-    {
-      WriteIndented = true,
-      PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-    });
+    var json = JsonSerializer.Serialize(package, JsonOptions.IndentedCamelCase);
     File.WriteAllText(jsonPath, json, Encoding.UTF8);
 
     // CSV export (eMASS import format)

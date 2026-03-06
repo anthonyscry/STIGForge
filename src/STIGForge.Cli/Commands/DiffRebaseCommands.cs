@@ -4,6 +4,7 @@ using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using STIGForge.Core;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
 using STIGForge.Core.Services;
@@ -23,12 +24,13 @@ internal static class DiffRebaseCommands
   private static void RegisterListPacks(RootCommand rootCmd, Func<IHost> buildHost)
   {
     var cmd = new Command("list-packs", "List all imported content packs");
-    cmd.SetHandler(async () =>
+    cmd.SetHandler(async (InvocationContext ctx) =>
     {
+      var ct = ctx.GetCancellationToken();
       using var host = buildHost();
       await host.StartAsync();
       var packs = host.Services.GetRequiredService<IContentPackRepository>();
-      var list = await packs.ListAsync(CancellationToken.None);
+      var list = await packs.ListAsync(ct);
       if (list.Count == 0) { Console.WriteLine("No packs found."); }
       else
       {
@@ -44,12 +46,13 @@ internal static class DiffRebaseCommands
   private static void RegisterListOverlays(RootCommand rootCmd, Func<IHost> buildHost)
   {
     var cmd = new Command("list-overlays", "List all overlays in the repository");
-    cmd.SetHandler(async () =>
+    cmd.SetHandler(async (InvocationContext ctx) =>
     {
+      var ct = ctx.GetCancellationToken();
       using var host = buildHost();
       await host.StartAsync();
       var repo = host.Services.GetRequiredService<IOverlayRepository>();
-      var list = await repo.ListAsync(CancellationToken.None);
+      var list = await repo.ListAsync(ct);
       if (list.Count == 0) { Console.WriteLine("No overlays found."); }
       else
       {
@@ -71,16 +74,22 @@ internal static class DiffRebaseCommands
     var jsonOpt = new Option<bool>("--json", "Output full diff as JSON");
     cmd.AddOption(baselineOpt); cmd.AddOption(targetOpt); cmd.AddOption(outputOpt); cmd.AddOption(jsonOpt);
 
-    cmd.SetHandler(async (baseline, target, output, json) =>
+    cmd.SetHandler(async (InvocationContext ctx) =>
     {
+      var baseline = ctx.ParseResult.GetValueForOption(baselineOpt) ?? string.Empty;
+      var target = ctx.ParseResult.GetValueForOption(targetOpt) ?? string.Empty;
+      var output = ctx.ParseResult.GetValueForOption(outputOpt) ?? string.Empty;
+      var json = ctx.ParseResult.GetValueForOption(jsonOpt);
+      var ct = ctx.GetCancellationToken();
+
       using var host = buildHost();
       await host.StartAsync();
       var diffService = host.Services.GetRequiredService<BaselineDiffService>();
-      var diff = await diffService.ComparePacksAsync(baseline, target, CancellationToken.None);
+      var diff = await diffService.ComparePacksAsync(baseline, target, ct);
 
       if (json)
       {
-        var jsonText = JsonSerializer.Serialize(diff, new JsonSerializerOptions { WriteIndented = true });
+        var jsonText = JsonSerializer.Serialize(diff, JsonOptions.Indented);
         if (!string.IsNullOrWhiteSpace(output)) { await File.WriteAllTextAsync(output, jsonText).ConfigureAwait(false); Console.WriteLine("JSON diff written to: " + output); }
         else Console.WriteLine(jsonText);
       }
@@ -133,7 +142,7 @@ internal static class DiffRebaseCommands
         }
       }
       await host.StopAsync();
-    }, baselineOpt, targetOpt, outputOpt, jsonOpt);
+    });
 
     rootCmd.AddCommand(cmd);
   }
@@ -152,6 +161,7 @@ internal static class DiffRebaseCommands
 
     cmd.SetHandler(async (InvocationContext ctx) =>
     {
+      var ct = ctx.GetCancellationToken();
       var overlayId = ctx.ParseResult.GetValueForOption(overlayOpt) ?? string.Empty;
       var baseline = ctx.ParseResult.GetValueForOption(baselineOpt) ?? string.Empty;
       var target = ctx.ParseResult.GetValueForOption(targetOpt) ?? string.Empty;
@@ -162,13 +172,13 @@ internal static class DiffRebaseCommands
       using var host = buildHost();
       await host.StartAsync();
       var svc = host.Services.GetRequiredService<OverlayRebaseService>();
-      var report = await svc.RebaseOverlayAsync(overlayId, baseline, target, CancellationToken.None);
+      var report = await svc.RebaseOverlayAsync(overlayId, baseline, target, ct);
 
       if (!report.Success) { Console.Error.WriteLine("Rebase failed: " + report.ErrorMessage); Environment.ExitCode = 1; await host.StopAsync(); return; }
 
       if (json)
       {
-        var text = JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true });
+        var text = JsonSerializer.Serialize(report, JsonOptions.Indented);
         if (!string.IsNullOrWhiteSpace(output)) { await File.WriteAllTextAsync(output, text).ConfigureAwait(false); Console.WriteLine("JSON report written to: " + output); }
         else Console.WriteLine(text);
       }
@@ -227,7 +237,7 @@ internal static class DiffRebaseCommands
           return;
         }
 
-        var rebased = await svc.ApplyRebaseAsync(overlayId, report, CancellationToken.None);
+        var rebased = await svc.ApplyRebaseAsync(overlayId, report, ct);
         Console.WriteLine($"Rebased overlay created: {rebased.OverlayId} ({rebased.Name})");
       }
       await host.StopAsync();

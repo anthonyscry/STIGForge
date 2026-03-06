@@ -152,7 +152,7 @@ public sealed class FleetAuditTrailTests : IDisposable
       var csvPath = Path.Combine(tempDir, "filled.csv");
       File.WriteAllLines(csvPath, csvLines);
 
-      var result = AttestationImporter.ImportAttestations(tempDir, csvPath, _audit);
+      var result = await AttestationImporter.ImportAttestationsAsync(tempDir, csvPath, _audit);
       result.Updated.Should().Be(1);
 
       var entries = await _audit.QueryAsync(new AuditQuery { Action = "import-attestations", Limit = 10 }, CancellationToken.None);

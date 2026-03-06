@@ -11,6 +11,7 @@ using System.Windows.Media;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
+using STIGForge.Core;
 using STIGForge.Core.Models;
 using STIGForge.Core.Services;
 using static STIGForge.Core.Services.BaselineDiffService;
@@ -221,7 +222,7 @@ public partial class DiffViewerViewModel : ObservableObject
     {
       try
       {
-        var json = JsonSerializer.Serialize(_diff, new JsonSerializerOptions { WriteIndented = true });
+        var json = JsonSerializer.Serialize(_diff, JsonOptions.Indented);
         await File.WriteAllTextAsync(dialog.FileName, json, Encoding.UTF8);
         MessageBox.Show($"JSON report exported to:\n{dialog.FileName}", "Export Successful", MessageBoxButton.OK, MessageBoxImage.Information);
       }

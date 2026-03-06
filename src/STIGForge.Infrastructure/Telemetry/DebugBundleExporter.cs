@@ -1,6 +1,7 @@
 using System.IO.Compression;
 using System.Runtime.InteropServices;
 using System.Text.Json;
+using STIGForge.Core;
 using STIGForge.Core.Abstractions;
 
 namespace STIGForge.Infrastructure.Telemetry;
@@ -197,7 +198,7 @@ public sealed class DebugBundleExporter
       ProcessId = Environment.ProcessId
     };
 
-    writer.Write(JsonSerializer.Serialize(info, new JsonSerializerOptions { WriteIndented = true }));
+    writer.Write(JsonSerializer.Serialize(info, JsonOptions.Indented));
     fileCount++;
   }
 
@@ -219,7 +220,7 @@ public sealed class DebugBundleExporter
       STIGForgeVersion = typeof(DebugBundleExporter).Assembly.GetName().Version?.ToString() ?? "unknown"
     };
 
-    writer.Write(JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true }));
+    writer.Write(JsonSerializer.Serialize(manifest, JsonOptions.Indented));
     fileCount++;
   }
 

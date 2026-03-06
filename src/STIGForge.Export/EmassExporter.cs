@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using STIGForge.Core;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
 using STIGForge.Verify;
@@ -278,7 +279,7 @@ public sealed class EmassExporter
         if (doc.RootElement.TryGetProperty("items", out var items))
           poamComplete = items.GetArrayLength() > 0 || !consolidated.Any(c => ExportStatusMapper.MapToVerifyStatus(c.Status) == VerifyStatus.Fail);
       }
-      catch { poamComplete = false; }
+      catch (Exception) { poamComplete = false; }
     }
 
     // attestationsComplete: all attestation records have ComplianceStatus != "Pending"
@@ -289,11 +290,11 @@ public sealed class EmassExporter
       try
       {
         var attestJson = File.ReadAllText(attestPath);
-        var package = JsonSerializer.Deserialize<AttestationPackage>(attestJson, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+        var package = JsonSerializer.Deserialize<AttestationPackage>(attestJson, JsonOptions.CaseInsensitive);
         if (package?.Attestations != null && package.Attestations.Count > 0)
           attestationsComplete = package.Attestations.All(a => !string.Equals(a.ComplianceStatus, "Pending", StringComparison.OrdinalIgnoreCase));
       }
-      catch { attestationsComplete = false; }
+      catch (Exception) { attestationsComplete = false; }
     }
 
     return new SubmissionReadiness
@@ -381,10 +382,7 @@ public sealed class EmassExporter
     if (!File.Exists(path)) return [];
 
     var json = File.ReadAllText(path);
-    var file = JsonSerializer.Deserialize<AnswerFile>(json, new JsonSerializerOptions
-    {
-      PropertyNameCaseInsensitive = true
-    });
+    var file = JsonSerializer.Deserialize<AnswerFile>(json, JsonOptions.CaseInsensitive);
 
     if (file == null) return [];
     return file.Answers;
@@ -597,10 +595,7 @@ public sealed class EmassExporter
       throw new FileNotFoundException("Bundle manifest not found", manifestPath);
 
     var json = File.ReadAllText(manifestPath);
-    var manifest = JsonSerializer.Deserialize<BundleManifestDto>(json, new JsonSerializerOptions
-    {
-      PropertyNameCaseInsensitive = true
-    });
+    var manifest = JsonSerializer.Deserialize<BundleManifestDto>(json, JsonOptions.CaseInsensitive);
 
     if (manifest == null)
       throw new InvalidOperationException("Invalid bundle manifest.");

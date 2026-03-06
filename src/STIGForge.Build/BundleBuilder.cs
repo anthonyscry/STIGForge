@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using STIGForge.Core;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
 
@@ -164,7 +165,7 @@ public sealed class BundleBuilder
       answers = Array.Empty<object>()
     };
 
-    var json = JsonSerializer.Serialize(template, new JsonSerializerOptions { WriteIndented = true });
+    var json = JsonSerializer.Serialize(template, JsonOptions.Indented);
     File.WriteAllText(path, json, Encoding.UTF8);
   }
 
@@ -218,7 +219,7 @@ public sealed class BundleBuilder
     };
     await File.WriteAllTextAsync(
       Path.Combine(reportsDir, "automation_gate.json"),
-      JsonSerializer.Serialize(automationNote, new JsonSerializerOptions { WriteIndented = true }),
+      JsonSerializer.Serialize(automationNote, JsonOptions.Indented),
       Encoding.UTF8,
       ct).ConfigureAwait(false);
   }
@@ -246,15 +247,15 @@ public sealed class BundleBuilder
     };
 
     var manifestPath = Path.Combine(manifestDir, "manifest.json");
-    var manifestJson = JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true });
+    var manifestJson = JsonSerializer.Serialize(manifest, JsonOptions.Indented);
     await File.WriteAllTextAsync(manifestPath, manifestJson, Encoding.UTF8, ct).ConfigureAwait(false);
 
     var controlsPath = Path.Combine(manifestDir, "pack_controls.json");
-    var controlsJson = JsonSerializer.Serialize(request.Controls, new JsonSerializerOptions { WriteIndented = true });
+    var controlsJson = JsonSerializer.Serialize(request.Controls, JsonOptions.Indented);
     await File.WriteAllTextAsync(controlsPath, controlsJson, Encoding.UTF8, ct).ConfigureAwait(false);
 
     var overlaysPath = Path.Combine(manifestDir, "overlays.json");
-    var overlaysJson = JsonSerializer.Serialize(request.Overlays, new JsonSerializerOptions { WriteIndented = true });
+    var overlaysJson = JsonSerializer.Serialize(request.Overlays, JsonOptions.Indented);
     await File.WriteAllTextAsync(overlaysPath, overlaysJson, Encoding.UTF8, ct).ConfigureAwait(false);
 
     var runLogPath = Path.Combine(manifestDir, "run_log.txt");
@@ -283,7 +284,7 @@ public sealed class BundleBuilder
 
     var scapManifest = _scapSelector.BuildMappingManifest(scapInput, request.Controls);
     var scapMappingManifestPath = Path.Combine(manifestDir, "scap_mapping_manifest.json");
-    var scapManifestJson = JsonSerializer.Serialize(scapManifest, new JsonSerializerOptions { WriteIndented = true });
+    var scapManifestJson = JsonSerializer.Serialize(scapManifest, JsonOptions.Indented);
     await File.WriteAllTextAsync(scapMappingManifestPath, scapManifestJson, Encoding.UTF8, ct).ConfigureAwait(false);
     return scapMappingManifestPath;
   }
@@ -378,7 +379,7 @@ public sealed class BundleBuilder
       })
       .ToArray();
 
-    var json = JsonSerializer.Serialize(decisionsArray, new JsonSerializerOptions { WriteIndented = true });
+    var json = JsonSerializer.Serialize(decisionsArray, JsonOptions.Indented);
     File.WriteAllText(path, json, Encoding.UTF8);
   }
 

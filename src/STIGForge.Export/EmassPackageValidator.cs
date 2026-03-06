@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using STIGForge.Core;
 
 namespace STIGForge.Export;
 
@@ -335,7 +336,7 @@ public sealed class EmassPackageValidator
     try
     {
       var json = File.ReadAllText(poamPath);
-      var package = JsonSerializer.Deserialize<PoamPackage>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+      var package = JsonSerializer.Deserialize<PoamPackage>(json, JsonOptions.CaseInsensitive);
       return package?.Items ?? [];
     }
     catch (Exception ex)
@@ -353,7 +354,7 @@ public sealed class EmassPackageValidator
     try
     {
       var json = File.ReadAllText(attestationPath);
-      var package = JsonSerializer.Deserialize<AttestationPackage>(json, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+      var package = JsonSerializer.Deserialize<AttestationPackage>(json, JsonOptions.CaseInsensitive);
       return package?.Attestations ?? [];
     }
     catch (Exception ex)
@@ -397,9 +398,8 @@ public sealed class EmassPackageValidator
   private static string ComputeSha256(string filePath)
   {
     using var stream = File.OpenRead(filePath);
-    using var sha256 = SHA256.Create();
-    var hashBytes = sha256.ComputeHash(stream);
-    return BitConverter.ToString(hashBytes).Replace("-", string.Empty).ToLowerInvariant();
+    var hashBytes = SHA256.HashData(stream);
+    return Convert.ToHexString(hashBytes).ToLowerInvariant();
   }
 
   private static string GetRelativePath(string root, string path)

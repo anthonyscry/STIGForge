@@ -1,4 +1,5 @@
 using System.Text.Json;
+using STIGForge.Core;
 
 namespace STIGForge.Evidence;
 
@@ -48,10 +49,7 @@ public sealed class EvidenceIndexService
         try
         {
           var json = await File.ReadAllTextAsync(metaFile, ct).ConfigureAwait(false);
-          var metadata = JsonSerializer.Deserialize<EvidenceMetadata>(json, new JsonSerializerOptions
-          {
-            PropertyNameCaseInsensitive = true
-          });
+          var metadata = JsonSerializer.Deserialize<EvidenceMetadata>(json, JsonOptions.CaseInsensitive);
 
           if (metadata == null) continue;
 
@@ -86,7 +84,7 @@ public sealed class EvidenceIndexService
             Tags = metadata.Tags
           });
         }
-        catch
+        catch (Exception)
         {
           // Skip malformed metadata files
         }
@@ -183,11 +181,7 @@ public sealed class EvidenceIndexService
     Directory.CreateDirectory(evidenceDir);
 
     var indexPath = Path.Combine(evidenceDir, "evidence_index.json");
-    var json = JsonSerializer.Serialize(index, new JsonSerializerOptions
-    {
-      WriteIndented = true,
-      PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-    });
+    var json = JsonSerializer.Serialize(index, JsonOptions.IndentedCamelCase);
 
     await File.WriteAllTextAsync(indexPath, json, ct).ConfigureAwait(false);
   }
@@ -203,9 +197,6 @@ public sealed class EvidenceIndexService
       return null;
 
     var json = await File.ReadAllTextAsync(indexPath, ct).ConfigureAwait(false);
-    return JsonSerializer.Deserialize<EvidenceIndex>(json, new JsonSerializerOptions
-    {
-      PropertyNameCaseInsensitive = true
-    });
+    return JsonSerializer.Deserialize<EvidenceIndex>(json, JsonOptions.CaseInsensitive);
   }
 }

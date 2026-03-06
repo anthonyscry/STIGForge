@@ -9,6 +9,7 @@ public interface IContentPackRepository
 {
   Task SaveAsync(ContentPack pack, CancellationToken ct);
   Task<ContentPack?> GetAsync(string packId, CancellationToken ct);
+  Task<ContentPack?> GetByManifestHashAsync(string manifestSha256, CancellationToken ct);
   Task<IReadOnlyList<ContentPack>> ListAsync(CancellationToken ct);
   Task DeleteAsync(string packId, CancellationToken ct);
 }

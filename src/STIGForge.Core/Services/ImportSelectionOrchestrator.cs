@@ -189,9 +189,8 @@ public sealed class ImportSelectionOrchestrator
     };
 
     var payload = System.Text.Json.JsonSerializer.Serialize(canonical);
-    using var sha = System.Security.Cryptography.SHA256.Create();
-    var hash = sha.ComputeHash(System.Text.Encoding.UTF8.GetBytes(payload));
-    return BitConverter.ToString(hash).Replace("-", string.Empty).ToLowerInvariant();
+    var hash = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(payload));
+    return Convert.ToHexString(hash).ToLowerInvariant();
   }
 
   private static int GetPriority(ImportSelectionArtifactType artifactType)

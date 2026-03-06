@@ -1,3 +1,4 @@
+using STIGForge.Apply.Steps;
 using STIGForge.Core.Abstractions;
 
 namespace STIGForge.Apply.Remediation.Handlers;
@@ -27,7 +28,7 @@ public sealed class RegistryRemediationHandler : RemediationHandlerBase
 
     public override async Task<RemediationResult> TestAsync(RemediationContext context, CancellationToken ct)
     {
-        var script = $"(Get-ItemProperty -Path '{_registryPath}' -Name '{_valueName}' -ErrorAction SilentlyContinue).'{_valueName}'";
+        var script = "(Get-ItemProperty -Path " + ApplyProcessHelpers.ToPowerShellSingleQuoted(_registryPath) + " -Name " + ApplyProcessHelpers.ToPowerShellSingleQuoted(_valueName) + " -ErrorAction SilentlyContinue)." + ApplyProcessHelpers.ToPowerShellSingleQuoted(_valueName);
         var currentValue = await RunPowerShellAsync(script, "PowerShell registry command failed", ct, returnNullWhenOutputEmpty: true).ConfigureAwait(false);
         var trimmedCurrent = currentValue?.Trim();
         var isCompliant = string.Equals(trimmedCurrent, _expectedValue, StringComparison.OrdinalIgnoreCase);
@@ -55,9 +56,13 @@ public sealed class RegistryRemediationHandler : RemediationHandlerBase
             return testResult;
         }
 
+        var qPath = ApplyProcessHelpers.ToPowerShellSingleQuoted(_registryPath);
+        var qName = ApplyProcessHelpers.ToPowerShellSingleQuoted(_valueName);
+        var qValue = ApplyProcessHelpers.ToPowerShellSingleQuoted(_expectedValue);
+        var qType = ApplyProcessHelpers.ToPowerShellSingleQuoted(_valueType);
         var script = $@"
-if (-not (Test-Path '{_registryPath}')) {{ New-Item -Path '{_registryPath}' -Force | Out-Null }}
-Set-ItemProperty -Path '{_registryPath}' -Name '{_valueName}' -Value '{_expectedValue}' -Type {_valueType} -Force";
+if (-not (Test-Path {qPath})) {{ New-Item -Path {qPath} -Force | Out-Null }}
+Set-ItemProperty -Path {qPath} -Name {qName} -Value {qValue} -Type {qType} -Force";
 
         await RunPowerShellAsync(script, "PowerShell registry command failed", ct, returnNullWhenOutputEmpty: true).ConfigureAwait(false);
 

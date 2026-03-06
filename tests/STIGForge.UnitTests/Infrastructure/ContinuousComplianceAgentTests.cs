@@ -270,6 +270,7 @@ public sealed class ContinuousComplianceAgentTests : IDisposable
       bundleRoot,
       (TimeSpan?)checkInterval,
       autoRemediate,
+      10,
       auditForwarder,
       auditTrail);
 

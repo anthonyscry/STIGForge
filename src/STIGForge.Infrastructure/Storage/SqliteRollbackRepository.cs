@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Dapper;
 using Microsoft.Data.Sqlite;
+using STIGForge.Core;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
 
@@ -9,7 +10,6 @@ namespace STIGForge.Infrastructure.Storage;
 public sealed class SqliteRollbackRepository : IRollbackRepository
 {
   private readonly string _cs;
-  private static readonly JsonSerializerOptions J = new();
 
   public SqliteRollbackRepository(DbConnectionString connectionString)
   {
@@ -47,10 +47,10 @@ ON CONFLICT(snapshot_id) DO UPDATE SET
         snapshot.BundleRoot,
         snapshot.Description,
         CreatedAt = snapshot.CreatedAt.ToString("o"),
-        RegistryKeysJson = JsonSerializer.Serialize(snapshot.RegistryKeys, J),
-        FilePathsJson = JsonSerializer.Serialize(snapshot.FilePaths, J),
-        ServiceStatesJson = JsonSerializer.Serialize(snapshot.ServiceStates, J),
-        GpoSettingsJson = JsonSerializer.Serialize(snapshot.GpoSettings, J),
+        RegistryKeysJson = JsonSerializer.Serialize(snapshot.RegistryKeys, JsonOptions.Default),
+        FilePathsJson = JsonSerializer.Serialize(snapshot.FilePaths, JsonOptions.Default),
+        ServiceStatesJson = JsonSerializer.Serialize(snapshot.ServiceStates, JsonOptions.Default),
+        GpoSettingsJson = JsonSerializer.Serialize(snapshot.GpoSettings, JsonOptions.Default),
         snapshot.RollbackScriptPath
       },
       cancellationToken: ct)).ConfigureAwait(false);
@@ -109,13 +109,13 @@ LIMIT @limit;";
     BundleRoot = row.BundleRoot,
     Description = row.Description,
     CreatedAt = DateTimeOffset.Parse(row.CreatedAt, null, RoundtripStyle),
-    RegistryKeys = JsonSerializer.Deserialize<List<RollbackRegistryKeyState>>(row.RegistryKeysJson ?? "[]", J)
+    RegistryKeys = JsonSerializer.Deserialize<List<RollbackRegistryKeyState>>(row.RegistryKeysJson ?? "[]", JsonOptions.Default)
       ?? new List<RollbackRegistryKeyState>(),
-    FilePaths = JsonSerializer.Deserialize<List<RollbackFilePathState>>(row.FilePathsJson ?? "[]", J)
+    FilePaths = JsonSerializer.Deserialize<List<RollbackFilePathState>>(row.FilePathsJson ?? "[]", JsonOptions.Default)
       ?? new List<RollbackFilePathState>(),
-    ServiceStates = JsonSerializer.Deserialize<List<RollbackServiceState>>(row.ServiceStatesJson ?? "[]", J)
+    ServiceStates = JsonSerializer.Deserialize<List<RollbackServiceState>>(row.ServiceStatesJson ?? "[]", JsonOptions.Default)
       ?? new List<RollbackServiceState>(),
-    GpoSettings = JsonSerializer.Deserialize<List<RollbackGpoSettingState>>(row.GpoSettingsJson ?? "[]", J)
+    GpoSettings = JsonSerializer.Deserialize<List<RollbackGpoSettingState>>(row.GpoSettingsJson ?? "[]", JsonOptions.Default)
       ?? new List<RollbackGpoSettingState>(),
     RollbackScriptPath = row.RollbackScriptPath ?? string.Empty
   };

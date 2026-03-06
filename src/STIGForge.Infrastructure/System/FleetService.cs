@@ -364,7 +364,7 @@ public sealed class FleetService
       if (!process.HasExited)
         process.Kill();
     }
-    catch
+    catch (Exception)
     {
     }
   }
@@ -494,8 +494,8 @@ public sealed class FleetService
 
       if (!string.IsNullOrWhiteSpace(target.CredentialUser))
       {
-        script.Append("$fleetUser = ").Append(ToPowerShellSingleQuoted(target.CredentialUser)).Append("; ");
-        script.Append("$fleetPass = ").Append(ToPowerShellSingleQuoted(target.CredentialPassword)).Append("; ");
+        script.Append("$fleetUser = $env:STIGFORGE_FLEET_USER; ");
+        script.Append("$fleetPass = $env:STIGFORGE_FLEET_PASS; ");
         script.Append("$fleetSecure = ConvertTo-SecureString $fleetPass -AsPlainText -Force; ");
         script.Append("$fleetCredential = New-Object System.Management.Automation.PSCredential($fleetUser, $fleetSecure); ");
         script.Append("$session = New-PSSession -ComputerName $computerName -Credential $fleetCredential; ");
@@ -556,9 +556,10 @@ public sealed class FleetService
         Timestamp = DateTimeOffset.Now
       }, ct).ConfigureAwait(false);
     }
-    catch
+    catch (Exception)
     {
-      // Audit failure should not block fleet operations
+      // Audit failure should not block fleet operations.
+      // Intentionally swallowed — FleetService has no logger dependency.
     }
   }
 

@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using STIGForge.Core;
 using STIGForge.Apply.Dsc;
 using STIGForge.Apply.Reboot;
 using STIGForge.Apply.Snapshot;
@@ -184,8 +185,9 @@ public class ApplyRunner
             {
               _logger.LogError("PowerSTIG stderr:\n{StdErr}", File.ReadAllText(outcome.StdErrPath));
             }
-            catch
+            catch (Exception ex)
             {
+              _logger.LogWarning(ex, "Failed to read PowerSTIG stderr file at {Path}", outcome.StdErrPath);
             }
           }
         }
@@ -402,7 +404,7 @@ public class ApplyRunner
       })
     };
 
-    var json = JsonSerializer.Serialize(summary, new JsonSerializerOptions { WriteIndented = true });
+    var json = JsonSerializer.Serialize(summary, JsonOptions.Indented);
     File.WriteAllText(logPath, json);
 
     if (dryRunCollector != null)
@@ -587,7 +589,7 @@ public class ApplyRunner
     DryRun.DryRunCollector dryRunCollector)
   {
     var report = dryRunCollector.Build(root, mode.ToString());
-    var reportJson = JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true });
+    var reportJson = JsonSerializer.Serialize(report, JsonOptions.Indented);
     var reportPath = Path.Combine(root, "Apply", "dry_run_report.json");
     Directory.CreateDirectory(Path.GetDirectoryName(reportPath)!);
     File.WriteAllText(reportPath, reportJson);

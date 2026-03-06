@@ -127,9 +127,17 @@ public static class DomainGpoBackupParser
         return null;
     }
 
+    private static XmlReaderSettings SecureXmlSettings => new()
+    {
+        DtdProcessing = DtdProcessing.Prohibit,
+        XmlResolver = null,
+        MaxCharactersInDocument = 10_000_000
+    };
+
     private static DomainGpoBackupInfo ParseBackupXml(string xmlPath, string backupDir, string dirGuid)
     {
-        var doc = XDocument.Load(xmlPath);
+        using var reader = XmlReader.Create(xmlPath, SecureXmlSettings);
+        var doc = XDocument.Load(reader, LoadOptions.None);
 
         // Search all descendants for the relevant elements (namespace-agnostic)
         string? displayName = doc.Descendants().FirstOrDefault(e => e.Name.LocalName == "DisplayName")?.Value?.Trim();
@@ -148,7 +156,8 @@ public static class DomainGpoBackupParser
 
     private static DomainGpoBackupInfo ParseBkupInfoXml(string xmlPath, string backupDir, string dirGuid)
     {
-        var doc = XDocument.Load(xmlPath);
+        using var reader = XmlReader.Create(xmlPath, SecureXmlSettings);
+        var doc = XDocument.Load(reader, LoadOptions.None);
 
         string? displayName = doc.Descendants().FirstOrDefault(e => e.Name.LocalName == "GPODisplayName")?.Value?.Trim();
         string? gpoGuid = doc.Descendants().FirstOrDefault(e => e.Name.LocalName == "GPOGuid")?.Value?.Trim();
@@ -208,7 +217,7 @@ public static class DomainGpoBackupParser
                 ?? Directory.EnumerateDirectories(extractedRoot, "*", SearchOption.TopDirectoryOnly)
                     .FirstOrDefault(d => string.Equals(Path.GetFileName(d), "GPOs", StringComparison.OrdinalIgnoreCase));
         }
-        catch
+        catch (Exception)
         {
             return null;
         }

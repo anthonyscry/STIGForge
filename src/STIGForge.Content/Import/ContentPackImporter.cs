@@ -1,4 +1,5 @@
 using System.Text.Json;
+using STIGForge.Core;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
 using STIGForge.Content.Models;
@@ -116,7 +117,7 @@ public sealed class ContentPackImporter
 
         try
         {
-            _zipHandler.ExtractZipSafely(consolidatedZipPath, extractionRoot, ct);
+            await _zipHandler.ExtractZipSafelyAsync(consolidatedZipPath, extractionRoot, ct).ConfigureAwait(false);
 
             var nestedZipPaths = Directory
                 .EnumerateFiles(extractionRoot, "*.zip", SearchOption.AllDirectories)
@@ -206,7 +207,7 @@ public sealed class ContentPackImporter
                             }
                             finally
                             {
-                                try { Directory.Delete(tempRoot, true); } catch { }
+                                try { Directory.Delete(tempRoot, true); } catch (Exception) { }
                             }
                         }
                         finally
@@ -264,8 +265,8 @@ public sealed class ContentPackImporter
 
         try
         {
-            _zipHandler.ExtractZipSafely(zipPath, extractionRoot, ct);
-            _zipHandler.ExpandNestedZipArchives(extractionRoot, maxPasses: 2, ct);
+            await _zipHandler.ExtractZipSafelyAsync(zipPath, extractionRoot, ct).ConfigureAwait(false);
+            await _zipHandler.ExpandNestedZipArchivesAsync(extractionRoot, maxPasses: 2, ct).ConfigureAwait(false);
 
             var admxGroups = Directory.EnumerateFiles(extractionRoot, "*.admx", SearchOption.AllDirectories)
                 .Select(path => new
@@ -325,7 +326,7 @@ public sealed class ContentPackImporter
                 }
                 finally
                 {
-                    try { Directory.Delete(templateRoot, true); } catch { }
+                    try { Directory.Delete(templateRoot, true); } catch (Exception) { }
                 }
             }
 
@@ -333,7 +334,7 @@ public sealed class ContentPackImporter
         }
         finally
         {
-            try { Directory.Delete(extractionRoot, true); } catch { }
+            try { Directory.Delete(extractionRoot, true); } catch (Exception) { }
         }
     }
 
@@ -374,9 +375,7 @@ public sealed class ContentPackImporter
 
             var directoryManifestHash = await _manifestBuilder.ComputeDirectoryManifestSha256Async(rawRoot, ct).ConfigureAwait(false);
 
-            var existingPacks = await _packs.ListAsync(ct).ConfigureAwait(false);
-            var existingPack = existingPacks.FirstOrDefault(p =>
-                string.Equals(p.ManifestSha256, directoryManifestHash, StringComparison.OrdinalIgnoreCase));
+            var existingPack = await _packs.GetByManifestHashAsync(directoryManifestHash, ct).ConfigureAwait(false);
             if (existingPack != null)
                 return existingPack;
 
@@ -411,13 +410,13 @@ public sealed class ContentPackImporter
             };
             await File.WriteAllTextAsync(
                 Path.Combine(packRoot, "import_note.json"),
-                JsonSerializer.Serialize(note, new JsonSerializerOptions { WriteIndented = true }),
+                JsonSerializer.Serialize(note, JsonOptions.Indented),
                 ct).ConfigureAwait(false);
 
             var compatibility = processing.Compatibility;
             await File.WriteAllTextAsync(
                 Path.Combine(packRoot, "compatibility_matrix.json"),
-                JsonSerializer.Serialize(compatibility, new JsonSerializerOptions { WriteIndented = true }),
+                JsonSerializer.Serialize(compatibility, JsonOptions.Indented),
                 ct).ConfigureAwait(false);
 
             checkpoint.Stage = ImportStage.Complete;
@@ -476,7 +475,7 @@ public sealed class ContentPackImporter
 
         try
         {
-            _zipHandler.ExtractZipSafely(zipPath, rawRoot, ct);
+            await _zipHandler.ExtractZipSafelyAsync(zipPath, rawRoot, ct).ConfigureAwait(false);
 
             checkpoint.Stage = ImportStage.Parsing;
             checkpoint.Save(packRoot);
@@ -515,11 +514,11 @@ public sealed class ContentPackImporter
 
             var notePath = Path.Combine(packRoot, "import_note.json");
             Directory.CreateDirectory(packRoot);
-            await File.WriteAllTextAsync(notePath, JsonSerializer.Serialize(note, new JsonSerializerOptions { WriteIndented = true }), ct).ConfigureAwait(false);
+            await File.WriteAllTextAsync(notePath, JsonSerializer.Serialize(note, JsonOptions.Indented), ct).ConfigureAwait(false);
 
             var compatibility = processing.Compatibility;
             var compatibilityPath = Path.Combine(packRoot, "compatibility_matrix.json");
-            await File.WriteAllTextAsync(compatibilityPath, JsonSerializer.Serialize(compatibility, new JsonSerializerOptions { WriteIndented = true }), ct).ConfigureAwait(false);
+            await File.WriteAllTextAsync(compatibilityPath, JsonSerializer.Serialize(compatibility, JsonOptions.Indented), ct).ConfigureAwait(false);
 
             checkpoint.Stage = ImportStage.Complete;
             checkpoint.CompletedAt = DateTimeOffset.Now;

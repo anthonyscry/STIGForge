@@ -68,7 +68,7 @@ public sealed class ScapRunner
       if (!process.HasExited)
         process.Kill();
     }
-    catch
+    catch (Exception)
     {
     }
   }

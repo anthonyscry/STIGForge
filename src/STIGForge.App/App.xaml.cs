@@ -120,7 +120,7 @@ public partial class App : Application
           services.AddSingleton<IControlRepository>(sp => new SqliteJsonControlRepository(sp.GetRequiredService<DbConnectionString>()));
           services.AddSingleton<IProfileRepository>(sp => new SqliteJsonProfileRepository(sp.GetRequiredService<DbConnectionString>()));
           services.AddSingleton<IOverlayRepository>(sp => new SqliteJsonOverlayRepository(sp.GetRequiredService<DbConnectionString>()));
-          services.AddSingleton<IMissionRunRepository>(sp => new MissionRunRepository(sp.GetRequiredService<DbConnectionString>().Value));
+          services.AddSingleton<IMissionRunRepository>(sp => new MissionRunRepository(sp.GetRequiredService<DbConnectionString>()));
           services.AddSingleton<IDriftRepository>(sp => new SqliteDriftRepository(sp.GetRequiredService<DbConnectionString>()));
           services.AddSingleton<IRollbackRepository>(sp => new SqliteRollbackRepository(sp.GetRequiredService<DbConnectionString>()));
 
@@ -165,7 +165,7 @@ public partial class App : Application
             new DpapiCredentialStore(sp.GetRequiredService<IPathBuilder>()));
           services.AddSingleton<ScheduledTaskService>();
           services.AddSingleton<FleetService>(sp =>
-            new FleetService(sp.GetRequiredService<ICredentialStore>()));
+            new FleetService(sp.GetRequiredService<ICredentialStore>(), sp.GetRequiredService<IAuditTrailService>()));
 
           services.AddSingleton<MainWindow>();
         })
@@ -252,7 +252,7 @@ public partial class App : Application
 
       return key is not null && Convert.ToInt32(key.GetValue("AppsUseLightTheme", 1)) == 1;
     }
-    catch
+    catch (Exception)
     {
       return false;
     }
@@ -341,7 +341,7 @@ public partial class App : Application
         File.AppendAllText(path, line + Environment.NewLine, Encoding.UTF8);
       }
     }
-    catch
+    catch (Exception)
     {
     }
   }
@@ -409,7 +409,7 @@ public partial class App : Application
       {
         Log.Error(ex, "Error during application shutdown.");
       }
-      catch
+      catch (Exception)
       {
       }
     }

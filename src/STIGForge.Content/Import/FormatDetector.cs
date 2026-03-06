@@ -84,7 +84,7 @@ internal sealed class FormatDetector
                 return !string.IsNullOrWhiteSpace(rootLocalName);
             }
         }
-        catch
+        catch (Exception)
         {
         }
 

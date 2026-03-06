@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Microsoft.Win32;
+using STIGForge.Core;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
 using STIGForge.Core.Services;
@@ -20,6 +21,7 @@ public partial class AnswerRebaseWizardViewModel : ObservableObject
   private readonly IControlRepository _controls;
   private readonly AnswerRebaseService _rebaseService;
   private readonly ManualAnswerService _answerService;
+  private readonly CancellationTokenSource _cts = new();
   private AnswerRebaseReport? _report;
 
   public event Action? CloseRequested;
@@ -100,7 +102,7 @@ public partial class AnswerRebaseWizardViewModel : ObservableObject
         BundleRoot,
         SelectedBaselinePack.PackId,
         SelectedTargetPack.PackId,
-        CancellationToken.None);
+        _cts.Token);
 
       TotalAnswers = _report.Actions.Count;
 
@@ -169,11 +171,7 @@ public partial class AnswerRebaseWizardViewModel : ObservableObject
 
       var rebasedPath = Path.Combine(BundleRoot, "Manual", "answers_rebased.json");
       Directory.CreateDirectory(Path.GetDirectoryName(rebasedPath)!);
-      var json = JsonSerializer.Serialize(rebased, new JsonSerializerOptions
-      {
-        WriteIndented = true,
-        PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-      });
+      var json = JsonSerializer.Serialize(rebased, JsonOptions.IndentedCamelCase);
       File.WriteAllText(rebasedPath, json);
 
       RebasedFilePath = rebasedPath;
@@ -267,7 +265,7 @@ public partial class AnswerRebaseWizardViewModel : ObservableObject
 
     try
     {
-      var json = JsonSerializer.Serialize(_report, new JsonSerializerOptions { WriteIndented = true });
+      var json = JsonSerializer.Serialize(_report, JsonOptions.Indented);
       await File.WriteAllTextAsync(dialog.FileName, json, Encoding.UTF8);
       AnalysisStatus = "Answer rebase JSON report exported: " + dialog.FileName;
     }

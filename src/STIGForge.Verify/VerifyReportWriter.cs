@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using STIGForge.Core;
 
 namespace STIGForge.Verify;
 
@@ -27,7 +28,7 @@ public static class VerifyReportWriter
 
   public static void WriteJson(string path, VerifyReport report)
   {
-    var json = JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true });
+    var json = JsonSerializer.Serialize(report, JsonOptions.Indented);
     File.WriteAllText(path, json, Encoding.UTF8);
   }
 
@@ -140,7 +141,7 @@ public static class VerifyReportWriter
 
   public static void WriteOverlapSummary(string csvPath, string jsonPath, IReadOnlyList<CoverageOverlap> overlaps)
   {
-    var json = JsonSerializer.Serialize(overlaps, new JsonSerializerOptions { WriteIndented = true });
+    var json = JsonSerializer.Serialize(overlaps, JsonOptions.Indented);
     File.WriteAllText(jsonPath, json, Encoding.UTF8);
 
     var sb = new StringBuilder(overlaps.Count * 64 + 128);
@@ -177,7 +178,7 @@ public static class VerifyReportWriter
 
   public static void WriteCoverageSummary(string csvPath, string jsonPath, IReadOnlyList<CoverageSummary> summaries)
   {
-    var json = JsonSerializer.Serialize(summaries, new JsonSerializerOptions { WriteIndented = true });
+    var json = JsonSerializer.Serialize(summaries, JsonOptions.Indented);
     File.WriteAllText(jsonPath, json, Encoding.UTF8);
 
     var sb = new StringBuilder(summaries.Count * 64 + 128);

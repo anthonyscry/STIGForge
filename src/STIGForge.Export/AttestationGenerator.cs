@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using STIGForge.Core;
 
 namespace STIGForge.Export;
 
@@ -56,11 +57,7 @@ public static class AttestationGenerator
 
     // JSON template (structured data)
     var jsonPath = Path.Combine(outputDir, "attestations.json");
-    var json = JsonSerializer.Serialize(package, new JsonSerializerOptions
-    {
-      WriteIndented = true,
-      PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-    });
+    var json = JsonSerializer.Serialize(package, JsonOptions.IndentedCamelCase);
     File.WriteAllText(jsonPath, json, Encoding.UTF8);
 
     // CSV template (fillable spreadsheet)

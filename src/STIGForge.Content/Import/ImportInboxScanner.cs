@@ -8,6 +8,13 @@ namespace STIGForge.Content.Import;
 
 public sealed class ImportInboxScanner
 {
+  private static XmlReaderSettings SecureXmlSettings => new()
+  {
+    DtdProcessing = DtdProcessing.Prohibit,
+    XmlResolver = null,
+    MaxCharactersInDocument = 10_000_000
+  };
+
   private static readonly Regex DisaVersionRegex = new(@"V\s*(\d+)\s*R\s*(\d+)", RegexOptions.IgnoreCase | RegexOptions.Compiled);
   private readonly IHashingService _hash;
 
@@ -334,7 +341,8 @@ public sealed class ImportInboxScanner
     try
     {
       using var stream = admxEntry.Open();
-      var doc = XDocument.Load(stream, LoadOptions.None);
+      using var reader = XmlReader.Create(stream, SecureXmlSettings);
+      var doc = XDocument.Load(reader, LoadOptions.None);
       var root = doc.Root;
       var targetNs = root?.Attribute("targetNamespace")?.Value?.Trim() ?? string.Empty;
       if (string.IsNullOrWhiteSpace(targetNs))
@@ -362,7 +370,7 @@ public sealed class ImportInboxScanner
         return "admx:" + identity + ":" + normalizedRevision;
       }
     }
-    catch
+    catch (Exception)
     {
     }
 
@@ -374,7 +382,8 @@ public sealed class ImportInboxScanner
     try
     {
       using var stream = xccdfEntry.Open();
-      var doc = XDocument.Load(stream, LoadOptions.None);
+      using var reader = XmlReader.Create(stream, SecureXmlSettings);
+      var doc = XDocument.Load(reader, LoadOptions.None);
       var root = doc.Root;
       if (root == null)
       {
@@ -421,7 +430,7 @@ public sealed class ImportInboxScanner
 
       candidate.ContentKey = defaultPrefix + ":" + NormalizeKey(keyIdentity);
     }
-    catch
+    catch (Exception)
     {
       candidate.ContentKey = defaultPrefix + ":" + Path.GetFileNameWithoutExtension(xccdfEntry.FullName).ToLowerInvariant();
     }
@@ -503,7 +512,7 @@ public sealed class ImportInboxScanner
         return !string.IsNullOrWhiteSpace(rootLocalName);
       }
     }
-    catch
+    catch (Exception)
     {
     }
 

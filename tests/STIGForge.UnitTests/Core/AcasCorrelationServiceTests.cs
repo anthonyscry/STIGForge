@@ -23,7 +23,7 @@ public sealed class AcasCorrelationServiceTests : IDisposable
   }
 
   [Fact]
-  public void Correlate_WithStigRuleIdMatch_CreatesStigRuleCorrelation()
+  public async Task Correlate_WithStigRuleIdMatch_CreatesStigRuleCorrelation()
   {
     var file = WriteNessusFile(
       CreateReportItem(pluginId: "10001", pluginName: "Rule ID finding", severity: 2, stigRuleId: "SV-10001r1_rule"));
@@ -34,7 +34,7 @@ public sealed class AcasCorrelationServiceTests : IDisposable
 
     var sut = new AcasCorrelationService(new NessusImporter(), controlRepo);
 
-    var result = sut.Correlate(file, "bundle-a");
+    var result = await sut.CorrelateAsync(file, "bundle-a", CancellationToken.None);
 
     result.TotalFindings.Should().Be(1);
     result.CorrelatedCount.Should().Be(1);
@@ -45,7 +45,7 @@ public sealed class AcasCorrelationServiceTests : IDisposable
   }
 
   [Fact]
-  public void Correlate_WithTitleKeywordMatch_UsesFuzzyTitleCorrelation()
+  public async Task Correlate_WithTitleKeywordMatch_UsesFuzzyTitleCorrelation()
   {
     var file = WriteNessusFile(
       CreateReportItem(pluginId: "10002", pluginName: "Disable legacy protocol service", severity: 1));
@@ -56,7 +56,7 @@ public sealed class AcasCorrelationServiceTests : IDisposable
 
     var sut = new AcasCorrelationService(new NessusImporter(), controlRepo);
 
-    var result = sut.Correlate(file, "bundle-a");
+    var result = await sut.CorrelateAsync(file, "bundle-a", CancellationToken.None);
 
     result.CorrelatedCount.Should().Be(1);
     result.Correlations[0].CorrelationType.Should().Be("TitleMatch");
@@ -64,7 +64,7 @@ public sealed class AcasCorrelationServiceTests : IDisposable
   }
 
   [Fact]
-  public void Correlate_WithCveMatch_UsesCveCorrelation()
+  public async Task Correlate_WithCveMatch_UsesCveCorrelation()
   {
     var file = WriteNessusFile(
       CreateReportItem(pluginId: "10003", pluginName: "Kernel vulnerability", severity: 2, cves: ["CVE-2024-12345"]));
@@ -75,7 +75,7 @@ public sealed class AcasCorrelationServiceTests : IDisposable
 
     var sut = new AcasCorrelationService(new NessusImporter(), controlRepo);
 
-    var result = sut.Correlate(file, "bundle-a");
+    var result = await sut.CorrelateAsync(file, "bundle-a", CancellationToken.None);
 
     result.CorrelatedCount.Should().Be(1);
     result.Correlations[0].CorrelationType.Should().Be("CveMatch");
@@ -83,7 +83,7 @@ public sealed class AcasCorrelationServiceTests : IDisposable
   }
 
   [Fact]
-  public void Correlate_WithoutAnyMatch_TracksUnmatchedFinding()
+  public async Task Correlate_WithoutAnyMatch_TracksUnmatchedFinding()
   {
     var file = WriteNessusFile(
       CreateReportItem(pluginId: "10004", pluginName: "Unmapped plugin", severity: 3));
@@ -94,7 +94,7 @@ public sealed class AcasCorrelationServiceTests : IDisposable
 
     var sut = new AcasCorrelationService(new NessusImporter(), controlRepo);
 
-    var result = sut.Correlate(file, "bundle-a");
+    var result = await sut.CorrelateAsync(file, "bundle-a", CancellationToken.None);
 
     result.CorrelatedCount.Should().Be(0);
     result.UnmatchedCount.Should().Be(1);
@@ -103,7 +103,7 @@ public sealed class AcasCorrelationServiceTests : IDisposable
   }
 
   [Fact]
-  public void Correlate_WithMixedMatchesAndUnmatched_ReturnsExpectedCountsAndOrdering()
+  public async Task Correlate_WithMixedMatchesAndUnmatched_ReturnsExpectedCountsAndOrdering()
   {
     var file = WriteNessusFile(
       CreateReportItem(pluginId: "10005", pluginName: "Rule-based", severity: 1, stigRuleId: "SV-10005r1_rule"),
@@ -117,7 +117,7 @@ public sealed class AcasCorrelationServiceTests : IDisposable
 
     var sut = new AcasCorrelationService(new NessusImporter(), controlRepo);
 
-    var result = sut.Correlate(file, "bundle-a");
+    var result = await sut.CorrelateAsync(file, "bundle-a", CancellationToken.None);
 
     result.TotalFindings.Should().Be(3);
     result.CorrelatedCount.Should().Be(2);
@@ -144,7 +144,7 @@ public sealed class AcasCorrelationServiceTests : IDisposable
   }
 
   [Fact]
-  public void Correlate_WithHighManualControl_SetsAcasHighNotReviewedMismatch()
+  public async Task Correlate_WithHighManualControl_SetsAcasHighNotReviewedMismatch()
   {
     var file = WriteNessusFile(
       CreateReportItem(pluginId: "10009", pluginName: "Manual high", severity: 3, stigRuleId: "SV-10009r1_rule"));
@@ -155,14 +155,14 @@ public sealed class AcasCorrelationServiceTests : IDisposable
 
     var sut = new AcasCorrelationService(new NessusImporter(), controlRepo);
 
-    var result = sut.Correlate(file, "bundle-a");
+    var result = await sut.CorrelateAsync(file, "bundle-a", CancellationToken.None);
 
     result.Correlations.Should().ContainSingle();
     result.Correlations[0].MismatchType.Should().Be("AcasHighNotReviewed");
   }
 
   [Fact]
-  public void Correlate_WithHighAndLowControlSeverity_SetsAcasHighSeverityMismatch()
+  public async Task Correlate_WithHighAndLowControlSeverity_SetsAcasHighSeverityMismatch()
   {
     var file = WriteNessusFile(
       CreateReportItem(pluginId: "10010", pluginName: "Severity mismatch", severity: 4, stigRuleId: "SV-10010r1_rule"));
@@ -173,14 +173,14 @@ public sealed class AcasCorrelationServiceTests : IDisposable
 
     var sut = new AcasCorrelationService(new NessusImporter(), controlRepo);
 
-    var result = sut.Correlate(file, "bundle-a");
+    var result = await sut.CorrelateAsync(file, "bundle-a", CancellationToken.None);
 
     result.Correlations.Should().ContainSingle();
     result.Correlations[0].MismatchType.Should().Be("AcasHighSeverityMismatch");
   }
 
   [Fact]
-  public void Correlate_WithEmptyFindings_ReturnsEmptyCorrelationResult()
+  public async Task Correlate_WithEmptyFindings_ReturnsEmptyCorrelationResult()
   {
     var file = WriteNessusFile();
     var controlRepo = new InMemoryControlRepository([
@@ -188,7 +188,7 @@ public sealed class AcasCorrelationServiceTests : IDisposable
     ]);
     var sut = new AcasCorrelationService(new NessusImporter(), controlRepo);
 
-    var result = sut.Correlate(file, "bundle-a");
+    var result = await sut.CorrelateAsync(file, "bundle-a", CancellationToken.None);
 
     result.TotalFindings.Should().Be(0);
     result.CorrelatedCount.Should().Be(0);

@@ -9,7 +9,7 @@ public static class ScapBundleParser
   private const int MaxArchiveEntryCount = 4096;
   private const long MaxExtractedBytes = 512L * 1024L * 1024L;
 
-  public static IReadOnlyList<ControlRecord> Parse(string bundleZipPath, string packName)
+  public static async Task<IReadOnlyList<ControlRecord>> ParseAsync(string bundleZipPath, string packName)
   {
     if (!File.Exists(bundleZipPath))
       throw new FileNotFoundException("SCAP bundle ZIP not found", bundleZipPath);
@@ -19,7 +19,7 @@ public static class ScapBundleParser
 
     try
     {
-      ExtractZipSafely(bundleZipPath, tempRoot);
+      await ExtractZipSafelyAsync(bundleZipPath, tempRoot).ConfigureAwait(false);
 
       var xccdfFiles = Directory
         .GetFiles(tempRoot, "*.xml", SearchOption.AllDirectories)
@@ -44,7 +44,7 @@ public static class ScapBundleParser
     }
   }
 
-  private static void ExtractZipSafely(string zipPath, string destinationRoot)
+  private static async Task ExtractZipSafelyAsync(string zipPath, string destinationRoot)
   {
     var destinationRootFullPath = Path.GetFullPath(destinationRoot);
     var destinationRootPrefix = destinationRootFullPath.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal)
@@ -83,8 +83,8 @@ public static class ScapBundleParser
         Directory.CreateDirectory(directory);
 
       using var entryStream = entry.Open();
-      using var outputStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None);
-      entryStream.CopyTo(outputStream);
+      using var outputStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true);
+      await entryStream.CopyToAsync(outputStream).ConfigureAwait(false);
     }
   }
 }

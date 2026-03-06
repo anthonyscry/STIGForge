@@ -32,7 +32,7 @@ public sealed class ScapResultAdapter : IVerifyResultAdapter
       return root?.Name.LocalName == "Benchmark" && root.Name.Namespace == XccdfNs
              || root?.Name.LocalName == "TestResult" && root.Name.Namespace == XccdfNs;
     }
-    catch
+    catch (Exception)
     {
       return false;
     }

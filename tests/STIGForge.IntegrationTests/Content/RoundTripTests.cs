@@ -365,6 +365,13 @@ public sealed class RoundTripTests : IDisposable
       return Task.FromResult(pack);
     }
 
+    public Task<ContentPack?> GetByManifestHashAsync(string manifestSha256, CancellationToken ct)
+    {
+      var match = _packs.Values.FirstOrDefault(p =>
+        string.Equals(p.ManifestSha256, manifestSha256, StringComparison.OrdinalIgnoreCase));
+      return Task.FromResult(match);
+    }
+
     public Task<IReadOnlyList<ContentPack>> ListAsync(CancellationToken ct)
       => Task.FromResult<IReadOnlyList<ContentPack>>(_packs.Values.ToList());
 

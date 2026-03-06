@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using STIGForge.Core;
 
 namespace STIGForge.Apply;
 
@@ -69,7 +70,7 @@ public sealed class PreflightRunner
       var completed = process.WaitForExit((int)DefaultTimeout.TotalMilliseconds);
       if (!completed)
       {
-        try { process.Kill(); } catch { /* best effort */ }
+        try { process.Kill(); } catch (Exception) { /* best effort */ }
         return new PreflightResult
         {
           Ok = false,
@@ -115,7 +116,7 @@ public sealed class PreflightRunner
 
     try
     {
-      var options = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+      var options = JsonOptions.CaseInsensitive;
       var parsed = JsonSerializer.Deserialize<PreflightResult>(stdout.Trim(), options);
       if (parsed != null)
       {
@@ -124,7 +125,7 @@ public sealed class PreflightRunner
         return parsed;
       }
     }
-    catch
+    catch (Exception)
     {
       // JSON parse failed — fall through to raw output handling
     }

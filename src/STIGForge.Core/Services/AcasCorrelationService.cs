@@ -14,12 +14,16 @@ public sealed class AcasCorrelationService
     _controlRepo = controlRepo;
   }
 
+  [Obsolete("Use CorrelateAsync instead to avoid potential deadlocks in UI contexts.")]
   public AcasCorrelationResult Correlate(string nessusFilePath, string? bundleRoot = null)
   {
     var findings = _nessusImporter.Import(nessusFilePath);
     var correlations = new List<AcasControlCorrelation>();
     var unmatched = new List<NessusFinding>();
-    var controls = LoadControls(bundleRoot);
+    // Avoid sync-over-async: only use controls if repo is null (no DB call needed)
+    IReadOnlyList<ControlRecord> controls = _controlRepo == null || string.IsNullOrWhiteSpace(bundleRoot)
+      ? []
+      : throw new InvalidOperationException("Use CorrelateAsync for async control loading. The synchronous Correlate method cannot safely access the control repository.");
 
     foreach (var finding in findings)
     {
@@ -66,14 +70,6 @@ public sealed class AcasCorrelationService
       Correlations = correlations.OrderByDescending(c => c.Finding.Severity).ToList(),
       UnmatchedFindings = unmatched.OrderByDescending(f => f.Severity).ToList()
     };
-  }
-
-  private IReadOnlyList<ControlRecord> LoadControls(string? bundleRoot)
-  {
-    if (_controlRepo == null || string.IsNullOrWhiteSpace(bundleRoot))
-      return [];
-
-    return Task.Run(() => _controlRepo.ListControlsAsync(bundleRoot, CancellationToken.None)).Result;
   }
 
   private async Task<IReadOnlyList<ControlRecord>> LoadControlsAsync(string? bundleRoot, CancellationToken ct)

@@ -4,6 +4,7 @@ using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using STIGForge.Core;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Services;
 
@@ -44,7 +45,7 @@ internal class DriftCommands
 
         if (json)
         {
-          Console.WriteLine(JsonSerializer.Serialize(result, new JsonSerializerOptions { WriteIndented = true }));
+          Console.WriteLine(JsonSerializer.Serialize(result, JsonOptions.Indented));
         }
         else
         {
@@ -126,7 +127,7 @@ internal class DriftCommands
 
         if (json)
         {
-          Console.WriteLine(JsonSerializer.Serialize(history, new JsonSerializerOptions { WriteIndented = true }));
+          Console.WriteLine(JsonSerializer.Serialize(history, JsonOptions.Indented));
         }
         else
         {

@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.CommandLine.Invocation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -29,8 +30,15 @@ internal static class VerifyCommands
     cmd.AddOption(toolRootOpt); cmd.AddOption(argsOpt); cmd.AddOption(workDirOpt);
     cmd.AddOption(logOpt); cmd.AddOption(outputRootOpt);
 
-    cmd.SetHandler(async (toolRoot, args, workDir, logPath, outputRoot) =>
+    cmd.SetHandler(async (InvocationContext ctx) =>
     {
+      var toolRoot = ctx.ParseResult.GetValueForOption(toolRootOpt) ?? string.Empty;
+      var args = ctx.ParseResult.GetValueForOption(argsOpt) ?? string.Empty;
+      var workDir = ctx.ParseResult.GetValueForOption(workDirOpt) ?? string.Empty;
+      var logPath = ctx.ParseResult.GetValueForOption(logOpt) ?? string.Empty;
+      var outputRoot = ctx.ParseResult.GetValueForOption(outputRootOpt) ?? string.Empty;
+      var ct = ctx.GetCancellationToken();
+
       var workflowResult = await RunWorkflowAsync(
         buildHost,
         outputRoot,
@@ -44,7 +52,8 @@ internal static class VerifyCommands
             Arguments = args ?? string.Empty,
             WorkingDirectory = string.IsNullOrWhiteSpace(workDir) ? null : workDir
           };
-        });
+        },
+        ct);
 
       var evalRun = workflowResult.ToolRuns.FirstOrDefault(r => r.Tool.IndexOf("Evaluate", StringComparison.OrdinalIgnoreCase) >= 0);
       if (evalRun != null)
@@ -59,7 +68,7 @@ internal static class VerifyCommands
       }
 
       PrintConsolidatedOutput(outputRoot, workflowResult);
-    }, toolRootOpt, argsOpt, workDirOpt, logOpt, outputRootOpt);
+    });
 
     rootCmd.AddCommand(cmd);
   }
@@ -77,8 +86,16 @@ internal static class VerifyCommands
     cmd.AddOption(exeOpt); cmd.AddOption(argsOpt); cmd.AddOption(workOpt);
     cmd.AddOption(outOpt); cmd.AddOption(toolOpt); cmd.AddOption(logOpt);
 
-    cmd.SetHandler(async (exe, args, workDir, outputRoot, toolName, logPath) =>
+    cmd.SetHandler(async (InvocationContext ctx) =>
     {
+      var exe = ctx.ParseResult.GetValueForOption(exeOpt) ?? string.Empty;
+      var args = ctx.ParseResult.GetValueForOption(argsOpt) ?? string.Empty;
+      var workDir = ctx.ParseResult.GetValueForOption(workOpt) ?? string.Empty;
+      var outputRoot = ctx.ParseResult.GetValueForOption(outOpt) ?? string.Empty;
+      var toolName = ctx.ParseResult.GetValueForOption(toolOpt) ?? string.Empty;
+      var logPath = ctx.ParseResult.GetValueForOption(logOpt) ?? string.Empty;
+      var ct = ctx.GetCancellationToken();
+
       var workflowResult = await RunWorkflowAsync(
         buildHost,
         outputRoot,
@@ -93,7 +110,8 @@ internal static class VerifyCommands
             WorkingDirectory = string.IsNullOrWhiteSpace(workDir) ? null : workDir,
             ToolLabel = string.IsNullOrWhiteSpace(toolName) ? "SCAP" : toolName
           };
-        });
+        },
+        ct);
 
       var scapRun = workflowResult.ToolRuns.FirstOrDefault(r => r.Tool.IndexOf("SCAP", StringComparison.OrdinalIgnoreCase) >= 0 || string.Equals(r.Tool, toolName, StringComparison.OrdinalIgnoreCase));
       if (scapRun != null)
@@ -108,7 +126,7 @@ internal static class VerifyCommands
       }
 
       PrintConsolidatedOutput(outputRoot, workflowResult);
-    }, exeOpt, argsOpt, workOpt, outOpt, toolOpt, logOpt);
+    });
 
     rootCmd.AddCommand(cmd);
   }
@@ -120,8 +138,11 @@ internal static class VerifyCommands
     var outOpt = new Option<string>("--output", () => string.Empty, "Output folder for summary files");
     cmd.AddOption(inputsOpt); cmd.AddOption(outOpt);
 
-    cmd.SetHandler((inputs, output) =>
+    cmd.SetHandler((InvocationContext ctx) =>
     {
+      var inputs = ctx.ParseResult.GetValueForOption(inputsOpt) ?? string.Empty;
+      var output = ctx.ParseResult.GetValueForOption(outOpt) ?? string.Empty;
+
       var outputRoot = string.IsNullOrWhiteSpace(output) ? Environment.CurrentDirectory : output;
       Directory.CreateDirectory(outputRoot);
 
@@ -159,7 +180,7 @@ internal static class VerifyCommands
       VerifyReportWriter.WriteOverlapSummary(Path.Combine(outputRoot, "coverage_overlap.csv"), Path.Combine(outputRoot, "coverage_overlap.json"), overlaps);
 
       Console.WriteLine("Wrote overlap summaries to: " + outputRoot);
-    }, inputsOpt, outOpt);
+    });
 
     rootCmd.AddCommand(cmd);
   }
@@ -171,8 +192,11 @@ internal static class VerifyCommands
     var outOpt = new Option<string>("--output", () => string.Empty, "Optional export root override");
     cmd.AddOption(bundleOpt); cmd.AddOption(outOpt);
 
-    cmd.SetHandler(async (bundle, output) =>
+    cmd.SetHandler(async (InvocationContext ctx) =>
     {
+      var bundle = ctx.ParseResult.GetValueForOption(bundleOpt) ?? string.Empty;
+      var output = ctx.ParseResult.GetValueForOption(outOpt) ?? string.Empty;
+      var ct = ctx.GetCancellationToken();
       using var host = buildHost();
       await host.StartAsync();
       var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("VerifyCommands");
@@ -181,7 +205,7 @@ internal static class VerifyCommands
       var result = await exporter.ExportAsync(new STIGForge.Export.ExportRequest
       {
         BundleRoot = bundle, OutputRoot = string.IsNullOrWhiteSpace(output) ? null : output
-      }, CancellationToken.None);
+      }, ct);
 
       Console.WriteLine("Exported eMASS package:");
       Console.WriteLine("  " + result.OutputRoot);
@@ -219,12 +243,12 @@ internal static class VerifyCommands
         result.ValidationResult?.Errors.Count,
         result.ValidationResult?.Warnings.Count);
       await host.StopAsync();
-    }, bundleOpt, outOpt);
+    });
 
     rootCmd.AddCommand(cmd);
   }
 
-  private static async Task<VerificationWorkflowResult> RunWorkflowAsync(Func<IHost> buildHost, string? outputRoot, Action<VerificationWorkflowRequest> configure)
+  private static async Task<VerificationWorkflowResult> RunWorkflowAsync(Func<IHost> buildHost, string? outputRoot, Action<VerificationWorkflowRequest> configure, CancellationToken ct)
   {
     using var host = buildHost();
     await host.StartAsync();
@@ -247,7 +271,7 @@ internal static class VerifyCommands
     configure(request);
 
     var service = host.Services.GetRequiredService<IVerificationWorkflowService>();
-    var result = await service.RunAsync(request, CancellationToken.None);
+    var result = await service.RunAsync(request, ct);
 
     if (!string.IsNullOrWhiteSpace(tempRoot))
     {

@@ -1,4 +1,5 @@
 using System.Text.Json;
+using STIGForge.Core;
 
 namespace STIGForge.Apply;
 
@@ -96,7 +97,7 @@ public sealed class IdempotencyTracker
                 CompletedOperations = new Dictionary<string, CompletedOperation>()
             };
         }
-        catch
+        catch (Exception)
         {
             // Corrupted tracker - start fresh
             return new IdempotencyState
@@ -109,7 +110,7 @@ public sealed class IdempotencyTracker
 
     private void Save()
     {
-        var json = JsonSerializer.Serialize(_state, new JsonSerializerOptions { WriteIndented = true });
+        var json = JsonSerializer.Serialize(_state, JsonOptions.Indented);
         
         // Atomic write pattern
         var tempPath = _trackerPath + ".tmp";

@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json;
+using STIGForge.Core;
 using STIGForge.Core.Abstractions;
 
 namespace STIGForge.Export;
@@ -34,7 +35,7 @@ public static class AttestationImporter
             Timestamp = DateTimeOffset.Now
           }, CancellationToken.None).ConfigureAwait(false);
         }
-        catch
+        catch (Exception)
         {
         }
       });
@@ -63,7 +64,7 @@ public static class AttestationImporter
           Timestamp = DateTimeOffset.Now
         }, ct).ConfigureAwait(false);
       }
-      catch
+      catch (Exception)
       {
       }
     }
@@ -89,10 +90,7 @@ public static class AttestationImporter
 
     // Load existing attestations
     var json = File.ReadAllText(attestPath);
-    var package = JsonSerializer.Deserialize<AttestationPackage>(json, new JsonSerializerOptions
-    {
-      PropertyNameCaseInsensitive = true
-    });
+    var package = JsonSerializer.Deserialize<AttestationPackage>(json, JsonOptions.CaseInsensitive);
 
     if (package?.Attestations == null)
       throw new InvalidOperationException("Invalid attestations.json format.");
@@ -153,11 +151,7 @@ public static class AttestationImporter
       SystemName = package.SystemName
     };
 
-    var updatedJson = JsonSerializer.Serialize(updatedPackage, new JsonSerializerOptions
-    {
-      WriteIndented = true,
-      PropertyNamingPolicy = JsonNamingPolicy.CamelCase
-    });
+    var updatedJson = JsonSerializer.Serialize(updatedPackage, JsonOptions.IndentedCamelCase);
     File.WriteAllText(attestPath, updatedJson, Encoding.UTF8);
 
     return new AttestationImportResult

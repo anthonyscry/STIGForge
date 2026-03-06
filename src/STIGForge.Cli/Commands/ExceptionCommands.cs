@@ -4,6 +4,7 @@ using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using STIGForge.Core;
 using STIGForge.Core.Models;
 using STIGForge.Core.Services;
 
@@ -44,6 +45,7 @@ internal static class ExceptionCommands
 
     cmd.SetHandler(async (InvocationContext ctx) =>
     {
+      var ct = ctx.GetCancellationToken();
       var bundle = ctx.ParseResult.GetValueForOption(bundleOpt) ?? string.Empty;
       var ruleId = ctx.ParseResult.GetValueForOption(ruleIdOpt) ?? string.Empty;
       var vulnId = ctx.ParseResult.GetValueForOption(vulnIdOpt) ?? string.Empty;
@@ -79,7 +81,7 @@ internal static class ExceptionCommands
         Justification = string.IsNullOrWhiteSpace(justification) ? null : justification,
         JustificationDoc = string.IsNullOrWhiteSpace(justificationDoc) ? null : justificationDoc,
         ExpiresAt = expiresAt
-      }, CancellationToken.None);
+      }, ct);
 
       Console.WriteLine("Exception created: " + created.ExceptionId);
       await host.StopAsync();
@@ -99,6 +101,7 @@ internal static class ExceptionCommands
 
     cmd.SetHandler(async (InvocationContext ctx) =>
     {
+      var ct = ctx.GetCancellationToken();
       var exceptionId = ctx.ParseResult.GetValueForOption(exceptionIdOpt) ?? string.Empty;
       var revokedBy = ctx.ParseResult.GetValueForOption(revokedByOpt) ?? string.Empty;
 
@@ -108,7 +111,7 @@ internal static class ExceptionCommands
       var service = host.Services.GetRequiredService<ExceptionWorkflowService>();
 
       logger.LogInformation("exception-revoke started: exceptionId={ExceptionId}", exceptionId);
-      await service.RevokeExceptionAsync(exceptionId, revokedBy, CancellationToken.None);
+      await service.RevokeExceptionAsync(exceptionId, revokedBy, ct);
       Console.WriteLine("Exception revoked: " + exceptionId);
       await host.StopAsync();
     });
@@ -129,6 +132,7 @@ internal static class ExceptionCommands
 
     cmd.SetHandler(async (InvocationContext ctx) =>
     {
+      var ct = ctx.GetCancellationToken();
       var bundle = ctx.ParseResult.GetValueForOption(bundleOpt) ?? string.Empty;
       var showExpired = ctx.ParseResult.GetValueForOption(expiredOpt);
       var json = ctx.ParseResult.GetValueForOption(jsonOpt);
@@ -140,12 +144,12 @@ internal static class ExceptionCommands
 
       logger.LogInformation("exception-list started: bundle={Bundle}, expired={Expired}", bundle, showExpired);
       var list = showExpired
-        ? await service.GetExpiredExceptionsAsync(bundle, CancellationToken.None)
-        : await service.GetActiveExceptionsAsync(bundle, CancellationToken.None);
+        ? await service.GetExpiredExceptionsAsync(bundle, ct)
+        : await service.GetActiveExceptionsAsync(bundle, ct);
 
       if (json)
       {
-        Console.WriteLine(JsonSerializer.Serialize(list, new JsonSerializerOptions { WriteIndented = true }));
+        Console.WriteLine(JsonSerializer.Serialize(list, JsonOptions.Indented));
       }
       else
       {
@@ -172,6 +176,7 @@ internal static class ExceptionCommands
 
     cmd.SetHandler(async (InvocationContext ctx) =>
     {
+      var ct = ctx.GetCancellationToken();
       var bundle = ctx.ParseResult.GetValueForOption(bundleOpt) ?? string.Empty;
       var json = ctx.ParseResult.GetValueForOption(jsonOpt);
 
@@ -181,11 +186,11 @@ internal static class ExceptionCommands
       var service = host.Services.GetRequiredService<ExceptionWorkflowService>();
 
       logger.LogInformation("exception-audit started: bundle={Bundle}", bundle);
-      var report = await service.AuditExceptionsAsync(bundle, CancellationToken.None);
+      var report = await service.AuditExceptionsAsync(bundle, ct);
 
       if (json)
       {
-        Console.WriteLine(JsonSerializer.Serialize(report, new JsonSerializerOptions { WriteIndented = true }));
+        Console.WriteLine(JsonSerializer.Serialize(report, JsonOptions.Indented));
       }
       else
       {

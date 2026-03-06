@@ -1,5 +1,6 @@
 using System.Text.Json;
 using STIGForge.Content.Import;
+using STIGForge.Core;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
 using STIGForge.Infrastructure.Workflow;
@@ -149,10 +150,7 @@ public sealed class LocalWorkflowService : ILocalWorkflowService
 
   private static async Task WriteMissionAsync(string missionPath, LocalWorkflowMission mission, CancellationToken ct)
   {
-    var json = JsonSerializer.Serialize(mission, new JsonSerializerOptions
-    {
-      WriteIndented = true
-    });
+    var json = JsonSerializer.Serialize(mission, JsonOptions.Indented);
 
     await File.WriteAllTextAsync(missionPath, json, ct).ConfigureAwait(false);
   }

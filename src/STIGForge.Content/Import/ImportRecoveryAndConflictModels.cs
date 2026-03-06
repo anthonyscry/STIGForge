@@ -1,4 +1,5 @@
 using System.Text.Json;
+using STIGForge.Core;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
 
@@ -36,7 +37,7 @@ public sealed class ImportCheckpoint
   {
     Directory.CreateDirectory(packRoot);
     var path = GetPath(packRoot);
-    var json = JsonSerializer.Serialize(this, new JsonSerializerOptions { WriteIndented = true });
+    var json = JsonSerializer.Serialize(this, JsonOptions.Indented);
     File.WriteAllText(path, json);
   }
 
@@ -51,7 +52,7 @@ public sealed class ImportCheckpoint
       var json = File.ReadAllText(path);
       return JsonSerializer.Deserialize<ImportCheckpoint>(json);
     }
-    catch
+    catch (Exception)
     {
       return null;
     }

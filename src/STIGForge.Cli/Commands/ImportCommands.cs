@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.CommandLine.Invocation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -25,18 +26,21 @@ internal static class ImportCommands
     cmd.AddArgument(zipArg);
     cmd.AddOption(nameOpt);
 
-    cmd.SetHandler(async (zip, name) =>
+    cmd.SetHandler(async (InvocationContext ctx) =>
     {
+      var zip = ctx.ParseResult.GetValueForArgument(zipArg);
+      var name = ctx.ParseResult.GetValueForOption(nameOpt) ?? string.Empty;
+      var ct = ctx.GetCancellationToken();
       using var host = buildHost();
       await host.StartAsync();
       var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("ImportCommands");
       logger.LogInformation("import-pack started: zip={Zip}, name={Name}", zip, name);
       var importer = host.Services.GetRequiredService<ContentPackImporter>();
-      var pack = await importer.ImportZipAsync(zip, name, "cli_import", CancellationToken.None);
+      var pack = await importer.ImportZipAsync(zip, name, "cli_import", ct);
       logger.LogInformation("import-pack completed: packId={PackId}, name={PackName}", pack.PackId, pack.Name);
       Console.WriteLine("Imported: " + pack.Name + " (" + pack.PackId + ")");
       await host.StopAsync();
-    }, zipArg, nameOpt);
+    });
 
     rootCmd.AddCommand(cmd);
   }
@@ -51,8 +55,12 @@ internal static class ImportCommands
     cmd.AddOption(nameOpt);
     cmd.AddOption(idOpt);
 
-    cmd.SetHandler(async (csvPath, overlayName, overlayId) =>
+    cmd.SetHandler(async (InvocationContext ctx) =>
     {
+      var csvPath = ctx.ParseResult.GetValueForOption(csvOpt) ?? string.Empty;
+      var overlayName = ctx.ParseResult.GetValueForOption(nameOpt) ?? string.Empty;
+      var overlayId = ctx.ParseResult.GetValueForOption(idOpt) ?? string.Empty;
+      var ct = ctx.GetCancellationToken();
       using var host = buildHost();
       await host.StartAsync();
       var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("ImportCommands");
@@ -62,18 +70,18 @@ internal static class ImportCommands
 
       Overlay overlay;
       if (!string.IsNullOrWhiteSpace(overlayId))
-        overlay = await overlaysRepo.GetAsync(overlayId, CancellationToken.None) ?? new Overlay { OverlayId = overlayId };
+        overlay = await overlaysRepo.GetAsync(overlayId, ct) ?? new Overlay { OverlayId = overlayId };
       else
         overlay = new Overlay { OverlayId = Guid.NewGuid().ToString("n") };
 
       overlay.Name = overlayName;
       overlay.UpdatedAt = DateTimeOffset.Now;
       overlay.PowerStigOverrides = overlays;
-      await overlaysRepo.SaveAsync(overlay, CancellationToken.None);
+      await overlaysRepo.SaveAsync(overlay, ct);
       logger.LogInformation("overlay-import-powerstig completed: overlayId={OverlayId}", overlay.OverlayId);
       Console.WriteLine("Overlay saved: " + overlay.OverlayId + " (" + overlay.Name + ")");
       await host.StopAsync();
-    }, csvOpt, nameOpt, idOpt);
+    });
 
     rootCmd.AddCommand(cmd);
   }
@@ -86,19 +94,22 @@ internal static class ImportCommands
     cmd.AddOption(packOpt);
     cmd.AddOption(outOpt);
 
-    cmd.SetHandler(async (packId, output) =>
+    cmd.SetHandler(async (InvocationContext ctx) =>
     {
+      var packId = ctx.ParseResult.GetValueForOption(packOpt) ?? string.Empty;
+      var output = ctx.ParseResult.GetValueForOption(outOpt) ?? string.Empty;
+      var ct = ctx.GetCancellationToken();
       using var host = buildHost();
       await host.StartAsync();
       var logger = host.Services.GetRequiredService<ILoggerFactory>().CreateLogger("ImportCommands");
       logger.LogInformation("powerstig-map-export started: packId={PackId}, output={Output}", packId, output);
       var controlsRepo = host.Services.GetRequiredService<IControlRepository>();
-      var list = await controlsRepo.ListControlsAsync(packId, CancellationToken.None);
+      var list = await controlsRepo.ListControlsAsync(packId, ct);
       Helpers.WritePowerStigMapCsv(output, list);
       logger.LogInformation("powerstig-map-export completed: {Count} controls exported", list.Count);
       Console.WriteLine("Wrote mapping template: " + output);
       await host.StopAsync();
-    }, packOpt, outOpt);
+    });
 
     rootCmd.AddCommand(cmd);
   }
