@@ -25,6 +25,11 @@
       <local:StepStateToRunningVisibilityConverter x:Key="StepStateToRunningVisibility" />
       <local:StepStateToCompleteVisibilityConverter x:Key="StepStateToCompleteVisibility" />
       <local:StepStateToErrorVisibilityConverter x:Key="StepStateToErrorVisibility" />
+      <local:StepStateToLabelTextConverter x:Key="StepStateToLabelText" />
+      <local:StepStateToContentOpacityConverter x:Key="StepStateToContentOpacity" />
+      <local:StepMatchConverter x:Key="StepMatchConverter" />
+      <local:StepActiveBackgroundConverter x:Key="StepActiveBackgroundConverter" />
+      <local:StepNumberForegroundConverter x:Key="StepNumberForegroundConverter" />
 
       <!-- ═══════════ TEXT ═══════════ -->
       <Style TargetType="TextBlock">
@@ -32,6 +37,11 @@
         <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
         <Setter Property="FontSize" Value="13" />
         <Setter Property="TextOptions.TextFormattingMode" Value="Display" />
+      </Style>
+
+      <Style x:Key="PageTitleStyle" TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+        <Setter Property="FontSize" Value="22" />
+        <Setter Property="FontWeight" Value="SemiBold" />
       </Style>
 
       <!-- ═══════════ BORDER ═══════════ -->
@@ -80,7 +90,6 @@
                 </Trigger>
                 <Trigger Property="IsKeyboardFocused" Value="True">
                   <Setter TargetName="ButtonBorder" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
-                  <Setter TargetName="ButtonBorder" Property="BorderThickness" Value="2" />
                 </Trigger>
               </ControlTemplate.Triggers>
             </ControlTemplate>
@@ -88,18 +97,27 @@
         </Setter>
       </Style>
 
+      <Style x:Key="WorkflowFocusVisual">
+        <Setter Property="Control.Template">
+          <Setter.Value>
+            <ControlTemplate>
+              <Border BorderBrush="{DynamicResource AccentBrush}" BorderThickness="2" CornerRadius="{DynamicResource UiButtonRadius}"
+                      Margin="-2" SnapsToDevicePixels="True" />
+            </ControlTemplate>
+          </Setter.Value>
+        </Setter>
+      </Style>
+
       <Style x:Key="WorkflowDashboardButtonStyle" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
-        <Setter Property="FocusVisualStyle" Value="{x:Null}" />
+        <Setter Property="FocusVisualStyle" Value="{StaticResource WorkflowFocusVisual}" />
         <Style.Triggers>
           <Trigger Property="IsKeyboardFocused" Value="True">
             <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
-            <Setter Property="BorderThickness" Value="2" />
             <Setter Property="Background" Value="{DynamicResource ButtonHoverBrush}" />
           </Trigger>
 
           <Trigger Property="IsFocused" Value="True">
             <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
-            <Setter Property="BorderThickness" Value="2" />
             <Setter Property="Background" Value="{DynamicResource ButtonHoverBrush}" />
           </Trigger>
         </Style.Triggers>
@@ -111,12 +129,10 @@
         <Style.Triggers>
           <Trigger Property="IsMouseOver" Value="True">
             <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
-            <Setter Property="BorderThickness" Value="3" />
           </Trigger>
 
           <Trigger Property="IsKeyboardFocusWithin" Value="True">
             <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
-            <Setter Property="BorderThickness" Value="3" />
             <Setter Property="Background" Value="{DynamicResource SurfaceMutedBrush}" />
           </Trigger>
         </Style.Triggers>
@@ -137,7 +153,6 @@
         <Style.Triggers>
           <Trigger Property="IsKeyboardFocused" Value="True">
             <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
-            <Setter Property="BorderThickness" Value="2" />
           </Trigger>
         </Style.Triggers>
       </Style>
@@ -557,6 +572,46 @@
         </Style.Triggers>
       </Style>
 
+      <!-- ═══════════ TOGGLEBUTTON ═══════════ -->
+      <Style TargetType="ToggleButton">
+        <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
+        <Setter Property="Background" Value="{DynamicResource ButtonBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="MinHeight" Value="34" />
+        <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Padding" Value="12,7" />
+        <Setter Property="Template">
+          <Setter.Value>
+            <ControlTemplate TargetType="ToggleButton">
+              <Border x:Name="ToggleBorder"
+                      Background="{TemplateBinding Background}"
+                      BorderBrush="{TemplateBinding BorderBrush}"
+                      BorderThickness="{TemplateBinding BorderThickness}"
+                      CornerRadius="{DynamicResource UiButtonRadius}" SnapsToDevicePixels="True">
+                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"
+                                  Margin="{TemplateBinding Padding}" RecognizesAccessKey="True" />
+              </Border>
+              <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                  <Setter TargetName="ToggleBorder" Property="Background" Value="{DynamicResource ButtonHoverBrush}" />
+                  <Setter TargetName="ToggleBorder" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                </Trigger>
+                <Trigger Property="IsChecked" Value="True">
+                  <Setter TargetName="ToggleBorder" Property="Background" Value="{DynamicResource AccentSoftBrush}" />
+                  <Setter TargetName="ToggleBorder" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                </Trigger>
+                <Trigger Property="IsKeyboardFocused" Value="True">
+                  <Setter TargetName="ToggleBorder" Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                </Trigger>
+              </ControlTemplate.Triggers>
+            </ControlTemplate>
+          </Setter.Value>
+        </Setter>
+      </Style>
+
       <!-- ═══════════ CHECKBOX ═══════════ -->
       <Style TargetType="CheckBox">
         <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}" />
@@ -610,6 +665,27 @@
         <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
       </Style>
 
+      <!-- ═══════════ FADE-IN ANIMATION ═══════════ -->
+      <Style x:Key="FadeInBorderStyle" TargetType="Border">
+        <Setter Property="Opacity" Value="0" />
+        <Setter Property="CornerRadius" Value="{DynamicResource UiPanelRadius}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource BorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="SnapsToDevicePixels" Value="True" />
+        <Style.Triggers>
+          <Trigger Property="Visibility" Value="Visible">
+            <Trigger.EnterActions>
+              <BeginStoryboard>
+                <Storyboard>
+                  <DoubleAnimation Storyboard.TargetProperty="Opacity"
+                                   From="0" To="1" Duration="0:0:0.2" />
+                </Storyboard>
+              </BeginStoryboard>
+            </Trigger.EnterActions>
+          </Trigger>
+        </Style.Triggers>
+      </Style>
+
       <!-- ═══════════ WINDOW ═══════════ -->
       <Style TargetType="Window">
         <Setter Property="FontFamily" Value="{DynamicResource AppFontFamily}" />
@@ -621,7 +697,7 @@
       <!-- ═══════════ SETUP STEP TEMPLATE ═══════════ -->
       <DataTemplate x:Key="SetupStepTemplate">
         <StackPanel MaxWidth="600">
-          <TextBlock Text="Step 1: Setup" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,20"/>
+          <TextBlock Text="Step 1: Setup" Style="{StaticResource PageTitleStyle}" Margin="0,0,0,20"/>
           <TextBlock Text="Configure paths for the workflow. Paths will be auto-detected where possible." 
                      Foreground="{DynamicResource TextMutedBrush}" Margin="0,0,0,20"/>
 
@@ -674,7 +750,7 @@
       <!-- ═══════════ IMPORT STEP TEMPLATE ═══════════ -->
       <DataTemplate x:Key="ImportStepTemplate">
         <StackPanel MaxWidth="600">
-          <TextBlock Text="Step 2: Import" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,20"/>
+          <TextBlock Text="Step 2: Import" Style="{StaticResource PageTitleStyle}" Margin="0,0,0,20"/>
           <TextBlock Text="Importing STIG content from the import folder..." Margin="0,0,0,20"/>
           <ProgressBar Height="20" IsIndeterminate="{Binding IsBusy}" Value="{Binding ProgressValue}" Maximum="{Binding ProgressMax}"/>
           <TextBlock Text="{Binding StatusText}" Margin="0,10,0,0"/>
@@ -684,7 +760,7 @@
       <!-- ═══════════ SCAN STEP TEMPLATE ═══════════ -->
       <DataTemplate x:Key="ScanStepTemplate">
         <StackPanel MaxWidth="600">
-          <TextBlock Text="Step 3: Scan" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,20"/>
+          <TextBlock Text="Step 3: Scan" Style="{StaticResource PageTitleStyle}" Margin="0,0,0,20"/>
           <TextBlock Text="Running Evaluate-STIG to establish baseline findings..." Margin="0,0,0,20"/>
           <ProgressBar Height="20" IsIndeterminate="{Binding IsBusy}" Value="{Binding ProgressValue}" Maximum="{Binding ProgressMax}"/>
           <TextBlock Text="{Binding StatusText}" Margin="0,10,0,0"/>
@@ -694,7 +770,7 @@
       <!-- ═══════════ HARDEN STEP TEMPLATE ═══════════ -->
       <DataTemplate x:Key="HardenStepTemplate">
         <StackPanel MaxWidth="600">
-          <TextBlock Text="Step 4: Harden" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,20"/>
+          <TextBlock Text="Step 4: Harden" Style="{StaticResource PageTitleStyle}" Margin="0,0,0,20"/>
           <TextBlock Text="Applying PowerSTIG/DSC configurations, GPO settings, and ADMX templates..." Margin="0,0,0,20"/>
           <ProgressBar Height="20" IsIndeterminate="{Binding IsBusy}" Value="{Binding ProgressValue}" Maximum="{Binding ProgressMax}"/>
           <TextBlock Text="{Binding StatusText}" Margin="0,10,0,0"/>
@@ -704,7 +780,7 @@
       <!-- ═══════════ VERIFY STEP TEMPLATE ═══════════ -->
       <DataTemplate x:Key="VerifyStepTemplate">
         <StackPanel MaxWidth="600">
-          <TextBlock Text="Step 5: Verify" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,20"/>
+          <TextBlock Text="Step 5: Verify" Style="{StaticResource PageTitleStyle}" Margin="0,0,0,20"/>
           <TextBlock Text="Re-running Evaluate-STIG and SCC to verify hardening results..." Margin="0,0,0,20"/>
           <ProgressBar Height="20" IsIndeterminate="{Binding IsBusy}" Value="{Binding ProgressValue}" Maximum="{Binding ProgressMax}"/>
           <TextBlock Text="{Binding StatusText}" Margin="0,10,0,0"/>
@@ -714,7 +790,7 @@
       <!-- ═══════════ DONE STEP TEMPLATE ═══════════ -->
       <DataTemplate x:Key="DoneStepTemplate">
         <StackPanel MaxWidth="600">
-          <TextBlock Text="Step 6: Done" FontSize="24" FontWeight="SemiBold" Margin="0,0,0,20"/>
+          <TextBlock Text="Step 6: Done" Style="{StaticResource PageTitleStyle}" Margin="0,0,0,20"/>
           <TextBlock Text="Workflow completed!" FontSize="18" Foreground="{DynamicResource SuccessBrush}" Margin="0,0,0,20"/>
 
           <Border BorderBrush="{DynamicResource BorderBrush}" BorderThickness="1" Padding="16" Margin="0,0,0,20">

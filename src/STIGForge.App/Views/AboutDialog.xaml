@@ -1,7 +1,7 @@
 <Window x:Class="STIGForge.App.Views.AboutDialog"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="About STIGForge" Height="300" Width="440"
+        Title="About STIGForge" Height="380" Width="440"
         WindowStartupLocation="CenterOwner" ResizeMode="NoResize"
         Background="{DynamicResource WindowBackgroundBrush}">
   <Grid Margin="{DynamicResource AppPagePadding}">
@@ -25,11 +25,13 @@
     <Border Grid.Row="1"
             Padding="{DynamicResource CardPadding}"
             Background="{DynamicResource SurfaceBrush}"
-            BorderBrush="{DynamicResource BorderBrush}">
+            BorderBrush="{DynamicResource BorderBrush}"
+            CornerRadius="{DynamicResource UiPanelRadius}">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
     <StackPanel>
       <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
         <TextBlock Text="Version:" FontWeight="SemiBold" Width="100"/>
-        <TextBlock Text="0.1.0-dev"/>
+        <TextBlock Text="{Binding AppVersion}"/>
       </StackPanel>
       <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
         <TextBlock Text="Runtime:" FontWeight="SemiBold" Width="100"/>
@@ -52,9 +54,11 @@
         <TextBlock Text="{Binding OverlayCount}"/>
       </StackPanel>
     </StackPanel>
+    </ScrollViewer>
     </Border>
 
-    <Button Grid.Row="2" Content="Close" Width="100" Height="28" HorizontalAlignment="Right"
-            Click="Close_Click" IsDefault="True" IsCancel="True"/>
+    <Button Grid.Row="2" Content="Close" Width="100" Height="34" Margin="0,16,0,0" HorizontalAlignment="Right"
+            Click="Close_Click" IsDefault="True" IsCancel="True"
+            AutomationProperties.Name="Close about dialog"/>
   </Grid>
 </Window>

@@ -17,7 +17,8 @@ internal sealed class PowerStigStepHandler
     bool verbose,
     string stepName,
     CancellationToken ct,
-    PowerStigTarget? target = null)
+    PowerStigTarget? target = null,
+    string? orgSettingsPath = null)
   {
     if (!Directory.Exists(modulePath) && !File.Exists(modulePath))
       throw new FileNotFoundException("PowerSTIG module path not found: " + modulePath, modulePath);
@@ -73,7 +74,7 @@ internal sealed class PowerStigStepHandler
     string command;
     if (target != null)
     {
-      var configScript = PowerStigTechnologyMap.BuildDscConfigurationScript(target, outputPath, dataFile, powerStigVersion);
+      var configScript = PowerStigTechnologyMap.BuildDscConfigurationScript(target, outputPath, dataFile, powerStigVersion, orgSettingsPath);
       command = "Import-Module " + ApplyProcessHelpers.ToPowerShellSingleQuoted(effectiveModulePath) + "; " + configScript + v + ";";
     }
     else

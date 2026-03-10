@@ -8,14 +8,14 @@
   <SolidColorBrush x:Key="TextMutedBrush" Color="{x:Static SystemColors.GrayTextColor}"/>
   <SolidColorBrush x:Key="AccentBrush" Color="{x:Static SystemColors.HighlightColor}"/>
   <SolidColorBrush x:Key="AccentSoftBrush" Color="{x:Static SystemColors.ControlLightColor}"/>
-  <SolidColorBrush x:Key="SuccessBrush" Color="{x:Static SystemColors.WindowTextColor}"/>
-  <SolidColorBrush x:Key="WarningBrush" Color="{x:Static SystemColors.InfoTextColor}"/>
-  <SolidColorBrush x:Key="DangerBrush" Color="{x:Static SystemColors.HotTrackColor}"/>
+  <SolidColorBrush x:Key="SuccessBrush" Color="{x:Static SystemColors.HighlightColor}"/>
+  <SolidColorBrush x:Key="WarningBrush" Color="{x:Static SystemColors.HotTrackColor}"/>
+  <SolidColorBrush x:Key="DangerBrush" Color="{x:Static SystemColors.MenuHighlightColor}"/>
   <SolidColorBrush x:Key="WorkflowStepReadyBrush" Color="{x:Static SystemColors.HighlightColor}"/>
   <SolidColorBrush x:Key="WorkflowStepRunningBrush" Color="{x:Static SystemColors.InfoTextColor}"/>
-  <SolidColorBrush x:Key="WorkflowStepCompleteBrush" Color="{x:Static SystemColors.WindowTextColor}"/>
+  <SolidColorBrush x:Key="WorkflowStepCompleteBrush" Color="{x:Static SystemColors.HighlightColor}"/>
   <SolidColorBrush x:Key="WorkflowStepLockedBrush" Color="{x:Static SystemColors.GrayTextColor}"/>
-  <SolidColorBrush x:Key="WorkflowStepErrorBrush" Color="{x:Static SystemColors.HotTrackColor}"/>
+  <SolidColorBrush x:Key="WorkflowStepErrorBrush" Color="{x:Static SystemColors.MenuHighlightColor}"/>
 
   <!-- Button -->
   <SolidColorBrush x:Key="ButtonBackgroundBrush" Color="{x:Static SystemColors.ControlColor}"/>
@@ -59,7 +59,7 @@
   <SolidColorBrush x:Key="ToolTipBgBrush" Color="{x:Static SystemColors.InfoColor}"/>
   <SolidColorBrush x:Key="ToolTipBorderBrush" Color="{x:Static SystemColors.ActiveBorderColor}"/>
 
-  <!-- Visual effects -->
-  <Color x:Key="CardShadowColor">{x:Static SystemColors.WindowTextColor}</Color>
+  <!-- Visual effects – shadows are invisible in High Contrast mode -->
+  <Color x:Key="CardShadowColor">Transparent</Color>
 
 </ResourceDictionary>

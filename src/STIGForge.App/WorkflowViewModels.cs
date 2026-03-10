@@ -1,5 +1,13 @@
 namespace STIGForge.App;
 
+public sealed class WizardStepInfo
+{
+    public required string Name { get; init; }
+    public required string Number { get; init; }
+    public required WorkflowStep Step { get; init; }
+    public bool IsFinalStep { get; init; }
+}
+
 public class ImportedPackViewModel
 {
     public string PackName { get; set; } = string.Empty;

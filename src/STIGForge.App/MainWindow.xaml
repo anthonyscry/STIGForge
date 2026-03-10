@@ -40,14 +40,42 @@
                                Margin="0,2,0,0" />
                 </StackPanel>
             <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center">
-                <Button Content="?" Width="38" Height="38" Padding="0" Margin="0,0,8,0" TabIndex="900" ToolTip="Help (F1)" FontSize="16" FontWeight="Bold" Command="{Binding ShowHelpCommand}" AutomationProperties.Name="Help"/>
-                <Button Content="i" Width="38" Height="38" Padding="0" Margin="0,0,8,0" TabIndex="901" ToolTip="About" FontSize="16" FontWeight="Bold" FontStyle="Italic" Command="{Binding ShowAboutCommand}" AutomationProperties.Name="About"/>
+                <ToggleButton Content="&#xE8CB;" Width="38" Height="38" Padding="0" Margin="0,0,8,0" TabIndex="899"
+                              ToolTip="Toggle guided wizard mode" FontFamily="Segoe MDL2 Assets" FontSize="16"
+                              IsChecked="{Binding IsWizardMode}" AutomationProperties.Name="Guided wizard mode toggle"/>
+                <Button Content="&#xE897;" Width="38" Height="38" Padding="0" Margin="0,0,8,0" TabIndex="900" ToolTip="Help (F1)" FontFamily="Segoe MDL2 Assets" FontSize="16" Command="{Binding ShowHelpCommand}" AutomationProperties.Name="Help"/>
+                <Button Content="&#xE946;" Width="38" Height="38" Padding="0" Margin="0,0,8,0" TabIndex="901" ToolTip="About" FontFamily="Segoe MDL2 Assets" FontSize="16" Command="{Binding ShowAboutCommand}" AutomationProperties.Name="About"/>
                 <Button Content="&#xE713;" Width="38" Height="38" Padding="0" TabIndex="902" ToolTip="Settings" FontFamily="Segoe MDL2 Assets" FontSize="16" Command="{Binding ShowSettingsCommand}" AutomationProperties.Name="Settings"/>
             </StackPanel>
             </DockPanel>
         </Border>
 
-        <!-- Dashboard -->
-        <views:DashboardView Grid.Row="1"/>
+        <!-- Dashboard (default) -->
+        <views:DashboardView Grid.Row="1">
+            <views:DashboardView.Style>
+                <Style TargetType="UserControl">
+                    <Setter Property="Visibility" Value="Visible" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsWizardMode}" Value="True">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </views:DashboardView.Style>
+        </views:DashboardView>
+
+        <!-- Guided Wizard (toggled) -->
+        <views:WorkflowWizardView Grid.Row="1">
+            <views:WorkflowWizardView.Style>
+                <Style TargetType="UserControl">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsWizardMode}" Value="True">
+                            <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </views:WorkflowWizardView.Style>
+        </views:WorkflowWizardView>
     </Grid>
 </Window>

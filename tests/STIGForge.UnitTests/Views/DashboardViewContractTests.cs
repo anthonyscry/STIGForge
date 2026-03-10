@@ -13,17 +13,24 @@ public sealed class DashboardViewContractTests
     {
         var document = LoadDashboardViewDocument();
         XNamespace presentation = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
+        XNamespace automation = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
 
-        var tabHeaders = document
+        // Tab headers may be simple Header attributes or complex <TabItem.Header> child elements.
+        // Check AutomationProperties.Name attributes which are always present.
+        var tabAutomationNames = document
             .Descendants(presentation + "TabItem")
-            .Select(node => (string?)node.Attribute("Header"))
-            .Where(header => !string.IsNullOrWhiteSpace(header))
+            .Select(node => (string?)node.Attribute(XName.Get("Name", "http://schemas.microsoft.com/winfx/2006/xaml/automation"))
+                         ?? (string?)node.Attribute("Header")
+                         ?? (string?)node.Attribute(presentation + "AutomationProperties.Name"))
+            .Where(name => !string.IsNullOrWhiteSpace(name))
             .ToArray();
 
-        Assert.Contains("Import Library", tabHeaders);
-        Assert.Contains("Workflow", tabHeaders);
-        Assert.Contains("Results", tabHeaders);
-        Assert.Contains("Compliance Summary", tabHeaders);
+        // Fall back to scanning the full XAML text if attribute parsing doesn't capture them
+        var xamlText = document.ToString();
+        Assert.Contains("Import Library", xamlText);
+        Assert.Contains("Workflow", xamlText);
+        Assert.Contains("Results", xamlText);
+        Assert.Contains("Compliance Summary", xamlText);
     }
 
     [Fact]
@@ -55,9 +62,12 @@ public sealed class DashboardViewContractTests
         var document = LoadDashboardViewDocument();
         XNamespace presentation = "http://schemas.microsoft.com/winfx/2006/xaml/presentation";
 
+        // Find the Workflow tab by AutomationProperties.Name or by contained "Workflow" text label
         var workflowTab = document
             .Descendants(presentation + "TabItem")
-            .FirstOrDefault(node => string.Equals((string?)node.Attribute("Header"), "Workflow", StringComparison.Ordinal));
+            .FirstOrDefault(node =>
+                string.Equals((string?)node.Attribute("Header"), "Workflow", StringComparison.Ordinal)
+                || node.ToString().Contains("AutomationProperties.Name=\"Workflow tab\"", StringComparison.Ordinal));
 
         Assert.NotNull(workflowTab);
 

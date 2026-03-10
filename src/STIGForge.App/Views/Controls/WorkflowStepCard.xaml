@@ -18,16 +18,38 @@
     </UserControl.Resources>
 
      <Border Style="{DynamicResource WorkflowStepCardBorderStyle}"
-              BorderThickness="1"
               Padding="10"
               MinHeight="85"
               Background="{DynamicResource SurfaceBrush}"
-              CornerRadius="12">
+              CornerRadius="12"
+              CacheMode="BitmapCache">
         <Border.Effect>
             <DropShadowEffect Color="{DynamicResource CardShadowColor}" Opacity="0.25" BlurRadius="12" Direction="270" ShadowDepth="4" />
         </Border.Effect>
-        <StackPanel>
-            <TextBlock Text="{Binding StepName, RelativeSource={RelativeSource AncestorType=UserControl}}" FontSize="16" FontWeight="SemiBold" Margin="0,0,0,8" />
+        <StackPanel Opacity="{Binding StepState, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource StepStateToContentOpacity}}">
+            <DockPanel Margin="0,0,0,8" LastChildFill="True">
+                <TextBlock DockPanel.Dock="Right"
+                           VerticalAlignment="Center"
+                           FontSize="11"
+                           Foreground="{DynamicResource TextMutedBrush}"
+                           Margin="8,0,0,0"
+                           Text="{Binding StepState, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource StepStateToLabelText}}">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding StepState, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="Ready">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                                <DataTrigger Binding="{Binding StepState, RelativeSource={RelativeSource AncestorType=UserControl}}" Value="Locked">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+                <TextBlock Text="{Binding StepName, RelativeSource={RelativeSource AncestorType=UserControl}}" FontSize="16" FontWeight="SemiBold" />
+            </DockPanel>
 
             <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
                 <Button Content="{Binding RunButtonLabel, RelativeSource={RelativeSource AncestorType=UserControl}}"

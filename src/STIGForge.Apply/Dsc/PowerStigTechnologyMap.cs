@@ -31,7 +31,7 @@ public static class PowerStigTechnologyMap
     /// Follows the official PowerSTIG usage pattern from
     /// https://github.com/microsoft/PowerStig#powerstigdsc
     /// </summary>
-    public static string BuildDscConfigurationScript(PowerStigTarget target, string outputPath, string? stigDataFile = null, string? moduleVersion = null)
+    public static string BuildDscConfigurationScript(PowerStigTarget target, string outputPath, string? stigDataFile = null, string? moduleVersion = null, string? orgSettingsPath = null)
     {
         var stigVersionParam = string.IsNullOrWhiteSpace(target.OsRole)
             ? string.Empty
@@ -45,6 +45,11 @@ public static class PowerStigTechnologyMap
         var osRoleParam = string.IsNullOrWhiteSpace(target.OsRole)
             ? string.Empty
             : $"\r\n            OsRole   = '{EscapePsString(target.OsRole)}'";
+
+        // OrgSettings XML path for site-specific organizational values
+        var orgSettingsParam = string.IsNullOrWhiteSpace(orgSettingsPath)
+            ? string.Empty
+            : $"\r\n            OrgSettings = '{EscapePsString(orgSettingsPath)}'";
 
         // WindowsFirewall is always applied alongside the primary OS STIG
         var firewallBlock = target.CompositeResourceName is "WindowsServer" or "WindowsClient"
@@ -64,7 +69,7 @@ Configuration STIGForgeHarden
     {{
         {target.CompositeResourceName} OsStig
         {{
-            OsVersion = '{EscapePsString(target.OsVersion)}'{osRoleParam}{stigVersionParam}{dataFileParam}
+            OsVersion = '{EscapePsString(target.OsVersion)}'{osRoleParam}{stigVersionParam}{dataFileParam}{orgSettingsParam}
         }}{firewallBlock}
     }}
 }}

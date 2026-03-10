@@ -60,6 +60,21 @@ public partial class WorkflowViewModel : ObservableObject
     }
 
     [ObservableProperty]
+    private bool _isWizardMode;
+
+    public static IReadOnlyList<WizardStepInfo> WizardSteps { get; } =
+    [
+        new() { Name = "Setup", Number = "1", Step = WorkflowStep.Setup },
+        new() { Name = "Import", Number = "2", Step = WorkflowStep.Import },
+        new() { Name = "Scan", Number = "3", Step = WorkflowStep.Scan },
+        new() { Name = "Harden", Number = "4", Step = WorkflowStep.Harden },
+        new() { Name = "Verify", Number = "5", Step = WorkflowStep.Verify },
+        new() { Name = "Done", Number = "\u2713", Step = WorkflowStep.Done, IsFinalStep = true },
+    ];
+
+    public Func<string, string, bool>? ConfirmAction { get; set; }
+
+    [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(CanGoBack))]
     [NotifyPropertyChangedFor(nameof(CanGoNext))]
     private WorkflowStep _currentStep = WorkflowStep.Setup;
@@ -162,6 +177,7 @@ public partial class WorkflowViewModel : ObservableObject
     private int _fixedCount;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ComplianceChartAccessibleText))]
     private int _totalRuleCount;
 
     [ObservableProperty]
@@ -186,6 +202,7 @@ public partial class WorkflowViewModel : ObservableObject
     private int _totalCatVulnerabilityCount;
 
     [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(ComplianceChartAccessibleText))]
     private double _compliancePercent;
 
     [ObservableProperty]
@@ -245,6 +262,10 @@ public partial class WorkflowViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(FailureCardLiveRegionHint))]
     private WorkflowFailureCard? _currentFailureCard;
 
+    public string ComplianceChartAccessibleText => TotalRuleCount == 0
+        ? "No compliance data collected"
+        : $"{CompliancePercent:0}% compliant: {CompliancePassCount} pass, {ComplianceFailCount} fail, {ComplianceOtherCount} other";
+
     public string FailureCardLiveRegionHint => CurrentFailureCard is null
         ? string.Empty
         : $"Recovery guidance updated. {CurrentFailureCard.Title}. {CurrentFailureCard.WhatHappened} Next step: {CurrentFailureCard.NextStep}";
@@ -290,6 +311,13 @@ public partial class WorkflowViewModel : ObservableObject
     {
         if (CurrentStep > WorkflowStep.Setup)
             CurrentStep = CurrentStep - 1;
+    }
+
+    [RelayCommand]
+    private void GoToStep(WorkflowStep step)
+    {
+        if (step <= CurrentStep)
+            CurrentStep = step;
     }
 
     [RelayCommand(CanExecute = nameof(CanGoNext))]
@@ -356,6 +384,9 @@ public partial class WorkflowViewModel : ObservableObject
     [RelayCommand]
     private void RestartWorkflow()
     {
+        if (ConfirmAction != null && !ConfirmAction("Restart Workflow", "This will clear all progress and outputs. Continue?"))
+            return;
+
         CurrentStep = WorkflowStep.Setup;
         ImportState = StepState.Ready;
         ScanState = StepState.Locked;

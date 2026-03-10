@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Shapes;
+using System.Windows.Threading;
 
 namespace STIGForge.App.Views.Controls;
 
@@ -12,6 +13,7 @@ public partial class ComplianceDonutChart : UserControl
     private const double MaxThickness = 28.0;
     private const double InnerRadiusFactor = 0.35;
     private const double MaxSweepAngle = 359.999d;
+    private bool _updatePending;
 
     public static readonly DependencyProperty PassValueProperty =
         DependencyProperty.Register(
@@ -75,7 +77,20 @@ public partial class ComplianceDonutChart : UserControl
     private static void OnSegmentValueChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
     {
         if (d is ComplianceDonutChart chart)
-            chart.UpdateChart();
+            chart.ScheduleUpdate();
+    }
+
+    private void ScheduleUpdate()
+    {
+        if (_updatePending)
+            return;
+
+        _updatePending = true;
+        Dispatcher.BeginInvoke(DispatcherPriority.Render, () =>
+        {
+            _updatePending = false;
+            UpdateChart();
+        });
     }
 
     private void OnLoaded(object? sender, RoutedEventArgs e)

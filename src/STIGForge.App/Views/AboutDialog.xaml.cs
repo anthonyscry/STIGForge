@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Windows;
 
@@ -10,6 +11,7 @@ public partial class AboutDialog : Window
     InitializeComponent();
     DataContext = new
     {
+      AppVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "0.0.0",
       RuntimeVersion = RuntimeInformation.FrameworkDescription,
       DataRoot = dataRoot,
       PackCount = packCount.ToString(),

@@ -9,25 +9,102 @@
             <RowDefinition Height="Auto"/>
         </Grid.RowDefinitions>
 
-        <!-- Step Indicator -->
+        <!-- Step Indicator (data-driven) -->
         <Border Grid.Row="0"
                 Margin="0,0,0,16"
                 Padding="{DynamicResource CardPadding}"
                 Background="{DynamicResource SurfaceMutedBrush}"
                 BorderBrush="{DynamicResource BorderBrush}">
-            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center">
-            <TextBlock Text="1. Setup" Margin="10,0" FontWeight="{Binding CurrentStep, Converter={StaticResource StepFontWeightConverter}, ConverterParameter=Setup}"/>
-            <TextBlock Text="→" Margin="5,0"/>
-            <TextBlock Text="2. Import" Margin="10,0" FontWeight="{Binding CurrentStep, Converter={StaticResource StepFontWeightConverter}, ConverterParameter=Import}"/>
-            <TextBlock Text="→" Margin="5,0"/>
-            <TextBlock Text="3. Scan" Margin="10,0" FontWeight="{Binding CurrentStep, Converter={StaticResource StepFontWeightConverter}, ConverterParameter=Scan}"/>
-            <TextBlock Text="→" Margin="5,0"/>
-            <TextBlock Text="4. Harden" Margin="10,0" FontWeight="{Binding CurrentStep, Converter={StaticResource StepFontWeightConverter}, ConverterParameter=Harden}"/>
-            <TextBlock Text="→" Margin="5,0"/>
-            <TextBlock Text="5. Verify" Margin="10,0" FontWeight="{Binding CurrentStep, Converter={StaticResource StepFontWeightConverter}, ConverterParameter=Verify}"/>
-            <TextBlock Text="→" Margin="5,0"/>
-            <TextBlock Text="6. Done" Margin="10,0" FontWeight="{Binding CurrentStep, Converter={StaticResource StepFontWeightConverter}, ConverterParameter=Done}"/>
-            </StackPanel>
+            <ItemsControl ItemsSource="{Binding WizardSteps}"
+                          HorizontalAlignment="Center"
+                          AutomationProperties.Name="Workflow step indicator">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type local:WizardStepInfo}">
+                        <StackPanel Orientation="Horizontal">
+                            <StackPanel Orientation="Horizontal" Margin="0,0,4,0">
+                                <!-- Clickable step circle -->
+                                <Border Width="26" Height="26" Margin="0,0,6,0" VerticalAlignment="Center"
+                                        Cursor="Hand">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Setter Property="CornerRadius" Value="13" />
+                                            <Setter Property="BorderThickness" Value="2" />
+                                            <Setter Property="SnapsToDevicePixels" Value="True" />
+                                            <Setter Property="BorderBrush" Value="{DynamicResource AccentBrush}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsFinalStep}" Value="True">
+                                                    <Setter Property="BorderBrush" Value="{DynamicResource SuccessBrush}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <Border.Background>
+                                        <MultiBinding Converter="{StaticResource StepActiveBackgroundConverter}">
+                                            <Binding Path="DataContext.CurrentStep" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
+                                            <Binding Path="Step"/>
+                                            <Binding Path="IsFinalStep"/>
+                                        </MultiBinding>
+                                    </Border.Background>
+                                    <Border.InputBindings>
+                                        <MouseBinding MouseAction="LeftClick"
+                                                      Command="{Binding DataContext.GoToStepCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                                                      CommandParameter="{Binding Step}"/>
+                                    </Border.InputBindings>
+                                    <TextBlock Text="{Binding Number}" FontSize="12" FontWeight="Bold"
+                                               HorizontalAlignment="Center" VerticalAlignment="Center"
+                                               IsHitTestVisible="False">
+                                        <TextBlock.Foreground>
+                                            <MultiBinding Converter="{StaticResource StepNumberForegroundConverter}">
+                                                <Binding Path="DataContext.CurrentStep" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
+                                                <Binding Path="Step"/>
+                                                <Binding Path="IsFinalStep"/>
+                                            </MultiBinding>
+                                        </TextBlock.Foreground>
+                                    </TextBlock>
+                                </Border>
+                                <!-- Step label -->
+                                <TextBlock Text="{Binding Name}" VerticalAlignment="Center">
+                                    <TextBlock.Style>
+                                        <Style TargetType="TextBlock" BasedOn="{StaticResource {x:Type TextBlock}}">
+                                            <Setter Property="FontWeight" Value="Normal" />
+                                            <Style.Triggers>
+                                                <DataTrigger Value="True">
+                                                    <DataTrigger.Binding>
+                                                        <MultiBinding Converter="{StaticResource StepMatchConverter}">
+                                                            <Binding Path="DataContext.CurrentStep" RelativeSource="{RelativeSource AncestorType=UserControl}"/>
+                                                            <Binding Path="Step"/>
+                                                        </MultiBinding>
+                                                    </DataTrigger.Binding>
+                                                    <Setter Property="FontWeight" Value="Bold" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </TextBlock.Style>
+                                </TextBlock>
+                            </StackPanel>
+                            <!-- Arrow separator (hidden for final step) -->
+                            <TextBlock Text="&#xE76C;" FontFamily="Segoe MDL2 Assets" FontSize="10"
+                                       VerticalAlignment="Center" Margin="6,0"
+                                       Foreground="{DynamicResource TextMutedBrush}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsFinalStep}" Value="True">
+                                                <Setter Property="Visibility" Value="Collapsed" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
         </Border>
 
         <!-- Step Content -->
@@ -60,12 +137,18 @@
 
         <!-- Navigation Buttons -->
         <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,16,0,0">
-            <Button Content="← Back" Width="100" Height="36" Margin="0,0,10,0"
+            <Button Content="&#x2190; Back" Width="100" Height="36" Margin="0,0,10,0"
+                    Style="{DynamicResource WorkflowDashboardButtonStyle}"
                     Command="{Binding GoBackCommand}"
-                    IsEnabled="{Binding CanGoBack}"/>
-            <Button Content="Next →" Width="100" Height="36"
+                    IsEnabled="{Binding CanGoBack}"
+                    AutomationProperties.Name="Go to previous step"
+                    ToolTip="Return to the previous wizard step"/>
+            <Button Content="Next &#x2192;" Width="100" Height="36"
+                    Style="{DynamicResource WorkflowDashboardButtonStyle}"
                     Command="{Binding GoNextCommand}"
-                    IsEnabled="{Binding CanGoNext}"/>
+                    IsEnabled="{Binding CanGoNext}"
+                    AutomationProperties.Name="Go to next step"
+                    ToolTip="Proceed to the next wizard step"/>
         </StackPanel>
     </Grid>
 </UserControl>

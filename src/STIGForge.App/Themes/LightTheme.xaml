@@ -61,6 +61,6 @@
   <SolidColorBrush x:Key="ToolTipBorderBrush" Color="#D5DEE9"/>
 
   <!-- Visual effects -->
-  <Color x:Key="CardShadowColor">#000000</Color>
+  <Color x:Key="CardShadowColor">#1A2E3F</Color>
 
 </ResourceDictionary>

@@ -2,14 +2,12 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         Title="Settings"
-        Height="560"
+        Height="700"
         Width="760"
         MinHeight="560"
         MinWidth="760"
-        MaxHeight="560"
-        MaxWidth="760"
         WindowStartupLocation="CenterOwner"
-        ResizeMode="NoResize"
+        ResizeMode="CanResizeWithGrip"
         Background="{DynamicResource WindowBackgroundBrush}">
   <Grid Margin="{DynamicResource AppPagePadding}">
     <Grid.RowDefinitions>
@@ -24,7 +22,7 @@
                 Background="{DynamicResource SurfaceMutedBrush}"
                 BorderBrush="{DynamicResource BorderBrush}">
           <StackPanel>
-            <TextBlock Text="Workflow Settings" FontSize="22" FontWeight="SemiBold" />
+            <TextBlock Text="Workflow Settings" Style="{StaticResource PageTitleStyle}" />
             <TextBlock Text="Configure import, scan, and verification paths for your environment."
                        Foreground="{DynamicResource TextMutedBrush}"
                        Margin="0,4,0,0" />
@@ -53,7 +51,8 @@
                   <ColumnDefinition Width="*"/>
                   <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBox Text="{Binding ImportFolderPath, UpdateSourceTrigger=PropertyChanged}" Height="32" VerticalContentAlignment="Center"/>
+                <TextBox Text="{Binding ImportFolderPath, UpdateSourceTrigger=PropertyChanged}" Height="32" VerticalContentAlignment="Center"
+                         MaxLength="260" ToolTip="{Binding ImportFolderPath}"/>
                 <Button Grid.Column="1" Content="Browse..." Width="88" Height="32" Margin="8,0,0,0" Command="{Binding BrowseImportFolderCommand}"/>
               </Grid>
             </StackPanel>
@@ -65,19 +64,21 @@
                   <ColumnDefinition Width="*"/>
                   <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBox Text="{Binding EvaluateStigToolPath, UpdateSourceTrigger=PropertyChanged}" Height="32" VerticalContentAlignment="Center"/>
+                <TextBox Text="{Binding EvaluateStigToolPath, UpdateSourceTrigger=PropertyChanged}" Height="32" VerticalContentAlignment="Center"
+                         MaxLength="260" ToolTip="{Binding EvaluateStigToolPath}"/>
                 <Button Grid.Column="1" Content="Browse..." Width="88" Height="32" Margin="8,0,0,0" Command="{Binding BrowseEvaluateStigCommand}"/>
               </Grid>
             </StackPanel>
 
             <StackPanel Grid.Row="3" Margin="0,0,0,12">
-              <TextBlock Text="SCC Tool Path" FontWeight="SemiBold" Margin="0,0,0,4"/>
+              <TextBlock Text="SCC Tool Path (Optional)" FontWeight="SemiBold" Margin="0,0,0,4"/>
               <Grid>
                 <Grid.ColumnDefinitions>
                   <ColumnDefinition Width="*"/>
                   <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBox Text="{Binding SccToolPath, UpdateSourceTrigger=PropertyChanged}" Height="32" VerticalContentAlignment="Center"/>
+                <TextBox Text="{Binding SccToolPath, UpdateSourceTrigger=PropertyChanged}" Height="32" VerticalContentAlignment="Center"
+                         MaxLength="260" ToolTip="{Binding SccToolPath}"/>
                 <Button Grid.Column="1" Content="Browse..." Width="88" Height="32" Margin="8,0,0,0" Command="{Binding BrowseSccCommand}"/>
               </Grid>
             </StackPanel>
@@ -89,14 +90,16 @@
                   <ColumnDefinition Width="*"/>
                   <ColumnDefinition Width="Auto"/>
                 </Grid.ColumnDefinitions>
-                <TextBox Text="{Binding OutputFolderPath, UpdateSourceTrigger=PropertyChanged}" Height="32" VerticalContentAlignment="Center"/>
+                <TextBox Text="{Binding OutputFolderPath, UpdateSourceTrigger=PropertyChanged}" Height="32" VerticalContentAlignment="Center"
+                         MaxLength="260" ToolTip="{Binding OutputFolderPath}"/>
                 <Button Grid.Column="1" Content="Browse..." Width="88" Height="32" Margin="8,0,0,0" Command="{Binding BrowseOutputFolderCommand}"/>
               </Grid>
             </StackPanel>
 
             <StackPanel Grid.Row="5">
               <TextBlock Text="Machine Target" FontWeight="SemiBold" Margin="0,0,0,4"/>
-              <TextBox Text="{Binding MachineTarget, UpdateSourceTrigger=PropertyChanged}" Height="32" VerticalContentAlignment="Center"/>
+              <TextBox Text="{Binding MachineTarget, UpdateSourceTrigger=PropertyChanged}" Height="32" VerticalContentAlignment="Center"
+                       MaxLength="255" ToolTip="{Binding MachineTarget}"/>
             </StackPanel>
           </Grid>
         </GroupBox>
@@ -104,13 +107,13 @@
         <GroupBox Header="Evaluate-STIG Advanced" Margin="0,0,0,16" Padding="12">
           <StackPanel>
             <TextBlock Text="Answer Files Path (AFPath)" FontWeight="SemiBold" Margin="0,0,0,4"/>
-            <TextBox Text="{Binding EvaluateAfPath, UpdateSourceTrigger=PropertyChanged}" Height="32" VerticalContentAlignment="Center" Margin="0,0,0,10"/>
+            <TextBox Text="{Binding EvaluateAfPath, UpdateSourceTrigger=PropertyChanged}" Height="32" VerticalContentAlignment="Center" MaxLength="260" Margin="0,0,0,10"/>
 
             <TextBlock Text="Select STIG(s)" FontWeight="SemiBold" Margin="0,0,0,4"/>
-            <TextBox Text="{Binding EvaluateSelectStig, UpdateSourceTrigger=PropertyChanged}" Height="32" VerticalContentAlignment="Center" Margin="0,0,0,10"/>
+            <TextBox Text="{Binding EvaluateSelectStig, UpdateSourceTrigger=PropertyChanged}" Height="32" VerticalContentAlignment="Center" MaxLength="500" Margin="0,0,0,10"/>
 
             <TextBlock Text="Additional Arguments" FontWeight="SemiBold" Margin="0,0,0,4"/>
-            <TextBox Text="{Binding EvaluateAdditionalArgs, UpdateSourceTrigger=PropertyChanged}" Height="32" VerticalContentAlignment="Center" Margin="0,0,0,10"/>
+            <TextBox Text="{Binding EvaluateAdditionalArgs, UpdateSourceTrigger=PropertyChanged}" Height="32" VerticalContentAlignment="Center" MaxLength="500" Margin="0,0,0,10"/>
 
             <CheckBox Content="Require Administrator mode for Scan/Verify" IsChecked="{Binding RequireElevationForScan}"/>
           </StackPanel>
@@ -119,10 +122,10 @@
         <GroupBox Header="SCC Advanced" Margin="0,0,0,16" Padding="12">
           <StackPanel>
             <TextBlock Text="Arguments (cscc/cscc-remote)" FontWeight="SemiBold" Margin="0,0,0,4"/>
-            <TextBox Text="{Binding SccArguments, UpdateSourceTrigger=PropertyChanged}" Height="32" VerticalContentAlignment="Center" Margin="0,0,0,10"/>
+            <TextBox Text="{Binding SccArguments, UpdateSourceTrigger=PropertyChanged}" Height="32" VerticalContentAlignment="Center" MaxLength="500" Margin="0,0,0,10"/>
 
             <TextBlock Text="Working Directory (optional)" FontWeight="SemiBold" Margin="0,0,0,4"/>
-            <TextBox Text="{Binding SccWorkingDirectory, UpdateSourceTrigger=PropertyChanged}" Height="32" VerticalContentAlignment="Center" Margin="0,0,0,10"/>
+            <TextBox Text="{Binding SccWorkingDirectory, UpdateSourceTrigger=PropertyChanged}" Height="32" VerticalContentAlignment="Center" MaxLength="260" Margin="0,0,0,10"/>
 
             <TextBlock Text="Timeout Seconds (30-3600)" FontWeight="SemiBold" Margin="0,0,0,4"/>
             <TextBox Text="{Binding SccTimeoutSeconds, UpdateSourceTrigger=PropertyChanged}" Height="32" VerticalContentAlignment="Center" Margin="0,0,0,10"/>

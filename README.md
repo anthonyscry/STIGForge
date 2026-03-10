@@ -191,6 +191,44 @@ See `docs/release/SecurityGatePolicies.md` for policy file and exception managem
   - `server2019`
   - `server2022`
 
+## E2E Compliance Metrics (Server 2019 Lab, 2026-03-10)
+
+Tested on isolated Hyper-V lab VMs (SRV01, SRV02) running Windows Server 2019 (Member Server).
+Hardening pipeline: PowerSTIG DSC (3-phase) + LGPO GPO application + DoD PKI certificate import.
+
+### Per-STIG Compliance Delta
+
+| STIG | Controls | Original | After DSC | After GPO+DSC+Certs | Total Delta |
+|------|----------|----------|-----------|---------------------|-------------|
+| Microsoft Windows Server 2019 | 283 | 50.9% | 68.2% | 71.4% | **+20.5%** |
+| Microsoft Windows Defender Firewall | 21 | 4.8% | 100% | 100% | **+95.2%** |
+| Microsoft DotNet Framework 4.0 | 16 | 87.5% | 93.8% | 93.8% | **+6.3%** |
+| Microsoft Defender Antivirus | 68 | 26.5% | 26.5% | 26.5% | 0% |
+| Microsoft Internet Explorer 11 | 137 | 1.5% | 1.5% | 1.5% | 0% |
+
+### Aggregate Results
+
+| Metric | Original Baseline | After DSC Only | After GPO+DSC+Certs |
+|--------|-------------------|----------------|---------------------|
+| **Weighted Total** | 35.7% (179/502) | 47.4% (249/525) | 49.1% (258/525) |
+| **Unweighted Average** | 34.2% | 58.0% | 58.6% |
+| **Findings Fixed** | - | 70 | 78 |
+
+### Remaining Findings Analysis
+
+- 248/253 remaining open findings (98%) are **Manual/Interview** checks requiring human review
+- IE11: 135 open (all require domain GPO or manual policy)
+- Defender: 48 open (all require domain GPO or manual Defender config)
+- Server 2019: 62 open (mix of GPO, certificate, and manual checks)
+- PKI/Certificate: 2 open (Root CA 3/5/6 import failed due to DER format mismatch)
+
+### Test Infrastructure
+
+- Unit tests: 927/927 pass
+- Integration tests: 102/102 pass
+- PowerSTIG: 4.29.0, Evaluate-STIG: DISA latest
+- Lab: Hyper-V (triton-ajt), VMs: SRV01/SRV02 (Server 2019), DC01 (Domain Controller)
+
 ## Repo layout
 - src/ STIGForge.* projects (WPF App + modules)
 - tests/ unit + integration tests

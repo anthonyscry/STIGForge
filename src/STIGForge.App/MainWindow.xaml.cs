@@ -37,7 +37,10 @@ public partial class MainWindow : Window
             }
         }
 
-        DataContext = new WorkflowViewModel(importScanner, verifyService, runApply);
+        var vm = new WorkflowViewModel(importScanner, verifyService, runApply);
+        vm.ConfirmAction = (title, message) =>
+            MessageBox.Show(message, title, MessageBoxButton.YesNo, MessageBoxImage.Warning) == MessageBoxResult.Yes;
+        DataContext = vm;
     }
 
     private void ApplyTitleBarColors()
