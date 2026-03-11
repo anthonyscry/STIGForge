@@ -44,7 +44,7 @@ Set-Item WSMan:\localhost\MaxEnvelopeSizekb -Value 8192
 if ($serverRole -eq 'DC') {
 
     Configuration ServerSTIG {
-        Import-DscResource -ModuleName @{ModuleName='PowerSTIG'; RequiredVersion='4.28.0'}
+        Import-DscResource -ModuleName @{ModuleName='PowerSTIG'; RequiredVersion='4.29.0'}
 
         Node localhost {
             WindowsServer ServerBaseline {
@@ -77,7 +77,7 @@ if ($serverRole -eq 'DC') {
 } else {
 
     Configuration ServerSTIG {
-        Import-DscResource -ModuleName @{ModuleName='PowerSTIG'; RequiredVersion='4.28.0'}
+        Import-DscResource -ModuleName @{ModuleName='PowerSTIG'; RequiredVersion='4.29.0'}
 
         Node localhost {
             WindowsServer ServerBaseline {

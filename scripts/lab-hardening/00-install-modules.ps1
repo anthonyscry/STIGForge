@@ -52,9 +52,18 @@ Write-Host "=== PowerSTIG + DSC Modules ==="
 
 $nupkgDir = "$tempDir\modules"
 if (-not (Test-Path $nupkgDir)) {
-    Write-Host "ERROR: $nupkgDir not found. Copy import/modules/*.nupkg to C:\temp\modules\ first."
-    Write-Host "Skipping module installation."
-} else {
+    # Fallback: check if nupkgs were placed directly in C:\temp
+    $fallbackPkgs = Get-ChildItem -Path $tempDir -Filter '*.nupkg' -ErrorAction SilentlyContinue
+    if ($fallbackPkgs.Count -gt 0) {
+        Write-Host "NOTE: $nupkgDir not found, but found $($fallbackPkgs.Count) nupkg files in $tempDir - creating modules dir"
+        New-Item -Path $nupkgDir -ItemType Directory -Force | Out-Null
+        $fallbackPkgs | ForEach-Object { Move-Item $_.FullName $nupkgDir -Force }
+    } else {
+        Write-Host "ERROR: $nupkgDir not found. Copy import/modules/*.nupkg to C:\temp\modules\ first."
+        Write-Host "Skipping module installation."
+    }
+}
+if (Test-Path $nupkgDir) {
     $nupkgs = Get-ChildItem -Path $nupkgDir -Filter '*.nupkg'
     if ($nupkgs.Count -eq 0) {
         Write-Host "ERROR: No .nupkg files found in $nupkgDir"

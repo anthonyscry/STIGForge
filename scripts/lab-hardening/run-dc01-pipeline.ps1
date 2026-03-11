@@ -44,12 +44,12 @@ if (-not $esPath -and (Test-Path $esZip)) {
 }
 
 if (-not $esPath) {
-    Write-Host "ERROR: Evaluate-STIG.ps1 not found"
-    exit 1
+    Write-Host "NOTE: Evaluate-STIG.ps1 not yet found - will be extracted by module install step"
+    $esDir = $null
+} else {
+    $esDir = Split-Path $esPath -Parent
+    Write-Host "Evaluate-STIG: $esPath"
 }
-
-$esDir = Split-Path $esPath -Parent
-Write-Host "Evaluate-STIG: $esPath"
 
 # ============================================
 # Helper: Run Evaluate-STIG and parse CKL results
@@ -285,19 +285,34 @@ function Restore-WinRmState {
 }
 
 # ============================================
-# STEP 0: Baseline scan (before any hardening)
+# STEP 0: Install E-STIG + DSC modules (BEFORE baseline scan)
+# Must run first so Evaluate-STIG is extracted and PowerSTIG is available
 # ============================================
 Assert-NotWinRmHosted
-Log-Step "STEP 0: Starting baseline scan"
-$allSteps += Invoke-StigScan -StepName '00-baseline'
-Log-Step "STEP 0: Baseline scan complete"
+Log-Step "STEP 0: Starting module install (E-STIG + PowerSTIG + DSC)"
+try { & "$scriptDir\00-install-modules.ps1" } catch { Log-Step "STEP 0 ERROR: $($_.Exception.Message)" }
+Log-Step "STEP 0: Module install complete"
+
+# Re-resolve Evaluate-STIG path after install (00-install-modules extracts to C:\Evaluate-STIG)
+$esPath = $null
+foreach ($dir in $esSearchDirs) {
+    $found = Get-ChildItem $dir -Filter 'Evaluate-STIG.ps1' -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($found) { $esPath = $found.FullName; break }
+}
+if ($esPath) {
+    $esDir = Split-Path $esPath -Parent
+    Log-Step "Evaluate-STIG resolved to: $esPath"
+} else {
+    Log-Step "ERROR: Evaluate-STIG still not found after module install"
+    exit 1
+}
 
 # ============================================
-# STEP 1: Install E-STIG + DSC modules
+# STEP 1: Baseline scan (before any hardening)
 # ============================================
-Log-Step "STEP 1: Starting module install"
-try { & "$scriptDir\00-install-modules.ps1" } catch { Log-Step "STEP 1 ERROR: $($_.Exception.Message)" }
-Log-Step "STEP 1: Module install complete"
+Log-Step "STEP 1: Starting baseline scan"
+$allSteps += Invoke-StigScan -StepName '00-baseline'
+Log-Step "STEP 1: Baseline scan complete"
 
 # ============================================
 # STEP 1a: Capture WinRM state

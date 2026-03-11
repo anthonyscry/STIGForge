@@ -23,11 +23,11 @@ if (-not $esPath -and (Test-Path $esZip)) {
 }
 
 if (-not $esPath) {
-    Write-Host "ERROR: Evaluate-STIG.ps1 not found"
-    exit 1
+    Write-Host "NOTE: Evaluate-STIG.ps1 not yet found - will be extracted by module install step"
+    $esDir = $null
+} else {
+    $esDir = Split-Path $esPath -Parent
 }
-
-$esDir = Split-Path $esPath -Parent
 
 function Invoke-StigScan {
     param([string]$StepName)
@@ -80,11 +80,25 @@ if (-not (Test-Path $scriptDir)) {
 
 $allSteps = @()
 
-Log-Step "STEP 0: Baseline scan"
-$allSteps += Invoke-StigScan -StepName '00-baseline'
+Log-Step "STEP 0: Install modules (E-STIG + PowerSTIG + DSC)"
+try { & "$scriptDir\00-install-modules.ps1" } catch { Log-Step "STEP 0 ERROR: $($_.Exception.Message)" }
 
-Log-Step "STEP 1: Install modules"
-try { & "$scriptDir\00-install-modules.ps1" } catch { Log-Step "STEP 1 ERROR: $($_.Exception.Message)" }
+# Re-resolve Evaluate-STIG path after install (00-install-modules extracts to C:\Evaluate-STIG)
+$esPath = $null
+foreach ($dir in $esSearchDirs) {
+    $found = Get-ChildItem $dir -Filter 'Evaluate-STIG.ps1' -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($found) { $esPath = $found.FullName; break }
+}
+if ($esPath) {
+    $esDir = Split-Path $esPath -Parent
+    Log-Step "Evaluate-STIG resolved to: $esPath"
+} else {
+    Log-Step "ERROR: Evaluate-STIG still not found after module install"
+    exit 1
+}
+
+Log-Step "STEP 1: Baseline scan"
+$allSteps += Invoke-StigScan -StepName '00-baseline'
 
 Log-Step "STEP 2: DSC hardening"
 try { & "$scriptDir\03-ws01-dsc-hardening.ps1" } catch { Log-Step "STEP 2 ERROR: $($_.Exception.Message)" }
