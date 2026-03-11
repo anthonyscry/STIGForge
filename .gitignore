@@ -27,3 +27,6 @@ tools/PSModules/
 
 # Build artifacts
 artifacts/
+
+# Lab hardening import binaries (download from DISA/Microsoft, see scripts/lab-hardening/README.md)
+scripts/lab-hardening/import/
