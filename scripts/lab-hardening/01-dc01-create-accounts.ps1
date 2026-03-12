@@ -11,7 +11,7 @@ $ouBase = 'DC=lab,DC=local'
 $ous = @(
     @{ Name='Admin Accounts'; Path=$ouBase }
     @{ Name='Workstations'; Path=$ouBase }
-    @{ Name='Servers'; Path=$ouBase }
+    @{ Name='Member Servers'; Path=$ouBase }
 )
 
 foreach ($ou in $ous) {
@@ -80,9 +80,9 @@ if ($ws01 -and $ws01.DistinguishedName -notmatch 'OU=Workstations') {
 
 foreach ($srv in @('SRV01','SRV02')) {
     $comp = Get-ADComputer $srv -ErrorAction SilentlyContinue
-    if ($comp -and $comp.DistinguishedName -notmatch 'OU=Servers') {
-        Move-ADObject -Identity $comp.DistinguishedName -TargetPath "OU=Servers,$ouBase"
-        Write-Host "Moved $srv to Servers OU"
+    if ($comp -and $comp.DistinguishedName -notmatch 'OU=Member Servers') {
+        Move-ADObject -Identity $comp.DistinguishedName -TargetPath "OU=Member Servers,$ouBase"
+        Write-Host "Moved $srv to Member Servers OU"
     }
 }
 

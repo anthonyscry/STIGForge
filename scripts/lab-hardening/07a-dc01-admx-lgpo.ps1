@@ -126,30 +126,53 @@ if ($isDC) {
     Import-Module GroupPolicy
 
     $dcOU = 'OU=Domain Controllers,DC=lab,DC=local'
+    $msOU = 'OU=Member Servers,DC=lab,DC=local'
 
-    # GPO backups to import as AD domain GPOs
+    # Ensure Member Servers OU exists
+    if (-not ([ADSI]::Exists("LDAP://$msOU"))) {
+        Import-Module ActiveDirectory
+        New-ADOrganizationalUnit -Name 'Member Servers' -Path 'DC=lab,DC=local' -ProtectedFromAccidentalDeletion $false
+        Write-Host "  Created OU: $msOU"
+    }
+
+    # GPO backups to import — using original DISA display names (do NOT rename)
+    # DC STIG -> Domain Controllers OU only
+    # MS STIG -> Member Servers OU only
+    # Defender, Firewall, IE11 -> both OUs (cross-linked below)
     $gpoImports = @(
         @{
-            Name     = 'DoD-WinSvr2019-DC'
+            Name     = 'DoD WinSvr 2019 DC STIG Comp v3r7'
             BackupId = '{FAF6982B-26E3-4CBB-976C-6B623D8E530B}'
             Path     = "$gpoDir\DoD WinSvr 2019 MS and DC v3r7\GPOs"
             Target   = $dcOU
         }
         @{
-            Name     = 'DoD-Defender'
-            BackupId = $null
+            Name     = 'DoD WinSvr 2019 MS STIG Comp v3r7'
+            BackupId = '{7A965217-8441-42E2-A612-4B8A5D49CD53}'
+            Path     = "$gpoDir\DoD WinSvr 2019 MS and DC v3r7\GPOs"
+            Target   = $msOU
+        }
+        @{
+            Name     = 'DoD Microsoft Defender Antivirus STIG Computer v2r7'
+            BackupId = '{893BF0A9-A4EC-4464-B75A-D597414C5A12}'
             Path     = "$gpoDir\DoD Microsoft Defender Antivirus STIG v2r7\GPOs"
             Target   = $dcOU
         }
         @{
-            Name     = 'DoD-Firewall'
-            BackupId = $null
+            Name     = 'DoD Windows Defender Firewall STIG v2r2'
+            BackupId = '{EB82B913-90A2-4599-A554-90B3A116B382}'
             Path     = "$gpoDir\DoD Windows Defender Firewall v2r2\GPOs"
             Target   = $dcOU
         }
         @{
-            Name     = 'DoD-IE11'
-            BackupId = $null
+            Name     = 'DoD Internet Explorer 11 STIG Computer v2r6'
+            BackupId = '{63A768C8-9905-4871-BF57-422A8D83B6D0}'
+            Path     = "$gpoDir\DoD Internet Explorer 11 v2r6\GPOs"
+            Target   = $dcOU
+        }
+        @{
+            Name     = 'DoD Internet Explorer 11 STIG User v2r6'
+            BackupId = '{75194269-DE5A-403D-A8C1-3DE83516BBAA}'
             Path     = "$gpoDir\DoD Internet Explorer 11 v2r6\GPOs"
             Target   = $dcOU
         }
@@ -207,6 +230,35 @@ if ($isDC) {
             }
         } else {
             Write-Host "  Already linked: $($import.Name)"
+        }
+    }
+
+    # Cross-link Defender, Firewall, IE11 to Member Servers OU
+    # (Primary target above is DC OU; these apply to both roles)
+    Write-Host ""
+    Write-Host "=== Cross-linking shared DISA GPOs to Member Servers OU ==="
+    $sharedGpos = @(
+        'DoD Microsoft Defender Antivirus STIG Computer v2r7'
+        'DoD Windows Defender Firewall STIG v2r2'
+        'DoD Internet Explorer 11 STIG Computer v2r6'
+        'DoD Internet Explorer 11 STIG User v2r6'
+    )
+    foreach ($name in $sharedGpos) {
+        $gpo = Get-GPO -Name $name -ErrorAction SilentlyContinue
+        if (-not $gpo) {
+            Write-Host "  SKIP: $name not found"
+            continue
+        }
+        $existingLink = (Get-GPInheritance -Target $msOU -ErrorAction SilentlyContinue).GpoLinks | Where-Object { $_.DisplayName -eq $name }
+        if (-not $existingLink) {
+            try {
+                $gpo | New-GPLink -Target $msOU -LinkEnabled Yes -ErrorAction Stop | Out-Null
+                Write-Host "  Linked: $name -> $msOU"
+            } catch {
+                Write-Host "  WARN: Could not link $name to Member Servers: $($_.Exception.Message)"
+            }
+        } else {
+            Write-Host "  $name already linked to Member Servers"
         }
     }
 }

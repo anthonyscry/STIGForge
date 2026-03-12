@@ -1,8 +1,8 @@
 # STIGForge Lab - Step 8: Create DC/MS STIG GPOs (Registry + Security Policy + Audit)
 # Run on: DC01 (lab.local\Administrator)
 # Prerequisites: Steps 1-2 complete (OUs, WS01 GPOs created)
-# Creates: STIG-Server2019, STIG-Defender, STIG-Firewall GPOs linked to Domain Controllers OU
-# Also links existing STIG-IE11, STIG-DotNet to Domain Controllers OU
+# Creates: STIG-Server2019, STIG-Defender, STIG-Firewall GPOs
+# Links all STIG GPOs to BOTH Domain Controllers OU and Member Servers OU
 #
 # This script consolidates ALL GPO-able DC/MS hardening:
 #   - Registry settings (Set-GPRegistryValue)
@@ -126,6 +126,16 @@ Write-Host "=== Creating STIG GPOs for $roleName ==="
 Write-Host ""
 
 $dcOU = 'OU=Domain Controllers,DC=lab,DC=local'
+$msOU = 'OU=Member Servers,DC=lab,DC=local'
+$wsOU = 'OU=Workstations,DC=lab,DC=local'
+
+# ============================================
+# Ensure Member Servers OU exists
+# ============================================
+if (-not ([ADSI]::Exists("LDAP://$msOU"))) {
+    New-ADOrganizationalUnit -Name 'Member Servers' -Path 'DC=lab,DC=local' -ProtectedFromAccidentalDeletion $false
+    Write-Host "Created OU: $msOU"
+}
 
 # ============================================
 # Create GPOs
@@ -488,25 +498,45 @@ Set-GPReg $gpo "$fw\PublicProfile" 'AllowLocalIPsecPolicyMerge' 0
 Write-Host "  Firewall GPO complete (20 settings)"
 
 # ============================================
-# Link GPOs to Domain Controllers OU
+# Link GPOs to Domain Controllers OU + Member Servers OU
 # ============================================
-Write-Host "`n=== Linking GPOs to Domain Controllers OU ==="
+Write-Host "`n=== Linking GPOs ==="
 
-foreach ($name in @('STIG-Server2019','STIG-Defender','STIG-Firewall','STIG-IE11','STIG-DotNet')) {
-    $existing = (Get-GPInheritance -Target $dcOU).GpoLinks | Where-Object { $_.DisplayName -eq $name }
-    if (-not $existing) {
-        Get-GPO $name | New-GPLink -Target $dcOU -LinkEnabled Yes -ErrorAction SilentlyContinue
-        Write-Host "  Linked $name -> Domain Controllers OU"
-    } else {
-        Write-Host "  $name already linked"
+# GPOs that apply to BOTH DC and Member Servers
+$bothOUs = @($dcOU, $msOU)
+foreach ($name in @('STIG-Server2019','STIG-Defender','STIG-Firewall','STIG-IE11')) {
+    $gpoObj = Get-GPO -Name $name -ErrorAction SilentlyContinue
+    if (-not $gpoObj) {
+        Write-Host "  SKIP: $name GPO not found (will be created by 02-dc01-create-gpos.ps1)"
+        continue
+    }
+    foreach ($ou in $bothOUs) {
+        $existing = (Get-GPInheritance -Target $ou -ErrorAction SilentlyContinue).GpoLinks | Where-Object { $_.DisplayName -eq $name }
+        if (-not $existing) {
+            $gpoObj | New-GPLink -Target $ou -LinkEnabled Yes -ErrorAction SilentlyContinue
+            Write-Host "  Linked $name -> $ou"
+        } else {
+            Write-Host "  $name already linked to $ou"
+        }
     }
 }
 
-Write-Host "`n=== DC01 GPO Setup Complete ==="
+# STIG-DotNet applies domain-wide (already linked to domain root by 02-dc01-create-gpos.ps1)
+$domRoot = 'DC=lab,DC=local'
+$dotnetGpo = Get-GPO -Name 'STIG-DotNet' -ErrorAction SilentlyContinue
+if ($dotnetGpo) {
+    $existing = (Get-GPInheritance -Target $domRoot -ErrorAction SilentlyContinue).GpoLinks | Where-Object { $_.DisplayName -eq 'STIG-DotNet' }
+    if (-not $existing) {
+        $dotnetGpo | New-GPLink -Target $domRoot -LinkEnabled Yes -ErrorAction SilentlyContinue
+        Write-Host "  Linked STIG-DotNet -> Domain Root"
+    } else {
+        Write-Host "  STIG-DotNet already linked to Domain Root"
+    }
+}
+
+Write-Host "`n=== GPO Setup Complete ==="
 Write-Host "  Registry settings: ~145"
 Write-Host "  Security policy: user rights + account rename (GptTmpl.inf)"
 Write-Host "  Audit policy: 16-18 subcategories (audit.csv)"
+Write-Host "  GPOs linked to: Domain Controllers OU + Member Servers OU"
 Write-Host "  Run 'gpupdate /force' to apply, then reboot for VBS/DeviceGuard"
-Write-Host ""
-Write-Host "  To DISABLE all hardening: Set-GPLink -Name 'STIG-*' -Target '$dcOU' -LinkEnabled No"
-Write-Host "  To RE-ENABLE: Set-GPLink -Name 'STIG-*' -Target '$dcOU' -LinkEnabled Yes"

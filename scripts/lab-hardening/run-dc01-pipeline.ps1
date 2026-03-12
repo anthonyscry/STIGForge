@@ -2,12 +2,15 @@
 # Run on: DC01 as Administrator (lab\Install or lab\Administrator)
 # Prerequisites: import/ folder contents copied to C:\temp\
 #
-# Priority order (DSC-first + DISA-first):
-#   1. DSC (PowerSTIG) - bulk baseline settings
-#   2. DISA ADMX/GPO import + LGPO - official DISA baselines
-#   3. Certificates - DoD/ECA certs
-#   4. Custom GPOs - fill gaps (registry, security policy, audit)
-#   5. Script fallback remediation - non-GPO items (AD ops, DNS, LDAP, NTP, optional IE11)
+# Priority order:
+#   0. Module install (E-STIG + PowerSTIG)
+#   0b. AD setup (OUs, accounts, STIG-IE11/DotNet GPOs via 01+02)
+#   1. Baseline scan
+#   2. DSC (PowerSTIG) - bulk baseline settings
+#   3. DISA ADMX/GPO import + LGPO - official DISA baselines
+#   4. Certificates - DoD/ECA certs
+#   5. Custom GPOs - fill gaps (registry, security policy, audit) + link to DC+MS OUs
+#   6. Script fallback remediation - non-GPO items (AD ops, DNS, LDAP, NTP, optional IE11)
 #
 # IE11 is handled by STIG-IE11 GPO (no separate script step needed).
 # User rights, audit policy, account rename all in GPOs (easy on/off).
@@ -306,6 +309,15 @@ if ($esPath) {
     Log-Step "ERROR: Evaluate-STIG still not found after module install"
     exit 1
 }
+
+# ============================================
+# STEP 0b: AD Setup (OUs, accounts, WS/common GPOs including STIG-IE11)
+# Must run before hardening so GPOs exist when linked by later steps
+# ============================================
+Log-Step "STEP 0b: Starting AD setup (OUs, accounts, GPOs)"
+try { & "$scriptDir\01-dc01-create-accounts.ps1" } catch { Log-Step "STEP 0b ERROR (accounts): $($_.Exception.Message)" }
+try { & "$scriptDir\02-dc01-create-gpos.ps1" } catch { Log-Step "STEP 0b ERROR (gpos): $($_.Exception.Message)" }
+Log-Step "STEP 0b: AD setup complete (OUs created, STIG-IE11/DotNet GPOs ready)"
 
 # ============================================
 # STEP 1: Baseline scan (before any hardening)
