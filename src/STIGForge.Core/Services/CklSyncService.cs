@@ -53,7 +53,7 @@ public sealed class CklImporter
   {
     return checklist.Findings.Select(f => new ControlResult
     {
-      RuleId = f.VulnId,
+      RuleId = f.RuleId,
       VulnId = f.VulnId,
       Status = MapCklStatus(f.Status),
       Comments = f.Comments ?? string.Empty,
@@ -92,7 +92,15 @@ public sealed class CklImporter
 
   private static string? GetElementValue(XElement? parent, string elementName)
   {
-    return parent?.Element(elementName)?.Value?.Trim();
+    // Try direct child element first (legacy format)
+    var direct = parent?.Element(elementName)?.Value?.Trim();
+    if (!string.IsNullOrWhiteSpace(direct))
+      return direct;
+
+    // Try SI_DATA / SID_NAME / SID_DATA structure (standard CKL format)
+    var siData = parent?.Elements("SI_DATA")
+      .FirstOrDefault(si => string.Equals(si.Element("SID_NAME")?.Value?.Trim(), elementName, StringComparison.OrdinalIgnoreCase));
+    return siData?.Element("SID_DATA")?.Value?.Trim();
   }
 
   private static string? GetStigData(XElement vuln, string attributeName)
@@ -115,12 +123,16 @@ public sealed class CklImporter
 
   private static string MapCklStatus(string status)
   {
-    return status.ToLowerInvariant() switch
+    // Strip underscores, hyphens, spaces before matching to handle all DISA CKL
+    // status variants (e.g. "Not_A_Finding", "NotAFinding", "not a finding")
+    var normalized = status.Replace("_", "").Replace("-", "").Replace(" ", "").ToLowerInvariant();
+    return normalized switch
     {
       "notafinding" or "pass" => "Pass",
       "open" or "fail" => "Fail",
-      "not_applicable" or "notapplicable" => "NotApplicable",
-      "not_reviewed" or "notreviewed" => "NotReviewed",
+      "notapplicable" or "na" => "NotApplicable",
+      "notreviewed" or "notchecked" => "NotReviewed",
+      "error" => "Fail",
       _ => "NotReviewed"
     };
   }
@@ -142,9 +154,15 @@ public sealed class CklExporter
         new XElement("STIGS",
           new XElement("iSTIG",
             new XElement("STIG_INFO",
-              new XElement("title", checklist.StigTitle),
-              new XElement("version", checklist.StigVersion),
-              new XElement("releaseinfo", checklist.StigRelease)
+              new XElement("SI_DATA",
+                new XElement("SID_NAME", "title"),
+                new XElement("SID_DATA", checklist.StigTitle)),
+              new XElement("SI_DATA",
+                new XElement("SID_NAME", "version"),
+                new XElement("SID_DATA", checklist.StigVersion)),
+              new XElement("SI_DATA",
+                new XElement("SID_NAME", "releaseinfo"),
+                new XElement("SID_DATA", checklist.StigRelease))
             ),
             checklist.Findings.Select(f => new XElement("VULN",
               new XElement("STIG_DATA", new XElement("VULN_ATTRIBUTE", "Vuln_Num"), new XElement("ATTRIBUTE_DATA", f.VulnId)),
@@ -188,12 +206,15 @@ public sealed class CklExporter
 
   private static string MapResultStatus(string? status)
   {
-    return status?.ToLowerInvariant() switch
+    // Strip separators to handle all variants (e.g. "not_applicable", "NotApplicable", "na")
+    var normalized = (status ?? "").Replace("_", "").Replace("-", "").Replace(" ", "").ToLowerInvariant();
+    return normalized switch
     {
-      "pass" or "compliant" => "NotAFinding",
-      "fail" or "noncompliant" => "Open",
-      "notapplicable" => "Not_Applicable",
-      "notreviewed" => "Not_Reviewed",
+      "pass" or "compliant" or "notafinding" => "NotAFinding",
+      "fail" or "noncompliant" or "open" or "error" => "Open",
+      "notapplicable" or "na" => "Not_Applicable",
+      "notreviewed" or "notchecked" => "Not_Reviewed",
+      "informational" => "Not_Reviewed",
       _ => "Not_Reviewed"
     };
   }
@@ -216,10 +237,19 @@ public sealed class CklChecklist
 
   public List<CklFinding> Findings { get; set; } = new();
 
-  public int PassCount => Findings.Count(f => f.Status == "NotAFinding" || f.Status == "Not_A_Finding");
-  public int FailCount => Findings.Count(f => f.Status == "Open" || f.Status == "Fail");
-  public int NotApplicableCount => Findings.Count(f => f.Status == "Not_Applicable" || f.Status == "NotApplicable");
-  public int NotReviewedCount => Findings.Count(f => f.Status == "Not_Reviewed" || f.Status == "NotReviewed");
+  public int PassCount => Findings.Count(f =>
+    string.Equals(f.Status, "NotAFinding", StringComparison.OrdinalIgnoreCase)
+    || string.Equals(f.Status, "Not_A_Finding", StringComparison.OrdinalIgnoreCase)
+    || string.Equals(f.Status, "Pass", StringComparison.OrdinalIgnoreCase));
+  public int FailCount => Findings.Count(f =>
+    string.Equals(f.Status, "Open", StringComparison.OrdinalIgnoreCase)
+    || string.Equals(f.Status, "Fail", StringComparison.OrdinalIgnoreCase));
+  public int NotApplicableCount => Findings.Count(f =>
+    string.Equals(f.Status, "Not_Applicable", StringComparison.OrdinalIgnoreCase)
+    || string.Equals(f.Status, "NotApplicable", StringComparison.OrdinalIgnoreCase));
+  public int NotReviewedCount => Findings.Count(f =>
+    string.Equals(f.Status, "Not_Reviewed", StringComparison.OrdinalIgnoreCase)
+    || string.Equals(f.Status, "NotReviewed", StringComparison.OrdinalIgnoreCase));
 }
 
 public sealed class CklFinding

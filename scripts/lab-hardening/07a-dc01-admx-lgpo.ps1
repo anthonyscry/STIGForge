@@ -125,6 +125,49 @@ if ($isDC) {
 
     Import-Module GroupPolicy
 
+    function Ensure-GpoLinkEnabled {
+        param(
+            [string]$GpoName,
+            [string]$Target
+        )
+
+        $inheritance = Get-GPInheritance -Target $Target -ErrorAction SilentlyContinue
+        $existingLink = $inheritance.GpoLinks | Where-Object { $_.DisplayName -eq $GpoName } | Select-Object -First 1
+
+        if (-not $existingLink) {
+            Get-GPO -Name $GpoName -ErrorAction Stop | New-GPLink -Target $Target -LinkEnabled Yes -ErrorAction Stop | Out-Null
+            Write-Host "  Linked: $GpoName -> $Target"
+            return
+        }
+
+        if (-not $existingLink.Enabled) {
+            Set-GPLink -Name $GpoName -Target $Target -LinkEnabled Yes -ErrorAction Stop | Out-Null
+            Write-Host "  Re-enabled link: $GpoName -> $Target"
+            return
+        }
+
+        Write-Host "  Link already enabled: $GpoName -> $Target"
+    }
+
+    function Ensure-GpoApplyPermission {
+        param(
+            [string]$GpoName,
+            [string]$Principal
+        )
+
+        $perm = $null
+        try {
+            $perm = Get-GPPermission -Name $GpoName -TargetName $Principal -TargetType Group -ErrorAction Stop
+        } catch {
+            $perm = $null
+        }
+
+        if (-not $perm -or "$($perm.Permission)" -ne 'GpoApply') {
+            Set-GPPermission -Name $GpoName -TargetName $Principal -TargetType Group -PermissionLevel GpoApply -Replace -ErrorAction Stop
+            Write-Host "  Set security filtering: $Principal = GpoApply on $GpoName"
+        }
+    }
+
     $dcOU = 'OU=Domain Controllers,DC=lab,DC=local'
     $msOU = 'OU=Member Servers,DC=lab,DC=local'
 
@@ -220,16 +263,17 @@ if ($isDC) {
             Write-Host "  ERROR importing $($import.Name): $($_.Exception.Message)"
         }
 
-        $existingLink = (Get-GPInheritance -Target $import.Target).GpoLinks | Where-Object { $_.DisplayName -eq $import.Name }
-        if (-not $existingLink) {
-            try {
-                $gpo | New-GPLink -Target $import.Target -LinkEnabled Yes -ErrorAction Stop | Out-Null
-                Write-Host "  Linked: $($import.Name) -> $($import.Target)"
-            } catch {
-                Write-Host "  WARN: Could not link $($import.Name): $($_.Exception.Message)"
-            }
-        } else {
-            Write-Host "  Already linked: $($import.Name)"
+        try {
+            Ensure-GpoApplyPermission -GpoName $import.Name -Principal 'Authenticated Users'
+            Ensure-GpoApplyPermission -GpoName $import.Name -Principal 'Domain Computers'
+        } catch {
+            Write-Host "  WARN: Could not update security filtering for $($import.Name): $($_.Exception.Message)"
+        }
+
+        try {
+            Ensure-GpoLinkEnabled -GpoName $import.Name -Target $import.Target
+        } catch {
+            Write-Host "  WARN: Could not enforce link for $($import.Name): $($_.Exception.Message)"
         }
     }
 
@@ -249,16 +293,10 @@ if ($isDC) {
             Write-Host "  SKIP: $name not found"
             continue
         }
-        $existingLink = (Get-GPInheritance -Target $msOU -ErrorAction SilentlyContinue).GpoLinks | Where-Object { $_.DisplayName -eq $name }
-        if (-not $existingLink) {
-            try {
-                $gpo | New-GPLink -Target $msOU -LinkEnabled Yes -ErrorAction Stop | Out-Null
-                Write-Host "  Linked: $name -> $msOU"
-            } catch {
-                Write-Host "  WARN: Could not link $name to Member Servers: $($_.Exception.Message)"
-            }
-        } else {
-            Write-Host "  $name already linked to Member Servers"
+        try {
+            Ensure-GpoLinkEnabled -GpoName $name -Target $msOU
+        } catch {
+            Write-Host "  WARN: Could not link $name to Member Servers: $($_.Exception.Message)"
         }
     }
 }

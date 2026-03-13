@@ -35,13 +35,17 @@ internal sealed class ImportManifestBuilder
 
         ct.ThrowIfCancellationRequested();
 
+        // Hash files in parallel for speedup on multi-pack imports
+        var fileHashes = new string[orderedFiles.Count];
+        await Parallel.ForEachAsync(
+            Enumerable.Range(0, orderedFiles.Count),
+            new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount, CancellationToken = ct },
+            async (i, token) => { fileHashes[i] = await _hash.Sha256FileAsync(orderedFiles[i].FullPath, token).ConfigureAwait(false); })
+            .ConfigureAwait(false);
+
         var lines = new List<string>(orderedFiles.Count);
-        foreach (var file in orderedFiles)
-        {
-            ct.ThrowIfCancellationRequested();
-            var fileHash = await _hash.Sha256FileAsync(file.FullPath, ct).ConfigureAwait(false);
-            lines.Add(file.RelativePath + ":" + fileHash);
-        }
+        for (var i = 0; i < orderedFiles.Count; i++)
+            lines.Add(orderedFiles[i].RelativePath + ":" + fileHashes[i]);
 
         var payload = string.Join("\n", lines);
         return await _hash.Sha256TextAsync(payload, ct).ConfigureAwait(false);

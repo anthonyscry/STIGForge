@@ -390,13 +390,17 @@ public sealed class BundleBuilder
       .OrderBy(p => p, StringComparer.OrdinalIgnoreCase)
       .ToList();
 
+    // Hash files in parallel for significant speedup on large bundles
+    var hashes = new string[files.Count];
+    await Parallel.ForEachAsync(
+      Enumerable.Range(0, files.Count),
+      new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount, CancellationToken = ct },
+      async (i, token) => { hashes[i] = await _hash.Sha256FileAsync(files[i], token).ConfigureAwait(false); })
+      .ConfigureAwait(false);
+
     var sb = new StringBuilder(files.Count * 80);
-    foreach (var file in files)
-    {
-      var hash = await _hash.Sha256FileAsync(file, ct).ConfigureAwait(false);
-      var rel = GetRelativePath(root, file);
-      sb.AppendLine(hash + "  " + rel);
-    }
+    for (var i = 0; i < files.Count; i++)
+      sb.AppendLine(hashes[i] + "  " + GetRelativePath(root, files[i]));
 
     await File.WriteAllTextAsync(outputPath, sb.ToString(), Encoding.UTF8, ct).ConfigureAwait(false);
   }
@@ -430,13 +434,7 @@ public sealed class BundleBuilder
     string ReportsDir,
     string ManifestDir);
 
-  private static string Csv(string? value)
-  {
-    var v = value ?? string.Empty;
-    if (v.IndexOfAny(new[] { ',', '"', '\n', '\r' }) >= 0)
-      v = "\"" + v.Replace("\"", "\"\"") + "\"";
-    return v;
-  }
+  private static string Csv(string? value) => CsvEscape.Escape(value);
 
   private static string GetRelativePath(string root, string path)
   {

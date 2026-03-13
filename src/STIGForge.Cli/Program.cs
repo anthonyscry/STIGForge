@@ -22,6 +22,7 @@ DriftCommands.Register(rootCmd, STIGForge.Cli.CliHostFactory.BuildHost);
 RollbackCommands.Register(rootCmd, STIGForge.Cli.CliHostFactory.BuildHost);
 GpoConflictCommands.Register(rootCmd, STIGForge.Cli.CliHostFactory.BuildHost);
 PhaseCExpansionCommands.Register(rootCmd, STIGForge.Cli.CliHostFactory.BuildHost);
+ReportCommands.Register(rootCmd, STIGForge.Cli.CliHostFactory.BuildHost);
 
 
 return await InvokeWithErrorHandlingAsync(rootCmd, args);

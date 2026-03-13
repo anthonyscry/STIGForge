@@ -3,6 +3,7 @@ using System.IO.Compression;
 using System.Text;
 using System.Text.Json;
 using System.Xml.Linq;
+using STIGForge.Core;
 using STIGForge.Verify;
 
 namespace STIGForge.Export;
@@ -429,13 +430,7 @@ public static class CklExporter
     File.WriteAllText(path, sb.ToString(), Encoding.UTF8);
   }
 
-  private static string Csv(string? value)
-  {
-    var safe = value ?? string.Empty;
-    if (safe.IndexOfAny(new[] { ',', '"', '\n', '\r' }) >= 0)
-      return '"' + safe.Replace("\"", "\"\"") + '"';
-    return safe;
-  }
+  private static string Csv(string? value) => Core.CsvEscape.Escape(value);
 }
 
 public enum CklFileFormat

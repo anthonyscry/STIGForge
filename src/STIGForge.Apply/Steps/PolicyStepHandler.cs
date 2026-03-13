@@ -132,7 +132,7 @@ internal sealed class PolicyStepHandler
     };
   }
 
-  public ApplyStepOutcome RunGpoImport(ApplyRequest request, string logsDir, string stepName)
+  public async Task<ApplyStepOutcome> RunGpoImportAsync(ApplyRequest request, string logsDir, string stepName, CancellationToken ct)
   {
     var started = DateTimeOffset.Now;
     var stepId = DateTimeOffset.Now.ToString("yyyyMMdd_HHmmss");
@@ -172,9 +172,14 @@ internal sealed class PolicyStepHandler
 
         using var process = new Process { StartInfo = psi };
         process.Start();
-        var psOut = process.StandardOutput.ReadToEnd();
-        var psErr = process.StandardError.ReadToEnd();
+        // Use async reads to prevent deadlock when process output exceeds buffer
+        var psOutTask = process.StandardOutput.ReadToEndAsync(ct);
+        var psErrTask = process.StandardError.ReadToEndAsync(ct);
+        await Task.WhenAll(psOutTask, psErrTask).ConfigureAwait(false);
         process.WaitForExit(120_000);
+
+        var psOut = await psOutTask.ConfigureAwait(false);
+        var psErr = await psErrTask.ConfigureAwait(false);
 
         outBuilder.AppendLine(psOut);
         if (!string.IsNullOrWhiteSpace(psErr))

@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>STIGForge Compliance Report — {{ system_name }}</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #1a1a2e; background: #f5f5f5; line-height: 1.5; }
+  .container { max-width: 960px; margin: 0 auto; padding: 24px; }
+  .header { background: #1a1a2e; color: #fff; padding: 32px; border-radius: 8px 8px 0 0; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
+  .header h1 { font-size: 1.5rem; font-weight: 600; }
+  .header .meta { font-size: 0.85rem; opacity: 0.8; }
+  .badge { display: inline-block; padding: 8px 20px; border-radius: 6px; font-size: 1.8rem; font-weight: 700; }
+  .badge-pass { background: #10b981; color: #fff; }
+  .badge-warn { background: #f59e0b; color: #1a1a2e; }
+  .badge-fail { background: #ef4444; color: #fff; }
+  .card { background: #fff; border-radius: 8px; padding: 24px; margin-bottom: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+  .card h2 { font-size: 1.1rem; margin-bottom: 16px; color: #1a1a2e; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+  .stat-box { text-align: center; padding: 12px; }
+  .stat-box .value { font-size: 2rem; font-weight: 700; }
+  .stat-box .label { font-size: 0.8rem; color: #6b7280; text-transform: uppercase; }
+  .stat-pass .value { color: #10b981; }
+  .stat-fail .value { color: #ef4444; }
+  .stat-error .value { color: #f59e0b; }
+  .stat-na .value { color: #6b7280; }
+  .stat-nr .value { color: #9ca3af; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th { text-align: left; padding: 8px 12px; background: #f9fafb; border-bottom: 2px solid #e5e7eb; font-weight: 600; }
+  td { padding: 8px 12px; border-bottom: 1px solid #f3f4f6; }
+  tr:hover td { background: #f9fafb; }
+  .sev-high { color: #ef4444; font-weight: 600; }
+  .sev-medium { color: #f59e0b; font-weight: 600; }
+  .sev-low { color: #3b82f6; font-weight: 600; }
+  .sev-badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 600; }
+  .sev-badge-high { background: #fef2f2; color: #dc2626; }
+  .sev-badge-medium { background: #fffbeb; color: #d97706; }
+  .sev-badge-low { background: #eff6ff; color: #2563eb; }
+  .bar-container { height: 20px; background: #e5e7eb; border-radius: 4px; overflow: hidden; display: flex; }
+  .bar-pass { background: #10b981; }
+  .bar-fail { background: #ef4444; }
+  .bar-na { background: #9ca3af; }
+  .mini-bar { height: 12px; background: #e5e7eb; border-radius: 3px; overflow: hidden; display: flex; min-width: 100px; }
+  .footer { text-align: center; font-size: 0.75rem; color: #9ca3af; padding: 20px; }
+  .poam-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; text-align: center; }
+  .poam-bucket { padding: 16px; border-radius: 6px; background: #f9fafb; }
+  .poam-bucket .count { font-size: 1.5rem; font-weight: 700; }
+  .poam-bucket .range { font-size: 0.8rem; color: #6b7280; }
+  @media (max-width: 640px) { .grid-2, .grid-3, .poam-grid { grid-template-columns: 1fr; } .header { flex-direction: column; text-align: center; } }
+  @media print { body { background: #fff; } .card { box-shadow: none; border: 1px solid #e5e7eb; page-break-inside: avoid; } }
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- Header -->
+<div class="header">
+  <div>
+    <h1>{{ system_name }}</h1>
+    <div class="meta">Bundle: {{ bundle_id }} | Generated: {{ generated_at_formatted }} UTC</div>
+  </div>
+  <div class="badge {{ if overall_compliance_percent >= 95 }}badge-pass{{ else if overall_compliance_percent >= 80 }}badge-warn{{ else }}badge-fail{{ end }}">
+    {{ overall_compliance_percent | math.round 1 }}%
+  </div>
+</div>
+
+<!-- Summary Counts -->
+<div class="card">
+  <h2>Compliance Summary</h2>
+  <div style="display: flex; justify-content: space-around; flex-wrap: wrap; gap: 8px;">
+    <div class="stat-box stat-pass"><div class="value">{{ pass_count }}</div><div class="label">Pass</div></div>
+    <div class="stat-box stat-fail"><div class="value">{{ fail_count }}</div><div class="label">Fail</div></div>
+    <div class="stat-box stat-error"><div class="value">{{ error_count }}</div><div class="label">Error</div></div>
+    <div class="stat-box stat-na"><div class="value">{{ not_applicable_count }}</div><div class="label">N/A</div></div>
+    <div class="stat-box stat-nr"><div class="value">{{ not_reviewed_count }}</div><div class="label">Not Reviewed</div></div>
+  </div>
+  <!-- Donut Chart -->
+  <div style="text-align: center; margin-top: 20px;">
+    {{
+      total_evaluated = pass_count + fail_count + error_count
+      pass_pct = 0
+      fail_pct = 0
+      error_pct = 0
+      if total_evaluated > 0
+        pass_pct = (pass_count * 100.0) / total_evaluated
+        fail_pct = (fail_count * 100.0) / total_evaluated
+        error_pct = (error_count * 100.0) / total_evaluated
+      end
+      circumference = 251.2
+      pass_dash = (pass_pct * circumference) / 100.0
+      fail_dash = (fail_pct * circumference) / 100.0
+      error_dash = (error_pct * circumference) / 100.0
+      pass_offset = 0
+      fail_offset = 0 - pass_dash
+      error_offset = 0 - pass_dash - fail_dash
+    }}
+    <svg width="180" height="180" viewBox="0 0 100 100" class="donut-chart">
+      <circle cx="50" cy="50" r="40" fill="none" stroke="#e5e7eb" stroke-width="12" />
+      {{ if pass_dash > 0 }}
+      <circle cx="50" cy="50" r="40" fill="none" stroke="#10b981" stroke-width="12"
+        stroke-dasharray="{{ pass_dash }} {{ circumference - pass_dash }}"
+        stroke-dashoffset="{{ pass_offset }}" transform="rotate(-90 50 50)" />
+      {{ end }}
+      {{ if fail_dash > 0 }}
+      <circle cx="50" cy="50" r="40" fill="none" stroke="#ef4444" stroke-width="12"
+        stroke-dasharray="{{ fail_dash }} {{ circumference - fail_dash }}"
+        stroke-dashoffset="{{ fail_offset }}" transform="rotate(-90 50 50)" />
+      {{ end }}
+      {{ if error_dash > 0 }}
+      <circle cx="50" cy="50" r="40" fill="none" stroke="#f59e0b" stroke-width="12"
+        stroke-dasharray="{{ error_dash }} {{ circumference - error_dash }}"
+        stroke-dashoffset="{{ error_offset }}" transform="rotate(-90 50 50)" />
+      {{ end }}
+      <text x="50" y="50" text-anchor="middle" dominant-baseline="central" font-size="14" font-weight="700" fill="#1a1a2e">{{ total_controls }}</text>
+    </svg>
+    <div style="font-size: 0.8rem; color: #6b7280;">Total Controls</div>
+  </div>
+</div>
+
+<!-- Severity Breakdown -->
+<div class="card">
+  <h2>Severity Breakdown</h2>
+  <table>
+    <thead><tr><th>Category</th><th>Pass</th><th>Fail</th><th>Total</th><th>Distribution</th></tr></thead>
+    <tbody>
+      <tr>
+        <td class="sev-high">CAT I (High)</td>
+        <td>{{ severity.cat_i_pass }}</td>
+        <td>{{ severity.cat_i_fail }}</td>
+        <td>{{ severity.cat_i_total }}</td>
+        <td>
+          {{ cat_i_pass_w = 0; cat_i_fail_w = 0; if severity.cat_i_total > 0; cat_i_pass_w = (severity.cat_i_pass * 100) / severity.cat_i_total; cat_i_fail_w = (severity.cat_i_fail * 100) / severity.cat_i_total; end }}
+          <div class="mini-bar"><div class="bar-pass" style="width:{{ cat_i_pass_w }}%"></div><div class="bar-fail" style="width:{{ cat_i_fail_w }}%"></div></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="sev-medium">CAT II (Medium)</td>
+        <td>{{ severity.cat_ii_pass }}</td>
+        <td>{{ severity.cat_ii_fail }}</td>
+        <td>{{ severity.cat_ii_total }}</td>
+        <td>
+          {{ cat_ii_pass_w = 0; cat_ii_fail_w = 0; if severity.cat_ii_total > 0; cat_ii_pass_w = (severity.cat_ii_pass * 100) / severity.cat_ii_total; cat_ii_fail_w = (severity.cat_ii_fail * 100) / severity.cat_ii_total; end }}
+          <div class="mini-bar"><div class="bar-pass" style="width:{{ cat_ii_pass_w }}%"></div><div class="bar-fail" style="width:{{ cat_ii_fail_w }}%"></div></div>
+        </td>
+      </tr>
+      <tr>
+        <td class="sev-low">CAT III (Low)</td>
+        <td>{{ severity.cat_iii_pass }}</td>
+        <td>{{ severity.cat_iii_fail }}</td>
+        <td>{{ severity.cat_iii_total }}</td>
+        <td>
+          {{ cat_iii_pass_w = 0; cat_iii_fail_w = 0; if severity.cat_iii_total > 0; cat_iii_pass_w = (severity.cat_iii_pass * 100) / severity.cat_iii_total; cat_iii_fail_w = (severity.cat_iii_fail * 100) / severity.cat_iii_total; end }}
+          <div class="mini-bar"><div class="bar-pass" style="width:{{ cat_iii_pass_w }}%"></div><div class="bar-fail" style="width:{{ cat_iii_fail_w }}%"></div></div>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+<!-- Trend Sparkline -->
+{{ if trend_data.size > 1 }}
+<div class="card">
+  <h2>Compliance Trend</h2>
+  <div style="text-align: center;">
+    {{
+      t_count = trend_data.size
+      svg_w = 400
+      svg_h = 120
+      pad_x = 40
+      pad_y = 20
+      plot_w = svg_w - pad_x * 2
+      plot_h = svg_h - pad_y * 2
+      points = ""
+      for i in 0..(t_count - 1)
+        pt = trend_data[i]
+        x = pad_x + (i * plot_w) / (t_count - 1)
+        y = pad_y + plot_h - (pt.compliance_percent * plot_h) / 100.0
+        if i > 0
+          points = points + " "
+        end
+        points = points + x + "," + y
+      end
+    }}
+    <svg width="{{ svg_w }}" height="{{ svg_h }}" viewBox="0 0 {{ svg_w }} {{ svg_h }}">
+      <!-- Grid lines -->
+      <line x1="{{ pad_x }}" y1="{{ pad_y }}" x2="{{ pad_x }}" y2="{{ pad_y + plot_h }}" stroke="#e5e7eb" stroke-width="1" />
+      <line x1="{{ pad_x }}" y1="{{ pad_y + plot_h }}" x2="{{ pad_x + plot_w }}" y2="{{ pad_y + plot_h }}" stroke="#e5e7eb" stroke-width="1" />
+      <!-- 50% line -->
+      {{ y50 = pad_y + plot_h / 2 }}
+      <line x1="{{ pad_x }}" y1="{{ y50 }}" x2="{{ pad_x + plot_w }}" y2="{{ y50 }}" stroke="#e5e7eb" stroke-width="1" stroke-dasharray="4,4" />
+      <text x="{{ pad_x - 4 }}" y="{{ y50 + 3 }}" text-anchor="end" font-size="8" fill="#9ca3af">50%</text>
+      <!-- 100% -->
+      <text x="{{ pad_x - 4 }}" y="{{ pad_y + 3 }}" text-anchor="end" font-size="8" fill="#9ca3af">100%</text>
+      <!-- 0% -->
+      <text x="{{ pad_x - 4 }}" y="{{ pad_y + plot_h + 3 }}" text-anchor="end" font-size="8" fill="#9ca3af">0%</text>
+      <!-- Line -->
+      <polyline points="{{ points }}" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linejoin="round" />
+      <!-- Dots -->
+      {{ for i in 0..(t_count - 1) }}
+        {{ pt = trend_data[i] }}
+        {{ x = pad_x + (i * plot_w) / (t_count - 1) }}
+        {{ y = pad_y + plot_h - (pt.compliance_percent * plot_h) / 100.0 }}
+        <circle cx="{{ x }}" cy="{{ y }}" r="3" fill="#3b82f6" />
+      {{ end }}
+    </svg>
+  </div>
+</div>
+{{ end }}
+
+<!-- Open Findings -->
+{{ if audience != "executive" || open_findings.size <= 20 }}
+{{ if open_findings.size > 0 }}
+<div class="card">
+  <h2>Open Findings ({{ open_findings.size }})</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>VulnId</th>
+        <th>Severity</th>
+        <th>Status</th>
+        <th>Title</th>
+        {{ if audience == "auditor" }}<th>Tool</th><th>Source</th>{{ end }}
+      </tr>
+    </thead>
+    <tbody>
+      {{ for f in open_findings }}
+      <tr>
+        <td>{{ f.vuln_id }}</td>
+        <td>
+          {{ sev_norm = f.severity | string.downcase }}
+          <span class="sev-badge {{ if sev_norm == 'high' }}sev-badge-high{{ else if sev_norm == 'medium' }}sev-badge-medium{{ else }}sev-badge-low{{ end }}">
+            {{ f.severity }}
+          </span>
+        </td>
+        <td>{{ f.status }}</td>
+        <td>{{ f.title }}</td>
+        {{ if audience == "auditor" }}
+        <td>{{ f.tool }}</td>
+        <td style="font-size:0.75rem; word-break:break-all;">{{ f.source_file }}</td>
+        {{ end }}
+      </tr>
+      {{ end }}
+    </tbody>
+  </table>
+</div>
+{{ end }}
+{{ end }}
+
+<!-- POA&M Age Summary -->
+{{ if poam_ages.age_0_to_30 > 0 || poam_ages.age_31_to_90 > 0 || poam_ages.age_91_plus > 0 }}
+<div class="card">
+  <h2>POA&M Age Distribution</h2>
+  <div class="poam-grid">
+    <div class="poam-bucket">
+      <div class="count" style="color:#10b981;">{{ poam_ages.age_0_to_30 }}</div>
+      <div class="range">0 - 30 days</div>
+    </div>
+    <div class="poam-bucket">
+      <div class="count" style="color:#f59e0b;">{{ poam_ages.age_31_to_90 }}</div>
+      <div class="range">31 - 90 days</div>
+    </div>
+    <div class="poam-bucket">
+      <div class="count" style="color:#ef4444;">{{ poam_ages.age_91_plus }}</div>
+      <div class="range">91+ days</div>
+    </div>
+  </div>
+</div>
+{{ end }}
+
+<!-- Per-STIG Breakdown -->
+{{ if stig_breakdowns.size > 0 }}
+<div class="card">
+  <h2>Per-STIG Breakdown</h2>
+  <table>
+    <thead><tr><th>Benchmark</th><th>Pass</th><th>Fail</th><th>Total</th><th>Compliance</th><th>Distribution</th></tr></thead>
+    <tbody>
+      {{ for s in stig_breakdowns }}
+      <tr>
+        <td>{{ s.benchmark_id }}</td>
+        <td>{{ s.pass_count }}</td>
+        <td>{{ s.fail_count }}</td>
+        <td>{{ s.total_count }}</td>
+        <td>{{ s.compliance_percent | math.round 1 }}%</td>
+        <td>
+          {{ s_pass_w = 0; s_fail_w = 0; if s.total_count > 0; s_pass_w = (s.pass_count * 100) / s.total_count; s_fail_w = (s.fail_count * 100) / s.total_count; end }}
+          <div class="mini-bar"><div class="bar-pass" style="width:{{ s_pass_w }}%"></div><div class="bar-fail" style="width:{{ s_fail_w }}%"></div></div>
+        </td>
+      </tr>
+      {{ end }}
+    </tbody>
+  </table>
+</div>
+{{ end }}
+
+<div class="footer">
+  Generated by STIGForge | {{ generated_at_formatted }} UTC | Audience: {{ audience }}
+</div>
+
+</div>
+</body>
+</html>

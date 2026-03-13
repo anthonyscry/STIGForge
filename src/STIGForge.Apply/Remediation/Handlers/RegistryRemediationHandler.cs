@@ -28,7 +28,10 @@ public sealed class RegistryRemediationHandler : RemediationHandlerBase
 
     public override async Task<RemediationResult> TestAsync(RemediationContext context, CancellationToken ct)
     {
-        var script = "(Get-ItemProperty -Path " + ApplyProcessHelpers.ToPowerShellSingleQuoted(_registryPath) + " -Name " + ApplyProcessHelpers.ToPowerShellSingleQuoted(_valueName) + " -ErrorAction SilentlyContinue)." + ApplyProcessHelpers.ToPowerShellSingleQuoted(_valueName);
+        // Store name in PS variable and use .$n access to handle value names with spaces/special chars
+        var qPath = ApplyProcessHelpers.ToPowerShellSingleQuoted(_registryPath);
+        var qName = ApplyProcessHelpers.ToPowerShellSingleQuoted(_valueName);
+        var script = $"$n = {qName}; $p = Get-ItemProperty -Path {qPath} -Name $n -ErrorAction SilentlyContinue; if ($null -ne $p) {{ $p.$n }}";
         var currentValue = await RunPowerShellAsync(script, "PowerShell registry command failed", ct, returnNullWhenOutputEmpty: true).ConfigureAwait(false);
         var trimmedCurrent = currentValue?.Trim();
         var isCompliant = string.Equals(trimmedCurrent, _expectedValue, StringComparison.OrdinalIgnoreCase);
@@ -66,11 +69,17 @@ Set-ItemProperty -Path {qPath} -Name {qName} -Value {qValue} -Type {qType} -Forc
 
         await RunPowerShellAsync(script, "PowerShell registry command failed", ct, returnNullWhenOutputEmpty: true).ConfigureAwait(false);
 
+        // Verify post-apply state to confirm the write took effect
+        var verifyResult = await TestAsync(context, ct).ConfigureAwait(false);
+        var verified = string.Equals(verifyResult.PreviousValue, _expectedValue, StringComparison.OrdinalIgnoreCase);
+
         return BuildResult(
-            success: true,
+            success: verified,
             changed: true,
             previousValue: testResult.PreviousValue,
-            newValue: _expectedValue,
-            detail: $"Set {_registryPath}\\{_valueName} to {_expectedValue}");
+            newValue: verifyResult.PreviousValue,
+            detail: verified
+                ? $"Set {_registryPath}\\{_valueName} to {_expectedValue}"
+                : $"Set-ItemProperty completed but post-apply verify failed: current='{verifyResult.PreviousValue}', expected='{_expectedValue}'");
     }
 }

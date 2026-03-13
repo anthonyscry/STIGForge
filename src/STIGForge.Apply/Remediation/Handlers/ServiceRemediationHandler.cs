@@ -85,12 +85,18 @@ else {{
         var script = BuildApplyScript();
         await RunPowerShellAsync(script, "PowerShell service command failed", ct).ConfigureAwait(false);
 
+        // Verify post-apply state
+        var verifyResult = await TestAsync(context, ct).ConfigureAwait(false);
+        var verified = string.Equals(verifyResult.PreviousValue, expectedValue, StringComparison.OrdinalIgnoreCase);
+
         return BuildResult(
-            success: true,
+            success: verified,
             changed: true,
             previousValue: testResult.PreviousValue,
-            newValue: expectedValue,
-            detail: $"Configured service '{_serviceName}' with StartType={NormalizeStartType(_expectedStartType)} and Status={NormalizeStatus(_expectedStatus)}");
+            newValue: verifyResult.PreviousValue,
+            detail: verified
+                ? $"Configured service '{_serviceName}' with StartType={NormalizeStartType(_expectedStartType)} and Status={NormalizeStatus(_expectedStatus)}"
+                : $"Service command completed but post-apply verify failed: current='{verifyResult.PreviousValue}', expected='{expectedValue}'");
     }
 
     private string BuildApplyScript()
@@ -114,7 +120,7 @@ Set-Service -Name {qSvc} -StartupType {ApplyProcessHelpers.ToPowerShellSingleQuo
         {
             "auto" => "Automatic",
             "automatic" => "Automatic",
-            "automaticdelayedstart" => "Automatic",
+            "automaticdelayedstart" or "autodelayed" => "AutomaticDelayedStart",
             "manual" => "Manual",
             "disabled" => "Disabled",
             _ => value.Trim()

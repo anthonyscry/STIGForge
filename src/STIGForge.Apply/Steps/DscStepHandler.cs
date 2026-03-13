@@ -94,7 +94,13 @@ internal sealed class DscStepHandler
     File.WriteAllText(stderr, stderrText);
 
     var exitCode = process.ExitCode;
-    if (exitCode != 0 && stderrText.Contains("Applying Configuration", StringComparison.Ordinal))
+    // Only suppress non-zero exit when stderr contains ONLY the benign "Applying configuration" progress message
+    // and no actual error indicators. Previously this used a loose substring match that masked real failures.
+    if (exitCode != 0
+        && stderrText.Contains("Applying configuration", StringComparison.OrdinalIgnoreCase)
+        && !stderrText.Contains("error", StringComparison.OrdinalIgnoreCase)
+        && !stderrText.Contains("exception", StringComparison.OrdinalIgnoreCase)
+        && !stderrText.Contains("failed", StringComparison.OrdinalIgnoreCase))
       exitCode = 0;
 
     return new ApplyStepOutcome

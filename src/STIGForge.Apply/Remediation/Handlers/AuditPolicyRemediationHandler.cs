@@ -79,12 +79,21 @@ public sealed class AuditPolicyRemediationHandler : RemediationHandlerBase
 
         await RunAuditPolAsync(setArguments, ct).ConfigureAwait(false);
 
+        // Verify post-apply state
+        var verifyResult = await TestAsync(context, ct).ConfigureAwait(false);
+        var verified = string.Equals(
+            NormalizeSetting(verifyResult.PreviousValue),
+            NormalizeSetting(_expectedSetting),
+            StringComparison.OrdinalIgnoreCase);
+
         return BuildResult(
-            success: true,
+            success: verified,
             changed: true,
             previousValue: testResult.PreviousValue,
-            newValue: _expectedSetting,
-            detail: $"Configured audit policy '{_subcategory}' to '{_expectedSetting}'");
+            newValue: verifyResult.PreviousValue,
+            detail: verified
+                ? $"Configured audit policy '{_subcategory}' to '{_expectedSetting}'"
+                : $"auditpol.exe completed but post-apply verify failed: current='{verifyResult.PreviousValue}', expected='{_expectedSetting}'");
     }
 
     private static string? BuildSetArguments(string subcategory, string expectedSetting)

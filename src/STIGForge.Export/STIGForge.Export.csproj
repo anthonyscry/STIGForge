@@ -3,7 +3,15 @@
   <ItemGroup>
     <ProjectReference Include="..\STIGForge.Core\STIGForge.Core.csproj" />
     <ProjectReference Include="..\STIGForge.Infrastructure\STIGForge.Infrastructure.csproj" />
-<ProjectReference Include="..\STIGForge.Verify\STIGForge.Verify.csproj" />
+    <ProjectReference Include="..\STIGForge.Verify\STIGForge.Verify.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Scriban" Version="5.12.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Templates\executive-report.html" />
   </ItemGroup>
 
   <PropertyGroup>

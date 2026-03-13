@@ -44,7 +44,7 @@ function Invoke-StigScan {
 
     $cklFiles = Get-ChildItem $stepDir -Filter '*.ckl' -Recurse -ErrorAction SilentlyContinue
     if (-not $cklFiles) {
-        return [PSCustomObject]@{ Step = $StepName; TotalNaf = 0; TotalApp = 0; TotalPct = 0; TotalOpen = 0; TotalNR = 0; Details = @() }
+        return [PSCustomObject]@{ Step = $StepName; TotalNaf = 0; TotalApp = 0; TotalPct = 0; TotalOpen = 0; TotalNR = 0; TotalNA = 0; TotalChecks = 0; ClosedTotal = 0; ClosedPct = 0; Details = @() }
     }
 
     $totalOpen = 0; $totalNaf = 0; $totalNr = 0; $totalNa = 0
@@ -59,8 +59,11 @@ function Invoke-StigScan {
 
     $grandApplicable = $totalOpen + $totalNaf + $totalNr
     $grandPct = if ($grandApplicable -gt 0) { [math]::Round(($totalNaf / $grandApplicable) * 100, 1) } else { 0 }
-    "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] $StepName - Overall: $totalNaf/$grandApplicable ($grandPct%) Open=$totalOpen NR=$totalNr" | Add-Content $logFile
-    return [PSCustomObject]@{ Step = $StepName; TotalNaf = $totalNaf; TotalApp = $grandApplicable; TotalPct = $grandPct; TotalOpen = $totalOpen; TotalNR = $totalNr }
+    $totalChecks = $grandApplicable + $totalNa
+    $closedTotal = $totalNaf + $totalNa
+    $closedPct = if ($totalChecks -gt 0) { [math]::Round(($closedTotal / $totalChecks) * 100, 1) } else { 0 }
+    "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] $StepName - Overall: $totalNaf/$grandApplicable ($grandPct%) Open=$totalOpen NR=$totalNr NA=$totalNa Closed=$closedTotal/$totalChecks ($closedPct%)" | Add-Content $logFile
+    return [PSCustomObject]@{ Step = $StepName; TotalNaf = $totalNaf; TotalApp = $grandApplicable; TotalPct = $grandPct; TotalOpen = $totalOpen; TotalNR = $totalNr; TotalNA = $totalNa; TotalChecks = $totalChecks; ClosedTotal = $closedTotal; ClosedPct = $closedPct; Details = @() }
 }
 
 function Log-Step { param([string]$Msg)
@@ -125,12 +128,12 @@ gpupdate /force 2>&1 | Out-Null
 $allSteps += Invoke-StigScan -StepName '06-after-script-fallback'
 
 Write-Host ""
-Write-Host "Step                      NaF/Applicable    %Compl   Open    NR     Delta"
-Write-Host "----                      --------------    ------   ----    --     -----"
+Write-Host "Step                      NaF/Applicable    %Compl   NaF+NA/Total    %Closed  Open   NR   NA   Delta"
+Write-Host "----                      --------------    ------   ------------     -------  ----   --   --   -----"
 $prevPct = 0
 foreach ($step in $allSteps) {
     $delta = if ($step.Step -eq '00-baseline') { '  ---' } else { $d = $step.TotalPct - $prevPct; '{0:+0.0;-0.0; 0.0}' -f $d }
-    Write-Host ("{0,-25} {1,4}/{2,-4}          {3,5}%  {4,4}  {5,4}   {6}" -f $step.Step, $step.TotalNaf, $step.TotalApp, $step.TotalPct, $step.TotalOpen, $step.TotalNR, $delta)
+    Write-Host ("{0,-25} {1,4}/{2,-4}          {3,5}%   {4,4}/{5,-4}      {6,5}%  {7,4}  {8,4} {9,4}   {10}" -f $step.Step, $step.TotalNaf, $step.TotalApp, $step.TotalPct, $step.ClosedTotal, $step.TotalChecks, $step.ClosedPct, $step.TotalOpen, $step.TotalNR, $step.TotalNA, $delta)
     $prevPct = $step.TotalPct
 }
 

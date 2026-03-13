@@ -502,6 +502,30 @@ Write-Host "  Firewall GPO complete (20 settings)"
 # ============================================
 Write-Host "`n=== Linking GPOs ==="
 
+function Ensure-LinkEnabled {
+    param(
+        [string]$GpoName,
+        [string]$Target
+    )
+
+    $inheritance = Get-GPInheritance -Target $Target -ErrorAction SilentlyContinue
+    $existing = $inheritance.GpoLinks | Where-Object { $_.DisplayName -eq $GpoName } | Select-Object -First 1
+
+    if (-not $existing) {
+        Get-GPO -Name $GpoName -ErrorAction Stop | New-GPLink -Target $Target -LinkEnabled Yes -ErrorAction Stop | Out-Null
+        Write-Host "  Linked $GpoName -> $Target"
+        return
+    }
+
+    if (-not $existing.Enabled) {
+        Set-GPLink -Name $GpoName -Target $Target -LinkEnabled Yes -ErrorAction Stop | Out-Null
+        Write-Host "  Re-enabled $GpoName -> $Target"
+        return
+    }
+
+    Write-Host "  $GpoName already linked and enabled on $Target"
+}
+
 # GPOs that apply to BOTH DC and Member Servers
 $bothOUs = @($dcOU, $msOU)
 foreach ($name in @('STIG-Server2019','STIG-Defender','STIG-Firewall','STIG-IE11')) {
@@ -511,12 +535,10 @@ foreach ($name in @('STIG-Server2019','STIG-Defender','STIG-Firewall','STIG-IE11
         continue
     }
     foreach ($ou in $bothOUs) {
-        $existing = (Get-GPInheritance -Target $ou -ErrorAction SilentlyContinue).GpoLinks | Where-Object { $_.DisplayName -eq $name }
-        if (-not $existing) {
-            $gpoObj | New-GPLink -Target $ou -LinkEnabled Yes -ErrorAction SilentlyContinue
-            Write-Host "  Linked $name -> $ou"
-        } else {
-            Write-Host "  $name already linked to $ou"
+        try {
+            Ensure-LinkEnabled -GpoName $name -Target $ou
+        } catch {
+            Write-Host "  WARN: Could not enforce $name link on ${ou}: $($_.Exception.Message)"
         }
     }
 }
@@ -525,12 +547,10 @@ foreach ($name in @('STIG-Server2019','STIG-Defender','STIG-Firewall','STIG-IE11
 $domRoot = 'DC=lab,DC=local'
 $dotnetGpo = Get-GPO -Name 'STIG-DotNet' -ErrorAction SilentlyContinue
 if ($dotnetGpo) {
-    $existing = (Get-GPInheritance -Target $domRoot -ErrorAction SilentlyContinue).GpoLinks | Where-Object { $_.DisplayName -eq 'STIG-DotNet' }
-    if (-not $existing) {
-        $dotnetGpo | New-GPLink -Target $domRoot -LinkEnabled Yes -ErrorAction SilentlyContinue
-        Write-Host "  Linked STIG-DotNet -> Domain Root"
-    } else {
-        Write-Host "  STIG-DotNet already linked to Domain Root"
+    try {
+        Ensure-LinkEnabled -GpoName 'STIG-DotNet' -Target $domRoot
+    } catch {
+        Write-Host "  WARN: Could not enforce STIG-DotNet link on Domain Root: $($_.Exception.Message)"
     }
 }
 

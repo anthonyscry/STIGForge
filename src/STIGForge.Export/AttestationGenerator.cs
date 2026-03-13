@@ -145,13 +145,7 @@ public static class AttestationGenerator
     File.WriteAllText(outputPath, sb.ToString(), Encoding.UTF8);
   }
 
-  private static string Csv(string? value)
-  {
-    var v = value ?? string.Empty;
-    if (v.IndexOfAny(new[] { ',', '"', '\n', '\r' }) >= 0)
-      v = "\"" + v.Replace("\"", "\"\"") + "\"";
-    return v;
-  }
+  private static string Csv(string? value) => Core.CsvEscape.Escape(value);
 }
 
 /// <summary>

@@ -205,9 +205,9 @@ public sealed class CklMergeService
     return NormalizeToken(status) switch
     {
       "notafinding" or "notafind" or "pass" => "NotAFinding",
-      "open" or "fail" => "Open",
-      "notapplicable" or "notapp" => "Not_Applicable",
-      "notreviewed" or "nr" => "Not_Reviewed",
+      "open" or "fail" or "error" => "Open",
+      "notapplicable" or "notapp" or "na" => "Not_Applicable",
+      "notreviewed" or "nr" or "notchecked" or "informational" => "Not_Reviewed",
       _ => "Not_Reviewed"
     };
   }
@@ -217,9 +217,9 @@ public sealed class CklMergeService
     return NormalizeToken(status) switch
     {
       "pass" or "compliant" or "notafinding" => "NotAFinding",
-      "fail" or "noncompliant" or "open" => "Open",
+      "fail" or "noncompliant" or "open" or "error" => "Open",
       "notapplicable" or "na" => "Not_Applicable",
-      "notreviewed" => "Not_Reviewed",
+      "notreviewed" or "notchecked" or "informational" => "Not_Reviewed",
       _ => "Not_Reviewed"
     };
   }

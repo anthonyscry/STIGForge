@@ -193,6 +193,7 @@ public class ApplyRunner
         }
       }
 
+      var pstigRebootCount = resumeContext?.RebootCount ?? 0;
       var rebootResult = await TryScheduleRebootAsync(
         root,
         mode,
@@ -202,7 +203,9 @@ public class ApplyRunner
         priorRunId,
         runId,
         ct,
-        "Reboot required after PowerSTIG compile").ConfigureAwait(false);
+        "Reboot required after PowerSTIG compile",
+        pstigRebootCount,
+        pstigRebootCount + 1).ConfigureAwait(false);
       if (rebootResult != null)
         return rebootResult;
     }
@@ -240,6 +243,7 @@ public class ApplyRunner
         steps.Add(outcome);
       }
 
+      var scriptRebootCount = resumeContext?.RebootCount ?? 0;
       var rebootResult = await TryScheduleRebootAsync(
         root,
         mode,
@@ -249,7 +253,9 @@ public class ApplyRunner
         priorRunId,
         runId,
         ct,
-        "Reboot required after script execution").ConfigureAwait(false);
+        "Reboot required after script execution",
+        scriptRebootCount,
+        scriptRebootCount + 1).ConfigureAwait(false);
       if (rebootResult != null)
         return rebootResult;
     }
@@ -361,7 +367,7 @@ public class ApplyRunner
       }
       else
       {
-        var outcome = _policyStepHandler.RunGpoImport(request, logsDir, GpoImportStepName);
+        var outcome = await _policyStepHandler.RunGpoImportAsync(request, logsDir, GpoImportStepName, ct).ConfigureAwait(false);
         outcome = _stepEvidenceWriter.Write(outcome, root, runId, priorStepSha256);
         steps.Add(outcome);
       }
@@ -481,7 +487,7 @@ public class ApplyRunner
 
       var lcmConfig = new LcmConfig
       {
-        ConfigurationMode = mode == HardeningMode.AuditOnly ? "ApplyOnly" : "ApplyAndMonitor",
+        ConfigurationMode = mode == HardeningMode.AuditOnly ? "ApplyAndMonitor" : "ApplyOnly",
         RebootNodeIfNeeded = true,
         ConfigurationModeFrequencyMins = 15,
         AllowModuleOverwrite = true

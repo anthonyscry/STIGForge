@@ -21,8 +21,9 @@ public static class StandalonePoamExporter
     if (results.Count == 0)
       return new PoamExportResult { OutputDirectory = string.Empty, ItemCount = 0, Message = "No verification results found." };
 
-    var systemName = request.SystemName ?? ReadSystemName(request.BundleRoot) ?? "Unknown";
-    var bundleId = ReadBundleId(request.BundleRoot) ?? "unknown";
+    var (manifestSystemName, manifestBundleId) = ReadManifest(request.BundleRoot);
+    var systemName = request.SystemName ?? manifestSystemName ?? "Unknown";
+    var bundleId = manifestBundleId ?? "unknown";
 
     var package = PoamGenerator.GeneratePoam(results, systemName, bundleId);
 
@@ -43,7 +44,7 @@ public static class StandalonePoamExporter
     };
   }
 
-  private static List<NormalizedVerifyResult> LoadAndNormalize(string bundleRoot)
+  internal static List<NormalizedVerifyResult> LoadAndNormalize(string bundleRoot)
   {
     var verifyRoot = Path.Combine(bundleRoot, "Verify");
     if (!Directory.Exists(verifyRoot)) return new List<NormalizedVerifyResult>();
@@ -75,35 +76,25 @@ public static class StandalonePoamExporter
     return all;
   }
 
-  private static string? ReadSystemName(string bundleRoot)
+  internal static (string? SystemName, string? BundleId) ReadManifest(string bundleRoot)
   {
     var manifestPath = Path.Combine(bundleRoot, "Manifest", "manifest.json");
-    if (!File.Exists(manifestPath)) return null;
+    if (!File.Exists(manifestPath)) return (null, null);
     try
     {
       using var doc = JsonDocument.Parse(File.ReadAllText(manifestPath));
-      return doc.RootElement.GetProperty("run").GetProperty("systemName").GetString();
+      string? systemName = null;
+      string? bundleId = null;
+      if (doc.RootElement.TryGetProperty("run", out var run) && run.TryGetProperty("systemName", out var sn))
+        systemName = sn.GetString();
+      if (doc.RootElement.TryGetProperty("bundleId", out var bi))
+        bundleId = bi.GetString();
+      return (systemName, bundleId);
     }
     catch (Exception ex)
     {
-      System.Diagnostics.Trace.TraceWarning("POAM export failed: " + ex.Message);
-      return null;
-    }
-  }
-
-  private static string? ReadBundleId(string bundleRoot)
-  {
-    var manifestPath = Path.Combine(bundleRoot, "Manifest", "manifest.json");
-    if (!File.Exists(manifestPath)) return null;
-    try
-    {
-      using var doc = JsonDocument.Parse(File.ReadAllText(manifestPath));
-      return doc.RootElement.GetProperty("bundleId").GetString();
-    }
-    catch (Exception ex)
-    {
-      System.Diagnostics.Trace.TraceWarning("POAM export failed: " + ex.Message);
-      return null;
+      System.Diagnostics.Trace.TraceWarning("POAM manifest read failed: " + ex.Message);
+      return (null, null);
     }
   }
 }

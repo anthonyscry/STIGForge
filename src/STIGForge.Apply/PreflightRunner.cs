@@ -36,16 +36,22 @@ public sealed class PreflightRunner
 
     var modulesPath = request.ModulesPath ?? Path.Combine(request.BundleRoot, "Apply", "Modules");
 
-    var args = $"-NoProfile -ExecutionPolicy Bypass -File \"{scriptPath}\" -BundleRoot \"{request.BundleRoot}\" -ModulesPath \"{modulesPath}\"";
+    // Use EncodedCommand with single-quoted args to prevent injection (consistent with rest of codebase)
+    var qScript = Steps.ApplyProcessHelpers.ToPowerShellSingleQuoted(scriptPath);
+    var qBundle = Steps.ApplyProcessHelpers.ToPowerShellSingleQuoted(request.BundleRoot);
+    var qModules = Steps.ApplyProcessHelpers.ToPowerShellSingleQuoted(modulesPath);
+    var command = $"& {qScript} -BundleRoot {qBundle} -ModulesPath {qModules}";
 
     if (!string.IsNullOrWhiteSpace(request.PowerStigModulePath))
-      args += $" -PowerStigModulePath \"{request.PowerStigModulePath}\"";
+      command += $" -PowerStigModulePath {Steps.ApplyProcessHelpers.ToPowerShellSingleQuoted(request.PowerStigModulePath!)}";
 
     if (request.CheckLgpoConflict)
-      args += " -CheckLgpoConflict";
+      command += " -CheckLgpoConflict";
 
     if (!string.IsNullOrWhiteSpace(request.BundleManifestPath))
-      args += $" -BundleManifestPath \"{request.BundleManifestPath}\"";
+      command += $" -BundleManifestPath {Steps.ApplyProcessHelpers.ToPowerShellSingleQuoted(request.BundleManifestPath!)}";
+
+    var args = Steps.ApplyProcessHelpers.BuildEncodedCommandArgs(command);
 
     _logger.LogInformation("Running preflight: powershell.exe {Args}", args);
 

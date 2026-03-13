@@ -60,10 +60,10 @@ internal sealed class ScriptStepHandler
     var outputTask = process.StandardOutput.ReadToEndAsync(ct);
     var errorTask = process.StandardError.ReadToEndAsync(ct);
     await Task.WhenAll(outputTask, errorTask).ConfigureAwait(false);
-    if (!process.WaitForExit(30_000))
+    if (!process.WaitForExit(300_000))
     {
       process.Kill();
-      throw new TimeoutException("Process did not exit within 30 seconds.");
+      throw new TimeoutException("Process did not exit within 5 minutes.");
     }
 
     File.WriteAllText(stdout, await outputTask.ConfigureAwait(false));
