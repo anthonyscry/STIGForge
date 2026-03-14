@@ -98,8 +98,12 @@ public sealed class EvaluateStigRunnerTests : IDisposable
         var act = async () => await runner.RunAsync(scriptPath, string.Empty, null, 1);
 
         var exception = await Record.ExceptionAsync(act);
-        exception.Should().NotBeOfType<FileNotFoundException>();
-        exception.Should().NotBeOfType<ArgumentException>();
+        // Null (success) or a non-path error is acceptable; FA 8.x NotBeOfType fails on null
+        if (exception is not null)
+        {
+            exception.Should().NotBeOfType<FileNotFoundException>();
+            exception.Should().NotBeOfType<ArgumentException>();
+        }
     }
 
     // ── ResolveScriptPath: directory containing Evaluate-STIG.ps1 ────────────
@@ -115,8 +119,11 @@ public sealed class EvaluateStigRunnerTests : IDisposable
         var act = async () => await runner.RunAsync(dir, string.Empty, null, 1);
 
         var exception = await Record.ExceptionAsync(act);
-        exception.Should().NotBeOfType<FileNotFoundException>();
-        exception.Should().NotBeOfType<ArgumentException>();
+        if (exception is not null)
+        {
+            exception.Should().NotBeOfType<FileNotFoundException>();
+            exception.Should().NotBeOfType<ArgumentException>();
+        }
     }
 
     // ── ResolveScriptPath: script in subdirectory ─────────────────────────────
@@ -133,7 +140,10 @@ public sealed class EvaluateStigRunnerTests : IDisposable
         var act = async () => await runner.RunAsync(dir, string.Empty, null, 1);
 
         var exception = await Record.ExceptionAsync(act);
-        exception.Should().NotBeOfType<FileNotFoundException>();
-        exception.Should().NotBeOfType<ArgumentException>();
+        if (exception is not null)
+        {
+            exception.Should().NotBeOfType<FileNotFoundException>();
+            exception.Should().NotBeOfType<ArgumentException>();
+        }
     }
 }

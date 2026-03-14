@@ -157,9 +157,12 @@ public sealed class ScapRunnerTests : IDisposable
         var act = async () => await runner.RunAsync(dir, "--scan x", null, 1);
 
         var exception = await Record.ExceptionAsync(act);
-        exception.Should().NotBeOfType<FileNotFoundException>();
-        exception.Should().NotBeOfType<ArgumentException>();
-        exception.Should().NotBeOfType<InvalidOperationException>();
+        if (exception is not null)
+        {
+            exception.Should().NotBeOfType<FileNotFoundException>();
+            exception.Should().NotBeOfType<ArgumentException>();
+            exception.Should().NotBeOfType<InvalidOperationException>();
+        }
     }
 
     // ── Path without extension resolved to .exe variant ──────────────────────
@@ -167,16 +170,19 @@ public sealed class ScapRunnerTests : IDisposable
     [Fact]
     public async Task RunAsync_PathWithoutExtensionWhenExeExists_DoesNotThrowPathError()
     {
-        var pathWithoutExt = Path.Combine(_tempDir, "mycscc");
+        // Use a valid SCAP binary name so the runner accepts it after resolving the .exe extension
+        var pathWithoutExt = Path.Combine(_tempDir, "cscc");
         File.WriteAllBytes(pathWithoutExt + ".exe", Array.Empty<byte>());
         var runner = new ScapRunner();
 
-        // The runner will try pathWithoutExt + ".exe" which exists and has a non-GUI name
         var act = async () => await runner.RunAsync(pathWithoutExt, "--scan x", null, 1);
 
         var exception = await Record.ExceptionAsync(act);
-        exception.Should().NotBeOfType<FileNotFoundException>();
-        exception.Should().NotBeOfType<ArgumentException>();
+        if (exception is not null)
+        {
+            exception.Should().NotBeOfType<FileNotFoundException>();
+            exception.Should().NotBeOfType<ArgumentException>();
+        }
     }
 
     // ── Full path to a supported CLI binary that exists ───────────────────────

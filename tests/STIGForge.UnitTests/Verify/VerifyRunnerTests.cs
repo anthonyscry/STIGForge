@@ -12,10 +12,10 @@ public sealed class VerifyRunnerTests
         var runner = new VerifyRunner();
         var manifest = new RunManifest();
 
-        var act = async () => await runner.RunAsync(manifest, CancellationToken.None);
+        var ex = await Record.ExceptionAsync(() => runner.RunAsync(manifest, CancellationToken.None));
 
-        await act.Should().ThrowAsync<NotImplementedException>()
-            .WithMessage("*VerifyRunner.RunAsync*");
+        ex.Should().BeOfType<NotImplementedException>();
+        ex!.Message.Should().Contain("VerifyRunner.RunAsync");
     }
 
     [Fact]
@@ -23,9 +23,9 @@ public sealed class VerifyRunnerTests
     {
         var runner = new VerifyRunner();
 
-        var act = async () => await runner.RunAsync(null!, CancellationToken.None);
+        var ex = await Record.ExceptionAsync(() => runner.RunAsync(null!, CancellationToken.None));
 
-        await act.Should().ThrowAsync<NotImplementedException>();
+        ex.Should().BeOfType<NotImplementedException>();
     }
 
     [Fact]
@@ -35,8 +35,8 @@ public sealed class VerifyRunnerTests
         using var cts = new CancellationTokenSource();
         cts.Cancel();
 
-        var act = async () => await runner.RunAsync(new RunManifest(), cts.Token);
+        var ex = await Record.ExceptionAsync(() => runner.RunAsync(new RunManifest(), cts.Token));
 
-        await act.Should().ThrowAsync<NotImplementedException>();
+        ex.Should().BeOfType<NotImplementedException>();
     }
 }

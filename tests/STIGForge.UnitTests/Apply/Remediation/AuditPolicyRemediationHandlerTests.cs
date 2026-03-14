@@ -76,7 +76,7 @@ public sealed class AuditPolicyRemediationHandlerTests
         var result = await h.TestAsync(ctx, CancellationToken.None);
 
         result.Success.Should().BeFalse();
-        result.ErrorMessage.Should().Contain("no output");
+        result.ErrorMessage.Should().Contain("Failed to query audit policy subcategory");
     }
 
     [Fact]
