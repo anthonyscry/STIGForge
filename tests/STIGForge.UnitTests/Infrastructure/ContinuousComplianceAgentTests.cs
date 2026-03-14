@@ -270,9 +270,10 @@ public sealed class ContinuousComplianceAgentTests : IDisposable
       bundleRoot,
       (TimeSpan?)checkInterval,
       autoRemediate,
-      10,
+      10,           // maxDriftEventsToForward
       auditForwarder,
-      auditTrail);
+      auditTrail,
+      null);        // config
 
     agent.Should().NotBeNull();
     return (ContinuousComplianceAgent)agent!;

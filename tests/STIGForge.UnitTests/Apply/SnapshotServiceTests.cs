@@ -28,13 +28,12 @@ public sealed class SnapshotServiceTests
     {
         // Arrange
         _processRunnerMock.Setup(x => x.RunAsync(It.Is<ProcessStartInfo>(p => 
-                p.FileName == "secedit.exe" && p.Arguments.Contains("/export")), 
+                p.FileName == "secedit.exe" && p.ArgumentList.Contains("/export")), 
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ProcessResult { ExitCode = 0 })
             .Callback<ProcessStartInfo, CancellationToken>((psi, _) => 
             {
-                // Simulate file creation
-                var path = ExtractPathFromArgs(psi.Arguments, "/cfg");
+                var path = ExtractPathFromArgList(psi, "/cfg");
                 if (path != null) File.WriteAllText(path, "[Version]");
             });
 
@@ -43,7 +42,7 @@ public sealed class SnapshotServiceTests
             .ReturnsAsync(new ProcessResult { ExitCode = 0 })
             .Callback<ProcessStartInfo, CancellationToken>((psi, _) => 
             {
-                var path = ExtractPathFromArgs(psi.Arguments, "/file:");
+                var path = ExtractFileArgFromArgList(psi);
                 if (path != null) File.WriteAllText(path, "test,data");
             });
 
@@ -57,7 +56,7 @@ public sealed class SnapshotServiceTests
         Assert.EndsWith(".inf", result.SecurityPolicyPath);
         
         _processRunnerMock.Verify(x => x.RunAsync(It.Is<ProcessStartInfo>(p => 
-            p.FileName == "secedit.exe" && p.Arguments.Contains("/export")), 
+            p.FileName == "secedit.exe" && p.ArgumentList.Contains("/export")), 
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -70,17 +69,17 @@ public sealed class SnapshotServiceTests
             .ReturnsAsync(new ProcessResult { ExitCode = 0 })
             .Callback<ProcessStartInfo, CancellationToken>((psi, _) => 
             {
-                var path = ExtractPathFromArgs(psi.Arguments, "/cfg");
+                var path = ExtractPathFromArgList(psi, "/cfg");
                 if (path != null) File.WriteAllText(path, "[Version]");
             });
 
         _processRunnerMock.Setup(x => x.RunAsync(It.Is<ProcessStartInfo>(p => 
-                p.FileName == "auditpol.exe" && p.Arguments.Contains("/backup")), 
+                p.FileName == "auditpol.exe" && p.ArgumentList.Contains("/backup")), 
                 It.IsAny<CancellationToken>()))
             .ReturnsAsync(new ProcessResult { ExitCode = 0 })
             .Callback<ProcessStartInfo, CancellationToken>((psi, _) => 
             {
-                var path = ExtractPathFromArgs(psi.Arguments, "/file:");
+                var path = ExtractFileArgFromArgList(psi);
                 if (path != null) File.WriteAllText(path, "test,data");
             });
 
@@ -94,7 +93,7 @@ public sealed class SnapshotServiceTests
         Assert.EndsWith(".csv", result.AuditPolicyPath);
 
         _processRunnerMock.Verify(x => x.RunAsync(It.Is<ProcessStartInfo>(p => 
-            p.FileName == "auditpol.exe" && p.Arguments.Contains("/backup")), 
+            p.FileName == "auditpol.exe" && p.ArgumentList.Contains("/backup")), 
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -143,7 +142,7 @@ public sealed class SnapshotServiceTests
 
         // Assert
         _processRunnerMock.Verify(x => x.RunAsync(It.Is<ProcessStartInfo>(p => 
-            p.FileName == "secedit.exe" && p.Arguments.Contains("/configure")), 
+            p.FileName == "secedit.exe" && p.ArgumentList.Contains("/configure")), 
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -160,7 +159,7 @@ public sealed class SnapshotServiceTests
 
         // Assert
         _processRunnerMock.Verify(x => x.RunAsync(It.Is<ProcessStartInfo>(p => 
-            p.FileName == "auditpol.exe" && p.Arguments.Contains("/restore")), 
+            p.FileName == "auditpol.exe" && p.ArgumentList.Contains("/restore")), 
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -171,7 +170,7 @@ public sealed class SnapshotServiceTests
             .ReturnsAsync(new ProcessResult { ExitCode = 0 })
             .Callback<ProcessStartInfo, CancellationToken>((psi, _) => 
             {
-                var path = ExtractPathFromArgs(psi.Arguments, "/cfg");
+                var path = ExtractPathFromArgList(psi, "/cfg");
                 if (path != null) File.WriteAllText(path, "[Version]");
             });
 
@@ -180,7 +179,7 @@ public sealed class SnapshotServiceTests
             .ReturnsAsync(new ProcessResult { ExitCode = 0 })
             .Callback<ProcessStartInfo, CancellationToken>((psi, _) => 
             {
-                var path = ExtractPathFromArgs(psi.Arguments, "/file:");
+                var path = ExtractFileArgFromArgList(psi);
                 if (path != null) File.WriteAllText(path, "test,data");
             });
     }
@@ -202,25 +201,19 @@ public sealed class SnapshotServiceTests
         return result;
     }
 
-    private string? ExtractPathFromArgs(string args, string switchName)
+    // Extract the value after a named switch from ArgumentList (e.g. "/cfg" → next element)
+    private static string? ExtractPathFromArgList(ProcessStartInfo psi, string switchName)
     {
-        // Simple extraction logic for test mocks
-        // e.g. /cfg "path/to/file"
-        var idx = args.IndexOf(switchName);
-        if (idx == -1) return null;
-        
-        var remaining = args.Substring(idx + switchName.Length).Trim();
-        if (remaining.StartsWith("\""))
-        {
-            var end = remaining.IndexOf("\"", 1);
-            if (end != -1) return remaining.Substring(1, end - 1);
-        }
-        else if (remaining.StartsWith(":\"")) // Handle /file:"..."
-        {
-            var end = remaining.IndexOf("\"", 2);
-            if (end != -1) return remaining.Substring(2, end - 2);
-        }
-        
+        var idx = psi.ArgumentList.IndexOf(switchName);
+        if (idx >= 0 && idx + 1 < psi.ArgumentList.Count)
+            return psi.ArgumentList[idx + 1];
         return null;
+    }
+
+    // Extract path from a /file:<path> style entry in ArgumentList
+    private static string? ExtractFileArgFromArgList(ProcessStartInfo psi)
+    {
+        var entry = psi.ArgumentList.FirstOrDefault(a => a.StartsWith("/file:", StringComparison.OrdinalIgnoreCase));
+        return entry?.Substring("/file:".Length);
     }
 }

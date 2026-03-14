@@ -96,7 +96,7 @@ public sealed class CklImporterTests : IDisposable
     var results = importer.ToControlResults(checklist);
 
     results.Select(r => r.Status).Should().Equal("Pass", "Fail", "NotApplicable", "NotReviewed");
-    results.Select(r => r.RuleId).Should().Equal("V-10001", "V-10002", "V-10003", "V-10004");
+    results.Select(r => r.VulnId).Should().Equal("V-10001", "V-10002", "V-10003", "V-10004");
   }
 
   [Fact]
