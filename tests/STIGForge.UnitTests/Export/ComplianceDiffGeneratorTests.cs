@@ -2,6 +2,7 @@ using System.Text.Json;
 using FluentAssertions;
 using STIGForge.Export;
 using STIGForge.Verify;
+using CoreModels = STIGForge.Core.Models;
 
 namespace STIGForge.UnitTests.Export;
 
@@ -165,7 +166,7 @@ public sealed class ComplianceDiffGeneratorTests : IDisposable
 
     File.Exists(jsonPath).Should().BeTrue();
     var json = File.ReadAllText(jsonPath);
-    var deserialized = JsonSerializer.Deserialize<Core.Models.ComplianceDiff>(json,
+    var deserialized = JsonSerializer.Deserialize<CoreModels.ComplianceDiff>(json,
       new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
     deserialized.Should().NotBeNull();
     deserialized!.Regressions.Should().HaveCount(1);

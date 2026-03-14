@@ -4,6 +4,7 @@ using FluentAssertions;
 using STIGForge.Core.Models;
 using STIGForge.Export;
 using STIGForge.Verify;
+using VerifyNs = STIGForge.Verify;
 
 namespace STIGForge.UnitTests.Export;
 
@@ -154,7 +155,7 @@ public sealed class HtmlReportGeneratorTests : IDisposable
     var report = new VerifyReport
     {
       Tool = "Test",
-      Results = new List<Verify.ControlResult>
+      Results = new List<VerifyNs.ControlResult>
       {
         new() { VulnId = "V-001", RuleId = "SV-001r1_rule", Title = "Pass Rule", Severity = "medium", Status = "NotAFinding", Tool = "SCAP" },
         new() { VulnId = "V-002", RuleId = "SV-002r1_rule", Title = "Fail CAT I", Severity = "high", Status = "Open", Tool = "SCAP" },
@@ -177,7 +178,7 @@ public sealed class HtmlReportGeneratorTests : IDisposable
     var report = new VerifyReport
     {
       Tool = "Test",
-      Results = new List<Verify.ControlResult>
+      Results = new List<VerifyNs.ControlResult>
       {
         new() { VulnId = "V-001", Title = "Win11 Pass", Severity = "medium", Status = "NotAFinding", Tool = "SCAP", BenchmarkId = "Windows_11_STIG" },
         new() { VulnId = "V-002", Title = "Win11 Fail", Severity = "high", Status = "Open", Tool = "SCAP", BenchmarkId = "Windows_11_STIG" },

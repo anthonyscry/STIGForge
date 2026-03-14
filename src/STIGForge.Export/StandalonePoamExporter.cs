@@ -69,6 +69,7 @@ public static class StandalonePoamExporter
           Tool = r.Tool,
           SourceFile = r.SourceFile,
           VerifiedAt = r.VerifiedAt,
+          BenchmarkId = r.BenchmarkId,
           Metadata = new Dictionary<string, string>()
         });
       }

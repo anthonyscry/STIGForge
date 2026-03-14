@@ -15,6 +15,7 @@
 
   <ItemGroup>
     <InternalsVisibleTo Include="STIGForge.UnitTests" />
+    <InternalsVisibleTo Include="STIGForge.Tests.CrossPlatform" />
   </ItemGroup>
 
 </Project>

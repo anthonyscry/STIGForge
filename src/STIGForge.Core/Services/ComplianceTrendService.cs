@@ -15,7 +15,7 @@ public sealed class ComplianceTrendService
   public ComplianceTrendService(IComplianceTrendRepository repo, IClock? clock = null)
   {
     _repo = repo ?? throw new ArgumentNullException(nameof(repo));
-    _clock = clock ?? new DefaultClock();
+    _clock = clock ?? new SystemClock();
   }
 
   public async Task RecordSnapshotAsync(
@@ -84,14 +84,11 @@ public sealed class ComplianceTrendService
     };
   }
 
-  public async Task<bool> DetectRegressionAsync(string bundleRoot, double thresholdPercent, CancellationToken ct)
+  public async Task<bool> DetectRegressionAsync(string bundleRoot, double thresholdPercent, CancellationToken ct, double minimumFloor = 0.0)
   {
     var trend = await GetTrendAsync(bundleRoot, 2, ct).ConfigureAwait(false);
+    if (minimumFloor > 0.0 && trend.CurrentPercent >= minimumFloor)
+      return false;
     return trend.Delta < -thresholdPercent;
-  }
-
-  private sealed class DefaultClock : IClock
-  {
-    public DateTimeOffset Now => DateTimeOffset.UtcNow;
   }
 }

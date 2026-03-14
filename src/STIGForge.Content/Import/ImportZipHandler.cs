@@ -6,9 +6,15 @@ namespace STIGForge.Content.Import;
 internal sealed class ImportZipHandler
 {
     private const int MaxArchiveEntryCount = 4096;
-    private const long MaxExtractedBytes = 512L * 1024L * 1024L;
+    private const long DefaultMaxExtractedBytes = 512L * 1024L * 1024L;
 
+    private readonly long _maxExtractedBytes;
     private long _totalExtractedBytes = 0;
+
+    internal ImportZipHandler(long maxExtractedBytes = DefaultMaxExtractedBytes)
+    {
+        _maxExtractedBytes = maxExtractedBytes;
+    }
 
     internal async Task ExtractZipSafelyAsync(string zipPath, string destinationRoot, CancellationToken ct)
     {
@@ -49,8 +55,8 @@ internal sealed class ImportZipHandler
             using var countingStream = new CountingStream(outputStream);
             await entryStream.CopyToAsync(countingStream, ct).ConfigureAwait(false);
             _totalExtractedBytes += countingStream.BytesWritten;
-            if (_totalExtractedBytes > MaxExtractedBytes)
-                throw new ParsingException($"[IMPORT-ARCHIVE-003] Archive expanded size exceeds {MaxExtractedBytes} bytes and was rejected.");
+            if (_totalExtractedBytes > _maxExtractedBytes)
+                throw new ParsingException($"[IMPORT-ARCHIVE-003] Archive expanded size exceeds {_maxExtractedBytes} bytes and was rejected.");
         }
     }
 
@@ -249,7 +255,7 @@ internal sealed class ImportZipHandler
         return Guid.TryParse(candidate, out _);
     }
 
-    private sealed class CountingStream : Stream
+    internal sealed class CountingStream : Stream
     {
         private readonly Stream _inner;
         public long BytesWritten { get; private set; }

@@ -15,4 +15,9 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="STIGForge.Tests.CrossPlatform" />
+    <InternalsVisibleTo Include="STIGForge.UnitTests" />
+  </ItemGroup>
+
 </Project>

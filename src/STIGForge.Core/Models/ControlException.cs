@@ -1,5 +1,8 @@
 namespace STIGForge.Core.Models;
 
+/// <summary>Strongly-typed exception status values. Stored as string in SQLite for backward compat.</summary>
+// NOTE: ExceptionStatus enum is defined in Models/Enums.cs
+
 /// <summary>
 /// Time-bounded exception/waiver for a control rule, with approver tracking and risk level.
 /// Exceptions can be Active, Expired (past ExpiresAt), or Revoked (manually revoked).
@@ -11,7 +14,7 @@ public sealed class ControlException
   public string RuleId { get; set; } = string.Empty;
   public string? VulnId { get; set; }
   public string ExceptionType { get; set; } = string.Empty;  // Waiver, RiskAcceptance, TechnicalException
-  public string Status { get; set; } = "Active";              // Active, Expired, Revoked
+  public string Status { get; set; } = "Active";              // Active, Expired, Revoked — stored as string for SQLite compat
   public string RiskLevel { get; set; } = string.Empty;       // High, Medium, Low
   public string ApprovedBy { get; set; } = string.Empty;
   public string? Justification { get; set; }
@@ -20,6 +23,10 @@ public sealed class ControlException
   public DateTimeOffset? ExpiresAt { get; set; }
   public DateTimeOffset? RevokedAt { get; set; }
   public string? RevokedBy { get; set; }
+
+  /// <summary>Strongly-typed status. Parses the <see cref="Status"/> string; unknown values map to <see cref="ExceptionStatus.Active"/>.</summary>
+  public ExceptionStatus StatusValue =>
+    Enum.TryParse<ExceptionStatus>(Status, ignoreCase: true, out var parsed) ? parsed : ExceptionStatus.Active;
 }
 
 /// <summary>Request to create a new control exception.</summary>
