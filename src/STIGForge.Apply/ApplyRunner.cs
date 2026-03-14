@@ -429,9 +429,11 @@ public class ApplyRunner
     if (_audit == null)
     {
       blockingFailures.Add("Audit trail service unavailable - integrity evidence cannot be verified.");
+      // _audit is null — guard: do not fall through to audit recording code
     }
     else
     {
+      // _audit is guaranteed non-null in this branch; no null-forgiving operator needed
       try
       {
         await _audit.RecordAsync(new AuditEntry
@@ -581,7 +583,7 @@ public class ApplyRunner
       RecoveryArtifactPaths = GetRecoveryArtifactPaths(snapshot, snapshotsDir, string.Empty),
       RunId = runId,
       PriorRunId = priorRunId,
-      RebootCount = resultRebootCount ?? 0,
+      RebootCount = context.RebootCount,
       ConvergenceStatus = convergenceStatus ?? ConvergenceStatus.NotApplicable
     };
   }

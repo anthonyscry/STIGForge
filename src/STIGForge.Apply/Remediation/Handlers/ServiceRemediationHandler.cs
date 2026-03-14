@@ -26,12 +26,12 @@ public sealed class ServiceRemediationHandler : RemediationHandlerBase
     public override async Task<RemediationResult> TestAsync(RemediationContext context, CancellationToken ct)
     {
         var qSvc = ApplyProcessHelpers.ToPowerShellSingleQuoted(_serviceName);
+        var wmiFilterName = EscapeWmiFilterValue(_serviceName);
         var script = $@"
 $service = Get-Service -Name {qSvc} -ErrorAction SilentlyContinue
 if ($null -eq $service) {{ '' }}
 else {{
-    $svcName = {qSvc}
-    $startMode = (Get-CimInstance -ClassName Win32_Service -Filter ""Name='$svcName'"" -ErrorAction SilentlyContinue).StartMode
+    $startMode = (Get-CimInstance -ClassName Win32_Service -Filter ""Name='{wmiFilterName}'"" -ErrorAction SilentlyContinue).StartMode
     ""$startMode|$($service.Status)""
 }}";
 
@@ -136,5 +136,10 @@ Set-Service -Name {qSvc} -StartupType {ApplyProcessHelpers.ToPowerShellSingleQuo
             _ => value.Trim()
         };
     }
+
+    private static string EscapeWmiFilterValue(string value)
+        => value.Replace("\\", "\\\\").Replace("'", "\\'");
+
+    private static string EscapePsSingleQuoted(string value) => value.Replace("'", "''");
 
 }

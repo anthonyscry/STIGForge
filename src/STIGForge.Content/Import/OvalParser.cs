@@ -48,7 +48,7 @@ public static class OvalParser
       DtdProcessing = DtdProcessing.Prohibit,
       XmlResolver = null,
       IgnoreWhitespace = true,
-      MaxCharactersFromEntities = 1024,
+      MaxCharactersFromEntities = 1_000_000,
       MaxCharactersInDocument = 20_000_000,
       Async = false
     };

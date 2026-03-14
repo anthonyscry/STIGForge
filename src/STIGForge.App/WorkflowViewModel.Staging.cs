@@ -164,8 +164,9 @@ public partial class WorkflowViewModel
             {
                 Directory.Delete(tempDir, true);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
+                System.Diagnostics.Trace.TraceWarning("EnsurePowerStigDependenciesStaged: temp dir cleanup failed: " + ex.Message);
             }
         }
     }
@@ -199,8 +200,9 @@ public partial class WorkflowViewModel
                         {
                             Directory.Delete(tempDir, true);
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
+                            System.Diagnostics.Trace.TraceWarning("StageApplyArtifacts (GPO): temp dir cleanup failed: " + ex.Message);
                         }
                     }
                 }
@@ -250,8 +252,9 @@ public partial class WorkflowViewModel
                         {
                             Directory.Delete(tempDir, true);
                         }
-                        catch (Exception)
+                        catch (Exception ex)
                         {
+                            System.Diagnostics.Trace.TraceWarning("StageApplyArtifacts (PowerStig): temp dir cleanup failed: " + ex.Message);
                         }
                     }
                 }

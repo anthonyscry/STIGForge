@@ -82,14 +82,14 @@ public sealed class RebootCoordinator
                 $"Maximum reboot count ({MaxReboots}) exceeded for apply cycle. Aborting. Error: max_reboot_exceeded");
         }
 
-        // Increment reboot count before writing marker
-        context.RebootCount++;
-
         try
         {
-            // Write resume marker BEFORE scheduling reboot (critical for recovery)
+            // Write resume marker with current (pre-increment) count BEFORE scheduling reboot
             await WriteResumeMarker(context, cancellationToken).ConfigureAwait(false);
             _logger.LogInformation("Resume marker created at {MarkerPath}", GetMarkerPath(context.BundleRoot));
+
+            // Increment count in memory only after marker is safely written
+            context.RebootCount++;
 
             // Schedule system reboot
             var result = _scheduleReboot(delaySeconds);

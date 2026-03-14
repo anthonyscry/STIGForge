@@ -151,6 +151,19 @@ public sealed class GpoConflictDetector
 
     var targetPathList = targetPaths.ToList();
     var targetByNormalized = targetPathList.ToDictionary(NormalizePath, p => p, StringComparer.OrdinalIgnoreCase);
+
+    // Build O(n+m) lookup tables for hive-stripped and compact normalization strategies
+    var targetByHiveStripped = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    var targetByCompact = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+    foreach (var kvp in targetByNormalized)
+    {
+      var hiveStripped = RemoveRegistryHivePrefix(kvp.Key);
+      targetByHiveStripped.TryAdd(hiveStripped, kvp.Value);
+      var compact = Regex.Replace(hiveStripped, "[^a-z0-9]", string.Empty, RegexOptions.IgnoreCase);
+      if (!string.IsNullOrWhiteSpace(compact))
+        targetByCompact.TryAdd(compact, kvp.Value);
+    }
+
     var results = new Dictionary<string, AppliedGpoSetting>(StringComparer.OrdinalIgnoreCase);
 
     XDocument doc;
@@ -188,7 +201,7 @@ public sealed class GpoConflictDetector
         continue;
 
       string? targetPath;
-      if (!TryMatchTargetPath(path, targetByNormalized, out targetPath) || string.IsNullOrWhiteSpace(targetPath))
+      if (!TryMatchTargetPath(path, targetByNormalized, targetByHiveStripped, targetByCompact, out targetPath) || string.IsNullOrWhiteSpace(targetPath))
         continue;
 
       var gpoName = FirstNonEmpty(
@@ -275,6 +288,8 @@ public sealed class GpoConflictDetector
   private static bool TryMatchTargetPath(
     string candidatePath,
     IReadOnlyDictionary<string, string> targetByNormalized,
+    IReadOnlyDictionary<string, string> targetByHiveStripped,
+    IReadOnlyDictionary<string, string> targetByCompact,
     out string? targetPath)
   {
     targetPath = null;
@@ -283,30 +298,12 @@ public sealed class GpoConflictDetector
       return true;
 
     var candidateNoHive = RemoveRegistryHivePrefix(normalizedCandidate);
-    foreach (var kvp in targetByNormalized)
-    {
-      if (string.Equals(candidateNoHive, RemoveRegistryHivePrefix(kvp.Key), StringComparison.OrdinalIgnoreCase)
-          || candidateNoHive.EndsWith(RemoveRegistryHivePrefix(kvp.Key), StringComparison.OrdinalIgnoreCase)
-          || RemoveRegistryHivePrefix(kvp.Key).EndsWith(candidateNoHive, StringComparison.OrdinalIgnoreCase))
-      {
-        targetPath = kvp.Value;
-        return true;
-      }
-    }
+    if (targetByHiveStripped.TryGetValue(candidateNoHive, out targetPath))
+      return true;
 
     var compactCandidate = Regex.Replace(candidateNoHive, "[^a-z0-9]", string.Empty, RegexOptions.IgnoreCase);
-    if (!string.IsNullOrWhiteSpace(compactCandidate))
-    {
-      foreach (var kvp in targetByNormalized)
-      {
-        var compactTarget = Regex.Replace(RemoveRegistryHivePrefix(kvp.Key), "[^a-z0-9]", string.Empty, RegexOptions.IgnoreCase);
-        if (string.Equals(compactCandidate, compactTarget, StringComparison.OrdinalIgnoreCase))
-        {
-          targetPath = kvp.Value;
-          return true;
-        }
-      }
-    }
+    if (!string.IsNullOrWhiteSpace(compactCandidate) && targetByCompact.TryGetValue(compactCandidate, out targetPath))
+      return true;
 
     return false;
   }

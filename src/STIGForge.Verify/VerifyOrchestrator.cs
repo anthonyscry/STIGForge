@@ -403,11 +403,11 @@ public sealed class VerifyOrchestrator
   /// <summary>
   /// Save consolidated verify report to JSON file.
   /// </summary>
-  public void SaveReport(ConsolidatedVerifyReport report, string outputPath)
+  public async Task SaveReport(ConsolidatedVerifyReport report, string outputPath)
   {
     var json = JsonSerializer.Serialize(report, JsonOptions.IndentedCamelCase);
 
-    File.WriteAllText(outputPath, json);
+    await File.WriteAllTextAsync(outputPath, json).ConfigureAwait(false);
   }
 
   private static string BuildGroupKey(NormalizedVerifyResult result, int fallbackIndex)

@@ -16,8 +16,9 @@ public sealed class NessusImporter
       DtdProcessing = DtdProcessing.Prohibit,
       XmlResolver = null,
       IgnoreWhitespace = true,
-      MaxCharactersFromEntities = 1024,
-      MaxCharactersInDocument = 40_000_000
+      MaxCharactersFromEntities = 1_000_000,
+      MaxCharactersInDocument = 40_000_000,
+      Async = true
     };
 
     using var reader = XmlReader.Create(nessusFilePath, settings);

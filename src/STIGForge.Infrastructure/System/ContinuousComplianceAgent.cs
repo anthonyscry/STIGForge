@@ -17,6 +17,7 @@ public sealed class ContinuousComplianceAgent : BackgroundService
   private readonly string _bundleRoot;
   private readonly bool _autoRemediate;
   private readonly int _maxDriftEventsToForward;
+  private readonly ComplianceAgentConfig? _config;
 
   public ContinuousComplianceAgent(
     DriftDetectionService driftService,
@@ -26,7 +27,8 @@ public sealed class ContinuousComplianceAgent : BackgroundService
     bool autoRemediate = false,
     int maxDriftEventsToForward = 10,
     AuditLogForwarder? auditForwarder = null,
-    IAuditTrailService? auditTrail = null)
+    IAuditTrailService? auditTrail = null,
+    ComplianceAgentConfig? config = null)
   {
     _driftService = driftService ?? throw new ArgumentNullException(nameof(driftService));
     _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -36,6 +38,7 @@ public sealed class ContinuousComplianceAgent : BackgroundService
     _maxDriftEventsToForward = Math.Max(0, maxDriftEventsToForward);
     _auditForwarder = auditForwarder;
     _auditTrail = auditTrail;
+    _config = config;
   }
 
   protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -76,13 +79,25 @@ public sealed class ContinuousComplianceAgent : BackgroundService
     _logger.LogDebug("Running scheduled compliance check");
 
     var stopwatch = Stopwatch.StartNew();
+    // Note: autoRemediate is passed as a bool to CheckBundleAsync; severity-gate filtering cannot
+    // be applied at the service call level. Instead, we filter remediable events for audit counting.
     var result = await _driftService.CheckBundleAsync(_bundleRoot, _autoRemediate, ct).ConfigureAwait(false);
     stopwatch.Stop();
 
+    // Filter drift events for audit logging according to severity gate configuration.
+    var remediableEvents = result.DriftEvents.Where(e =>
+    {
+      if (_config?.ExcludeBaselineEstablishedEvents == true &&
+          e.ChangeType == STIGForge.Core.Models.DriftChangeTypes.BaselineEstablished)
+        return false;
+      return true;
+    }).ToList();
+
     _logger.LogInformation(
-      "Compliance check completed in {ElapsedMs}ms. Drift events: {DriftCount}, Auto-remediated: {RemediatedCount}",
+      "Compliance check completed in {ElapsedMs}ms. Drift events: {DriftCount}, Remediable: {RemediableCount}, Auto-remediated: {RemediatedCount}",
       stopwatch.ElapsedMilliseconds,
       result.DriftEvents.Count,
+      remediableEvents.Count,
       result.AutoRemediatedRuleIds.Count);
 
     if (_auditTrail != null)
@@ -95,7 +110,7 @@ public sealed class ContinuousComplianceAgent : BackgroundService
         Action = "ContinuousCompliance",
         Target = _bundleRoot,
         Result = "Success",
-        Detail = $"Scheduled check: {result.DriftEvents.Count} drift events detected"
+        Detail = $"Scheduled check: {remediableEvents.Count} remediable drift events detected (total: {result.DriftEvents.Count})"
       }, ct).ConfigureAwait(false);
     }
 
@@ -160,7 +175,8 @@ public sealed class ComplianceAgentFactory
       resolvedAutoRemediate,
       maxDriftEventsToForward,
       auditForwarder,
-      auditTrail);
+      auditTrail,
+      config);
   }
 }
 

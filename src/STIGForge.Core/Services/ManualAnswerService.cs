@@ -126,7 +126,7 @@ public sealed class ManualAnswerService
   /// <summary>
   /// Save or update a single answer.
   /// </summary>
-  public void SaveAnswer(string bundleRoot, ManualAnswer answer, bool requireReasonForDecision = false, string? profileId = null, string? packId = null)
+  public void SaveAnswer(string bundleRoot, ManualAnswer answer, bool requireReasonForDecision = false, string? profileId = null, string? packId = null, CancellationToken ct = default)
   {
     if (answer == null)
       throw new ArgumentNullException(nameof(answer));
@@ -197,7 +197,7 @@ public sealed class ManualAnswerService
             User = Environment.UserName,
             Machine = Environment.MachineName,
             Timestamp = DateTimeOffset.Now
-          }, CancellationToken.None).ConfigureAwait(false);
+          }, ct).ConfigureAwait(false);
         }
         catch (Exception ex)
         {

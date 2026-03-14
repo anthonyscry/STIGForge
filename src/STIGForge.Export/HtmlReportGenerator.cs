@@ -24,10 +24,9 @@ public static class HtmlReportGenerator
     string audience = "executive")
   {
     var results = StandalonePoamExporter.LoadAndNormalize(bundleRoot);
-    var systemName = systemNameOverride
-      ?? StandalonePoamExporter.ReadSystemName(bundleRoot)
-      ?? "Unknown System";
-    var bundleId = StandalonePoamExporter.ReadBundleId(bundleRoot) ?? "unknown";
+    var (manifestSystemName, manifestBundleId) = StandalonePoamExporter.ReadManifest(bundleRoot);
+    var systemName = systemNameOverride ?? manifestSystemName ?? "Unknown System";
+    var bundleId = manifestBundleId ?? "unknown";
 
     var passCount = results.Count(r => r.Status == VerifyStatus.Pass);
     var failCount = results.Count(r => r.Status == VerifyStatus.Fail);

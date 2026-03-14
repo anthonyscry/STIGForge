@@ -89,7 +89,7 @@ public sealed class OverlayRebaseService
             User = Environment.UserName,
             Machine = Environment.MachineName,
             Timestamp = DateTimeOffset.UtcNow
-          }, CancellationToken.None).ConfigureAwait(false);
+          }, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex)
         {

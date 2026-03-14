@@ -134,6 +134,7 @@ VALUES(@EventId, @RunId, @Seq, @Phase, @StepName, @Status, @OccurredAt, @Message
     using var conn = new SqliteConnection(_cs);
     await conn.OpenAsync(ct).ConfigureAwait(false);
 
+    const int SqliteConstraintViolation = 19;
     try
     {
       await conn.ExecuteAsync(new CommandDefinition(
@@ -153,14 +154,14 @@ VALUES(@EventId, @RunId, @Seq, @Phase, @StepName, @Status, @OccurredAt, @Message
         },
         cancellationToken: ct)).ConfigureAwait(false);
     }
-    catch (SqliteException ex) when (ex.SqliteErrorCode == 19 /* SQLITE_CONSTRAINT */)
+    catch (SqliteException ex) when (ex.SqliteErrorCode == SqliteConstraintViolation)
     {
       throw new InvalidOperationException(
         $"Duplicate sequence index {evt.Seq} for run '{evt.RunId}'. Timeline events are append-only.", ex);
     }
   }
 
-  public async Task<IReadOnlyList<MissionTimelineEvent>> GetTimelineAsync(string runId, CancellationToken ct)
+  public async Task<IReadOnlyList<MissionTimelineEvent>> GetTimelineAsync(string runId, CancellationToken ct, int limit = 1000, int offset = 0)
   {
     ArgumentException.ThrowIfNullOrEmpty(runId);
 
@@ -170,10 +171,11 @@ SELECT event_id EventId, run_id RunId, seq Seq, phase Phase, step_name StepName,
        evidence_path EvidencePath, evidence_sha256 EvidenceSha256
 FROM mission_timeline
 WHERE run_id=@runId
-ORDER BY seq ASC;";
+ORDER BY seq ASC
+LIMIT @limit OFFSET @offset;";
 
     using var conn = new SqliteConnection(_cs);
-    var rows = await conn.QueryAsync<EventRow>(new CommandDefinition(sql, new { runId }, cancellationToken: ct)).ConfigureAwait(false);
+    var rows = await conn.QueryAsync<EventRow>(new CommandDefinition(sql, new { runId, limit, offset }, cancellationToken: ct)).ConfigureAwait(false);
     return rows.Select(MapEvent).ToList();
   }
 

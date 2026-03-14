@@ -335,7 +335,6 @@ public sealed class DriftDetectionService
     private readonly Action<Exception>? _onError;
     private readonly CancellationTokenSource _cts;
     private readonly Timer _timer;
-    private int _tickRunning;
     private bool _disposed;
 
     public PeriodicDriftScheduler(
@@ -364,17 +363,14 @@ public sealed class DriftDetectionService
         return;
 
       _disposed = true;
-      _timer.Dispose();
       _cts.Cancel();
+      _timer.Dispose();
       _cts.Dispose();
     }
 
     private void OnTick(object? state)
     {
-      if (_disposed)
-        return;
-
-      if (Interlocked.Exchange(ref _tickRunning, 1) == 1)
+      if (_cts.IsCancellationRequested)
         return;
 
       _ = RunTickAsync();
@@ -397,10 +393,6 @@ public sealed class DriftDetectionService
       catch (Exception ex)
       {
         _onError?.Invoke(ex);
-      }
-      finally
-      {
-        Interlocked.Exchange(ref _tickRunning, 0);
       }
     }
   }

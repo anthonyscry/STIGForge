@@ -131,7 +131,8 @@ public static class DomainGpoBackupParser
     {
         DtdProcessing = DtdProcessing.Prohibit,
         XmlResolver = null,
-        MaxCharactersInDocument = 10_000_000
+        MaxCharactersInDocument = 10_000_000,
+        MaxCharactersFromEntities = 1_000_000
     };
 
     private static DomainGpoBackupInfo ParseBackupXml(string xmlPath, string backupDir, string dirGuid)

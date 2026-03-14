@@ -14,7 +14,7 @@ public static class AttestationImporter
   /// <summary>
   /// Merge filled attestation CSV into existing attestation JSON in the eMASS package.
   /// </summary>
-  public static AttestationImportResult ImportAttestations(string packageRoot, string csvFilePath, IAuditTrailService? audit = null)
+  public static AttestationImportResult ImportAttestations(string packageRoot, string csvFilePath, IAuditTrailService? audit = null, CancellationToken ct = default)
   {
     var result = ImportAttestationsCore(packageRoot, csvFilePath);
 
@@ -33,7 +33,7 @@ public static class AttestationImporter
             User = Environment.UserName,
             Machine = Environment.MachineName,
             Timestamp = DateTimeOffset.Now
-          }, CancellationToken.None).ConfigureAwait(false);
+          }, ct).ConfigureAwait(false);
         }
         catch (Exception)
         {

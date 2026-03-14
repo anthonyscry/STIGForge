@@ -122,7 +122,7 @@ public static class PolFileParser
             return false;
 
         // Read data bytes
-        if (dataSize > 0 && offset + (int)dataSize > data.Length)
+        if (dataSize > 0 && (long)offset + (long)dataSize > data.Length)
         {
             warnings.Add($"Data size {dataSize} exceeds remaining bytes at offset {offset}");
             return false;
@@ -156,7 +156,7 @@ public static class PolFileParser
         result = string.Empty;
         var start = offset;
 
-        while (offset + 1 < data.Length)
+        while (offset + 2 <= data.Length)
         {
             if (data[offset] == 0x00 && data[offset + 1] == 0x00)
             {
@@ -184,7 +184,9 @@ public static class PolFileParser
 
     private static int FindNextEntryBracket(byte[] data, int startOffset)
     {
-        for (var i = startOffset; i + 1 < data.Length; i += 2)
+        const int MaxScanDistance = 1_000_000;
+        var scanLimit = Math.Min(data.Length, startOffset + MaxScanDistance);
+        for (var i = startOffset; i + 1 < scanLimit; i += 2)
         {
             if (data[i] == 0x5B && data[i + 1] == 0x00)
                 return i;

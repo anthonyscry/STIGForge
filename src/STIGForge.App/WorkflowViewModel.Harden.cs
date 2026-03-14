@@ -172,8 +172,9 @@ public partial class WorkflowViewModel
 
             return (osTarget, roleTemplate);
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            System.Diagnostics.Trace.TraceWarning("ReadOsTargetFromManifest failed: " + ex.Message);
             return (null, null);
         }
     }
@@ -237,12 +238,14 @@ public partial class WorkflowViewModel
 
             return bestMatch?.Path ?? candidate;
         }
-        catch (IOException)
+        catch (IOException ex)
         {
+            System.Diagnostics.Trace.TraceWarning("ResolveDscMofPath IO error: " + ex.Message);
             return candidate;
         }
-        catch (UnauthorizedAccessException)
+        catch (UnauthorizedAccessException ex)
         {
+            System.Diagnostics.Trace.TraceWarning("ResolveDscMofPath access denied: " + ex.Message);
             return candidate;
         }
     }
@@ -301,8 +304,9 @@ public partial class WorkflowViewModel
                 null);
             return value as string;
         }
-        catch (Exception)
+        catch (Exception ex)
         {
+            System.Diagnostics.Trace.TraceWarning("ReadWindowsProductName failed: " + ex.Message);
             return null;
         }
     }
@@ -335,11 +339,13 @@ public partial class WorkflowViewModel
             if (!string.IsNullOrWhiteSpace(moduleDirectory))
                 return moduleDirectory;
         }
-        catch (IOException)
+        catch (IOException ex)
         {
+            System.Diagnostics.Trace.TraceWarning("ResolvePowerStigModulePath IO error: " + ex.Message);
         }
-        catch (UnauthorizedAccessException)
+        catch (UnauthorizedAccessException ex)
         {
+            System.Diagnostics.Trace.TraceWarning("ResolvePowerStigModulePath access denied: " + ex.Message);
         }
 
         return null;
@@ -385,11 +391,13 @@ public partial class WorkflowViewModel
                 return discovered;
             }
         }
-        catch (IOException)
+        catch (IOException ex)
         {
+            System.Diagnostics.Trace.TraceWarning("ResolveLgpoPolFilePath IO error: " + ex.Message);
         }
-        catch (UnauthorizedAccessException)
+        catch (UnauthorizedAccessException ex)
         {
+            System.Diagnostics.Trace.TraceWarning("ResolveLgpoPolFilePath access denied: " + ex.Message);
         }
 
         return null;
@@ -438,12 +446,14 @@ public partial class WorkflowViewModel
 
             return Path.GetDirectoryName(discovered);
         }
-        catch (IOException)
+        catch (IOException ex)
         {
+            System.Diagnostics.Trace.TraceWarning("ResolveAdmxTemplateRootPath IO error: " + ex.Message);
             return null;
         }
-        catch (UnauthorizedAccessException)
+        catch (UnauthorizedAccessException ex)
         {
+            System.Diagnostics.Trace.TraceWarning("ResolveAdmxTemplateRootPath access denied: " + ex.Message);
             return null;
         }
     }

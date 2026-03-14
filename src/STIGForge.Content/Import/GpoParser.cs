@@ -19,8 +19,10 @@ public static class GpoParser
     var osScopes = GpoPackageExtractor.DetectOsScopes(extractedRoot);
 
     // Parse ADMX files
-    var admxFiles = Directory.EnumerateFiles(extractedRoot, "*.admx", SearchOption.AllDirectories).ToList();
-    foreach (var admxFile in admxFiles.OrderBy(f => f, StringComparer.OrdinalIgnoreCase))
+    var admxFiles = Directory.EnumerateFiles(extractedRoot, "*.admx", SearchOption.AllDirectories)
+      .OrderBy(f => f, StringComparer.OrdinalIgnoreCase)
+      .ToList();
+    foreach (var admxFile in admxFiles)
     {
       try
       {
@@ -101,7 +103,9 @@ public static class GpoParser
       DtdProcessing = DtdProcessing.Prohibit,
       XmlResolver = null,
       IgnoreWhitespace = true,
-      Async = false
+      Async = false,
+      MaxCharactersInDocument = 50_000_000,
+      MaxCharactersFromEntities = 1_000_000
     };
 
     using var reader = XmlReader.Create(admxPath, settings);

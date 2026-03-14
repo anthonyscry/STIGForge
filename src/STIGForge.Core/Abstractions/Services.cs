@@ -43,9 +43,10 @@ public interface IMissionRunRepository
   Task AppendEventAsync(MissionTimelineEvent evt, CancellationToken ct);
 
   /// <summary>
-  /// Returns all timeline events for the given run, ordered by Seq ascending (deterministic).
+  /// Returns timeline events for the given run, ordered by Seq ascending (deterministic).
+  /// Use <paramref name="limit"/> and <paramref name="offset"/> for pagination.
   /// </summary>
-  Task<IReadOnlyList<MissionTimelineEvent>> GetTimelineAsync(string runId, CancellationToken ct);
+  Task<IReadOnlyList<MissionTimelineEvent>> GetTimelineAsync(string runId, CancellationToken ct, int limit = 1000, int offset = 0);
 }
 
 /// <summary>

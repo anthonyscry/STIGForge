@@ -16,7 +16,7 @@ public static class XccdfParser
             XmlResolver = null,
             IgnoreWhitespace = true,
             Async = false,
-            MaxCharactersFromEntities = 1024,
+            MaxCharactersFromEntities = 1_000_000,
             MaxCharactersInDocument = 40_000_000
         };
 
@@ -259,27 +259,33 @@ public static class XccdfParser
         return null;
     }
 
+    private static readonly (string Substring, OsTarget Target)[] OsTargetSubstrings =
+    [
+        ("windows_server_2022", OsTarget.Server2022),
+        ("windows_server_2019", OsTarget.Server2019),
+        ("windows_11", OsTarget.Win11),
+        ("windows_10", OsTarget.Win10),
+        ("win11", OsTarget.Win11),
+        ("win10", OsTarget.Win10),
+        ("2022", OsTarget.Server2022),
+        ("2019", OsTarget.Server2019),
+    ];
+
+    private static OsTarget DetectOsTarget(string platformCpe)
+    {
+        var lower = platformCpe.ToLowerInvariant();
+        foreach (var (substring, target) in OsTargetSubstrings)
+        {
+            if (lower.Contains(substring, StringComparison.Ordinal))
+                return target;
+        }
+        return OsTarget.Unknown;
+    }
+
     private static OsTarget MapOsTarget(string? platformCpe)
     {
         if (string.IsNullOrWhiteSpace(platformCpe)) return OsTarget.Unknown;
-
-        if (platformCpe!.IndexOf("windows_11", StringComparison.OrdinalIgnoreCase) >= 0 ||
-            platformCpe.IndexOf("win11", StringComparison.OrdinalIgnoreCase) >= 0)
-            return OsTarget.Win11;
-
-        if (platformCpe.IndexOf("windows_server_2019", StringComparison.OrdinalIgnoreCase) >= 0 ||
-            platformCpe.IndexOf("2019", StringComparison.OrdinalIgnoreCase) >= 0)
-            return OsTarget.Server2019;
-
-        if (platformCpe.IndexOf("windows_server_2022", StringComparison.OrdinalIgnoreCase) >= 0 ||
-            platformCpe.IndexOf("2022", StringComparison.OrdinalIgnoreCase) >= 0)
-            return OsTarget.Server2022;
-
-        if (platformCpe.IndexOf("windows_10", StringComparison.OrdinalIgnoreCase) >= 0 ||
-            platformCpe.IndexOf("win10", StringComparison.OrdinalIgnoreCase) >= 0)
-            return OsTarget.Win10;
-
-        return OsTarget.Unknown;
+        return DetectOsTarget(platformCpe!);
     }
 
     private static ScopeTag MapClassificationScope(string? classification)

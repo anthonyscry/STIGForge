@@ -42,8 +42,8 @@ public sealed class RegistryRemediationHandler : RemediationHandlerBase
             previousValue: trimmedCurrent,
             newValue: isCompliant ? null : _expectedValue,
             detail: isCompliant
-                ? "Already compliant"
-                : $"Non-compliant: current='{trimmedCurrent}', expected='{_expectedValue}'");
+                ? $"Already compliant ({_valueType})"
+                : $"Non-compliant: current='{trimmedCurrent}', expected='{_expectedValue}' ({_valueType})");
     }
 
     public override async Task<RemediationResult> ApplyAsync(RemediationContext context, CancellationToken ct)

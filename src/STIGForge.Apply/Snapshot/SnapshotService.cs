@@ -23,7 +23,7 @@ public sealed class SnapshotService
 
         Directory.CreateDirectory(snapshotsDir);
 
-        var snapshotId = $"snapshot_{DateTimeOffset.Now:yyyyMMdd_HHmmss}";
+        var snapshotId = $"snapshot_{DateTimeOffset.UtcNow:yyyyMMdd_HHmmss}";
         var snapshotPath = Path.Combine(snapshotsDir, snapshotId);
         Directory.CreateDirectory(snapshotPath);
 
@@ -35,18 +35,29 @@ public sealed class SnapshotService
 
         try
         {
-            // Export security policy
+            // Export security policy using ArgumentList to prevent path injection
             _logger.LogInformation("Exporting security policy using secedit...");
-            await RunProcessAsync("secedit.exe", $"/export /cfg \"{securityPolicyPath}\"", snapshotPath, ct).ConfigureAwait(false);
+            {
+                var psi = new ProcessStartInfo("secedit.exe") { WorkingDirectory = snapshotPath };
+                psi.ArgumentList.Add("/export");
+                psi.ArgumentList.Add("/cfg");
+                psi.ArgumentList.Add(securityPolicyPath);
+                await RunProcessAsync(psi, ct).ConfigureAwait(false);
+            }
             
             if (!File.Exists(securityPolicyPath))
                 throw new SnapshotException($"Security policy export failed: {securityPolicyPath} not created");
 
             _logger.LogInformation("Security policy exported to {Path}", securityPolicyPath);
 
-            // Export audit policy
+            // Export audit policy using ArgumentList to prevent path injection
             _logger.LogInformation("Exporting audit policy using auditpol...");
-            await RunProcessAsync("auditpol.exe", $"/backup /file:\"{auditPolicyPath}\"", snapshotPath, ct).ConfigureAwait(false);
+            {
+                var psi2 = new ProcessStartInfo("auditpol.exe") { WorkingDirectory = snapshotPath };
+                psi2.ArgumentList.Add("/backup");
+                psi2.ArgumentList.Add($"/file:{auditPolicyPath}");
+                await RunProcessAsync(psi2, ct).ConfigureAwait(false);
+            }
             
             if (!File.Exists(auditPolicyPath))
                 throw new SnapshotException($"Audit policy export failed: {auditPolicyPath} not created");
@@ -110,19 +121,36 @@ public sealed class SnapshotService
 
         try
         {
-            // Restore security policy
+            // Restore security policy using ArgumentList to prevent path injection
             _logger.LogInformation("Restoring security policy using secedit...");
-            await RunProcessAsync("secedit.exe", 
-                $"/configure /cfg \"{snapshot.SecurityPolicyPath}\" /db secedit.sdb /overwrite /quiet",
-                Path.GetDirectoryName(snapshot.SecurityPolicyPath) ?? string.Empty, ct).ConfigureAwait(false);
+            {
+                var psi = new ProcessStartInfo("secedit.exe")
+                {
+                    WorkingDirectory = Path.GetDirectoryName(snapshot.SecurityPolicyPath) ?? string.Empty
+                };
+                psi.ArgumentList.Add("/configure");
+                psi.ArgumentList.Add("/cfg");
+                psi.ArgumentList.Add(snapshot.SecurityPolicyPath);
+                psi.ArgumentList.Add("/db");
+                psi.ArgumentList.Add("secedit.sdb");
+                psi.ArgumentList.Add("/overwrite");
+                psi.ArgumentList.Add("/quiet");
+                await RunProcessAsync(psi, ct).ConfigureAwait(false);
+            }
             
             _logger.LogInformation("Security policy restored from {Path}", snapshot.SecurityPolicyPath);
 
-            // Restore audit policy
+            // Restore audit policy using ArgumentList to prevent path injection
             _logger.LogInformation("Restoring audit policy using auditpol...");
-            await RunProcessAsync("auditpol.exe", 
-                $"/restore /file:\"{snapshot.AuditPolicyPath}\"",
-                Path.GetDirectoryName(snapshot.AuditPolicyPath) ?? string.Empty, ct).ConfigureAwait(false);
+            {
+                var psi2 = new ProcessStartInfo("auditpol.exe")
+                {
+                    WorkingDirectory = Path.GetDirectoryName(snapshot.AuditPolicyPath) ?? string.Empty
+                };
+                psi2.ArgumentList.Add("/restore");
+                psi2.ArgumentList.Add($"/file:{snapshot.AuditPolicyPath}");
+                await RunProcessAsync(psi2, ct).ConfigureAwait(false);
+            }
             
             _logger.LogInformation("Audit policy restored from {Path}", snapshot.AuditPolicyPath);
 
@@ -184,6 +212,26 @@ public sealed class SnapshotService
             return "LGPO.exe";
 
         return null;
+    }
+
+    private async Task RunProcessAsync(ProcessStartInfo psi, CancellationToken ct)
+    {
+        var result = await _processRunner.RunAsync(psi, ct).ConfigureAwait(false);
+
+        if (!string.IsNullOrWhiteSpace(result.StandardOutput))
+            _logger.LogDebug("{FileName} stdout: {Output}", psi.FileName, result.StandardOutput);
+
+        if (!string.IsNullOrWhiteSpace(result.StandardError))
+            _logger.LogDebug("{FileName} stderr: {Error}", psi.FileName, result.StandardError);
+
+        if (result.ExitCode != 0)
+        {
+            var errorMessage = $"Process '{psi.FileName}' failed with exit code {result.ExitCode}";
+            if (!string.IsNullOrWhiteSpace(result.StandardError))
+                errorMessage += $": {result.StandardError}";
+
+            throw new SnapshotException(errorMessage);
+        }
     }
 
     private async Task RunProcessAsync(string fileName, string arguments, string workingDirectory, CancellationToken ct)

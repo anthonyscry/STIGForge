@@ -88,7 +88,7 @@ public sealed class AnswerRebaseService
             User = Environment.UserName,
             Machine = Environment.MachineName,
             Timestamp = DateTimeOffset.UtcNow
-          }, CancellationToken.None).ConfigureAwait(false);
+          }, cancellationToken).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -145,7 +145,7 @@ public sealed class AnswerRebaseService
         VulnId = action.OriginalAnswer.VulnId,
         Status = action.OriginalAnswer.Status,
         Reason = action.OriginalAnswer.Reason,
-        UpdatedAt = DateTimeOffset.Now
+        UpdatedAt = DateTimeOffset.UtcNow
       };
 
       // Add rebase metadata to Comment

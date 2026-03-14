@@ -246,7 +246,8 @@ ON CONFLICT(pack_id,control_id) DO UPDATE SET json=excluded.json;";
     using var conn = new SqliteConnection(_cs);
     var jsons = await conn.QueryAsync<string>(new CommandDefinition(
       "SELECT json FROM controls WHERE pack_id=@packId", new { packId }, cancellationToken: ct)).ConfigureAwait(false);
-    return jsons.Select(j => JsonSerializer.Deserialize<ControlRecord>(j, J)!).ToList();
+    return jsons.Select(j => JsonSerializer.Deserialize<ControlRecord>(j, J)
+        ?? throw new InvalidOperationException($"Failed to deserialize {typeof(ControlRecord).Name} from stored JSON.")).ToList();
   }
 
   public async Task<bool> VerifySchemaAsync(CancellationToken ct)

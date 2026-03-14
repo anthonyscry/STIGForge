@@ -109,11 +109,11 @@ public sealed class WdacPolicyService : ISecurityFeatureService
         {
             var enforce = request.Mode == HardeningMode.Full;
             var modeLabel = enforce ? "Enforced" : "Audit";
-            var option = enforce ? 0 : 3;
+            var optionValue = ValidateCiOption((enforce ? 0 : 3).ToString());
 
             var script = $"$p='{EscapePowerShellLiteral(policyPath)}'; if (!(Test-Path $p)) {{ throw 'WDAC policy not found: ' + $p }}; "
                 + "$bin=[System.IO.Path]::ChangeExtension($p,'cip'); "
-                + "Set-RuleOption -FilePath $p -Option " + option + "; "
+                + "Set-RuleOption -FilePath $p -Option " + optionValue + "; "
                 + "ConvertFrom-CIPolicy -XmlFilePath $p -BinaryFilePath $bin; "
                 + "& CiTool.exe --update-policy $bin --json";
 
@@ -167,5 +167,14 @@ public sealed class WdacPolicyService : ISecurityFeatureService
     private static string EscapePowerShellLiteral(string value)
     {
         return value.Replace("'", "''", StringComparison.Ordinal);
+    }
+
+    private static string ValidateCiOption(string option)
+    {
+        if (!System.Text.RegularExpressions.Regex.IsMatch(option, @"^\d+$") &&
+            !new[] { "Enabled:Audit Mode", "Enabled:Enforce", "Disabled:Audit Mode", "Disabled:Enforce" }
+                .Contains(option, StringComparer.OrdinalIgnoreCase))
+            throw new ArgumentException($"Invalid WDAC CI option: '{option}'");
+        return option;
     }
 }

@@ -11,6 +11,12 @@ public sealed class ComplianceAgentConfig
   public bool EnableAuditForwarding { get; set; } = true;
   public int MaxDriftEventsToForward { get; set; } = 10;
 
+  /// <summary>Minimum drift severity to trigger auto-remediation. Defaults to "High".</summary>
+  public string MinAutoRemediateSeverity { get; set; } = "High";
+
+  /// <summary>When true, baseline-establishment events are excluded from auto-remediation.</summary>
+  public bool ExcludeBaselineEstablishedEvents { get; set; } = true;
+
   public static async Task<ComplianceAgentConfig> LoadFromFileAsync(string configPath)
   {
     if (string.IsNullOrWhiteSpace(configPath))

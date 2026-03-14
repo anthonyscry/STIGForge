@@ -499,7 +499,9 @@ public sealed class ImportInboxScanner
         DtdProcessing = DtdProcessing.Prohibit,
         IgnoreWhitespace = true,
         IgnoreComments = true,
-        XmlResolver = null
+        XmlResolver = null,
+        MaxCharactersInDocument = 50_000_000,
+        MaxCharactersFromEntities = 1_000_000
       };
 
       using var reader = XmlReader.Create(stream, settings);

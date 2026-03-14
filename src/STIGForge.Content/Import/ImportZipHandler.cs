@@ -8,6 +8,8 @@ internal sealed class ImportZipHandler
     private const int MaxArchiveEntryCount = 4096;
     private const long MaxExtractedBytes = 512L * 1024L * 1024L;
 
+    private long _totalExtractedBytes = 0;
+
     internal async Task ExtractZipSafelyAsync(string zipPath, string destinationRoot, CancellationToken ct)
     {
         var destinationRootFullPath = Path.GetFullPath(destinationRoot);
@@ -19,8 +21,6 @@ internal sealed class ImportZipHandler
 
         if (archive.Entries.Count > MaxArchiveEntryCount)
             throw new ParsingException($"[IMPORT-ARCHIVE-001] Archive contains {archive.Entries.Count} entries, exceeding the maximum allowed {MaxArchiveEntryCount}.");
-
-        long extractedBytes = 0;
 
         foreach (var entry in archive.Entries)
         {
@@ -40,22 +40,24 @@ internal sealed class ImportZipHandler
                 continue;
             }
 
-            extractedBytes += entry.Length;
-            if (extractedBytes > MaxExtractedBytes)
-                throw new ParsingException($"[IMPORT-ARCHIVE-003] Archive expanded size exceeds {MaxExtractedBytes} bytes and was rejected.");
-
             var directory = Path.GetDirectoryName(destinationPath);
             if (!string.IsNullOrWhiteSpace(directory))
                 Directory.CreateDirectory(directory);
 
             using var entryStream = entry.Open();
             using var outputStream = new FileStream(destinationPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, useAsync: true);
-            await entryStream.CopyToAsync(outputStream, ct).ConfigureAwait(false);
+            using var countingStream = new CountingStream(outputStream);
+            await entryStream.CopyToAsync(countingStream, ct).ConfigureAwait(false);
+            _totalExtractedBytes += countingStream.BytesWritten;
+            if (_totalExtractedBytes > MaxExtractedBytes)
+                throw new ParsingException($"[IMPORT-ARCHIVE-003] Archive expanded size exceeds {MaxExtractedBytes} bytes and was rejected.");
         }
     }
 
     internal async Task ExpandNestedZipArchivesAsync(string extractionRoot, int maxPasses, CancellationToken ct)
     {
+        _totalExtractedBytes = 0;
+
         for (var pass = 0; pass < maxPasses; pass++)
         {
             ct.ThrowIfCancellationRequested();
@@ -245,5 +247,36 @@ internal sealed class ImportZipHandler
         }
 
         return Guid.TryParse(candidate, out _);
+    }
+
+    private sealed class CountingStream : Stream
+    {
+        private readonly Stream _inner;
+        public long BytesWritten { get; private set; }
+        public CountingStream(Stream inner) => _inner = inner;
+        public override bool CanWrite => true;
+        public override bool CanRead => false;
+        public override bool CanSeek => false;
+        public override long Length => throw new NotSupportedException();
+        public override long Position { get => throw new NotSupportedException(); set => throw new NotSupportedException(); }
+        public override void Flush() => _inner.Flush();
+        public override int Read(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count)
+        {
+            _inner.Write(buffer, offset, count);
+            BytesWritten += count;
+        }
+        public override async Task WriteAsync(byte[] buffer, int offset, int count, CancellationToken cancellationToken)
+        {
+            await _inner.WriteAsync(buffer, offset, count, cancellationToken).ConfigureAwait(false);
+            BytesWritten += count;
+        }
+        public override async ValueTask WriteAsync(ReadOnlyMemory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            await _inner.WriteAsync(buffer, cancellationToken).ConfigureAwait(false);
+            BytesWritten += buffer.Length;
+        }
     }
 }

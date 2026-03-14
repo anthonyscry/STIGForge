@@ -58,13 +58,13 @@ public sealed class RollbackScriptGenerator
         sb.AppendLine();
 
         // Restore security policy
-        var qSecPol = snapshot.SecurityPolicyPath.Replace("'", "''");
+        var qSecPol = EscapePowerShellSingleQuoted(snapshot.SecurityPolicyPath);
         sb.AppendLine("Write-Host 'Restoring security policy...'");
         sb.AppendLine($"secedit /configure /cfg '{qSecPol}' /db secedit.sdb /overwrite /quiet");
         sb.AppendLine();
 
         // Restore audit policy
-        var qAuditPol = snapshot.AuditPolicyPath.Replace("'", "''");
+        var qAuditPol = EscapePowerShellSingleQuoted(snapshot.AuditPolicyPath);
         sb.AppendLine("Write-Host 'Restoring audit policy...'");
         sb.AppendLine($"auditpol /restore /file:'{qAuditPol}'");
         sb.AppendLine();
@@ -72,7 +72,7 @@ public sealed class RollbackScriptGenerator
         // Restore LGPO state (optional)
         if (!string.IsNullOrWhiteSpace(snapshot.LgpoStatePath) && File.Exists(snapshot.LgpoStatePath))
         {
-            var qLgpo = snapshot.LgpoStatePath.Replace("'", "''");
+            var qLgpo = EscapePowerShellSingleQuoted(snapshot.LgpoStatePath);
             sb.AppendLine("if (Test-Path '" + qLgpo + "') {");
             sb.AppendLine("    Write-Host 'Restoring LGPO state...'");
             sb.AppendLine($"    & 'LGPO.exe' /restore '{qLgpo}'");
@@ -84,4 +84,17 @@ public sealed class RollbackScriptGenerator
 
         return sb.ToString();
     }
+
+    /// <summary>Escapes a value for use inside a PowerShell single-quoted string. Only single-quote needs escaping.</summary>
+    private static string EscapePowerShellSingleQuoted(string value) => value.Replace("'", "''");
+
+    /// <summary>
+    /// Escapes a value for use inside a PowerShell double-quoted string.
+    /// Escapes: backtick, dollar sign, double-quote, and backslash before expandable characters.
+    /// </summary>
+    private static string EscapePowerShellDoubleQuoted(string value)
+        => value
+            .Replace("`", "``")
+            .Replace("$", "`$")
+            .Replace("\"", "`\"");
 }

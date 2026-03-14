@@ -249,7 +249,7 @@ public sealed class BundleMissionSummaryServiceTests : IDisposable
 
     var repo = new Mock<IMissionRunRepository>();
     repo.Setup(r => r.GetLatestRunAsync(It.IsAny<CancellationToken>())).ReturnsAsync(run);
-    repo.Setup(r => r.GetTimelineAsync(runId, It.IsAny<CancellationToken>()))
+    repo.Setup(r => r.GetTimelineAsync(runId, It.IsAny<CancellationToken>(), It.IsAny<int>(), It.IsAny<int>()))
         .ReturnsAsync(events.OrderBy(e => e.Seq).ToList());
 
     var service = new BundleMissionSummaryService(missionRunRepo: repo.Object);
@@ -278,7 +278,7 @@ public sealed class BundleMissionSummaryServiceTests : IDisposable
 
     var repo = new Mock<IMissionRunRepository>();
     repo.Setup(r => r.GetLatestRunAsync(It.IsAny<CancellationToken>())).ReturnsAsync(run);
-    repo.Setup(r => r.GetTimelineAsync(runId, It.IsAny<CancellationToken>())).ReturnsAsync(events);
+    repo.Setup(r => r.GetTimelineAsync(runId, It.IsAny<CancellationToken>(), It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync(events);
 
     var service = new BundleMissionSummaryService(missionRunRepo: repo.Object);
     var result = await service.LoadTimelineSummaryAsync(_bundleRoot, CancellationToken.None);

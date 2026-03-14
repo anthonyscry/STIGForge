@@ -22,7 +22,7 @@ public sealed class AuditPolicyRemediationHandler : RemediationHandlerBase
 
     public override async Task<RemediationResult> TestAsync(RemediationContext context, CancellationToken ct)
     {
-        var safeSubcategory = _subcategory.Replace("\"", "");
+        var safeSubcategory = ValidateAuditSubcategory(_subcategory);
         var output = await RunAuditPolAsync($"/get /subcategory:\"{safeSubcategory}\"", ct).ConfigureAwait(false);
         if (string.IsNullOrWhiteSpace(output))
         {
@@ -98,7 +98,7 @@ public sealed class AuditPolicyRemediationHandler : RemediationHandlerBase
 
     private static string? BuildSetArguments(string subcategory, string expectedSetting)
     {
-        var safeSubcategory = subcategory.Replace("\"", "");
+        var safeSubcategory = ValidateAuditSubcategory(subcategory);
         var normalized = NormalizeSetting(expectedSetting);
         return normalized switch
         {
@@ -110,8 +110,7 @@ public sealed class AuditPolicyRemediationHandler : RemediationHandlerBase
         };
     }
 
-    private static string NormalizeSetting(string? value)
-    {
+    private static string NormalizeSetting(string? value)    {
         if (string.IsNullOrWhiteSpace(value))
         {
             return string.Empty;
@@ -160,6 +159,17 @@ public sealed class AuditPolicyRemediationHandler : RemediationHandlerBase
         }
 
         return null;
+    }
+
+    /// <summary>Validates an auditpol subcategory name against a safe pattern to prevent command injection.</summary>
+    private static string ValidateAuditSubcategory(string subcategory)
+    {
+        if (string.IsNullOrWhiteSpace(subcategory))
+            throw new ArgumentException("Audit subcategory cannot be empty.");
+        // Only allow alphanumeric, spaces, hyphens, and slashes (valid subcategory chars)
+        if (!System.Text.RegularExpressions.Regex.IsMatch(subcategory, @"^[\w\s\-/]+$"))
+            throw new ArgumentException($"Invalid audit subcategory name: '{subcategory}'");
+        return subcategory.Trim();
     }
 
     private Task<string?> RunAuditPolAsync(string arguments, CancellationToken ct)

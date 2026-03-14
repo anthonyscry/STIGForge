@@ -10,6 +10,7 @@ namespace STIGForge.Apply;
 public sealed class IdempotencyTracker
 {
     private readonly string _trackerPath;
+    private readonly object _lock = new();
     private IdempotencyState _state;
 
     public IdempotencyTracker(string bundleRoot)
@@ -25,7 +26,7 @@ public sealed class IdempotencyTracker
     /// </summary>
     public bool IsCompleted(string operationKey)
     {
-        return _state.CompletedOperations.ContainsKey(operationKey);
+        lock (_lock) { return _state.CompletedOperations.ContainsKey(operationKey); }
     }
 
     /// <summary>
@@ -34,14 +35,17 @@ public sealed class IdempotencyTracker
     /// </summary>
     public void MarkCompleted(string operationKey, string fingerprint, string description)
     {
-        _state.CompletedOperations[operationKey] = new CompletedOperation
+        lock (_lock)
         {
-            Key = operationKey,
-            Fingerprint = fingerprint,
-            Description = description,
-            CompletedAt = DateTimeOffset.Now
-        };
-        Save();
+            _state.CompletedOperations[operationKey] = new CompletedOperation
+            {
+                Key = operationKey,
+                Fingerprint = fingerprint,
+                Description = description,
+                CompletedAt = DateTimeOffset.Now
+            };
+            Save();
+        }
     }
 
     /// <summary>
@@ -50,10 +54,12 @@ public sealed class IdempotencyTracker
     /// </summary>
     public bool FingerprintMatches(string operationKey, string currentFingerprint)
     {
-        if (!_state.CompletedOperations.TryGetValue(operationKey, out var op))
-            return false;
-
-        return string.Equals(op.Fingerprint, currentFingerprint, StringComparison.Ordinal);
+        lock (_lock)
+        {
+            if (!_state.CompletedOperations.TryGetValue(operationKey, out var op))
+                return false;
+            return string.Equals(op.Fingerprint, currentFingerprint, StringComparison.Ordinal);
+        }
     }
 
     /// <summary>
@@ -61,12 +67,15 @@ public sealed class IdempotencyTracker
     /// </summary>
     public void Reset()
     {
-        _state = new IdempotencyState
+        lock (_lock)
         {
-            CreatedAt = DateTimeOffset.Now,
-            CompletedOperations = new Dictionary<string, CompletedOperation>()
-        };
-        Save();
+            _state = new IdempotencyState
+            {
+                CreatedAt = DateTimeOffset.Now,
+                CompletedOperations = new Dictionary<string, CompletedOperation>()
+            };
+            Save();
+        }
     }
 
     /// <summary>
@@ -74,7 +83,7 @@ public sealed class IdempotencyTracker
     /// </summary>
     public IReadOnlyList<CompletedOperation> GetCompletedOperations()
     {
-        return _state.CompletedOperations.Values.OrderBy(op => op.CompletedAt).ToList();
+        lock (_lock) { return _state.CompletedOperations.Values.OrderBy(op => op.CompletedAt).ToList(); }
     }
 
     private IdempotencyState Load()
@@ -111,13 +120,9 @@ public sealed class IdempotencyTracker
     private void Save()
     {
         var json = JsonSerializer.Serialize(_state, JsonOptions.Indented);
-        
-        // Atomic write pattern
         var tempPath = _trackerPath + ".tmp";
         File.WriteAllText(tempPath, json);
-        if (File.Exists(_trackerPath))
-            File.Delete(_trackerPath);
-        File.Move(tempPath, _trackerPath);
+        File.Move(tempPath, _trackerPath, overwrite: true); // single atomic NTFS rename
     }
 
     private sealed class IdempotencyState

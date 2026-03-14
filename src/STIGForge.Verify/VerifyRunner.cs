@@ -6,6 +6,6 @@ public sealed class VerifyRunner
 {
   public Task RunAsync(RunManifest manifest, CancellationToken ct)
   {
-    return Task.CompletedTask;
+    throw new NotImplementedException("VerifyRunner.RunAsync is not yet implemented. Use VerifyOrchestrator for verification.");
   }
 }
