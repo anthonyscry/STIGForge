@@ -144,10 +144,12 @@ public sealed class VerificationWorkflowServiceAdditionalTests : IDisposable
     // ── BuildConsolidatedJsonPath static helper ───────────────────────────────
 
     [Theory]
-    [InlineData(@"C:\output", @"C:\output\consolidated-results.json")]
-    [InlineData("/tmp/output", "/tmp/output/consolidated-results.json")]
-    public void BuildConsolidatedJsonPath_ReturnsExpectedPath(string outputRoot, string expected)
+    [InlineData(@"C:\output")]
+    [InlineData("/tmp/output")]
+    public void BuildConsolidatedJsonPath_ReturnsExpectedPath(string outputRoot)
     {
+        var expected = Path.Combine(outputRoot, "consolidated-results.json");
+
         var result = VerificationWorkflowService.BuildConsolidatedJsonPath(outputRoot);
 
         result.Should().Be(expected);
