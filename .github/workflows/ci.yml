@@ -7,6 +7,32 @@ on:
   workflow_dispatch:
 
 jobs:
+  cross-platform-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.0.x
+
+      - name: Cross-platform test suite
+        run: |
+          dotnet test tests/STIGForge.Tests.CrossPlatform/ \
+            --configuration Release \
+            --collect:"XPlat Code Coverage" \
+            --results-directory .artifacts/coverage/crossplatform
+
+      - name: Upload cross-platform coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-crossplatform-${{ github.run_id }}
+          path: .artifacts/coverage/crossplatform
+          if-no-files-found: warn
+
   build-test:
     runs-on: windows-latest
     steps:
@@ -29,6 +55,11 @@ jobs:
         run: |
           dotnet test .\tests\STIGForge.UnitTests\STIGForge.UnitTests.csproj --configuration Release --framework net8.0-windows --filter "FullyQualifiedName~BaselineDiffServiceTests|FullyQualifiedName~OverlayRebaseServiceTests|FullyQualifiedName~BundleMissionSummaryServiceTests|FullyQualifiedName~STIGForge.UnitTests.Build|FullyQualifiedName~STIGForge.UnitTests.Apply|FullyQualifiedName~STIGForge.UnitTests.Verify|FullyQualifiedName~STIGForge.UnitTests.Infrastructure" --collect:"XPlat Code Coverage" --results-directory .\.artifacts\coverage\ci\unit
           dotnet test .\tests\STIGForge.IntegrationTests\STIGForge.IntegrationTests.csproj --configuration Release --framework net8.0 --filter "FullyQualifiedName~CliCommandTests.DiffPacks|FullyQualifiedName~CliCommandTests.RebaseOverlay" --collect:"XPlat Code Coverage" --results-directory .\.artifacts\coverage\ci\integration
+
+      - name: Cross-platform coverage suite
+        shell: pwsh
+        run: |
+          dotnet test .\tests\STIGForge.Tests.CrossPlatform\STIGForge.Tests.CrossPlatform.csproj --configuration Release --collect:"XPlat Code Coverage" --results-directory .\.artifacts\coverage\ci\crossplatform
 
       - name: Build coverage report and gate
         shell: pwsh
