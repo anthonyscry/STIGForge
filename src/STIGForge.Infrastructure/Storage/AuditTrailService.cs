@@ -183,9 +183,8 @@ public sealed class AuditTrailService : IAuditTrailService
     }
     else
     {
-      var anchorPath = Path.Combine(
-        Path.GetDirectoryName(_connectionString.Replace("Data Source=", "").Split(';')[0]) ?? ".",
-        "audit_anchor.log");
+      var dbPath = new Microsoft.Data.Sqlite.SqliteConnectionStringBuilder(_connectionString).DataSource;
+      var anchorPath = Path.Combine(Path.GetDirectoryName(dbPath) ?? ".", "audit_anchor.log");
       await File.AppendAllTextAsync(anchorPath, message + Environment.NewLine, ct).ConfigureAwait(false);
     }
   }
