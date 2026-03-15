@@ -86,6 +86,7 @@ public static class CliHostFactory
     services.AddSingleton<RollbackScriptGenerator>();
     services.AddSingleton<STIGForge.Apply.Dsc.LcmService>();
     services.AddSingleton<STIGForge.Apply.Reboot.RebootCoordinator>();
+    services.AddSingleton<STIGForge.Apply.Lgpo.LgpoRunner>();
     services.AddSingleton<STIGForge.Apply.ApplyRunner>();
     services.AddSingleton<EvaluateStigRunner>();
     services.AddSingleton<ScapRunner>();

@@ -304,6 +304,7 @@ public sealed class ApplyRunnerTests : IDisposable
             rollbackGenerator,
             lcmService,
             rebootCoordinator,
+            processRunner.Object,
             audit);
     }
 
@@ -324,6 +325,7 @@ public sealed class ApplyRunnerTests : IDisposable
             rollbackGenerator,
             lcmService,
             rebootCoordinator,
+            processRunner.Object,
             audit,
             evidenceCollector);
     }

@@ -1,3 +1,4 @@
+using Moq;
 using FluentAssertions;
 using STIGForge.Core.Abstractions;
 using STIGForge.Verify;
@@ -24,7 +25,7 @@ public sealed class VerificationWorkflowServiceAdditionalTests : IDisposable
     [Fact]
     public async Task RunAsync_NullRequest_ThrowsArgumentNullException()
     {
-        var service = new VerificationWorkflowService(new EvaluateStigRunner(), new ScapRunner());
+        var service = new VerificationWorkflowService(new EvaluateStigRunner(new Mock<IProcessRunner>().Object), new ScapRunner(new Mock<IProcessRunner>().Object));
 
         var act = async () => await service.RunAsync(null!, CancellationToken.None);
 
@@ -35,7 +36,7 @@ public sealed class VerificationWorkflowServiceAdditionalTests : IDisposable
     [Fact]
     public async Task RunAsync_EmptyOutputRoot_ThrowsArgumentException()
     {
-        var service = new VerificationWorkflowService(new EvaluateStigRunner(), new ScapRunner());
+        var service = new VerificationWorkflowService(new EvaluateStigRunner(new Mock<IProcessRunner>().Object), new ScapRunner(new Mock<IProcessRunner>().Object));
         var request = new VerificationWorkflowRequest { OutputRoot = "   " };
 
         var act = async () => await service.RunAsync(request, CancellationToken.None);
@@ -47,7 +48,7 @@ public sealed class VerificationWorkflowServiceAdditionalTests : IDisposable
     [Fact]
     public async Task RunAsync_CancelledToken_ThrowsOperationCanceledException()
     {
-        var service = new VerificationWorkflowService(new EvaluateStigRunner(), new ScapRunner());
+        var service = new VerificationWorkflowService(new EvaluateStigRunner(new Mock<IProcessRunner>().Object), new ScapRunner(new Mock<IProcessRunner>().Object));
         using var cts = new CancellationTokenSource();
         cts.Cancel();
 
@@ -69,7 +70,7 @@ public sealed class VerificationWorkflowServiceAdditionalTests : IDisposable
         var outputRoot = Path.Combine(_tempDir, "evaluatestig-exc");
         Directory.CreateDirectory(outputRoot);
 
-        var service = new VerificationWorkflowService(new EvaluateStigRunner(), new ScapRunner());
+        var service = new VerificationWorkflowService(new EvaluateStigRunner(new Mock<IProcessRunner>().Object), new ScapRunner(new Mock<IProcessRunner>().Object));
         var request = new VerificationWorkflowRequest
         {
             OutputRoot = outputRoot,
@@ -95,7 +96,7 @@ public sealed class VerificationWorkflowServiceAdditionalTests : IDisposable
         var outputRoot = Path.Combine(_tempDir, "scap-gui-exc");
         Directory.CreateDirectory(outputRoot);
 
-        var service = new VerificationWorkflowService(new EvaluateStigRunner(), new ScapRunner());
+        var service = new VerificationWorkflowService(new EvaluateStigRunner(new Mock<IProcessRunner>().Object), new ScapRunner(new Mock<IProcessRunner>().Object));
         var request = new VerificationWorkflowRequest
         {
             OutputRoot = outputRoot,
@@ -123,7 +124,7 @@ public sealed class VerificationWorkflowServiceAdditionalTests : IDisposable
         var outputRoot = Path.Combine(_tempDir, "scap-default-label");
         Directory.CreateDirectory(outputRoot);
 
-        var service = new VerificationWorkflowService(new EvaluateStigRunner(), new ScapRunner());
+        var service = new VerificationWorkflowService(new EvaluateStigRunner(new Mock<IProcessRunner>().Object), new ScapRunner(new Mock<IProcessRunner>().Object));
         var request = new VerificationWorkflowRequest
         {
             OutputRoot = outputRoot,
@@ -164,7 +165,7 @@ public sealed class VerificationWorkflowServiceAdditionalTests : IDisposable
         Directory.CreateDirectory(outputRoot);
         WriteCkl(Path.Combine(outputRoot, "sample.ckl"));
 
-        var service = new VerificationWorkflowService(new EvaluateStigRunner(), new ScapRunner());
+        var service = new VerificationWorkflowService(new EvaluateStigRunner(new Mock<IProcessRunner>().Object), new ScapRunner(new Mock<IProcessRunner>().Object));
         var request = new VerificationWorkflowRequest
         {
             OutputRoot = outputRoot,
@@ -188,7 +189,7 @@ public sealed class VerificationWorkflowServiceAdditionalTests : IDisposable
         Directory.CreateDirectory(outputRoot);
 
         var before = DateTimeOffset.Now;
-        var service = new VerificationWorkflowService(new EvaluateStigRunner(), new ScapRunner());
+        var service = new VerificationWorkflowService(new EvaluateStigRunner(new Mock<IProcessRunner>().Object), new ScapRunner(new Mock<IProcessRunner>().Object));
         var result = await service.RunAsync(new VerificationWorkflowRequest { OutputRoot = outputRoot }, CancellationToken.None);
         var after = DateTimeOffset.Now;
 
@@ -205,7 +206,7 @@ public sealed class VerificationWorkflowServiceAdditionalTests : IDisposable
         Directory.CreateDirectory(outputRoot);
         WriteCkl(Path.Combine(outputRoot, "crit.ckl"), status: "Open", severity: "critical", vulnId: "V-9900", ruleId: "SV-9900");
 
-        var service = new VerificationWorkflowService(new EvaluateStigRunner(), new ScapRunner());
+        var service = new VerificationWorkflowService(new EvaluateStigRunner(new Mock<IProcessRunner>().Object), new ScapRunner(new Mock<IProcessRunner>().Object));
         var result = await service.RunAsync(new VerificationWorkflowRequest { OutputRoot = outputRoot }, CancellationToken.None);
 
         result.CatICount.Should().Be(1);
@@ -222,7 +223,7 @@ public sealed class VerificationWorkflowServiceAdditionalTests : IDisposable
         WriteCkl(Path.Combine(outputRoot, "compliant.ckl"), status: "Compliant", vulnId: "V-PA1", ruleId: "SV-PA1");
         WriteCkl(Path.Combine(outputRoot, "pass.ckl"), status: "Pass", vulnId: "V-PA2", ruleId: "SV-PA2");
 
-        var service = new VerificationWorkflowService(new EvaluateStigRunner(), new ScapRunner());
+        var service = new VerificationWorkflowService(new EvaluateStigRunner(new Mock<IProcessRunner>().Object), new ScapRunner(new Mock<IProcessRunner>().Object));
         var result = await service.RunAsync(new VerificationWorkflowRequest { OutputRoot = outputRoot }, CancellationToken.None);
 
         result.PassCount.Should().Be(2);
@@ -238,7 +239,7 @@ public sealed class VerificationWorkflowServiceAdditionalTests : IDisposable
         WriteCkl(Path.Combine(outputRoot, "noncompliant.ckl"), status: "NonCompliant", vulnId: "V-FA1", ruleId: "SV-FA1");
         WriteCkl(Path.Combine(outputRoot, "fail.ckl"), status: "Fail", vulnId: "V-FA2", ruleId: "SV-FA2");
 
-        var service = new VerificationWorkflowService(new EvaluateStigRunner(), new ScapRunner());
+        var service = new VerificationWorkflowService(new EvaluateStigRunner(new Mock<IProcessRunner>().Object), new ScapRunner(new Mock<IProcessRunner>().Object));
         var result = await service.RunAsync(new VerificationWorkflowRequest { OutputRoot = outputRoot }, CancellationToken.None);
 
         result.FailCount.Should().Be(2);
@@ -254,7 +255,7 @@ public sealed class VerificationWorkflowServiceAdditionalTests : IDisposable
         WriteCkl(Path.Combine(outputRoot, "notselected.ckl"), status: "NotSelected", vulnId: "V-NR2", ruleId: "SV-NR2");
         WriteCkl(Path.Combine(outputRoot, "unknown.ckl"), status: "Unknown", vulnId: "V-NR3", ruleId: "SV-NR3");
 
-        var service = new VerificationWorkflowService(new EvaluateStigRunner(), new ScapRunner());
+        var service = new VerificationWorkflowService(new EvaluateStigRunner(new Mock<IProcessRunner>().Object), new ScapRunner(new Mock<IProcessRunner>().Object));
         var result = await service.RunAsync(new VerificationWorkflowRequest { OutputRoot = outputRoot }, CancellationToken.None);
 
         result.NotReviewedCount.Should().Be(3);
@@ -268,7 +269,7 @@ public sealed class VerificationWorkflowServiceAdditionalTests : IDisposable
 
         WriteCkl(Path.Combine(outputRoot, "na.ckl"), status: "NA", vulnId: "V-NA1", ruleId: "SV-NA1");
 
-        var service = new VerificationWorkflowService(new EvaluateStigRunner(), new ScapRunner());
+        var service = new VerificationWorkflowService(new EvaluateStigRunner(new Mock<IProcessRunner>().Object), new ScapRunner(new Mock<IProcessRunner>().Object));
         var result = await service.RunAsync(new VerificationWorkflowRequest { OutputRoot = outputRoot }, CancellationToken.None);
 
         result.NotApplicableCount.Should().Be(1);
@@ -282,7 +283,7 @@ public sealed class VerificationWorkflowServiceAdditionalTests : IDisposable
 
         WriteCkl(Path.Combine(outputRoot, "empty.ckl"), status: "", vulnId: "V-ES1", ruleId: "SV-ES1");
 
-        var service = new VerificationWorkflowService(new EvaluateStigRunner(), new ScapRunner());
+        var service = new VerificationWorkflowService(new EvaluateStigRunner(new Mock<IProcessRunner>().Object), new ScapRunner(new Mock<IProcessRunner>().Object));
         var result = await service.RunAsync(new VerificationWorkflowRequest { OutputRoot = outputRoot }, CancellationToken.None);
 
         result.NotReviewedCount.Should().Be(1);

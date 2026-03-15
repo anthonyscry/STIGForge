@@ -1,4 +1,5 @@
 using FluentAssertions;
+using Moq;
 using STIGForge.Core.Abstractions;
 using STIGForge.Tests.CrossPlatform.Helpers;
 using STIGForge.Verify;
@@ -7,10 +8,11 @@ namespace STIGForge.Tests.CrossPlatform.Verify;
 
 public sealed class VerificationWorkflowServiceTests
 {
-    // ── factory helper ────────────────────────────────────────────────────────
-
-    private static VerificationWorkflowService BuildService() =>
-        new(new EvaluateStigRunner(), new ScapRunner());
+    private static VerificationWorkflowService BuildService()
+    {
+        var processRunner = new Mock<IProcessRunner>().Object;
+        return new(new EvaluateStigRunner(processRunner), new ScapRunner(processRunner));
+    }
 
     // ── argument guards ───────────────────────────────────────────────────────
 

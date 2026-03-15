@@ -340,7 +340,8 @@ public sealed class BundleOrchestratorControlOverrideTests : IDisposable
         new SnapshotService(NullLogger<SnapshotService>.Instance, new Mock<IProcessRunner>().Object),
         new RollbackScriptGenerator(NullLogger<RollbackScriptGenerator>.Instance),
         new LcmService(NullLogger<LcmService>.Instance),
-        new RebootCoordinator(NullLogger<RebootCoordinator>.Instance, _ => true))
+        new RebootCoordinator(NullLogger<RebootCoordinator>.Instance, _ => true),
+        new Mock<IProcessRunner>().Object)
     {
     }
 

@@ -3,6 +3,7 @@ using System.Text;
 using Dapper;
 using Microsoft.Data.Sqlite;
 using STIGForge.Core.Abstractions;
+using IsolationLevel = System.Data.IsolationLevel;
 
 namespace STIGForge.Infrastructure.Storage;
 
@@ -34,10 +35,15 @@ public sealed class AuditTrailService : IAuditTrailService
     using var conn = new SqliteConnection(_connectionString);
     await conn.OpenAsync(ct).ConfigureAwait(false);
 
+    // BEGIN IMMEDIATE acquires a write lock upfront, serialising concurrent
+    // RecordAsync calls so the read-then-insert for chain hashing is atomic.
+    using var tx = conn.BeginTransaction(IsolationLevel.Serializable);
+
     // Get previous hash for chaining
     var previousHash = await conn.QueryFirstOrDefaultAsync<string>(
       new CommandDefinition(
         "SELECT entry_hash FROM audit_trail ORDER BY id DESC LIMIT 1",
+        transaction: tx,
         cancellationToken: ct)
     ).ConfigureAwait(false) ?? "genesis";
 
@@ -49,8 +55,11 @@ public sealed class AuditTrailService : IAuditTrailService
         @"INSERT INTO audit_trail (timestamp, user, machine, action, target, result, detail, previous_hash, entry_hash)
           VALUES (@Timestamp, @User, @Machine, @Action, @Target, @Result, @Detail, @PreviousHash, @EntryHash)",
         entry,
+        transaction: tx,
         cancellationToken: ct)
     ).ConfigureAwait(false);
+
+    tx.Commit();
   }
 
   public async Task<IReadOnlyList<AuditEntry>> QueryAsync(AuditQuery query, CancellationToken ct)

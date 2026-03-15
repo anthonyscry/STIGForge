@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using STIGForge.Apply.Lgpo;
+using STIGForge.Core.Abstractions;
 
 namespace STIGForge.Apply.Steps;
 
@@ -9,11 +10,13 @@ internal sealed class PolicyStepHandler
 {
   private readonly ILogger<ApplyRunner> _logger;
   private readonly LgpoRunner? _lgpoRunner;
+  private readonly IProcessRunner _processRunner;
 
-  public PolicyStepHandler(ILogger<ApplyRunner> logger, LgpoRunner? lgpoRunner)
+  public PolicyStepHandler(ILogger<ApplyRunner> logger, LgpoRunner? lgpoRunner, IProcessRunner processRunner)
   {
     _logger = logger;
     _lgpoRunner = lgpoRunner;
+    _processRunner = processRunner;
   }
 
   public bool CanRunLgpo => _lgpoRunner != null;
@@ -170,25 +173,29 @@ internal sealed class PolicyStepHandler
           CreateNoWindow = true
         };
 
-        using var process = new Process { StartInfo = psi };
-        process.Start();
-        // Use async reads to prevent deadlock when process output exceeds buffer
-        var psOutTask = process.StandardOutput.ReadToEndAsync(ct);
-        var psErrTask = process.StandardError.ReadToEndAsync(ct);
-        await Task.WhenAll(psOutTask, psErrTask).ConfigureAwait(false);
-        process.WaitForExit(120_000);
+        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(120));
+        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutCts.Token);
 
-        var psOut = await psOutTask.ConfigureAwait(false);
-        var psErr = await psErrTask.ConfigureAwait(false);
-
-        outBuilder.AppendLine(psOut);
-        if (!string.IsNullOrWhiteSpace(psErr))
-          errBuilder.AppendLine(psErr);
-
-        if (process.ExitCode != 0)
+        ProcessResult psResult;
+        try
         {
-          exitCode = process.ExitCode;
-          _logger.LogWarning("Import-GPO for {GpoName} exited with code {ExitCode}", folderName, process.ExitCode);
+          psResult = await _processRunner.RunAsync(psi, linkedCts.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        {
+          _logger.LogWarning("Import-GPO for {GpoName} timed out after 120 seconds", folderName);
+          exitCode = -2;
+          continue;
+        }
+
+        outBuilder.AppendLine(psResult.StandardOutput);
+        if (!string.IsNullOrWhiteSpace(psResult.StandardError))
+          errBuilder.AppendLine(psResult.StandardError);
+
+        if (psResult.ExitCode != 0)
+        {
+          exitCode = psResult.ExitCode;
+          _logger.LogWarning("Import-GPO for {GpoName} exited with code {ExitCode}", folderName, psResult.ExitCode);
           continue;
         }
 

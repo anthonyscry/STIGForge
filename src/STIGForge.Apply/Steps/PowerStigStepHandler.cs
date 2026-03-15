@@ -1,11 +1,19 @@
 using System.Diagnostics;
 using STIGForge.Apply.Dsc;
+using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
 
 namespace STIGForge.Apply.Steps;
 
 internal sealed class PowerStigStepHandler
 {
+  private readonly IProcessRunner _processRunner;
+
+  public PowerStigStepHandler(IProcessRunner processRunner)
+  {
+    _processRunner = processRunner;
+  }
+
   public async Task<ApplyStepOutcome> RunCompileAsync(
     string modulePath,
     string? dataFile,
@@ -113,26 +121,27 @@ internal sealed class PowerStigStepHandler
     ApplyProcessHelpers.InjectTraceContext(psi);
 
     var started = DateTimeOffset.Now;
-    using var process = Process.Start(psi);
-    if (process == null)
-      throw new InvalidOperationException("Failed to start PowerSTIG compile.");
 
-    var outputTask = process.StandardOutput.ReadToEndAsync(ct);
-    var errorTask = process.StandardError.ReadToEndAsync(ct);
-    await Task.WhenAll(outputTask, errorTask).ConfigureAwait(false);
-    if (!process.WaitForExit(300_000))
+    using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMinutes(5));
+    using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutCts.Token);
+
+    ProcessResult result;
+    try
     {
-      process.Kill();
+      result = await _processRunner.RunAsync(psi, linkedCts.Token).ConfigureAwait(false);
+    }
+    catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+    {
       throw new TimeoutException("PowerSTIG compilation did not complete within 5 minutes.");
     }
 
-    File.WriteAllText(stdout, await outputTask.ConfigureAwait(false));
-    File.WriteAllText(stderr, await errorTask.ConfigureAwait(false));
+    File.WriteAllText(stdout, result.StandardOutput);
+    File.WriteAllText(stderr, result.StandardError);
 
     return new ApplyStepOutcome
     {
       StepName = stepName,
-      ExitCode = process.ExitCode,
+      ExitCode = result.ExitCode,
       StartedAt = started,
       FinishedAt = DateTimeOffset.Now,
       StdOutPath = stdout,

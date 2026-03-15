@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Text;
+using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
 using STIGForge.Infrastructure.Telemetry;
 
@@ -7,6 +8,13 @@ namespace STIGForge.Apply.Steps;
 
 internal sealed class ScriptStepHandler
 {
+  private readonly IProcessRunner _processRunner;
+
+  public ScriptStepHandler(IProcessRunner processRunner)
+  {
+    _processRunner = processRunner;
+  }
+
   public async Task<ApplyStepOutcome> RunAsync(
     string scriptPath,
     string? args,
@@ -53,26 +61,27 @@ internal sealed class ScriptStepHandler
     ApplyProcessHelpers.InjectTraceContext(psi);
 
     var started = DateTimeOffset.Now;
-    using var process = Process.Start(psi);
-    if (process == null)
-      throw new InvalidOperationException("Failed to start apply script.");
 
-    var outputTask = process.StandardOutput.ReadToEndAsync(ct);
-    var errorTask = process.StandardError.ReadToEndAsync(ct);
-    await Task.WhenAll(outputTask, errorTask).ConfigureAwait(false);
-    if (!process.WaitForExit(300_000))
+    using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMinutes(5));
+    using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutCts.Token);
+
+    ProcessResult result;
+    try
     {
-      process.Kill();
+      result = await _processRunner.RunAsync(psi, linkedCts.Token).ConfigureAwait(false);
+    }
+    catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+    {
       throw new TimeoutException("Process did not exit within 5 minutes.");
     }
 
-    File.WriteAllText(stdout, await outputTask.ConfigureAwait(false));
-    File.WriteAllText(stderr, await errorTask.ConfigureAwait(false));
+    File.WriteAllText(stdout, result.StandardOutput);
+    File.WriteAllText(stderr, result.StandardError);
 
     return new ApplyStepOutcome
     {
       StepName = stepName,
-      ExitCode = process.ExitCode,
+      ExitCode = result.ExitCode,
       StartedAt = started,
       FinishedAt = DateTimeOffset.Now,
       StdOutPath = stdout,

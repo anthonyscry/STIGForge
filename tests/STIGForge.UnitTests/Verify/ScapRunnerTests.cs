@@ -1,3 +1,5 @@
+using STIGForge.Core.Abstractions;
+using Moq;
 using FluentAssertions;
 using STIGForge.Verify;
 
@@ -23,7 +25,7 @@ public sealed class ScapRunnerTests : IDisposable
     [Fact]
     public async Task RunAsync_EmptyCommandPath_ThrowsArgumentException()
     {
-        var runner = new ScapRunner();
+        var runner = new ScapRunner(new Mock<IProcessRunner>().Object);
 
         var act = async () => await runner.RunAsync(string.Empty, "--scan x", null, 5);
 
@@ -34,7 +36,7 @@ public sealed class ScapRunnerTests : IDisposable
     [Fact]
     public async Task RunAsync_WhiteSpaceCommandPath_ThrowsArgumentException()
     {
-        var runner = new ScapRunner();
+        var runner = new ScapRunner(new Mock<IProcessRunner>().Object);
 
         var act = async () => await runner.RunAsync("   ", "--scan x", null, 5);
 
@@ -46,7 +48,7 @@ public sealed class ScapRunnerTests : IDisposable
     [Fact]
     public async Task RunAsync_SccExeGuiBinary_ThrowsInvalidOperationException()
     {
-        var runner = new ScapRunner();
+        var runner = new ScapRunner(new Mock<IProcessRunner>().Object);
 
         var act = async () => await runner.RunAsync("scc.exe", "--scan x", null, 5);
 
@@ -57,7 +59,7 @@ public sealed class ScapRunnerTests : IDisposable
     [Fact]
     public async Task RunAsync_SccWithoutExtension_ThrowsInvalidOperationException()
     {
-        var runner = new ScapRunner();
+        var runner = new ScapRunner(new Mock<IProcessRunner>().Object);
 
         var act = async () => await runner.RunAsync("scc", "--scan x", null, 5);
 
@@ -72,7 +74,7 @@ public sealed class ScapRunnerTests : IDisposable
     {
         var sccPath = Path.Combine(_tempDir, "scc.exe");
         File.WriteAllBytes(sccPath, Array.Empty<byte>());
-        var runner = new ScapRunner();
+        var runner = new ScapRunner(new Mock<IProcessRunner>().Object);
 
         var act = async () => await runner.RunAsync(sccPath, "--scan x", null, 5);
 
@@ -88,7 +90,7 @@ public sealed class ScapRunnerTests : IDisposable
         var dir = Path.Combine(_tempDir, "scap-gui-only");
         Directory.CreateDirectory(dir);
         File.WriteAllBytes(Path.Combine(dir, "scc.exe"), Array.Empty<byte>());
-        var runner = new ScapRunner();
+        var runner = new ScapRunner(new Mock<IProcessRunner>().Object);
 
         var act = async () => await runner.RunAsync(dir, "--scan x", null, 5);
 
@@ -105,7 +107,7 @@ public sealed class ScapRunnerTests : IDisposable
     [InlineData("cscc-remote")]
     public async Task RunAsync_SupportedCliBinarySimpleName_DoesNotThrowArgumentOrValidationError(string binaryName)
     {
-        var runner = new ScapRunner();
+        var runner = new ScapRunner(new Mock<IProcessRunner>().Object);
 
         // Simple name resolves immediately; process start will fail (binary not present) but that is not an arg error
         var act = async () => await runner.RunAsync(binaryName, "--scan x", null, 1);
@@ -120,7 +122,7 @@ public sealed class ScapRunnerTests : IDisposable
     [Fact]
     public async Task RunAsync_NonExistentFilePath_ThrowsFileNotFoundException()
     {
-        var runner = new ScapRunner();
+        var runner = new ScapRunner(new Mock<IProcessRunner>().Object);
         var fakePath = Path.Combine(_tempDir, "no-such-dir", "cscc.exe");
 
         var act = async () => await runner.RunAsync(fakePath, "--scan x", null, 5);
@@ -136,7 +138,7 @@ public sealed class ScapRunnerTests : IDisposable
     {
         var dir = Path.Combine(_tempDir, "scap-empty");
         Directory.CreateDirectory(dir);
-        var runner = new ScapRunner();
+        var runner = new ScapRunner(new Mock<IProcessRunner>().Object);
 
         var act = async () => await runner.RunAsync(dir, "--scan x", null, 5);
 
@@ -152,7 +154,7 @@ public sealed class ScapRunnerTests : IDisposable
         var dir = Path.Combine(_tempDir, "scap-with-cscc");
         Directory.CreateDirectory(dir);
         File.WriteAllBytes(Path.Combine(dir, "cscc.exe"), Array.Empty<byte>());
-        var runner = new ScapRunner();
+        var runner = new ScapRunner(new Mock<IProcessRunner>().Object);
 
         var act = async () => await runner.RunAsync(dir, "--scan x", null, 1);
 
@@ -173,7 +175,7 @@ public sealed class ScapRunnerTests : IDisposable
         // Use a valid SCAP binary name so the runner accepts it after resolving the .exe extension
         var pathWithoutExt = Path.Combine(_tempDir, "cscc");
         File.WriteAllBytes(pathWithoutExt + ".exe", Array.Empty<byte>());
-        var runner = new ScapRunner();
+        var runner = new ScapRunner(new Mock<IProcessRunner>().Object);
 
         var act = async () => await runner.RunAsync(pathWithoutExt, "--scan x", null, 1);
 
@@ -192,7 +194,7 @@ public sealed class ScapRunnerTests : IDisposable
     {
         var csccPath = Path.Combine(_tempDir, "cscc.exe");
         File.WriteAllBytes(csccPath, Array.Empty<byte>());
-        var runner = new ScapRunner();
+        var runner = new ScapRunner(new Mock<IProcessRunner>().Object);
 
         var act = async () => await runner.RunAsync(csccPath, "--scan x", null, 1);
 
@@ -211,7 +213,7 @@ public sealed class ScapRunnerTests : IDisposable
         var subDir = Path.Combine(dir, "bin");
         Directory.CreateDirectory(subDir);
         File.WriteAllBytes(Path.Combine(subDir, "cscc.exe"), Array.Empty<byte>());
-        var runner = new ScapRunner();
+        var runner = new ScapRunner(new Mock<IProcessRunner>().Object);
 
         var act = async () => await runner.RunAsync(dir, "--scan x", null, 1);
 

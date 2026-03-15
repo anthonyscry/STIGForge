@@ -1,5 +1,6 @@
 using FluentAssertions;
 using STIGForge.Core.Abstractions;
+using STIGForge.Infrastructure.System;
 using STIGForge.Verify;
 
 namespace STIGForge.IntegrationTests.Cli;
@@ -22,7 +23,7 @@ public sealed class VerifyCommandFlowTests : IDisposable
   [Fact]
   public async Task CliAndAppStyleRequests_ProduceEquivalentConsolidatedArtifacts()
   {
-    var workflow = new VerificationWorkflowService(new EvaluateStigRunner(), new ScapRunner());
+    var workflow = new VerificationWorkflowService(new EvaluateStigRunner(new ProcessRunner()), new ScapRunner(new ProcessRunner()));
 
     var cliRoot = Path.Combine(_tempDir, "cli");
     var appRoot = Path.Combine(_tempDir, "app");
@@ -67,7 +68,7 @@ public sealed class VerifyCommandFlowTests : IDisposable
     Directory.CreateDirectory(outputRoot);
     WriteSampleCkl(Path.Combine(outputRoot, "sample.ckl"));
 
-    var workflow = new VerificationWorkflowService(new EvaluateStigRunner(), new ScapRunner());
+    var workflow = new VerificationWorkflowService(new EvaluateStigRunner(new ProcessRunner()), new ScapRunner(new ProcessRunner()));
     var result = await workflow.RunAsync(new VerificationWorkflowRequest
     {
       OutputRoot = outputRoot,

@@ -1,3 +1,4 @@
+using STIGForge.Infrastructure.System;
 using STIGForge.Verify;
 
 namespace STIGForge.IntegrationTests.Verify;
@@ -38,7 +39,7 @@ public sealed class RunnerPathResolutionTests : IDisposable
     MakeExecutable(fakePowerShellPath);
     PrependPath(fakePowerShellDir);
 
-    var runner = new EvaluateStigRunner();
+    var runner = new EvaluateStigRunner(new ProcessRunner());
     var result = await runner.RunAsync(toolParent, "-AnswerFile ./AnswerFile.xml", workingDirectory: null);
 
     Assert.Equal(0, result.ExitCode);
@@ -59,7 +60,7 @@ public sealed class RunnerPathResolutionTests : IDisposable
     File.WriteAllText(csccExePath, "#!/usr/bin/env bash\necho CSCC_OK\nexit 0\n");
     MakeExecutable(csccExePath);
 
-    var runner = new ScapRunner();
+    var runner = new ScapRunner(new ProcessRunner());
     var result = await runner.RunAsync(sccRoot, string.Empty, workingDirectory: null);
 
     Assert.Equal(0, result.ExitCode);
@@ -83,7 +84,7 @@ public sealed class RunnerPathResolutionTests : IDisposable
     File.WriteAllText(csccRemotePath, "#!/usr/bin/env bash\necho CSCC_REMOTE_OK\nexit 0\n");
     MakeExecutable(csccRemotePath);
 
-    var runner = new ScapRunner();
+    var runner = new ScapRunner(new ProcessRunner());
     var result = await runner.RunAsync(sccRoot, string.Empty, workingDirectory: null);
 
     Assert.Equal(0, result.ExitCode);
@@ -104,7 +105,7 @@ public sealed class RunnerPathResolutionTests : IDisposable
     File.WriteAllText(sccGuiPath, "#!/usr/bin/env bash\necho GUI\nexit 0\n");
     MakeExecutable(sccGuiPath);
 
-    var runner = new ScapRunner();
+    var runner = new ScapRunner(new ProcessRunner());
     var ex = await Assert.ThrowsAsync<InvalidOperationException>(() => runner.RunAsync(sccRoot, string.Empty, workingDirectory: null));
     Assert.Contains("cscc", ex.Message, StringComparison.OrdinalIgnoreCase);
   }

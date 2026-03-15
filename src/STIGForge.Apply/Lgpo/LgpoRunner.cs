@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Microsoft.Extensions.Logging;
+using STIGForge.Core.Abstractions;
 
 namespace STIGForge.Apply.Lgpo;
 
@@ -10,11 +11,13 @@ namespace STIGForge.Apply.Lgpo;
 public sealed class LgpoRunner
 {
   private readonly ILogger<LgpoRunner> _logger;
+  private readonly IProcessRunner _processRunner;
   private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(60);
 
-  public LgpoRunner(ILogger<LgpoRunner> logger)
+  public LgpoRunner(ILogger<LgpoRunner> logger, IProcessRunner processRunner)
   {
     _logger = logger;
+    _processRunner = processRunner;
   }
 
   /// <summary>
@@ -41,42 +44,37 @@ public sealed class LgpoRunner
       {
         FileName = lgpoPath,
         Arguments = args,
-        RedirectStandardOutput = true,
-        RedirectStandardError = true,
         UseShellExecute = false,
         CreateNoWindow = true
       };
 
-      using var process = new Process { StartInfo = psi };
-      process.Start();
+      using var timeoutCts = new CancellationTokenSource(DefaultTimeout);
+      using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutCts.Token);
 
-      var stdoutTask = process.StandardOutput.ReadToEndAsync(ct);
-      var stderrTask = process.StandardError.ReadToEndAsync(ct);
-
-      var completed = process.WaitForExit((int)DefaultTimeout.TotalMilliseconds);
-      if (!completed)
+      ProcessResult result;
+      try
       {
-        try { process.Kill(); } catch (Exception) { /* best effort */ }
+        result = await _processRunner.RunAsync(psi, linkedCts.Token).ConfigureAwait(false);
+      }
+      catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+      {
         return new LgpoApplyResult
         {
           Success = false,
           ExitCode = -2,
-          StdOut = "LGPO.exe timed out after 60 seconds",
+          StdOut = $"LGPO.exe timed out after {DefaultTimeout.TotalSeconds} seconds",
           StdErr = string.Empty,
           StartedAt = started,
           FinishedAt = DateTimeOffset.UtcNow
         };
       }
 
-      var stdout = await stdoutTask.ConfigureAwait(false);
-      var stderr = await stderrTask.ConfigureAwait(false);
-
       return new LgpoApplyResult
       {
-        Success = process.ExitCode == 0,
-        ExitCode = process.ExitCode,
-        StdOut = stdout,
-        StdErr = stderr,
+        Success = result.ExitCode == 0,
+        ExitCode = result.ExitCode,
+        StdOut = result.StandardOutput,
+        StdErr = result.StandardError,
         StartedAt = started,
         FinishedAt = DateTimeOffset.UtcNow
       };
@@ -117,19 +115,15 @@ public sealed class LgpoRunner
     {
       FileName = lgpoPath,
       Arguments = args,
-      RedirectStandardOutput = true,
-      RedirectStandardError = true,
       UseShellExecute = false,
       CreateNoWindow = true
     };
 
-    using var process = new Process { StartInfo = psi };
-    process.Start();
+    using var timeoutCts = new CancellationTokenSource(DefaultTimeout);
+    using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutCts.Token);
+    var result = await _processRunner.RunAsync(psi, linkedCts.Token).ConfigureAwait(false);
 
-    var stdout = await process.StandardOutput.ReadToEndAsync(ct).ConfigureAwait(false);
-    process.WaitForExit((int)DefaultTimeout.TotalMilliseconds);
-
-    await File.WriteAllTextAsync(outputFile, stdout, ct).ConfigureAwait(false);
+    await File.WriteAllTextAsync(outputFile, result.StandardOutput, ct).ConfigureAwait(false);
     _logger.LogInformation("Policy exported to {OutputFile}", outputFile);
 
     return outputFile;

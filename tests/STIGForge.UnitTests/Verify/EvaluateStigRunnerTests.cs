@@ -1,3 +1,5 @@
+using Moq;
+using STIGForge.Core.Abstractions;
 using FluentAssertions;
 using STIGForge.Verify;
 
@@ -23,7 +25,7 @@ public sealed class EvaluateStigRunnerTests : IDisposable
     [Fact]
     public async Task RunAsync_EmptyToolRoot_ThrowsArgumentException()
     {
-        var runner = new EvaluateStigRunner();
+        var runner = new EvaluateStigRunner(new Mock<IProcessRunner>().Object);
 
         var act = async () => await runner.RunAsync(string.Empty, string.Empty, null, 5);
 
@@ -34,7 +36,7 @@ public sealed class EvaluateStigRunnerTests : IDisposable
     [Fact]
     public async Task RunAsync_WhiteSpaceToolRoot_ThrowsArgumentException()
     {
-        var runner = new EvaluateStigRunner();
+        var runner = new EvaluateStigRunner(new Mock<IProcessRunner>().Object);
 
         var act = async () => await runner.RunAsync("   ", string.Empty, null, 5);
 
@@ -46,7 +48,7 @@ public sealed class EvaluateStigRunnerTests : IDisposable
     [Fact]
     public async Task RunAsync_NonExistentDirectory_ThrowsFileNotFoundException()
     {
-        var runner = new EvaluateStigRunner();
+        var runner = new EvaluateStigRunner(new Mock<IProcessRunner>().Object);
         var fakePath = Path.Combine(_tempDir, "no-such-dir");
 
         var act = async () => await runner.RunAsync(fakePath, string.Empty, null, 5);
@@ -60,7 +62,7 @@ public sealed class EvaluateStigRunnerTests : IDisposable
     [Fact]
     public async Task RunAsync_DirectoryWithoutScript_ThrowsFileNotFoundException()
     {
-        var runner = new EvaluateStigRunner();
+        var runner = new EvaluateStigRunner(new Mock<IProcessRunner>().Object);
         var dir = Path.Combine(_tempDir, "empty-tool-dir");
         Directory.CreateDirectory(dir);
 
@@ -75,7 +77,7 @@ public sealed class EvaluateStigRunnerTests : IDisposable
     [Fact]
     public async Task RunAsync_FilePathThatIsNotEvaluateStigScript_ThrowsFileNotFoundException()
     {
-        var runner = new EvaluateStigRunner();
+        var runner = new EvaluateStigRunner(new Mock<IProcessRunner>().Object);
         var wrongFile = Path.Combine(_tempDir, "other-script.ps1");
         File.WriteAllText(wrongFile, "# not the right script");
 
@@ -89,7 +91,7 @@ public sealed class EvaluateStigRunnerTests : IDisposable
     [Fact]
     public async Task RunAsync_DirectFilePathToEvaluateStigPs1_DoesNotThrowPathError()
     {
-        var runner = new EvaluateStigRunner();
+        var runner = new EvaluateStigRunner(new Mock<IProcessRunner>().Object);
         var scriptPath = Path.Combine(_tempDir, "Evaluate-STIG.ps1");
         File.WriteAllText(scriptPath, "# stub script");
 
@@ -111,7 +113,7 @@ public sealed class EvaluateStigRunnerTests : IDisposable
     [Fact]
     public async Task RunAsync_DirectoryContainingScript_DoesNotThrowPathError()
     {
-        var runner = new EvaluateStigRunner();
+        var runner = new EvaluateStigRunner(new Mock<IProcessRunner>().Object);
         var dir = Path.Combine(_tempDir, "tool-dir");
         Directory.CreateDirectory(dir);
         File.WriteAllText(Path.Combine(dir, "Evaluate-STIG.ps1"), "# stub");
@@ -131,7 +133,7 @@ public sealed class EvaluateStigRunnerTests : IDisposable
     [Fact]
     public async Task RunAsync_ScriptInSubdirectory_DoesNotThrowPathError()
     {
-        var runner = new EvaluateStigRunner();
+        var runner = new EvaluateStigRunner(new Mock<IProcessRunner>().Object);
         var dir = Path.Combine(_tempDir, "tool-with-subdir");
         var subDir = Path.Combine(dir, "Evaluate-STIG");
         Directory.CreateDirectory(subDir);

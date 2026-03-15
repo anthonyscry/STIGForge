@@ -25,8 +25,8 @@ public static class HtmlReportGenerator
   {
     var results = StandalonePoamExporter.LoadAndNormalize(bundleRoot);
     var (manifestSystemName, manifestBundleId) = StandalonePoamExporter.ReadManifest(bundleRoot);
-    var systemName = systemNameOverride ?? manifestSystemName ?? "Unknown System";
-    var bundleId = manifestBundleId ?? "unknown";
+    var systemName = HtmlEncode(systemNameOverride ?? manifestSystemName ?? "Unknown System");
+    var bundleId = HtmlEncode(manifestBundleId ?? "unknown");
 
     var passCount = results.Count(r => r.Status == VerifyStatus.Pass);
     var failCount = results.Count(r => r.Status == VerifyStatus.Fail);
@@ -51,12 +51,12 @@ public static class HtmlReportGenerator
       .OrderBy(r => SeverityOrder(r.Severity))
       .Select(r => new OpenFinding
       {
-        VulnId = r.VulnId ?? r.ControlId,
-        Title = r.Title,
-        Severity = r.Severity,
-        Status = r.Status.ToString(),
-        Tool = r.Tool,
-        SourceFile = r.SourceFile,
+        VulnId = HtmlEncode(r.VulnId ?? r.ControlId),
+        Title = HtmlEncode(r.Title),
+        Severity = HtmlEncode(r.Severity),
+        Status = HtmlEncode(r.Status.ToString()),
+        Tool = HtmlEncode(r.Tool),
+        SourceFile = HtmlEncode(r.SourceFile),
         VerifiedAt = r.VerifiedAt
       })
       .ToList();
@@ -84,7 +84,7 @@ public static class HtmlReportGenerator
         var gTotal = gPass + gFail;
         return new StigBreakdown
         {
-          BenchmarkId = g.Key,
+          BenchmarkId = HtmlEncode(g.Key),
           PassCount = gPass,
           FailCount = gFail,
           TotalCount = gTotal,
@@ -211,6 +211,9 @@ public static class HtmlReportGenerator
     using var reader = new StreamReader(stream, Encoding.UTF8);
     return reader.ReadToEnd();
   }
+
+  private static string HtmlEncode(string? value) =>
+    System.Net.WebUtility.HtmlEncode(value ?? string.Empty);
 
   private static string ToSnakeCase(string name)
   {

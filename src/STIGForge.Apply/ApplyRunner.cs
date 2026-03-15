@@ -8,6 +8,7 @@ using STIGForge.Apply.Snapshot;
 using STIGForge.Apply.Steps;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
+using STIGForge.Core.Services;
 using STIGForge.Evidence;
 
 namespace STIGForge.Apply;
@@ -40,6 +41,7 @@ public class ApplyRunner
     RollbackScriptGenerator rollbackScriptGenerator,
     LcmService lcmService,
     RebootCoordinator rebootCoordinator,
+    IProcessRunner processRunner,
     IAuditTrailService? audit = null,
     EvidenceCollector? evidenceCollector = null,
     Lgpo.LgpoRunner? lgpoRunner = null)
@@ -51,10 +53,10 @@ public class ApplyRunner
     _rebootCoordinator = rebootCoordinator ?? throw new ArgumentNullException(nameof(rebootCoordinator));
     _audit = audit;
 
-    _powerStigStepHandler = new PowerStigStepHandler();
-    _scriptStepHandler = new ScriptStepHandler();
-    _dscStepHandler = new DscStepHandler();
-    _policyStepHandler = new PolicyStepHandler(_logger, lgpoRunner);
+    _powerStigStepHandler = new PowerStigStepHandler(processRunner);
+    _scriptStepHandler = new ScriptStepHandler(processRunner);
+    _dscStepHandler = new DscStepHandler(processRunner);
+    _policyStepHandler = new PolicyStepHandler(_logger, lgpoRunner, processRunner);
     _stepEvidenceWriter = new StepEvidenceWriter(_logger, evidenceCollector);
   }
 
@@ -66,6 +68,8 @@ public class ApplyRunner
     var root = request.BundleRoot.Trim();
     if (!Directory.Exists(root))
       throw new DirectoryNotFoundException("Bundle root not found: " + root);
+
+    await BundleIntegrityVerifier.VerifyAsync(root, ct).ConfigureAwait(false);
 
     var applyRoot = Path.Combine(root, "Apply");
     var logsDir = Path.Combine(applyRoot, "Logs");

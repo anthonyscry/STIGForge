@@ -60,6 +60,8 @@ public sealed class BundleOrchestrator
     if (!Directory.Exists(root))
       throw new DirectoryNotFoundException("Bundle root not found: " + root);
 
+    await BundleIntegrityVerifier.VerifyAsync(root, ct).ConfigureAwait(false);
+
     var verifyRoot = string.IsNullOrWhiteSpace(request.VerifyOutputRoot)
       ? Path.Combine(root, "Verify")
       : request.VerifyOutputRoot!;

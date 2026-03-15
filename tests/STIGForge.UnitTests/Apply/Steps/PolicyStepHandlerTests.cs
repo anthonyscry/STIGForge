@@ -1,7 +1,9 @@
 using FluentAssertions;
 using Microsoft.Extensions.Logging.Abstractions;
+using Moq;
 using STIGForge.Apply;
 using STIGForge.Apply.Steps;
+using STIGForge.Core.Abstractions;
 
 namespace STIGForge.UnitTests.Apply.Steps;
 
@@ -25,7 +27,7 @@ public sealed class PolicyStepHandlerTests : IDisposable
     [Fact]
     public void CanRunLgpo_WhenNoLgpoRunnerInjected_ReturnsFalse()
     {
-        var handler = new PolicyStepHandler(NullLogger<ApplyRunner>.Instance, null);
+        var handler = new PolicyStepHandler(NullLogger<ApplyRunner>.Instance, null, new Mock<IProcessRunner>().Object);
 
         handler.CanRunLgpo.Should().BeFalse();
     }
@@ -38,7 +40,7 @@ public sealed class PolicyStepHandlerTests : IDisposable
         var logsDir = Path.Combine(_tempDir, "logs");
         Directory.CreateDirectory(logsDir);
 
-        var handler = new PolicyStepHandler(NullLogger<ApplyRunner>.Instance, null);
+        var handler = new PolicyStepHandler(NullLogger<ApplyRunner>.Instance, null, new Mock<IProcessRunner>().Object);
         var request = new ApplyRequest
         {
             BundleRoot = _tempDir,
@@ -65,7 +67,7 @@ public sealed class PolicyStepHandlerTests : IDisposable
 
         var targetDir = Path.Combine(_tempDir, "PolicyDefs");
 
-        var handler = new PolicyStepHandler(NullLogger<ApplyRunner>.Instance, null);
+        var handler = new PolicyStepHandler(NullLogger<ApplyRunner>.Instance, null, new Mock<IProcessRunner>().Object);
         var request = new ApplyRequest
         {
             BundleRoot = _tempDir,
@@ -93,7 +95,7 @@ public sealed class PolicyStepHandlerTests : IDisposable
 
         var targetDir = Path.Combine(_tempDir, "PolicyDefs");
 
-        var handler = new PolicyStepHandler(NullLogger<ApplyRunner>.Instance, null);
+        var handler = new PolicyStepHandler(NullLogger<ApplyRunner>.Instance, null, new Mock<IProcessRunner>().Object);
         var request = new ApplyRequest
         {
             BundleRoot = _tempDir,
@@ -123,7 +125,7 @@ public sealed class PolicyStepHandlerTests : IDisposable
 
         var targetDir = Path.Combine(_tempDir, "PolicyDefs2");
 
-        var handler = new PolicyStepHandler(NullLogger<ApplyRunner>.Instance, null);
+        var handler = new PolicyStepHandler(NullLogger<ApplyRunner>.Instance, null, new Mock<IProcessRunner>().Object);
         var request = new ApplyRequest
         {
             BundleRoot = _tempDir,
@@ -149,7 +151,7 @@ public sealed class PolicyStepHandlerTests : IDisposable
         var logsDir = Path.Combine(_tempDir, "logs");
         Directory.CreateDirectory(logsDir);
 
-        var handler = new PolicyStepHandler(NullLogger<ApplyRunner>.Instance, null);
+        var handler = new PolicyStepHandler(NullLogger<ApplyRunner>.Instance, null, new Mock<IProcessRunner>().Object);
         var request = new ApplyRequest
         {
             BundleRoot = _tempDir,
@@ -172,7 +174,7 @@ public sealed class PolicyStepHandlerTests : IDisposable
         var logsDir = Path.Combine(_tempDir, "log-check");
         Directory.CreateDirectory(logsDir);
 
-        var handler = new PolicyStepHandler(NullLogger<ApplyRunner>.Instance, null);
+        var handler = new PolicyStepHandler(NullLogger<ApplyRunner>.Instance, null, new Mock<IProcessRunner>().Object);
         var request = new ApplyRequest
         {
             BundleRoot = _tempDir,

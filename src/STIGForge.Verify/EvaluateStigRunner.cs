@@ -1,10 +1,17 @@
 using System.Diagnostics;
+using STIGForge.Core.Abstractions;
 
 namespace STIGForge.Verify;
 
 public sealed class EvaluateStigRunner
 {
   private const int DefaultTimeoutSeconds = 30;
+  private readonly IProcessRunner _processRunner;
+
+  public EvaluateStigRunner(IProcessRunner processRunner)
+  {
+    _processRunner = processRunner;
+  }
 
   public async Task<VerifyRunResult> RunAsync(string toolRoot, string arguments, string? workingDirectory, int timeoutSeconds = DefaultTimeoutSeconds, CancellationToken ct = default)
   {
@@ -20,57 +27,34 @@ public sealed class EvaluateStigRunner
       FileName = "powershell.exe",
       Arguments = args,
       WorkingDirectory = string.IsNullOrWhiteSpace(workingDirectory) ? resolvedToolRoot : workingDirectory,
-      RedirectStandardOutput = true,
-      RedirectStandardError = true,
       UseShellExecute = false,
       CreateNoWindow = true
     };
 
     var started = DateTimeOffset.Now;
-    using var process = Process.Start(psi);
-    if (process == null)
-      throw new InvalidOperationException("Failed to start Evaluate-STIG process.");
-
-    var outputTask = process.StandardOutput.ReadToEndAsync();
-    var errorTask = process.StandardError.ReadToEndAsync();
-
     var effectiveTimeoutSeconds = timeoutSeconds <= 0 ? DefaultTimeoutSeconds : timeoutSeconds;
-    using var timeoutCts = new CancellationTokenSource(checked(effectiveTimeoutSeconds * 1000));
+
+    using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(effectiveTimeoutSeconds));
     using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutCts.Token);
 
+    ProcessResult result;
     try
     {
-      await process.WaitForExitAsync(linkedCts.Token).ConfigureAwait(false);
+      result = await _processRunner.RunAsync(psi, linkedCts.Token).ConfigureAwait(false);
     }
     catch (OperationCanceledException) when (!ct.IsCancellationRequested)
     {
-      TryKill(process);
       throw new TimeoutException($"Process did not exit within {effectiveTimeoutSeconds} seconds.");
     }
 
-    var output = await outputTask.ConfigureAwait(false);
-    var error = await errorTask.ConfigureAwait(false);
-
     return new VerifyRunResult
     {
-      ExitCode = process.ExitCode,
-      Output = output,
-      Error = error,
+      ExitCode = result.ExitCode,
+      Output = result.StandardOutput,
+      Error = result.StandardError,
       StartedAt = started,
       FinishedAt = DateTimeOffset.Now
     };
-  }
-
-  private static void TryKill(Process process)
-  {
-    try
-    {
-      if (!process.HasExited)
-        process.Kill();
-    }
-    catch (Exception)
-    {
-    }
   }
 
   private static string ResolveScriptPath(string toolRoot)

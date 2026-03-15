@@ -1,3 +1,4 @@
+using STIGForge.Core.Abstractions;
 using FluentAssertions;
 using Moq;
 using Microsoft.Extensions.Logging;
@@ -14,7 +15,7 @@ public sealed class LgpoRunnerTests
     public void ApplyPolicy_MissingLgpoExe_ThrowsFileNotFound()
     {
         var logger = new Mock<ILogger<LgpoRunner>>();
-        var runner = new LgpoRunner(logger.Object);
+        var runner = new LgpoRunner(logger.Object, new Mock<IProcessRunner>().Object);
 
         var request = new LgpoApplyRequest
         {
@@ -39,7 +40,7 @@ public sealed class LgpoRunnerTests
         File.WriteAllText(fakeLgpo, "fake");
 
         var logger = new Mock<ILogger<LgpoRunner>>();
-        var runner = new LgpoRunner(logger.Object);
+        var runner = new LgpoRunner(logger.Object, new Mock<IProcessRunner>().Object);
 
         var request = new LgpoApplyRequest
         {

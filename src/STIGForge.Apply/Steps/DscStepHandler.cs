@@ -1,11 +1,19 @@
 using System.Diagnostics;
 using System.Text;
+using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
 
 namespace STIGForge.Apply.Steps;
 
 internal sealed class DscStepHandler
 {
+  private readonly IProcessRunner _processRunner;
+
+  public DscStepHandler(IProcessRunner processRunner)
+  {
+    _processRunner = processRunner;
+  }
+
   public async Task<ApplyStepOutcome> RunAsync(
     string mofPath,
     string bundleRoot,
@@ -75,32 +83,31 @@ internal sealed class DscStepHandler
     ApplyProcessHelpers.InjectTraceContext(psi);
 
     var started = DateTimeOffset.Now;
-    using var process = Process.Start(psi);
-    if (process == null)
-      throw new InvalidOperationException("Failed to start DSC apply.");
 
-    var outputTask = process.StandardOutput.ReadToEndAsync(ct);
-    var errorTask = process.StandardError.ReadToEndAsync(ct);
-    await Task.WhenAll(outputTask, errorTask).ConfigureAwait(false);
-    if (!process.WaitForExit(600_000))
+    using var timeoutCts = new CancellationTokenSource(TimeSpan.FromMinutes(10));
+    using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutCts.Token);
+
+    ProcessResult result;
+    try
     {
-      process.Kill();
+      result = await _processRunner.RunAsync(psi, linkedCts.Token).ConfigureAwait(false);
+    }
+    catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+    {
       throw new TimeoutException("DSC apply did not complete within 10 minutes.");
     }
 
-    var stdoutText = await outputTask.ConfigureAwait(false);
-    var stderrText = await errorTask.ConfigureAwait(false);
-    File.WriteAllText(stdout, stdoutText);
-    File.WriteAllText(stderr, stderrText);
+    File.WriteAllText(stdout, result.StandardOutput);
+    File.WriteAllText(stderr, result.StandardError);
 
-    var exitCode = process.ExitCode;
+    var exitCode = result.ExitCode;
     // Only suppress non-zero exit when stderr contains ONLY the benign "Applying configuration" progress message
     // and no actual error indicators. Previously this used a loose substring match that masked real failures.
     if (exitCode != 0
-        && stderrText.Contains("Applying configuration", StringComparison.OrdinalIgnoreCase)
-        && !stderrText.Contains("error", StringComparison.OrdinalIgnoreCase)
-        && !stderrText.Contains("exception", StringComparison.OrdinalIgnoreCase)
-        && !stderrText.Contains("failed", StringComparison.OrdinalIgnoreCase))
+        && result.StandardError.Contains("Applying configuration", StringComparison.OrdinalIgnoreCase)
+        && !result.StandardError.Contains("error", StringComparison.OrdinalIgnoreCase)
+        && !result.StandardError.Contains("exception", StringComparison.OrdinalIgnoreCase)
+        && !result.StandardError.Contains("failed", StringComparison.OrdinalIgnoreCase))
       exitCode = 0;
 
     return new ApplyStepOutcome

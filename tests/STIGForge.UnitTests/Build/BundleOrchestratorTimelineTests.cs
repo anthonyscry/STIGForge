@@ -307,6 +307,7 @@ public sealed class BundleOrchestratorTimelineTests : IDisposable
             rollbackGenerator,
             lcmService,
             rebootCoordinator,
+            processRunner.Object,
             audit.Object);
 
         var verificationWorkflow = new Mock<IVerificationWorkflowService>();
