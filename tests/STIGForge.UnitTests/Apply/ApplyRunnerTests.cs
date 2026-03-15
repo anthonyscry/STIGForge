@@ -296,7 +296,7 @@ public sealed class ApplyRunnerTests : IDisposable
 
         var snapshotService = new SnapshotService(new Mock<ILogger<SnapshotService>>().Object, processRunner.Object);
         var rollbackGenerator = new RollbackScriptGenerator(new Mock<ILogger<RollbackScriptGenerator>>().Object);
-        var lcmService = new LcmService(new Mock<ILogger<LcmService>>().Object);
+        var lcmService = new LcmService(new Mock<ILogger<LcmService>>().Object, processRunner.Object);
         var rebootCoordinator = new RebootCoordinator(new Mock<ILogger<RebootCoordinator>>().Object, _ => true);
 
         return new ApplyRunner(
@@ -316,7 +316,7 @@ public sealed class ApplyRunnerTests : IDisposable
 
         var snapshotService = new SnapshotService(new Mock<ILogger<SnapshotService>>().Object, processRunner.Object);
         var rollbackGenerator = new RollbackScriptGenerator(new Mock<ILogger<RollbackScriptGenerator>>().Object);
-        var lcmService = new LcmService(new Mock<ILogger<LcmService>>().Object);
+        var lcmService = new LcmService(new Mock<ILogger<LcmService>>().Object, processRunner.Object);
         var rebootCoordinator = new RebootCoordinator(new Mock<ILogger<RebootCoordinator>>().Object, _ => true);
         var evidenceCollector = new EvidenceCollector();
 

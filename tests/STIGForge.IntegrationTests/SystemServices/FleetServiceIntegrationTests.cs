@@ -8,7 +8,7 @@ public class FleetServiceIntegrationTests
     [Fact]
     public async Task ExecuteAsync_EmptyTargets_Throws()
     {
-        var svc = new FleetService();
+        var svc = new FleetService(new ProcessRunner());
 
         var act = () => svc.ExecuteAsync(new FleetRequest
         {
@@ -22,7 +22,7 @@ public class FleetServiceIntegrationTests
     [Fact]
     public async Task ExecuteAsync_UnreachableTarget_ReturnsFailure()
     {
-        var svc = new FleetService();
+        var svc = new FleetService(new ProcessRunner());
 
         var result = await svc.ExecuteAsync(new FleetRequest
         {
@@ -44,7 +44,7 @@ public class FleetServiceIntegrationTests
     [Fact]
     public async Task CheckStatusAsync_UnreachableTarget_ReturnsUnreachable()
     {
-        var svc = new FleetService();
+        var svc = new FleetService(new ProcessRunner());
 
         var targets = new List<FleetTarget>
         {

@@ -26,6 +26,7 @@ public sealed class PowerStigDataGeneratorTests
   public void CreateFromControls_MapsRuleIds()
   {
     // Arrange
+    var generator = new PowerStigDataGenerator();
     var controls = new List<ControlRecord>
     {
       new ControlRecord
@@ -46,7 +47,7 @@ public sealed class PowerStigDataGeneratorTests
     };
 
     // Act
-    var data = PowerStigDataGenerator.CreateFromControls(controls, null);
+    var data = generator.CreateFromControls(controls, null);
 
     // Assert
     Assert.Equal(2, data.RuleSettings.Count);
@@ -58,6 +59,7 @@ public sealed class PowerStigDataGeneratorTests
   public void CreateFromControls_AppliesOverrides()
   {
     // Arrange
+    var generator = new PowerStigDataGenerator();
     var controls = new List<ControlRecord>
     {
       new ControlRecord
@@ -84,7 +86,7 @@ public sealed class PowerStigDataGeneratorTests
     };
 
     // Act
-    var data = PowerStigDataGenerator.CreateFromControls(controls, overrides);
+    var data = generator.CreateFromControls(controls, overrides);
 
     // Assert
     Assert.Single(data.RuleSettings);
@@ -100,7 +102,8 @@ public sealed class PowerStigDataGeneratorTests
     // Arrange
     var clock = new STIGForge.Core.Services.SystemClock();
     var releaseAgeGate = new STIGForge.Core.Services.ReleaseAgeGate(clock);
-    PowerStigDataGenerator.Initialize(releaseAgeGate, new STIGForge.Core.Services.ClassificationScopeService());
+    var scopeService = new STIGForge.Core.Services.ClassificationScopeService();
+    var generator = new PowerStigDataGenerator(releaseAgeGate, scopeService);
 
     var controls = new List<ControlRecord>
     {
@@ -124,7 +127,7 @@ public sealed class PowerStigDataGeneratorTests
     };
 
     // Act
-    var data = PowerStigDataGenerator.CreateFromControls(controls, null, profile);
+    var data = generator.CreateFromControls(controls, null, profile);
 
     // Assert
     Assert.Single(data.RuleSettings);
@@ -137,7 +140,7 @@ public sealed class PowerStigDataGeneratorTests
     // Arrange
     var clock = new STIGForge.Core.Services.SystemClock();
     var scopeService = new STIGForge.Core.Services.ClassificationScopeService();
-    PowerStigDataGenerator.Initialize(new STIGForge.Core.Services.ReleaseAgeGate(clock), scopeService);
+    var generator = new PowerStigDataGenerator(new STIGForge.Core.Services.ReleaseAgeGate(clock), scopeService);
 
     var controls = new List<ControlRecord>
     {
@@ -161,7 +164,7 @@ public sealed class PowerStigDataGeneratorTests
     };
 
     // Act
-    var data = PowerStigDataGenerator.CreateFromControls(controls, null, profile);
+    var data = generator.CreateFromControls(controls, null, profile);
 
     // Assert
     Assert.Single(data.RuleSettings);
@@ -172,11 +175,12 @@ public sealed class PowerStigDataGeneratorTests
   public void CreateFromControls_HandlesEmptyInput()
   {
     // Arrange
+    var generator = new PowerStigDataGenerator();
     var emptyControls = Array.Empty<ControlRecord>();
     var emptyOverrides = Array.Empty<PowerStigOverride>();
 
     // Act
-    var data = PowerStigDataGenerator.CreateFromControls(emptyControls, emptyOverrides);
+    var data = generator.CreateFromControls(emptyControls, emptyOverrides);
 
     // Assert
     Assert.NotNull(data);
@@ -189,6 +193,7 @@ public sealed class PowerStigDataGeneratorTests
   public void CreateFromControls_HandlesWhitespaceRuleIds()
   {
     // Arrange
+    var generator = new PowerStigDataGenerator();
     var controls = new List<ControlRecord>
     {
       new ControlRecord
@@ -209,7 +214,7 @@ public sealed class PowerStigDataGeneratorTests
     };
 
     // Act
-    var data = PowerStigDataGenerator.CreateFromControls(controls, null);
+    var data = generator.CreateFromControls(controls, null);
 
     // Assert
     Assert.Single(data.RuleSettings);

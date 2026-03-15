@@ -131,7 +131,10 @@ public partial class App : Application
           services.AddSingleton<BundleBuilder>();
           services.AddSingleton<SnapshotService>();
           services.AddSingleton<RollbackScriptGenerator>();
-          services.AddSingleton<STIGForge.Apply.Dsc.LcmService>();
+          services.AddSingleton<STIGForge.Apply.Dsc.LcmService>(sp =>
+            new STIGForge.Apply.Dsc.LcmService(
+              sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<STIGForge.Apply.Dsc.LcmService>>(),
+              sp.GetRequiredService<IProcessRunner>()));
           services.AddSingleton<STIGForge.Apply.Reboot.RebootCoordinator>();
           services.AddSingleton<STIGForge.Apply.ApplyRunner>();
           services.AddSingleton<EvaluateStigRunner>();
@@ -156,6 +159,10 @@ public partial class App : Application
           services.AddSingleton<PhaseCCommandService>();
           services.AddSingleton<IBundleMissionSummaryService, BundleMissionSummaryService>();
           services.AddSingleton<ImportSelectionOrchestrator>();
+          services.AddSingleton<STIGForge.Apply.PowerStig.PowerStigDataGenerator>(sp =>
+            new STIGForge.Apply.PowerStig.PowerStigDataGenerator(
+              sp.GetRequiredService<ReleaseAgeGate>(),
+              sp.GetRequiredService<ClassificationScopeService>()));
           services.AddSingleton<BundleOrchestrator>();
           services.AddSingleton<STIGForge.Export.EmassExporter>();
           services.AddSingleton<STIGForge.Evidence.EvidenceCollector>();
@@ -165,7 +172,10 @@ public partial class App : Application
             new DpapiCredentialStore(sp.GetRequiredService<IPathBuilder>()));
           services.AddSingleton<ScheduledTaskService>();
           services.AddSingleton<FleetService>(sp =>
-            new FleetService(sp.GetRequiredService<ICredentialStore>(), sp.GetRequiredService<IAuditTrailService>()));
+            new FleetService(
+              sp.GetRequiredService<IProcessRunner>(),
+              sp.GetRequiredService<ICredentialStore>(),
+              sp.GetRequiredService<IAuditTrailService>()));
 
         })
         .Build();

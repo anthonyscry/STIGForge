@@ -84,7 +84,10 @@ public static class CliHostFactory
     services.AddSingleton<BundleBuilder>();
     services.AddSingleton<SnapshotService>();
     services.AddSingleton<RollbackScriptGenerator>();
-    services.AddSingleton<STIGForge.Apply.Dsc.LcmService>();
+    services.AddSingleton<STIGForge.Apply.Dsc.LcmService>(sp =>
+      new STIGForge.Apply.Dsc.LcmService(
+        sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<STIGForge.Apply.Dsc.LcmService>>(),
+        sp.GetRequiredService<IProcessRunner>()));
     services.AddSingleton<STIGForge.Apply.Reboot.RebootCoordinator>();
     services.AddSingleton<STIGForge.Apply.Lgpo.LgpoRunner>();
     services.AddSingleton<STIGForge.Apply.ApplyRunner>();
@@ -99,6 +102,10 @@ public static class CliHostFactory
     services.AddSingleton<ManualAnswerService>();
     services.AddSingleton<IBundleMissionSummaryService, BundleMissionSummaryService>();
     services.AddSingleton<EvidenceCollector>();
+    services.AddSingleton<STIGForge.Apply.PowerStig.PowerStigDataGenerator>(sp =>
+      new STIGForge.Apply.PowerStig.PowerStigDataGenerator(
+        sp.GetRequiredService<ReleaseAgeGate>(),
+        sp.GetRequiredService<ClassificationScopeService>()));
     services.AddSingleton<BundleOrchestrator>();
     services.AddSingleton<STIGForge.Export.EmassExporter>();
     services.AddSingleton<IAuditTrailService>(sp =>
