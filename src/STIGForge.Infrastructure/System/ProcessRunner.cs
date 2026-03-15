@@ -73,6 +73,21 @@ public sealed class ProcessRunner : IProcessRunner
         };
     }
 
+    public async Task<ProcessResult> RunWithTimeoutAsync(ProcessStartInfo startInfo, TimeSpan timeout, CancellationToken ct)
+    {
+        using var timeoutCts = new CancellationTokenSource(timeout);
+        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutCts.Token);
+
+        try
+        {
+            return await RunAsync(startInfo, linkedCts.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        {
+            throw new TimeoutException($"Process did not exit within {timeout.TotalSeconds:F0} seconds.");
+        }
+    }
+
     public bool ExistsInPath(string fileName)
     {
         var pathVar = Environment.GetEnvironmentVariable("PATH");

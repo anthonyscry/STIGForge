@@ -93,16 +93,10 @@ internal sealed class ScriptStepHandler
 internal static class ApplyProcessHelpers
 {
   public static string ToPowerShellSingleQuoted(string? value)
-  {
-    return "'" + (value ?? string.Empty).Replace("'", "''") + "'";
-  }
+    => STIGForge.Core.PowerShellHelpers.SingleQuote(value);
 
   public static string BuildEncodedCommandArgs(string command)
-  {
-    var bytes = Encoding.Unicode.GetBytes(command);
-    var encoded = Convert.ToBase64String(bytes);
-    return "-NoProfile -ExecutionPolicy Bypass -EncodedCommand " + encoded;
-  }
+    => STIGForge.Core.PowerShellHelpers.BuildEncodedCommandArgs(command);
 
   public static void InjectTraceContext(ProcessStartInfo psi)
   {

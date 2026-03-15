@@ -19,5 +19,13 @@ public sealed class ProcessResult
 public interface IProcessRunner
 {
     Task<ProcessResult> RunAsync(ProcessStartInfo startInfo, CancellationToken ct);
+
+    /// <summary>
+    /// Runs a process with an explicit timeout. Kills the process if the timeout
+    /// elapses before exit, then returns the captured output up to that point.
+    /// Throws <see cref="TimeoutException"/> when the deadline is exceeded.
+    /// </summary>
+    Task<ProcessResult> RunWithTimeoutAsync(ProcessStartInfo startInfo, TimeSpan timeout, CancellationToken ct);
+
     bool ExistsInPath(string fileName);
 }
