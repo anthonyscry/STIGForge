@@ -3,6 +3,11 @@
 All notable changes to STIGForge are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.0.2] - 2026-03-15
+
+### Added
+- `tools/qa/stigforge-qa-suite.ps1` — Hyper-V lab QA test suite covering smoke tests, import/build/orchestrate commands, fleet credential DPAPI round-trip, PS Direct connectivity, fleet-status WinRM, verify/compliance/audit commands, security path-traversal checks, and VM health (eval days, AD services, disk). Verified 40/40 checks on lab VMs DC01, SRV01, SRV02.
+
 ## [1.0.1] - 2026-03-15
 
 ### Added
