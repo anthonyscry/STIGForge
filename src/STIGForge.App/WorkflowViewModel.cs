@@ -387,6 +387,10 @@ public partial class WorkflowViewModel : ObservableObject
         if (ConfirmAction != null && !ConfirmAction("Restart Workflow", "This will clear all progress and outputs. Continue?"))
             return;
 
+        _cts.Cancel();
+        _cts.Dispose();
+        _cts = new CancellationTokenSource();
+
         CurrentStep = WorkflowStep.Setup;
         ImportState = StepState.Ready;
         ScanState = StepState.Locked;

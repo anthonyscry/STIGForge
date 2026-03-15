@@ -10,9 +10,14 @@ public static partial class WindowsServiceCommandHelper
   [GeneratedRegex("^[A-Za-z0-9_.-]+$", RegexOptions.CultureInvariant)]
   private static partial Regex ServiceNameRegex();
 
+  [GeneratedRegex(@"["";&|<>\r\n]")]
+  private static partial Regex ShellMetacharRegex();
+
   public static void InstallService(string serviceName, string displayName, string executablePath)
   {
     ValidateServiceName(serviceName);
+    ValidateDisplayName(displayName);
+    ValidateExecutablePath(executablePath);
     if (!OperatingSystem.IsWindows())
       return;
 
@@ -50,6 +55,28 @@ public static partial class WindowsServiceCommandHelper
       throw new ArgumentException($"Service name must be {MaxServiceNameLength} characters or fewer.", nameof(name));
     if (!ServiceNameRegex().IsMatch(name))
       throw new ArgumentException("Service name contains invalid characters.", nameof(name));
+  }
+
+  private static void ValidateDisplayName(string displayName)
+  {
+    if (string.IsNullOrWhiteSpace(displayName))
+      throw new ArgumentException("Display name cannot be null or empty.", nameof(displayName));
+    if (displayName.Length > MaxServiceNameLength)
+      throw new ArgumentException($"Display name must be {MaxServiceNameLength} characters or fewer.", nameof(displayName));
+    if (ShellMetacharRegex().IsMatch(displayName))
+      throw new ArgumentException("Display name contains unsafe characters.", nameof(displayName));
+  }
+
+  private static void ValidateExecutablePath(string executablePath)
+  {
+    if (string.IsNullOrWhiteSpace(executablePath))
+      throw new ArgumentException("Executable path cannot be null or empty.", nameof(executablePath));
+    if (ShellMetacharRegex().IsMatch(executablePath))
+      throw new ArgumentException("Executable path contains unsafe characters.", nameof(executablePath));
+    var ext = Path.GetExtension(executablePath);
+    if (!string.Equals(ext, ".exe", StringComparison.OrdinalIgnoreCase) &&
+        !string.Equals(ext, ".dll", StringComparison.OrdinalIgnoreCase))
+      throw new ArgumentException("Executable path must end in .exe or .dll.", nameof(executablePath));
   }
 
   private static ProcessStartInfo CreateScProcessStartInfo(string arguments)

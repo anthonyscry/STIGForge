@@ -792,6 +792,48 @@ internal static class BuildCommands
     return root;
   }
 
+  private const int MaxArchiveEntryCount = 4096;
+  private const long MaxArchiveExtractedBytes = 512 * 1024 * 1024; // 512 MB
+
+  private static void ExtractZipSafely(string zipPath, string destinationRoot)
+  {
+    var destFull = Path.GetFullPath(destinationRoot);
+    var destPrefix = destFull.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal)
+      ? destFull
+      : destFull + Path.DirectorySeparatorChar;
+
+    using var archive = ZipFile.OpenRead(zipPath);
+
+    if (archive.Entries.Count > MaxArchiveEntryCount)
+      throw new InvalidOperationException($"Archive contains {archive.Entries.Count} entries, exceeding maximum {MaxArchiveEntryCount}.");
+
+    long totalBytes = 0;
+    foreach (var entry in archive.Entries)
+    {
+      var entryPath = Path.GetFullPath(Path.Combine(destFull, entry.FullName));
+      if (!entryPath.StartsWith(destPrefix, StringComparison.OrdinalIgnoreCase)
+          && !string.Equals(entryPath, destFull, StringComparison.OrdinalIgnoreCase))
+        throw new InvalidOperationException($"Archive entry '{entry.FullName}' resolves outside extraction root.");
+
+      if (entry.FullName.EndsWith("/", StringComparison.Ordinal) || entry.FullName.EndsWith("\\", StringComparison.Ordinal))
+      {
+        Directory.CreateDirectory(entryPath);
+        continue;
+      }
+
+      var dir = Path.GetDirectoryName(entryPath);
+      if (!string.IsNullOrWhiteSpace(dir))
+        Directory.CreateDirectory(dir);
+
+      using var src = entry.Open();
+      using var dst = new FileStream(entryPath, FileMode.Create, FileAccess.Write, FileShare.None);
+      src.CopyTo(dst);
+      totalBytes += dst.Length;
+      if (totalBytes > MaxArchiveExtractedBytes)
+        throw new InvalidOperationException($"Archive expanded size exceeds {MaxArchiveExtractedBytes} bytes.");
+    }
+  }
+
   private static string CreateDownloadSessionFolder(string airGapTransferRoot, string sourceName)
   {
     var safeSourceName = SanitizeFileSegment(sourceName);
@@ -894,7 +936,7 @@ internal static class BuildCommands
     var zipPath = await DownloadSourceZipAsync(sourceUrl, "powerstig", airGapTransferRoot, ct).ConfigureAwait(false);
     var extractRoot = CreateDownloadSessionFolder(airGapTransferRoot, "powerstig-extracted");
     Directory.CreateDirectory(extractRoot);
-    ZipFile.ExtractToDirectory(zipPath, extractRoot, overwriteFiles: true);
+    ExtractZipSafely(zipPath, extractRoot);
 
     var psd1Candidates = Directory
       .GetFiles(extractRoot, "*.psd1", SearchOption.AllDirectories)

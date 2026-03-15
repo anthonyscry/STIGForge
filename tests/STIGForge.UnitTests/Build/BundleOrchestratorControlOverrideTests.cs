@@ -50,6 +50,7 @@ public sealed class BundleOrchestratorControlOverrideTests : IDisposable
     Directory.CreateDirectory(reportsDir);
     Directory.CreateDirectory(manifestDir);
     Directory.CreateDirectory(applyDir);
+    File.WriteAllText(Path.Combine(manifestDir, "file_hashes.sha256"), string.Empty);
 
     // Create overlay_decisions.json with NotApplicable decision
     var decisions = new[]

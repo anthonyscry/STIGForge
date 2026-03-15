@@ -20,25 +20,23 @@ public static class AttestationImporter
 
     if (audit != null)
     {
-      _ = Task.Run(async () =>
+      try
       {
-        try
+        audit.RecordAsync(new AuditEntry
         {
-          await audit.RecordAsync(new AuditEntry
-          {
-            Action = "import-attestations",
-            Target = packageRoot,
-            Result = "success",
-            Detail = $"Updated={result.Updated}, Skipped={result.Skipped}, NotFound={result.NotFound}",
-            User = Environment.UserName,
-            Machine = Environment.MachineName,
-            Timestamp = DateTimeOffset.Now
-          }, ct).ConfigureAwait(false);
-        }
-        catch (Exception)
-        {
-        }
-      });
+          Action = "import-attestations",
+          Target = packageRoot,
+          Result = "success",
+          Detail = $"Updated={result.Updated}, Skipped={result.Skipped}, NotFound={result.NotFound}",
+          User = Environment.UserName,
+          Machine = Environment.MachineName,
+          Timestamp = DateTimeOffset.Now
+        }, ct).GetAwaiter().GetResult();
+      }
+      catch (Exception)
+      {
+        System.Diagnostics.Trace.TraceWarning("Audit write failed in AttestationImporter.ImportAttestations");
+      }
     }
 
     return result;

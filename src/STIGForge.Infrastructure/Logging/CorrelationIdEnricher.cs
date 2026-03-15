@@ -11,6 +11,14 @@ namespace STIGForge.Infrastructure.Logging;
 /// </summary>
 public sealed class CorrelationIdEnricher : ILogEventEnricher
 {
+    private static readonly AsyncLocal<string?> ScopeCorrelationId = new();
+
+    /// <summary>
+    /// Set a correlation ID for the current async scope.
+    /// If not set, a stable per-scope ID is generated on first use.
+    /// </summary>
+    public static void SetCorrelationId(string correlationId) => ScopeCorrelationId.Value = correlationId;
+
     public void Enrich(LogEvent logEvent, ILogEventPropertyFactory propertyFactory)
     {
         ArgumentNullException.ThrowIfNull(logEvent);
@@ -20,21 +28,22 @@ public sealed class CorrelationIdEnricher : ILogEventEnricher
 
         if (activity != null)
         {
-            // Add TraceId for distributed correlation (W3C standard)
             logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty(
                 "TraceId", activity.TraceId.ToString()));
 
-            // Add SpanId for hierarchical correlation
             logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty(
                 "SpanId", activity.SpanId.ToString()));
         }
         else
         {
-            // Generate correlation ID if no Activity context exists
-            // This ensures every log has some form of correlation identifier
-            var correlationId = Guid.NewGuid().ToString("N");
+            var correlationId = ScopeCorrelationId.Value;
+            if (correlationId == null)
+            {
+                correlationId = Guid.NewGuid().ToString("N");
+                ScopeCorrelationId.Value = correlationId;
+            }
             logEvent.AddPropertyIfAbsent(propertyFactory.CreateProperty(
-                "CorrelationId", correlationId));
+                "TraceId", correlationId));
         }
     }
 }

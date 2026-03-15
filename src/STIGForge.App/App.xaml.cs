@@ -72,9 +72,9 @@ public partial class App : Application
           var logRoot = Path.Combine(AppContext.BaseDirectory, "logs");
           Directory.CreateDirectory(logRoot);
 
-          // Default to Verbose when no environment override is set
+          // Default to Information for production; set STIGFORGE_LOG_LEVEL=Verbose for debug
           if (string.IsNullOrEmpty(Environment.GetEnvironmentVariable("STIGFORGE_LOG_LEVEL")))
-            LoggingConfiguration.LevelSwitch.MinimumLevel = Serilog.Events.LogEventLevel.Verbose;
+            LoggingConfiguration.LevelSwitch.MinimumLevel = Serilog.Events.LogEventLevel.Information;
 
           lc.MinimumLevel.ControlledBy(LoggingConfiguration.LevelSwitch)
             .Enrich.With(new CorrelationIdEnricher())
@@ -167,7 +167,6 @@ public partial class App : Application
           services.AddSingleton<FleetService>(sp =>
             new FleetService(sp.GetRequiredService<ICredentialStore>(), sp.GetRequiredService<IAuditTrailService>()));
 
-          services.AddSingleton<MainWindow>();
         })
         .Build();
       TraceStartup("Host build complete");
@@ -397,7 +396,7 @@ public partial class App : Application
 
       if (_host != null)
       {
-        Task.Run(async () => await _host.StopAsync()).Wait(TimeSpan.FromSeconds(5));
+        _host.StopAsync(TimeSpan.FromSeconds(5)).GetAwaiter().GetResult();
         _host.Dispose();
         TraceStartup("Host stopped and disposed");
       }

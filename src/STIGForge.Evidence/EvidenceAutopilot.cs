@@ -61,12 +61,20 @@ public sealed class EvidenceAutopilot
   /// <summary>
   /// Collect registry evidence for a control.
   /// </summary>
+  private static readonly System.Text.RegularExpressions.Regex SafeRegistryPathRegex =
+    new(@"^[A-Za-z0-9_\-\\:. /]+$", System.Text.RegularExpressions.RegexOptions.Compiled);
+
   public async Task<List<string>> CollectRegistryEvidenceAsync(
     string registryPath,
     string valueName,
     string outputDir,
     CancellationToken cancellationToken = default)
   {
+    if (string.IsNullOrWhiteSpace(registryPath) || !SafeRegistryPathRegex.IsMatch(registryPath))
+      throw new ArgumentException("Registry path contains invalid characters.", nameof(registryPath));
+    if (string.IsNullOrWhiteSpace(valueName) || !SafeRegistryPathRegex.IsMatch(valueName))
+      throw new ArgumentException("Value name contains invalid characters.", nameof(valueName));
+
     var files = new List<string>();
     var outputPath = Path.Combine(outputDir, "registry_export.txt");
 
@@ -179,12 +187,23 @@ public sealed class EvidenceAutopilot
   /// <summary>
   /// Collect command output evidence.
   /// </summary>
+  private static readonly HashSet<string> AllowedCommands = new(StringComparer.OrdinalIgnoreCase)
+  {
+    "auditpol.exe", "reg.exe", "secedit.exe", "gpresult.exe", "whoami.exe",
+    "net.exe", "netsh.exe", "sfc.exe", "systeminfo.exe", "powershell.exe",
+    "bcdedit.exe", "wmic.exe", "icacls.exe", "Get-ComputerInfo"
+  };
+
   public async Task<List<string>> CollectCommandEvidenceAsync(
     string command,
     string arguments,
     string outputDir,
     CancellationToken cancellationToken = default)
   {
+    var commandFileName = Path.GetFileName(command);
+    if (string.IsNullOrWhiteSpace(commandFileName) || !AllowedCommands.Contains(commandFileName))
+      throw new ArgumentException($"Command '{commandFileName}' is not in the evidence collection allowlist.", nameof(command));
+
     var files = new List<string>();
     var outputPath = Path.Combine(outputDir, "command_output.txt");
 

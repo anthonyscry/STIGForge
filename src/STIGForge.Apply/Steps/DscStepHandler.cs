@@ -43,9 +43,10 @@ internal sealed class DscStepHandler
       foreach (var modDir in Directory.GetDirectories(bundledModulesDir))
       {
         var modName = Path.GetFileName(modDir);
+        var qModName = ApplyProcessHelpers.ToPowerShellSingleQuoted(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ProgramFiles), "WindowsPowerShell", "Modules", modName));
         copyModulesBlock.AppendLine(
-          "Copy-Item -Path " + ApplyProcessHelpers.ToPowerShellSingleQuoted(modDir) + " -Destination \"$env:ProgramFiles\\WindowsPowerShell\\Modules\\" + modName + "\" -Recurse -Force; " +
-          "Get-ChildItem \"$env:ProgramFiles\\WindowsPowerShell\\Modules\\" + modName + "\" -Recurse -File | Unblock-File;");
+          "Copy-Item -Path " + ApplyProcessHelpers.ToPowerShellSingleQuoted(modDir) + " -Destination " + qModName + " -Recurse -Force; " +
+          "Get-ChildItem " + qModName + " -Recurse -File | Unblock-File;");
       }
     }
 

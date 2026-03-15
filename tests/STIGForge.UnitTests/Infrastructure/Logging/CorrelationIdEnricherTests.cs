@@ -46,8 +46,7 @@ public class CorrelationIdEnricherTests
         enricher.Enrich(logEvent, propertyFactory);
 
         // Assert
-        logEvent.Properties.Should().ContainKey("CorrelationId");
-        logEvent.Properties.Should().NotContainKey("TraceId");
+        logEvent.Properties.Should().ContainKey("TraceId");
         logEvent.Properties.Should().NotContainKey("SpanId");
     }
 

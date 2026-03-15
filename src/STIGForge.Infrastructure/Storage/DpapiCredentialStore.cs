@@ -33,7 +33,15 @@ public sealed class DpapiCredentialStore : ICredentialStore
 
     var json = JsonSerializer.Serialize(new CredentialPayload { U = username, P = password });
     var plainBytes = Encoding.UTF8.GetBytes(json);
-    var encryptedBytes = ProtectedData.Protect(plainBytes, null, DataProtectionScope.CurrentUser);
+    byte[] encryptedBytes;
+    try
+    {
+      encryptedBytes = ProtectedData.Protect(plainBytes, null, DataProtectionScope.CurrentUser);
+    }
+    finally
+    {
+      CryptographicOperations.ZeroMemory(plainBytes);
+    }
 
     var filePath = GetCredentialPath(targetHost);
     File.WriteAllBytes(filePath, encryptedBytes);
@@ -46,13 +54,20 @@ public sealed class DpapiCredentialStore : ICredentialStore
 
     var encryptedBytes = File.ReadAllBytes(filePath);
     var plainBytes = ProtectedData.Unprotect(encryptedBytes, null, DataProtectionScope.CurrentUser);
-    var json = Encoding.UTF8.GetString(plainBytes);
-    var payload = JsonSerializer.Deserialize<CredentialPayload>(json);
+    try
+    {
+      var json = Encoding.UTF8.GetString(plainBytes);
+      var payload = JsonSerializer.Deserialize<CredentialPayload>(json);
 
-    if (payload == null || string.IsNullOrEmpty(payload.U))
-      return null;
+      if (payload == null || string.IsNullOrEmpty(payload.U))
+        return null;
 
-    return (payload.U, payload.P);
+      return (payload.U, payload.P);
+    }
+    finally
+    {
+      CryptographicOperations.ZeroMemory(plainBytes);
+    }
   }
 
   public bool Remove(string targetHost)

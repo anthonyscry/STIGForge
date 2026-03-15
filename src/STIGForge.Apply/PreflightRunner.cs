@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using STIGForge.Core;
+using STIGForge.Core.Abstractions;
 
 namespace STIGForge.Apply;
 
@@ -12,11 +13,13 @@ namespace STIGForge.Apply;
 public sealed class PreflightRunner
 {
   private readonly ILogger<PreflightRunner> _logger;
+  private readonly IProcessRunner _processRunner;
   private static readonly TimeSpan DefaultTimeout = TimeSpan.FromSeconds(60);
 
-  public PreflightRunner(ILogger<PreflightRunner> logger)
+  public PreflightRunner(ILogger<PreflightRunner> logger, IProcessRunner processRunner)
   {
     _logger = logger;
+    _processRunner = processRunner;
   }
 
   public async Task<PreflightResult> RunPreflightAsync(PreflightRequest request, CancellationToken ct)
@@ -61,22 +64,20 @@ public sealed class PreflightRunner
       {
         FileName = "powershell.exe",
         Arguments = args,
-        RedirectStandardOutput = true,
-        RedirectStandardError = true,
         UseShellExecute = false,
         CreateNoWindow = true
       };
 
-      using var process = new Process { StartInfo = psi };
-      process.Start();
+      using var timeoutCts = new CancellationTokenSource(DefaultTimeout);
+      using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutCts.Token);
 
-      var stdoutTask = process.StandardOutput.ReadToEndAsync(ct);
-      var stderrTask = process.StandardError.ReadToEndAsync(ct);
-
-      var completed = process.WaitForExit((int)DefaultTimeout.TotalMilliseconds);
-      if (!completed)
+      ProcessResult result;
+      try
       {
-        try { process.Kill(); } catch (Exception) { /* best effort */ }
+        result = await _processRunner.RunAsync(psi, linkedCts.Token).ConfigureAwait(false);
+      }
+      catch (OperationCanceledException) when (timeoutCts.IsCancellationRequested && !ct.IsCancellationRequested)
+      {
         return new PreflightResult
         {
           Ok = false,
@@ -86,13 +87,10 @@ public sealed class PreflightRunner
         };
       }
 
-      var stdout = await stdoutTask.ConfigureAwait(false);
-      var stderr = await stderrTask.ConfigureAwait(false);
+      if (!string.IsNullOrWhiteSpace(result.StandardError))
+        _logger.LogWarning("Preflight stderr: {Stderr}", result.StandardError.Trim());
 
-      if (!string.IsNullOrWhiteSpace(stderr))
-        _logger.LogWarning("Preflight stderr: {Stderr}", stderr.Trim());
-
-      return ParseResult(stdout, process.ExitCode);
+      return ParseResult(result.StandardOutput, result.ExitCode);
     }
     catch (Exception ex)
     {

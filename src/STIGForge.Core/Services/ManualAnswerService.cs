@@ -184,26 +184,23 @@ public sealed class ManualAnswerService
 
     if (_audit != null)
     {
-      _ = Task.Run(async () =>
+      try
       {
-        try
+        _audit.RecordAsync(new AuditEntry
         {
-          await _audit.RecordAsync(new AuditEntry
-          {
-            Action = "manual-answer",
-            Target = ruleId ?? vulnId ?? "unknown",
-            Result = normalizedStatus,
-            Detail = reason ?? string.Empty,
-            User = Environment.UserName,
-            Machine = Environment.MachineName,
-            Timestamp = DateTimeOffset.Now
-          }, ct).ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-          System.Diagnostics.Trace.TraceWarning("Audit write failed in ManualAnswerService: " + ex.Message);
-        }
-      });
+          Action = "manual-answer",
+          Target = ruleId ?? vulnId ?? "unknown",
+          Result = normalizedStatus,
+          Detail = reason ?? string.Empty,
+          User = Environment.UserName,
+          Machine = Environment.MachineName,
+          Timestamp = DateTimeOffset.Now
+        }, ct).GetAwaiter().GetResult();
+      }
+      catch (Exception ex)
+      {
+        System.Diagnostics.Trace.TraceWarning("Audit write failed in ManualAnswerService: " + ex.Message);
+      }
     }
   }
 

@@ -169,7 +169,9 @@ public sealed class GpoConflictDetector
     XDocument doc;
     try
     {
-      doc = XDocument.Parse(xml);
+      var xmlSettings = new System.Xml.XmlReaderSettings { DtdProcessing = System.Xml.DtdProcessing.Prohibit, XmlResolver = null };
+      using var xmlReader = System.Xml.XmlReader.Create(new System.IO.StringReader(xml), xmlSettings);
+      doc = XDocument.Load(xmlReader, LoadOptions.None);
     }
     catch (Exception)
     {

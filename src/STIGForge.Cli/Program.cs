@@ -58,4 +58,8 @@ static async Task<int> InvokeWithErrorHandlingAsync(RootCommand command, string[
     Console.Error.WriteLine($"[CLI-UNEXPECTED-500] {ex.Message}");
     return 1;
   }
+  finally
+  {
+    Serilog.Log.CloseAndFlush();
+  }
 }

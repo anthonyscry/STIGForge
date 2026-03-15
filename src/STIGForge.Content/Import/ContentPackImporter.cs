@@ -149,7 +149,7 @@ public sealed class ContentPackImporter
 
                 if (benchmarkDirs.Count > 1)
                 {
-                    var semaphore = new SemaphoreSlim(4);
+                    using var semaphore = new SemaphoreSlim(4);
                     var tasks = benchmarkDirs.Select(async benchDir =>
                     {
                         await semaphore.WaitAsync(ct).ConfigureAwait(false);
@@ -177,7 +177,7 @@ public sealed class ContentPackImporter
                         .OrderBy(path => path, StringComparer.OrdinalIgnoreCase)
                         .ToList();
 
-                    var semaphore = new SemaphoreSlim(4);
+                    using var semaphore = new SemaphoreSlim(4);
                     var tasks = xccdfFiles.Select(async benchmarkFile =>
                     {
                         await semaphore.WaitAsync(ct).ConfigureAwait(false);
@@ -224,7 +224,7 @@ public sealed class ContentPackImporter
                 return new[] { importedSingle };
             }
 
-            var zipSemaphore = new SemaphoreSlim(4);
+            using var zipSemaphore = new SemaphoreSlim(4);
             var zipTasks = nestedZipPaths.Select(async nestedZipPath =>
             {
                 await zipSemaphore.WaitAsync(ct).ConfigureAwait(false);

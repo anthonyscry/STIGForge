@@ -68,7 +68,8 @@ public static class BundleIntegrityVerifier
         using var fs = new FileStream(
             filePath, FileMode.Open, FileAccess.Read, FileShare.Read,
             bufferSize: 81920, useAsync: true);
-        var bytes = await SHA256.HashDataAsync(fs, ct).ConfigureAwait(false);
+        using var sha = SHA256.Create();
+        var bytes = await sha.ComputeHashAsync(fs, ct).ConfigureAwait(false);
         return Convert.ToHexString(bytes).ToLowerInvariant();
     }
 }

@@ -75,26 +75,23 @@ public sealed class AnswerRebaseService
 
     if (_audit != null)
     {
-      _ = Task.Run(async () =>
+      try
       {
-        try
+        await _audit.RecordAsync(new AuditEntry
         {
-          await _audit.RecordAsync(new AuditEntry
-          {
-            Action = "rebase-answers",
-            Target = bundleRoot,
-            Result = "success",
-            Detail = $"Baseline={baselinePackId}, New={newPackId}, Safe={report.SafeActions}, Review={report.ReviewNeeded}, Blocking={report.BlockingConflicts}, HighRisk={report.HighRisk}",
-            User = Environment.UserName,
-            Machine = Environment.MachineName,
-            Timestamp = DateTimeOffset.UtcNow
-          }, cancellationToken).ConfigureAwait(false);
-        }
-        catch (Exception ex)
-        {
-          System.Diagnostics.Trace.TraceError("Answer rebase audit logging failed: " + ex.Message);
-        }
-      });
+          Action = "rebase-answers",
+          Target = bundleRoot,
+          Result = "success",
+          Detail = $"Baseline={baselinePackId}, New={newPackId}, Safe={report.SafeActions}, Review={report.ReviewNeeded}, Blocking={report.BlockingConflicts}, HighRisk={report.HighRisk}",
+          User = Environment.UserName,
+          Machine = Environment.MachineName,
+          Timestamp = DateTimeOffset.UtcNow
+        }, cancellationToken).ConfigureAwait(false);
+      }
+      catch (Exception ex)
+      {
+        System.Diagnostics.Trace.TraceError("Answer rebase audit logging failed: " + ex.Message);
+      }
     }
 
     return report;

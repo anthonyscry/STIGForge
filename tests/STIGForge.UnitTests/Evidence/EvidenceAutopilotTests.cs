@@ -37,23 +37,20 @@ public sealed class EvidenceAutopilotTests : IDisposable
   }
 
   [Fact]
-  public async Task CollectCommandEvidenceAsync_CommandUnavailable_WritesErrorFile()
+  public async Task CollectCommandEvidenceAsync_CommandNotInAllowlist_ThrowsArgException()
   {
     var autopilot = new EvidenceAutopilot(_evidenceRoot);
     var outputDir = Path.Combine(_evidenceRoot, "by_control", "SV-999");
     Directory.CreateDirectory(outputDir);
 
-    var files = await autopilot.CollectCommandEvidenceAsync(
+    var act = () => autopilot.CollectCommandEvidenceAsync(
       "this-command-does-not-exist-xyz",
       "",
       outputDir,
       CancellationToken.None);
 
-    files.Should().ContainSingle();
-    var errorPath = files[0];
-    Path.GetFileName(errorPath).Should().Be("command_error.txt");
-    File.Exists(errorPath).Should().BeTrue();
-    File.ReadAllText(errorPath).Should().Contain("Failed to execute command");
+    await act.Should().ThrowAsync<ArgumentException>()
+      .WithMessage("*allowlist*");
   }
 
   [Fact]

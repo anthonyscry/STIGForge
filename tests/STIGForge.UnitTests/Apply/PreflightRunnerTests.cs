@@ -3,6 +3,7 @@ using FluentAssertions;
 using Moq;
 using Microsoft.Extensions.Logging;
 using STIGForge.Apply;
+using STIGForge.Core.Abstractions;
 
 namespace STIGForge.UnitTests.Apply;
 
@@ -20,7 +21,8 @@ public sealed class PreflightRunnerTests : IDisposable
         _tempRoot = Path.Combine(Path.GetTempPath(), "stigforge-preflight-test-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(_tempRoot);
         var logger = new Mock<ILogger<PreflightRunner>>();
-        _runner = new PreflightRunner(logger.Object);
+        var processRunner = new Mock<IProcessRunner>();
+        _runner = new PreflightRunner(logger.Object, processRunner.Object);
     }
 
     public void Dispose()

@@ -5,7 +5,7 @@ namespace STIGForge.Verify;
 
 public sealed class EvaluateStigRunner
 {
-  private const int DefaultTimeoutSeconds = 30;
+  private const int DefaultTimeoutSeconds = 600;
   private readonly IProcessRunner _processRunner;
 
   public EvaluateStigRunner(IProcessRunner processRunner)

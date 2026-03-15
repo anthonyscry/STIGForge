@@ -10,6 +10,8 @@ public sealed class ProcessRunner : IProcessRunner
     {
         var stdout = new StringBuilder();
         var stderr = new StringBuilder();
+        var stdoutLock = new object();
+        var stderrLock = new object();
 
         startInfo.RedirectStandardOutput = true;
         startInfo.RedirectStandardError = true;
@@ -17,8 +19,8 @@ public sealed class ProcessRunner : IProcessRunner
 
         using var process = new Process { StartInfo = startInfo, EnableRaisingEvents = true };
 
-        process.OutputDataReceived += (_, e) => { if (e.Data != null) stdout.AppendLine(e.Data); };
-        process.ErrorDataReceived += (_, e) => { if (e.Data != null) stderr.AppendLine(e.Data); };
+        process.OutputDataReceived += (_, e) => { if (e.Data != null) lock (stdoutLock) { stdout.AppendLine(e.Data); } };
+        process.ErrorDataReceived += (_, e) => { if (e.Data != null) lock (stderrLock) { stderr.AppendLine(e.Data); } };
 
         var tcs = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
         process.Exited += (_, _) => tcs.TrySetResult(true);
@@ -59,11 +61,15 @@ public sealed class ProcessRunner : IProcessRunner
         process.WaitForExit(5_000); // safety flush — Exited already fired; 5 s covers post-Kill OS cleanup
         process.WaitForExit();     // no-arg call ensures all async OutputDataReceived events have fired
 
+        string stdoutResult, stderrResult;
+        lock (stdoutLock) { stdoutResult = stdout.ToString(); }
+        lock (stderrLock) { stderrResult = stderr.ToString(); }
+
         return new ProcessResult
         {
             ExitCode = process.ExitCode,
-            StandardOutput = stdout.ToString(),
-            StandardError = stderr.ToString()
+            StandardOutput = stdoutResult,
+            StandardError = stderrResult
         };
     }
 

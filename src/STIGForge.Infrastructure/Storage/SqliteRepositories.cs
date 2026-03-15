@@ -9,7 +9,7 @@ namespace STIGForge.Infrastructure.Storage;
 public sealed class SqliteContentPackRepository : IContentPackRepository
 {
   private readonly string _cs;
-  private static readonly JsonSerializerOptions J = new();
+  private static readonly JsonSerializerOptions J = STIGForge.Core.JsonOptions.CaseInsensitive;
   public SqliteContentPackRepository(DbConnectionString connectionString)
   {
     ArgumentNullException.ThrowIfNull(connectionString);
@@ -136,7 +136,7 @@ release=excluded.release;";
 public sealed class SqliteJsonProfileRepository : IProfileRepository
 {
   private readonly string _cs;
-  private static readonly JsonSerializerOptions J = new();
+  private static readonly JsonSerializerOptions J = STIGForge.Core.JsonOptions.CaseInsensitive;
 
   public SqliteJsonProfileRepository(DbConnectionString connectionString)
   {
@@ -179,7 +179,7 @@ ON CONFLICT(profile_id) DO UPDATE SET json=excluded.json;";
 public sealed class SqliteJsonOverlayRepository : IOverlayRepository
 {
   private readonly string _cs;
-  private static readonly JsonSerializerOptions J = new();
+  private static readonly JsonSerializerOptions J = STIGForge.Core.JsonOptions.CaseInsensitive;
 
   public SqliteJsonOverlayRepository(DbConnectionString connectionString)
   {
@@ -216,7 +216,7 @@ ON CONFLICT(overlay_id) DO UPDATE SET json=excluded.json;";
 public sealed class SqliteJsonControlRepository : IControlRepository
 {
   private readonly string _cs;
-  private static readonly JsonSerializerOptions J = new();
+  private static readonly JsonSerializerOptions J = STIGForge.Core.JsonOptions.CaseInsensitive;
 
   public SqliteJsonControlRepository(DbConnectionString connectionString)
   {

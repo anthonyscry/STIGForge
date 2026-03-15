@@ -22,6 +22,7 @@ public sealed class ApplyRunnerTests : IDisposable
         Directory.CreateDirectory(_bundleRoot);
         Directory.CreateDirectory(Path.Combine(_bundleRoot, "Apply"));
         Directory.CreateDirectory(Path.Combine(_bundleRoot, "Manifest"));
+        File.WriteAllText(Path.Combine(_bundleRoot, "Manifest", "file_hashes.sha256"), string.Empty);
     }
 
     public void Dispose()

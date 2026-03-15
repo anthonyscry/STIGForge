@@ -378,8 +378,11 @@ public sealed class FleetService
 
     try
     {
+      var escapedTarget = connectionTarget.Replace("'", "''");
+      var testCommand = $"Test-WSMan -ComputerName '{escapedTarget}' -ErrorAction Stop | Out-Null; Write-Output 'OK'";
+      var encodedCommand = Convert.ToBase64String(Encoding.Unicode.GetBytes(testCommand));
       var psi = new global::System.Diagnostics.ProcessStartInfo("powershell.exe",
-        $"-NoProfile -NonInteractive -Command \"Test-WSMan -ComputerName '{connectionTarget}' -ErrorAction Stop | Out-Null; Write-Output 'OK'\"")
+        $"-NoProfile -NonInteractive -EncodedCommand {encodedCommand}")
       {
         RedirectStandardOutput = true,
         RedirectStandardError = true,
@@ -556,10 +559,9 @@ public sealed class FleetService
         Timestamp = DateTimeOffset.Now
       }, ct).ConfigureAwait(false);
     }
-    catch (Exception)
+    catch (Exception ex)
     {
-      // Audit failure should not block fleet operations.
-      // Intentionally swallowed — FleetService has no logger dependency.
+      global::System.Diagnostics.Trace.TraceWarning("Fleet audit write failed: " + ex.Message);
     }
   }
 
@@ -607,6 +609,7 @@ public sealed class FleetTarget
   public string HostName { get; set; } = string.Empty;
   public string? IpAddress { get; set; }
   public string? CredentialUser { get; set; }
+  [global::System.Text.Json.Serialization.JsonIgnore]
   public string? CredentialPassword { get; set; }
 }
 
