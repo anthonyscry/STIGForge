@@ -3,18 +3,18 @@ using STIGForge.Core.Services;
 
 namespace STIGForge.Apply.PowerStig;
 
-public static class PowerStigDataGenerator
+/// <summary>
+/// Generates PowerSTIG .psd1 data from STIG controls and overlays.
+/// Constructor-injected — no static mutable state. Thread-safe.
+/// </summary>
+public sealed class PowerStigDataGenerator
 {
-  private static ReleaseAgeGate? _releaseAgeGate;
-  private static ClassificationScopeService? _scopeService;
+  private readonly ReleaseAgeGate? _releaseAgeGate;
+  private readonly ClassificationScopeService? _scopeService;
 
-  /// <summary>
-  /// Initialize services for data generation.
-  /// Must be called before CreateFromControls with filtering.
-  /// </summary>
-  public static void Initialize(
-    ReleaseAgeGate releaseAgeGate,
-    ClassificationScopeService scopeService)
+  public PowerStigDataGenerator(
+    ReleaseAgeGate? releaseAgeGate = null,
+    ClassificationScopeService? scopeService = null)
   {
     _releaseAgeGate = releaseAgeGate;
     _scopeService = scopeService;
@@ -35,14 +35,14 @@ public static class PowerStigDataGenerator
     };
   }
 
-  public static PowerStigData CreateFromControls(
+  public PowerStigData CreateFromControls(
     IEnumerable<ControlRecord> controls,
     IEnumerable<PowerStigOverride>? overrides,
     Profile? profile = null)
   {
     var data = CreateDefault(string.Empty, string.Empty);
 
-    // Apply release age filter (if service initialized and profile provided)
+    // Apply release age filter (if service injected and profile provided)
     if (_releaseAgeGate != null && profile != null)
     {
       var gracePeriod = profile.AutomationPolicy.NewRuleGraceDays;
@@ -50,7 +50,7 @@ public static class PowerStigDataGenerator
       controls = filteredByAge;
     }
 
-    // Apply classification scope filter (if service initialized and profile provided)
+    // Apply classification scope filter (if service injected and profile provided)
     if (_scopeService != null && profile != null)
     {
       var filteredByScope = ClassificationScopeService.FilterControls(
