@@ -14,8 +14,8 @@ namespace STIGForge.Build;
 
 public sealed class BundleOrchestrator
 {
-  private readonly BundleBuilder _builder;
-  private readonly ApplyRunner _apply;
+  private readonly IBundleBuilder _builder;
+  private readonly IApplyRunner _apply;
   private readonly IVerificationWorkflowService _verificationWorkflow;
   private readonly VerificationArtifactAggregationService _artifactAggregation;
   private readonly MissionTracingService _tracing;
@@ -26,8 +26,8 @@ public sealed class BundleOrchestrator
   private readonly IMissionRunRepository? _missionRunRepository;
 
   public BundleOrchestrator(
-      BundleBuilder builder,
-      ApplyRunner apply,
+      IBundleBuilder builder,
+      IApplyRunner apply,
       IVerificationWorkflowService verificationWorkflow,
       VerificationArtifactAggregationService artifactAggregation,
       MissionTracingService tracing,
@@ -321,24 +321,26 @@ public sealed class BundleOrchestrator
           "No verification tools configured", ct).ConfigureAwait(false);
       }
 
+      await _audit.SafeRecordAsync(new AuditEntry
+      {
+        Action = "orchestrate",
+        Target = root,
+        Result = "success",
+        Detail = $"CoverageInputs={coverageInputs.Count}; NotApplicableFiltered={notApplicableKeys.Count}",
+        User = Environment.UserName,
+        Machine = Environment.MachineName,
+        Timestamp = DateTimeOffset.Now
+      }, ct);
+
       if (_audit != null)
       {
         try
         {
-          await _audit.RecordAsync(new AuditEntry
-          {
-            Action = "orchestrate",
-            Target = root,
-            Result = "success",
-            Detail = $"CoverageInputs={coverageInputs.Count}; NotApplicableFiltered={notApplicableKeys.Count}",
-            User = Environment.UserName,
-            Machine = Environment.MachineName,
-            Timestamp = DateTimeOffset.Now
-          }, ct).ConfigureAwait(false);
+          await _audit.WriteChainAnchorToEventLogAsync(run.Label, ct).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
-          System.Diagnostics.Trace.TraceWarning("Audit write failed during orchestration: " + ex.Message);
+          System.Diagnostics.Trace.TraceWarning("Failed to write audit chain anchor: " + ex.Message);
         }
       }
 

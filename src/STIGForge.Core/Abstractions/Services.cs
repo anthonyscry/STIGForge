@@ -66,6 +66,7 @@ public interface IAuditTrailService
   Task RecordAsync(AuditEntry entry, CancellationToken ct);
   Task<IReadOnlyList<AuditEntry>> QueryAsync(AuditQuery query, CancellationToken ct);
   Task<bool> VerifyIntegrityAsync(CancellationToken ct);
+  Task WriteChainAnchorToEventLogAsync(string missionLabel, CancellationToken ct);
 }
 
 public sealed class AuditEntry

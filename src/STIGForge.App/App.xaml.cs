@@ -123,12 +123,14 @@ public partial class App : Application
           services.AddSingleton<IMissionRunRepository>(sp => new MissionRunRepository(sp.GetRequiredService<DbConnectionString>()));
           services.AddSingleton<IDriftRepository>(sp => new SqliteDriftRepository(sp.GetRequiredService<DbConnectionString>()));
           services.AddSingleton<IRollbackRepository>(sp => new SqliteRollbackRepository(sp.GetRequiredService<DbConnectionString>()));
+          services.AddSingleton<IFleetInventoryRepository>(sp => new FleetInventoryRepository(sp.GetRequiredService<DbConnectionString>()));
 
           services.AddSingleton<ImportInboxScanner>();
           services.AddSingleton<ContentPackImporter>();
           services.AddSingleton<STIGForge.Core.Services.OverlayConflictDetector>();
           services.AddSingleton<OverlayMergeService>();
           services.AddSingleton<BundleBuilder>();
+          services.AddSingleton<IBundleBuilder>(sp => sp.GetRequiredService<BundleBuilder>());
           services.AddSingleton<SnapshotService>();
           services.AddSingleton<RollbackScriptGenerator>();
           services.AddSingleton<STIGForge.Apply.Dsc.LcmService>(sp =>
@@ -137,6 +139,7 @@ public partial class App : Application
               sp.GetRequiredService<IProcessRunner>()));
           services.AddSingleton<STIGForge.Apply.Reboot.RebootCoordinator>();
           services.AddSingleton<STIGForge.Apply.ApplyRunner>();
+          services.AddSingleton<STIGForge.Apply.IApplyRunner>(sp => sp.GetRequiredService<STIGForge.Apply.ApplyRunner>());
           services.AddSingleton<EvaluateStigRunner>();
           services.AddSingleton<ScapRunner>();
           services.AddSingleton<IVerificationWorkflowService, VerificationWorkflowService>();

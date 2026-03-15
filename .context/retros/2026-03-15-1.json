@@ -1,0 +1,42 @@
+{
+  "date": "2026-03-15",
+  "window": "7d",
+  "metrics": {
+    "commits": 24,
+    "contributors": 1,
+    "prs_merged": 1,
+    "insertions": 775064,
+    "deletions": 1856,
+    "net_loc": 773208,
+    "test_loc_insertions": 592757,
+    "production_loc_insertions": 182307,
+    "test_ratio": 0.76,
+    "active_days": 6,
+    "sessions": 8,
+    "deep_sessions": 4,
+    "avg_session_minutes": 55,
+    "loc_per_session_hour": 350,
+    "feat_pct": 0.21,
+    "fix_pct": 0.42,
+    "peak_hour": 11,
+    "ai_assisted_commits": 4
+  },
+  "authors": {
+    "Anthony Tran": {
+      "commits": 24,
+      "insertions": 775064,
+      "deletions": 1856,
+      "test_ratio": 0.76,
+      "top_area": "tests/"
+    }
+  },
+  "streak_days": 6,
+  "tweetable": "Week of Mar 10: 24 commits, 775k LOC (76% tests/coverage), 6 security fixes, IApplyStep abstraction shipped | Streak: 6d",
+  "backlog": {
+    "total_open": 21,
+    "p0_p1": 7,
+    "p2": 14,
+    "completed_this_period": 6,
+    "added_this_period": 1
+  }
+}

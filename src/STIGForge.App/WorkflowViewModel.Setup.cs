@@ -313,7 +313,7 @@ public partial class WorkflowViewModel
         }
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanBrowseImportFolder))]
     private void BrowseImportFolder()
     {
         var dialog = new Microsoft.Win32.OpenFolderDialog { Title = "Select Import Folder" };
@@ -321,7 +321,7 @@ public partial class WorkflowViewModel
             ImportFolderPath = dialog.FolderName;
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanBrowseEvaluateStig))]
     private void BrowseEvaluateStig()
     {
         var dialog = new Microsoft.Win32.OpenFolderDialog { Title = "Select Evaluate-STIG Folder" };
@@ -329,7 +329,7 @@ public partial class WorkflowViewModel
             EvaluateStigToolPath = dialog.FolderName;
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanBrowseScc))]
     private void BrowseScc()
     {
         var dialog = new Microsoft.Win32.OpenFileDialog
@@ -343,13 +343,18 @@ public partial class WorkflowViewModel
             SccToolPath = dialog.FileName;
     }
 
-    [RelayCommand]
+    [RelayCommand(CanExecute = nameof(CanBrowseOutputFolder))]
     private void BrowseOutputFolder()
     {
         var dialog = new Microsoft.Win32.OpenFolderDialog { Title = "Select Output Folder" };
         if (dialog.ShowDialog() == true)
             OutputFolderPath = dialog.FolderName;
     }
+
+    public bool CanBrowseImportFolder => !IsBusy;
+    public bool CanBrowseEvaluateStig => !IsBusy;
+    public bool CanBrowseScc => !IsBusy;
+    public bool CanBrowseOutputFolder => !IsBusy;
 
     [RelayCommand]
     private void OpenOutputFolder()

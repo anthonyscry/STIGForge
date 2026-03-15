@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
 using Dapper;
@@ -148,5 +149,44 @@ public sealed class AuditTrailService : IAuditTrailService
 
     var bytes = SHA256.HashData(Encoding.UTF8.GetBytes(payload));
     return Convert.ToHexString(bytes).ToLowerInvariant();
+  }
+
+  /// <summary>
+  /// Writes the latest chain hash to the Windows Application Event Log as an
+  /// external trust anchor. This prevents full-chain recomputation attacks: an
+  /// attacker who rewrites the SQLite DB cannot alter the Event Log entry without
+  /// separate privileged access.
+  /// </summary>
+  public async Task WriteChainAnchorToEventLogAsync(string missionLabel, CancellationToken ct)
+  {
+    using var conn = new SqliteConnection(_connectionString);
+    await conn.OpenAsync(ct).ConfigureAwait(false);
+
+    var latestHash = await conn.QueryFirstOrDefaultAsync<string>(
+      new CommandDefinition(
+        "SELECT entry_hash FROM audit_trail ORDER BY id DESC LIMIT 1",
+        cancellationToken: ct)
+    ).ConfigureAwait(false);
+
+    if (string.IsNullOrWhiteSpace(latestHash))
+      return;
+
+    var message = $"STIGForge audit chain anchor | Mission: {missionLabel} | LatestHash: {latestHash} | Timestamp: {_clock.Now:o}";
+
+    if (OperatingSystem.IsWindows())
+    {
+      const string sourceName = "STIGForge";
+      const string logName = "Application";
+      if (!EventLog.SourceExists(sourceName))
+        EventLog.CreateEventSource(sourceName, logName);
+      EventLog.WriteEntry(sourceName, message, EventLogEntryType.Information, 1701);
+    }
+    else
+    {
+      var anchorPath = Path.Combine(
+        Path.GetDirectoryName(_connectionString.Replace("Data Source=", "").Split(';')[0]) ?? ".",
+        "audit_anchor.log");
+      await File.AppendAllTextAsync(anchorPath, message + Environment.NewLine, ct).ConfigureAwait(false);
+    }
   }
 }

@@ -25,7 +25,7 @@ namespace STIGForge.Apply;
 ///   │   └── if CanTriggerReboot → check reboot     │
 ///   └──────────────────────────────────────────────┘
 /// </summary>
-public class ApplyRunner
+public class ApplyRunner : IApplyRunner
 {
   private readonly ILogger<ApplyRunner> _logger;
   private readonly SnapshotService _snapshotService;

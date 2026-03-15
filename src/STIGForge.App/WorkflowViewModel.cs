@@ -124,6 +124,10 @@ public partial class WorkflowViewModel : ObservableObject
 
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(TestSccHeadlessCommand))]
+    [NotifyCanExecuteChangedFor(nameof(BrowseImportFolderCommand))]
+    [NotifyCanExecuteChangedFor(nameof(BrowseEvaluateStigCommand))]
+    [NotifyCanExecuteChangedFor(nameof(BrowseSccCommand))]
+    [NotifyCanExecuteChangedFor(nameof(BrowseOutputFolderCommand))]
     private bool _isBusy;
 
     [ObservableProperty]

@@ -371,6 +371,11 @@ public sealed class ContinuousComplianceAgentTests : IDisposable
     {
       return Task.FromResult(true);
     }
+
+    public Task WriteChainAnchorToEventLogAsync(string missionLabel, CancellationToken ct)
+    {
+      return Task.CompletedTask;
+    }
   }
 
   private sealed class InMemoryDriftRepository : IDriftRepository

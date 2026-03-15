@@ -1,3 +1,4 @@
+using STIGForge.Apply.Dsc;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
 

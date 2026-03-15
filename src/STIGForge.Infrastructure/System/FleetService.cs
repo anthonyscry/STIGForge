@@ -13,13 +13,13 @@ public sealed class FleetService
 {
   private static readonly Regex HostIdentifierRegex = new("^[A-Za-z0-9._:-]+$", RegexOptions.Compiled);
 
-  private readonly IProcessRunner _processRunner;
+  private readonly IProcessRunner? _processRunner;
   private readonly ICredentialStore? _credentialStore;
   private readonly IAuditTrailService? _audit;
 
-  public FleetService(IProcessRunner processRunner, ICredentialStore? credentialStore = null, IAuditTrailService? audit = null)
+  public FleetService(IProcessRunner? processRunner = null, ICredentialStore? credentialStore = null, IAuditTrailService? audit = null)
   {
-    _processRunner = processRunner ?? throw new ArgumentNullException(nameof(processRunner));
+    _processRunner = processRunner;
     _credentialStore = credentialStore;
     _audit = audit;
   }
@@ -35,6 +35,12 @@ public sealed class FleetService
     var results = new ConcurrentBag<FleetMachineResult>();
     var startedAt = DateTimeOffset.Now;
 
+    using var timeoutCts = request.TotalTimeout.HasValue
+      ? new CancellationTokenSource(request.TotalTimeout.Value)
+      : new CancellationTokenSource();
+    using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutCts.Token);
+    var effectiveCt = linkedCts.Token;
+
     // Execute in parallel, respecting max concurrency
     var semaphore = new SemaphoreSlim(request.MaxConcurrency > 0 ? request.MaxConcurrency : 5);
     var tasks = new List<Task>();
@@ -43,17 +49,24 @@ public sealed class FleetService
     {
       var t = Task.Run(async () =>
       {
-        await semaphore.WaitAsync(ct).ConfigureAwait(false);
+        await semaphore.WaitAsync(effectiveCt).ConfigureAwait(false);
         try
         {
-          var machineResult = await ExecuteOnMachineAsync(target, request, ct).ConfigureAwait(false);
+          var machineResult = await ExecuteOnMachineAsync(target, request, effectiveCt).ConfigureAwait(false);
           results.Add(machineResult);
+          request.Progress?.Report(new FleetProgress
+          {
+            CompletedCount = results.Count,
+            TotalCount = request.Targets.Count,
+            MachineName = machineResult.MachineName,
+            Success = machineResult.Success
+          });
         }
         finally
         {
           semaphore.Release();
         }
-      }, ct);
+      }, effectiveCt);
       tasks.Add(t);
     }
 
@@ -264,7 +277,7 @@ public sealed class FleetService
   private static string ToPowerShellSingleQuoted(string? value)
     => STIGForge.Core.PowerShellHelpers.SingleQuote(value);
 
-  private static async Task<(int ExitCode, string Output, string Error)> RunPowerShellRemoteAsync(
+  private async Task<(int ExitCode, string Output, string Error)> RunPowerShellRemoteAsync(
     FleetTarget target, string remoteScript, int timeoutSeconds, CancellationToken ct)
   {
     var validatedHostName = ValidateHostIdentifier(target.HostName);
@@ -309,7 +322,7 @@ public sealed class FleetService
     ProcessResult result;
     try
     {
-      result = await _processRunner.RunWithTimeoutAsync(psi, TimeSpan.FromSeconds(effectiveTimeoutSeconds), ct).ConfigureAwait(false);
+      result = await _processRunner!.RunWithTimeoutAsync(psi, TimeSpan.FromSeconds(effectiveTimeoutSeconds), ct).ConfigureAwait(false);
     }
     catch (TimeoutException)
     {
@@ -343,7 +356,7 @@ public sealed class FleetService
         CreateNoWindow = true
       };
 
-      var result = await _processRunner.RunWithTimeoutAsync(psi, TimeSpan.FromSeconds(15), ct).ConfigureAwait(false);
+      var result = await _processRunner!.RunWithTimeoutAsync(psi, TimeSpan.FromSeconds(15), ct).ConfigureAwait(false);
 
       return new FleetMachineStatus
       {
@@ -561,6 +574,14 @@ public sealed class FleetTarget
   public string? CredentialPassword { get; set; }
 }
 
+public sealed class FleetProgress
+{
+  public int CompletedCount { get; init; }
+  public int TotalCount { get; init; }
+  public string MachineName { get; init; } = string.Empty;
+  public bool Success { get; init; }
+}
+
 public sealed class FleetRequest
 {
   public IReadOnlyList<FleetTarget> Targets { get; set; } = [];
@@ -573,6 +594,8 @@ public sealed class FleetRequest
   public string? EvaluateStigRoot { get; set; }
   public int MaxConcurrency { get; set; } = 5;
   public int TimeoutSeconds { get; set; } = 600;
+  public TimeSpan? TotalTimeout { get; set; }
+  public IProgress<FleetProgress>? Progress { get; set; }
 }
 
 public sealed class FleetResult

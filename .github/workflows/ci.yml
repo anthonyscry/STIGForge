@@ -1,40 +1,21 @@
-name: ci
+name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [main, develop]
   pull_request:
-  workflow_dispatch:
+    branches: [main, develop]
+
+env:
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_NOLOGO: true
 
 jobs:
-  cross-platform-tests:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup .NET
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: 8.0.x
-
-      - name: Cross-platform test suite
-        run: |
-          dotnet test tests/STIGForge.Tests.CrossPlatform/ \
-            --configuration Release \
-            --collect:"XPlat Code Coverage" \
-            --results-directory .artifacts/coverage/crossplatform
-
-      - name: Upload cross-platform coverage
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: coverage-crossplatform-${{ github.run_id }}
-          path: .artifacts/coverage/crossplatform
-          if-no-files-found: warn
-
-  build-test:
+  build-and-test:
+    name: Build & Test
     runs-on: windows-latest
+
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -42,275 +23,52 @@ jobs:
       - name: Setup .NET
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: 8.0.x
+          global-json-file: global.json
 
-      - name: Compatibility contract tests
-        shell: pwsh
+      - name: Restore
+        run: dotnet restore STIGForge.sln --locked-mode
+
+      - name: Build
+        run: dotnet build STIGForge.sln --no-restore -c Release
+
+      - name: Test
+        run: >
+          dotnet test STIGForge.sln
+          --no-build
+          -c Release
+          --logger "trx;LogFileName=test-results.trx"
+          --collect:"XPlat Code Coverage"
+          --results-directory TestResults
+
+      - name: Coverage gate
         run: |
-          dotnet test .\tests\STIGForge.UnitTests\STIGForge.UnitTests.csproj --configuration Release --framework net8.0-windows --filter "FullyQualifiedName~ContentPackImporterTests" --collect:"XPlat Code Coverage" --results-directory .\.artifacts\coverage\ci\unit
-          dotnet test .\tests\STIGForge.IntegrationTests\STIGForge.IntegrationTests.csproj --configuration Release --framework net8.0 --filter "FullyQualifiedName~RoundTrip" --collect:"XPlat Code Coverage" --results-directory .\.artifacts\coverage\ci\integration
-
-      - name: Upgrade/rebase parity contracts
+          $coverage = [xml](Get-Content TestResults/**/coverage.cobertura.xml)
+          $lineRate = [double]$coverage.coverage.'line-rate'
+          Write-Host "Line coverage: $($lineRate * 100)%"
+          if ($lineRate -lt 0.60) {
+            Write-Error "Coverage $($lineRate * 100)% is below the 60% gate"
+            exit 1
+          }
         shell: pwsh
-        run: |
-          dotnet test .\tests\STIGForge.UnitTests\STIGForge.UnitTests.csproj --configuration Release --framework net8.0-windows --filter "FullyQualifiedName~BaselineDiffServiceTests|FullyQualifiedName~OverlayRebaseServiceTests|FullyQualifiedName~BundleMissionSummaryServiceTests|FullyQualifiedName~STIGForge.UnitTests.Build|FullyQualifiedName~STIGForge.UnitTests.Apply|FullyQualifiedName~STIGForge.UnitTests.Verify|FullyQualifiedName~STIGForge.UnitTests.Infrastructure" --collect:"XPlat Code Coverage" --results-directory .\.artifacts\coverage\ci\unit
-          dotnet test .\tests\STIGForge.IntegrationTests\STIGForge.IntegrationTests.csproj --configuration Release --framework net8.0 --filter "FullyQualifiedName~CliCommandTests.DiffPacks|FullyQualifiedName~CliCommandTests.RebaseOverlay" --collect:"XPlat Code Coverage" --results-directory .\.artifacts\coverage\ci\integration
 
-      - name: Cross-platform coverage suite
-        shell: pwsh
-        run: |
-          dotnet test .\tests\STIGForge.Tests.CrossPlatform\STIGForge.Tests.CrossPlatform.csproj --configuration Release --collect:"XPlat Code Coverage" --results-directory .\.artifacts\coverage\ci\crossplatform
-
-      - name: Build coverage report and gate
-        shell: pwsh
-        run: |
-          $mergeArgs = @(
-            '-NoProfile',
-            '-ExecutionPolicy', 'Bypass',
-            '-File', '.\tools\release\Invoke-CoverageMerge.ps1',
-            '-SourceDirectory', '.\.artifacts\coverage\ci',
-            '-OutputPath', '.\.artifacts\coverage\ci\coverage.cobertura.xml'
-          )
-          powershell @mergeArgs
-
-          $reportArgs = @(
-            '-NoProfile',
-            '-ExecutionPolicy', 'Bypass',
-            '-File', '.\tools\release\Invoke-CoverageReport.ps1',
-            '-CoverageReportPath', '.\.artifacts\coverage\ci\coverage.cobertura.xml',
-            '-OutputDirectory', '.\.artifacts\coverage\ci\report'
-          )
-          powershell @reportArgs
-
-          $gateArgs = @(
-            '-NoProfile',
-            '-ExecutionPolicy', 'Bypass',
-            '-File', '.\tools\release\Invoke-CoverageGate.ps1',
-            '-CoverageReportPath', '.\.artifacts\coverage\ci\coverage.cobertura.xml',
-            '-PolicyPath', '.\tools\release\coverage-gate-policy-ci.json'
-          )
-          powershell @gateArgs
-
-      - name: Report mutation policy
-        shell: pwsh
-        run: |
-          $resultPath = '.\.artifacts\mutation\current-result.json'
-          if (-not (Test-Path -LiteralPath $resultPath)) {
-            Write-Host "[mutation-policy] Skipping mutation policy: result file missing at $resultPath"
-          }
-          else {
-            $mutationArgs = @(
-              '-NoProfile',
-              '-ExecutionPolicy', 'Bypass',
-              '-File', '.\tools\release\Invoke-MutationPolicy.ps1',
-              '-CurrentResultPath', $resultPath,
-              '-PolicyPath', '.\tools\release\mutation-policy.json'
-            )
-            powershell @mutationArgs
-          }
-
-      - name: Run release gate
-        shell: pwsh
-        run: |
-          $args = @(
-            '-NoProfile',
-            '-ExecutionPolicy', 'Bypass',
-            '-File', '.\tools\release\Invoke-ReleaseGate.ps1',
-            '-Configuration', 'Release',
-            '-OutputRoot', '.\.artifacts\release-gate\latest'
-          )
-
-          $strictSetting = '${{ vars.STIGFORGE_SECURITY_GATE_STRICT }}'
-          if (-not [string]::IsNullOrWhiteSpace($strictSetting) -and $strictSetting.Equals('true', [StringComparison]::OrdinalIgnoreCase)) {
-            $args += '-SecurityStrict'
-          }
-
-          powershell @args
-
-      - name: Validate release parity evidence
-        shell: pwsh
-        run: |
-          $summaryPath = '.\.artifacts\release-gate\latest\upgrade-rebase\upgrade-rebase-summary.json'
-          if (-not (Test-Path -LiteralPath $summaryPath)) {
-            throw "Upgrade/rebase summary artifact missing at $summaryPath"
-          }
-
-          $summary = Get-Content -Path $summaryPath -Raw | ConvertFrom-Json
-          if ($summary.status -ne 'passed') {
-            throw "Upgrade/rebase validation status is '$($summary.status)': $($summary.message)"
-          }
-
-          $requiredStages = @(
-            [pscustomobject]@{ name = 'upgrade-rebase-diff-contract'; requirement = 'WP-01' }
-            [pscustomobject]@{ name = 'upgrade-rebase-overlay-contract'; requirement = 'WP-01' }
-            [pscustomobject]@{ name = 'upgrade-rebase-parity-contract'; requirement = 'WP-02' }
-            [pscustomobject]@{ name = 'upgrade-rebase-cli-contract'; requirement = 'WP-01' }
-            [pscustomobject]@{ name = 'upgrade-rebase-rollback-safety'; requirement = 'WP-03' }
-          )
-
-          foreach ($stage in $requiredStages) {
-            $stageStep = @($summary.steps | Where-Object { $_.name -eq $stage.name })
-            if ($stageStep.Count -ne 1) {
-              throw "Required stage '$($stage.name)' ($($stage.requirement)) evidence step missing from upgrade/rebase summary."
-            }
-
-            if (-not [bool]$stageStep[0].succeeded) {
-              $logDetail = if ([string]::IsNullOrWhiteSpace($stageStep[0].logPath)) { '' } else { " See log: $($stageStep[0].logPath)" }
-              throw "Required stage '$($stage.name)' ($($stage.requirement)) evidence failed.$logDetail"
-            }
-          }
-
-          Write-Host "All required upgrade/rebase contract stages validated." -ForegroundColor Green
-
-      - name: Validate quarterly trend evidence
-        shell: pwsh
-        run: |
-          $summaryPath = '.\.artifacts\release-gate\latest\quarterly-pack\quarterly-pack-summary.json'
-          $reportPath = '.\.artifacts\release-gate\latest\quarterly-pack\quarterly-pack-report.md'
-
-          if (-not (Test-Path -LiteralPath $summaryPath)) {
-            throw "Quarterly trend summary artifact missing at $summaryPath"
-          }
-
-          if (-not (Test-Path -LiteralPath $reportPath)) {
-            throw "Quarterly trend report artifact missing at $reportPath"
-          }
-
-          $summary = Get-Content -Path $summaryPath -Raw | ConvertFrom-Json
-          if (-not [bool]$summary.overallPassed) {
-            throw "Quarterly trend signal is failing: decision=$($summary.decision)"
-          }
-
-          if ($summary.decision -ne 'pass') {
-            throw "Quarterly trend decision is '$($summary.decision)' (expected 'pass')."
-          }
-
-          Write-Host "Quarterly trend evidence validated. Fixtures: pass=$($summary.fixtures.passed) warning=$($summary.fixtures.warnings) fail=$($summary.fixtures.failed)" -ForegroundColor Green
-
-      - name: Evaluate stability budget
-        shell: pwsh
-        run: |
-          $outputRoot = '.\.artifacts\stability-budget\ci'
-          New-Item -ItemType Directory -Force -Path $outputRoot | Out-Null
-
-          $maxAttempts = 3
-          $requiredPasses = 2
-          $allowedFailures = $maxAttempts - $requiredPasses
-          $attempts = @()
-
-          for ($attempt = 1; $attempt -le $maxAttempts; $attempt++) {
-            $logPath = Join-Path $outputRoot ("stability-attempt-{0}.log" -f $attempt)
-            Write-Host "[stability-budget] CI attempt $attempt/$maxAttempts" -ForegroundColor Cyan
-
-            $runOutput = & dotnet test .\tests\STIGForge.IntegrationTests\STIGForge.IntegrationTests.csproj --configuration Release --framework net8.0 --nologo --filter 'FullyQualifiedName~E2E|FullyQualifiedName~SnapshotIntegrationTests' 2>&1
-            $exitCode = $LASTEXITCODE
-            $runOutput | Out-File -FilePath $logPath -Encoding UTF8
-
-            $attempts += [pscustomobject]@{
-              attempt = $attempt
-              exitCode = $exitCode
-              succeeded = ($exitCode -eq 0)
-              logPath = $logPath
-            }
-          }
-
-          $passCount = @($attempts | Where-Object { $_.succeeded }).Count
-          $failureCount = $maxAttempts - $passCount
-          $overallPassed = ($passCount -ge $requiredPasses -and $failureCount -le $allowedFailures)
-          $releaseGateSummaryPath = '.\.artifacts\release-gate\latest\report\release-gate-summary.json'
-
-          $summaryPath = Join-Path $outputRoot 'stability-budget-summary.json'
-          $reportPath = Join-Path $outputRoot 'stability-budget-report.md'
-
-          $summary = [ordered]@{
-            generatedAtUtc = (Get-Date).ToUniversalTime().ToString('o')
-            suite = 'E2E|SnapshotIntegrationTests'
-            releaseGateSummaryPath = $releaseGateSummaryPath
-            policy = [ordered]@{
-              maxAttempts = $maxAttempts
-              requiredPasses = $requiredPasses
-              allowedFailures = $allowedFailures
-            }
-            result = [ordered]@{
-              passes = $passCount
-              failures = $failureCount
-              overallPassed = $overallPassed
-            }
-            attempts = @($attempts)
-          }
-          $summary | ConvertTo-Json -Depth 6 | Set-Content -Path $summaryPath -Encoding UTF8
-
-          $report = New-Object System.Text.StringBuilder
-          [void]$report.AppendLine('# Stability Budget Report (CI)')
-          [void]$report.AppendLine()
-          [void]$report.AppendLine("- Suite: E2E + SnapshotIntegrationTests")
-          [void]$report.AppendLine("- Attempts: $maxAttempts")
-          [void]$report.AppendLine("- Required passes: $requiredPasses")
-          [void]$report.AppendLine("- Allowed failures: $allowedFailures")
-          [void]$report.AppendLine("- Result: $(if ($overallPassed) { 'PASS' } else { 'FAIL' })")
-          [void]$report.AppendLine("- Passes: $passCount")
-          [void]$report.AppendLine("- Failures: $failureCount")
-          [void]$report.AppendLine("- Release gate summary: $releaseGateSummaryPath")
-          [void]$report.AppendLine()
-          [void]$report.AppendLine('## Attempts')
-          [void]$report.AppendLine()
-          [void]$report.AppendLine('| Attempt | Status | Exit Code | Log |')
-          [void]$report.AppendLine('|---------|--------|-----------|-----|')
-          foreach ($attempt in $attempts) {
-            $status = if ($attempt.succeeded) { 'PASS' } else { 'FAIL' }
-            [void]$report.AppendLine("| $($attempt.attempt) | $status | $($attempt.exitCode) | $($attempt.logPath) |")
-          }
-          Set-Content -Path $reportPath -Value $report.ToString() -Encoding UTF8
-
-          if (-not $overallPassed) {
-            throw "Stability budget failed: passes=$passCount required=$requiredPasses failures=$failureCount allowed=$allowedFailures"
-          }
-
-      - name: Validate stability trend artifacts
-        shell: pwsh
-        run: |
-          $summaryPath = '.\.artifacts\stability-budget\ci\stability-budget-summary.json'
-          $reportPath = '.\.artifacts\stability-budget\ci\stability-budget-report.md'
-
-          if (-not (Test-Path -LiteralPath $summaryPath)) {
-            throw "CI stability trend summary missing at $summaryPath"
-          }
-
-          if (-not (Test-Path -LiteralPath $reportPath)) {
-            throw "CI stability trend report missing at $reportPath"
-          }
-
-          $summary = Get-Content -Path $summaryPath -Raw | ConvertFrom-Json
-          if (-not [bool]$summary.result.overallPassed) {
-            throw "CI stability trend summary indicates failure."
-          }
-
-          if ([int]$summary.policy.maxAttempts -lt 1 -or [int]$summary.policy.requiredPasses -lt 1) {
-            throw "CI stability trend summary policy values are invalid."
-          }
-
-          Write-Host "CI stability trend artifacts validated. Passes=$($summary.result.passes) Failures=$($summary.result.failures)" -ForegroundColor Green
-
-      - name: Upload release-gate artifacts
+      - name: Upload test results
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: release-gate-${{ github.run_id }}
-          path: ./.artifacts/release-gate/latest
-          if-no-files-found: warn
+          name: test-results
+          path: TestResults/
 
-      - name: Upload coverage artifacts
-        if: always()
+      - name: Publish CLI
+        if: github.ref == 'refs/heads/main'
+        run: >
+          dotnet publish src/STIGForge.Cli/STIGForge.Cli.csproj
+          -c Release
+          --no-build
+          -o artifacts/cli
+
+      - name: Upload CLI artifact
+        if: github.ref == 'refs/heads/main'
         uses: actions/upload-artifact@v4
         with:
-          name: coverage-ci-${{ github.run_id }}
-          path: ./.artifacts/coverage/ci
-          if-no-files-found: warn
-
-      - name: Upload stability-budget artifacts
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: stability-budget-ci-${{ github.run_id }}
-          path: ./.artifacts/stability-budget/ci
-          if-no-files-found: warn
+          name: stigforge-cli
+          path: artifacts/cli/

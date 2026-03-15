@@ -43,6 +43,10 @@ public sealed class GpoConflictDetectorTests
 
         public bool ExistsInPath(string fileName) => true;
 
+        public Task<STIGForge.Core.Abstractions.ProcessResult> RunWithTimeoutAsync(
+            System.Diagnostics.ProcessStartInfo startInfo, TimeSpan timeout, CancellationToken ct)
+            => RunAsync(startInfo, ct);
+
         private static string ExtractPath(string args)
         {
             var first = args.IndexOf('"');
