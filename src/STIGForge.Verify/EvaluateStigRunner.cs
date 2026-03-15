@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using STIGForge.Core;
 using STIGForge.Core.Abstractions;
 
 namespace STIGForge.Verify;
@@ -18,9 +19,12 @@ public sealed class EvaluateStigRunner
     var scriptPath = ResolveScriptPath(toolRoot);
     var resolvedToolRoot = Path.GetDirectoryName(scriptPath) ?? toolRoot;
 
-    var args = "-NoProfile -ExecutionPolicy Bypass -File \"" + scriptPath + "\"";
+    var args = "-NoProfile -ExecutionPolicy Bypass -File " + PowerShellHelpers.SingleQuote(scriptPath);
     if (!string.IsNullOrWhiteSpace(arguments))
-      args += " " + arguments;
+    {
+      var argParts = arguments.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+      args += " " + string.Join(" ", argParts.Select(PowerShellHelpers.SingleQuote));
+    }
 
     var psi = new ProcessStartInfo
     {
