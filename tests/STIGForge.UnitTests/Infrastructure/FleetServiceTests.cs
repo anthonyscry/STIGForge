@@ -5,10 +5,13 @@ namespace STIGForge.UnitTests.Infrastructure;
 
 public sealed class FleetServiceTests
 {
+  private static FleetService CreateService()
+    => new FleetService(new ProcessRunner());
+
   [Fact]
   public async Task ExecuteAsync_ThrowsForEmptyTargets()
   {
-    var svc = new FleetService();
+    var svc = CreateService();
     var act = () => svc.ExecuteAsync(new FleetRequest { Targets = new List<FleetTarget>() }, CancellationToken.None);
     await act.Should().ThrowAsync<ArgumentException>();
   }
@@ -16,7 +19,7 @@ public sealed class FleetServiceTests
   [Fact]
   public async Task ExecuteAsync_ReturnsResultForUnreachableTarget()
   {
-    var svc = new FleetService();
+    var svc = CreateService();
     var result = await svc.ExecuteAsync(new FleetRequest
     {
       Targets = new List<FleetTarget> { new() { HostName = "nonexistent-host-" + Guid.NewGuid().ToString("n").Substring(0, 8) } },
@@ -35,7 +38,7 @@ public sealed class FleetServiceTests
   [Fact]
   public async Task CheckStatusAsync_ReturnsStatusForUnreachableHost()
   {
-    var svc = new FleetService();
+    var svc = CreateService();
     var result = await svc.CheckStatusAsync(
       new List<FleetTarget> { new() { HostName = "nonexistent-host-" + Guid.NewGuid().ToString("n").Substring(0, 8) } },
       CancellationToken.None);
@@ -49,7 +52,7 @@ public sealed class FleetServiceTests
   public async Task ExecuteAsync_SetsTimestamps()
   {
     var before = DateTimeOffset.Now;
-    var svc = new FleetService();
+    var svc = CreateService();
     var result = await svc.ExecuteAsync(new FleetRequest
     {
       Targets = new List<FleetTarget> { new() { HostName = "localhost" } },

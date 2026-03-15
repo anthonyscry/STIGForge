@@ -10,6 +10,7 @@ using STIGForge.Build;
 using STIGForge.Infrastructure.Telemetry;
 using STIGForge.Core.Services;
 using STIGForge.Apply.Dsc;
+using STIGForge.Apply.PowerStig;
 using STIGForge.Apply.Reboot;
 using STIGForge.Apply.Snapshot;
 using Microsoft.Extensions.Logging.Abstractions;
@@ -125,7 +126,8 @@ public sealed class BundleOrchestratorControlOverrideTests : IDisposable
       _mockVerification.Object,
       new VerificationArtifactAggregationService(),
       new MissionTracingService(),
-      new PerformanceInstrumenter()
+      new PerformanceInstrumenter(),
+      new PowerStigDataGenerator()
     );
 
     var request = new OrchestrateRequest
@@ -180,7 +182,8 @@ public sealed class BundleOrchestratorControlOverrideTests : IDisposable
       Mock.Of<IVerificationWorkflowService>(),
       new VerificationArtifactAggregationService(),
       new MissionTracingService(),
-      new PerformanceInstrumenter()
+      new PerformanceInstrumenter(),
+      new PowerStigDataGenerator()
     );
 
     var method = typeof(BundleOrchestrator).GetMethod("LoadOverlayDecisions",
@@ -207,7 +210,8 @@ public sealed class BundleOrchestratorControlOverrideTests : IDisposable
       Mock.Of<IVerificationWorkflowService>(),
       new VerificationArtifactAggregationService(),
       new MissionTracingService(),
-      new PerformanceInstrumenter()
+      new PerformanceInstrumenter(),
+      new PowerStigDataGenerator()
     );
 
     var method = typeof(BundleOrchestrator).GetMethod("LoadOverlayDecisions",
@@ -340,7 +344,7 @@ public sealed class BundleOrchestratorControlOverrideTests : IDisposable
         NullLogger<ApplyRunner>.Instance,
         new SnapshotService(NullLogger<SnapshotService>.Instance, new Mock<IProcessRunner>().Object),
         new RollbackScriptGenerator(NullLogger<RollbackScriptGenerator>.Instance),
-        new LcmService(NullLogger<LcmService>.Instance),
+        new LcmService(NullLogger<LcmService>.Instance, new Mock<IProcessRunner>().Object),
         new RebootCoordinator(NullLogger<RebootCoordinator>.Instance, _ => true),
         new Mock<IProcessRunner>().Object)
     {

@@ -2,6 +2,7 @@ using FluentAssertions;
 using Moq;
 using STIGForge.Apply;
 using STIGForge.Apply.Dsc;
+using STIGForge.Apply.PowerStig;
 using STIGForge.Apply.Reboot;
 using STIGForge.Apply.Snapshot;
 using STIGForge.Build;
@@ -299,7 +300,7 @@ public sealed class BundleOrchestratorTimelineTests : IDisposable
 
         var snapshotService = new SnapshotService(new Mock<ILogger<SnapshotService>>().Object, processRunner.Object);
         var rollbackGenerator = new RollbackScriptGenerator(new Mock<ILogger<RollbackScriptGenerator>>().Object);
-        var lcmService = new LcmService(new Mock<ILogger<LcmService>>().Object);
+        var lcmService = new LcmService(new Mock<ILogger<LcmService>>().Object, processRunner.Object);
         var rebootCoordinator = new RebootCoordinator(new Mock<ILogger<RebootCoordinator>>().Object, _ => true);
 
         var applyRunner = new ApplyRunner(
@@ -327,6 +328,7 @@ public sealed class BundleOrchestratorTimelineTests : IDisposable
             artifactAggregation,
             new MissionTracingService(),
             new PerformanceInstrumenter(),
+            new PowerStigDataGenerator(),
             audit.Object,
             repo);
     }

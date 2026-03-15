@@ -2,16 +2,24 @@ using Microsoft.Extensions.Logging;
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
+using STIGForge.Core.Abstractions;
 
 namespace STIGForge.Apply.Dsc;
 
 public sealed class LcmService
 {
-    private readonly ILogger<LcmService> _logger;
+    private static readonly HashSet<string> ValidConfigurationModes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "ApplyOnly", "ApplyAndMonitor", "ApplyAndAutoCorrect"
+    };
 
-    public LcmService(ILogger<LcmService> logger)
+    private readonly ILogger<LcmService> _logger;
+    private readonly IProcessRunner _processRunner;
+
+    public LcmService(ILogger<LcmService> logger, IProcessRunner processRunner)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _processRunner = processRunner ?? throw new ArgumentNullException(nameof(processRunner));
     }
 
     /// <summary>
@@ -177,8 +185,17 @@ public sealed class LcmService
         }
     }
 
+    private static void ValidateConfigurationMode(string mode)
+    {
+        if (!ValidConfigurationModes.Contains(mode))
+          throw new LcmException(
+            $"Invalid ConfigurationMode '{mode}'. " +
+            $"Allowed values: {string.Join(", ", ValidConfigurationModes)}.");
+    }
+
     private static string GenerateLcmMof(LcmConfig config)
     {
+        ValidateConfigurationMode(config.ConfigurationMode);
         var sb = new StringBuilder();
         sb.AppendLine("/*");
         sb.AppendLine("@TargetNode='localhost'");
@@ -204,13 +221,9 @@ public sealed class LcmService
     }
 
     private static string BuildEncodedCommandArgs(string command)
-    {
-        var bytes = Encoding.Unicode.GetBytes(command);
-        var encoded = Convert.ToBase64String(bytes);
-        return "-NoProfile -ExecutionPolicy Bypass -EncodedCommand " + encoded;
-    }
+        => STIGForge.Core.PowerShellHelpers.BuildEncodedCommandArgs(command);
 
-    private static async Task<(int exitCode, string stdout, string stderr)> ExecutePowerShellCommand(
+    private async Task<(int exitCode, string stdout, string stderr)> ExecutePowerShellCommand(
         string command,
         CancellationToken ct)
     {
@@ -224,22 +237,20 @@ public sealed class LcmService
             CreateNoWindow = true
         };
 
-        using var process = Process.Start(psi);
-        if (process == null)
-            throw new InvalidOperationException("Failed to start PowerShell process.");
+        using var timeoutCts = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(ct, timeoutCts.Token);
 
-        var outputTask = process.StandardOutput.ReadToEndAsync();
-        var errorTask = process.StandardError.ReadToEndAsync();
-        await Task.WhenAll(outputTask, errorTask).ConfigureAwait(false);
-        if (!process.WaitForExit(30000))
+        ProcessResult result;
+        try
         {
-            process.Kill();
+            result = await _processRunner.RunAsync(psi, linkedCts.Token).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException) when (!ct.IsCancellationRequested)
+        {
             throw new TimeoutException("Process did not exit within 30 seconds.");
         }
 
-        var output = await outputTask.ConfigureAwait(false);
-        var error = await errorTask.ConfigureAwait(false);
-        return (process.ExitCode, output, error);
+        return (result.ExitCode, result.StandardOutput, result.StandardError);
     }
 
     private static string? TryGetString(JsonElement element, string propertyName)

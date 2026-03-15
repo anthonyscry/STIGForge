@@ -20,6 +20,7 @@ public sealed class BundleOrchestrator
   private readonly VerificationArtifactAggregationService _artifactAggregation;
   private readonly MissionTracingService _tracing;
   private readonly PerformanceInstrumenter _performanceInstrumenter;
+  private readonly PowerStigDataGenerator _powerStigDataGenerator;
   private readonly ControlFilterService? _controlFilter;
   private readonly IAuditTrailService? _audit;
   private readonly IMissionRunRepository? _missionRunRepository;
@@ -31,6 +32,7 @@ public sealed class BundleOrchestrator
       VerificationArtifactAggregationService artifactAggregation,
       MissionTracingService tracing,
       PerformanceInstrumenter performanceInstrumenter,
+      PowerStigDataGenerator powerStigDataGenerator,
       IAuditTrailService? audit = null,
       IMissionRunRepository? missionRunRepository = null,
       ControlFilterService? _controlFilter = null)
@@ -41,6 +43,7 @@ public sealed class BundleOrchestrator
     _artifactAggregation = artifactAggregation;
     _tracing = tracing ?? throw new ArgumentNullException(nameof(tracing));
     _performanceInstrumenter = performanceInstrumenter ?? throw new ArgumentNullException(nameof(performanceInstrumenter));
+    _powerStigDataGenerator = powerStigDataGenerator ?? throw new ArgumentNullException(nameof(powerStigDataGenerator));
     _audit = audit;
     _missionRunRepository = missionRunRepository;
     this._controlFilter = _controlFilter;
@@ -137,7 +140,7 @@ public sealed class BundleOrchestrator
 
         // Generate PowerStig data from filtered controls
         var data = filteredControls.Count > 0 || overrides.Count > 0
-          ? PowerStigDataGenerator.CreateFromControls(filteredControls, overrides)
+          ? _powerStigDataGenerator.CreateFromControls(filteredControls, overrides)
           : PowerStigDataGenerator.CreateDefault(request.PowerStigModulePath!, request.BundleRoot);
 
         PowerStigDataWriter.Write(generated, data);
@@ -368,10 +371,12 @@ public sealed class BundleOrchestrator
         JsonOptions.CaseInsensitive);
       return decisions ?? new List<OverlayDecisionDto>();
     }
-    catch (Exception)
+    catch (Exception ex)
     {
-      // If deserialization fails, return empty list
-      return new List<OverlayDecisionDto>();
+      throw new InvalidOperationException(
+        "Failed to parse overlay_decisions.json at " + decisionsPath +
+        ". Corrupt overlay data would cause hardening without operator customizations. " +
+        "Delete or fix the file before retrying.", ex);
     }
   }
 
@@ -516,9 +521,7 @@ public sealed class BundleOrchestrator
   }
 
   private static string Quote(string value)
-  {
-    return "\"" + value + "\"";
-  }
+    => STIGForge.Core.PowerShellHelpers.SingleQuote(value);
 
   private static void ValidateBreakGlass(bool breakGlassAcknowledged, string? breakGlassReason, string action)
   {

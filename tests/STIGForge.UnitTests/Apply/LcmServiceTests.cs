@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using Moq;
 using STIGForge.Apply.Dsc;
+using STIGForge.Core.Abstractions;
 using FluentAssertions;
 
 namespace STIGForge.UnitTests.Apply;
@@ -13,7 +14,7 @@ public sealed class LcmServiceTests
     public LcmServiceTests()
     {
         _loggerMock = new Mock<ILogger<LcmService>>();
-        _service = new LcmService(_loggerMock.Object);
+        _service = new LcmService(_loggerMock.Object, new Mock<IProcessRunner>().Object);
     }
 
     [Fact]

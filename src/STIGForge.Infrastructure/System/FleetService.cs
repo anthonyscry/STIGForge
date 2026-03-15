@@ -13,11 +13,13 @@ public sealed class FleetService
 {
   private static readonly Regex HostIdentifierRegex = new("^[A-Za-z0-9._:-]+$", RegexOptions.Compiled);
 
+  private readonly IProcessRunner _processRunner;
   private readonly ICredentialStore? _credentialStore;
   private readonly IAuditTrailService? _audit;
 
-  public FleetService(ICredentialStore? credentialStore = null, IAuditTrailService? audit = null)
+  public FleetService(IProcessRunner processRunner, ICredentialStore? credentialStore = null, IAuditTrailService? audit = null)
   {
+    _processRunner = processRunner ?? throw new ArgumentNullException(nameof(processRunner));
     _credentialStore = credentialStore;
     _audit = audit;
   }
@@ -260,9 +262,7 @@ public sealed class FleetService
   }
 
   private static string ToPowerShellSingleQuoted(string? value)
-  {
-    return "'" + (value ?? string.Empty).Replace("'", "''") + "'";
-  }
+    => STIGForge.Core.PowerShellHelpers.SingleQuote(value);
 
   private static async Task<(int ExitCode, string Output, string Error)> RunPowerShellRemoteAsync(
     FleetTarget target, string remoteScript, int timeoutSeconds, CancellationToken ct)
@@ -304,69 +304,23 @@ public sealed class FleetService
       psi.Environment["STIGFORGE_FLEET_PASS"] = target.CredentialPassword ?? string.Empty;
     }
 
-    using var proc = global::System.Diagnostics.Process.Start(psi);
-    if (proc == null) return (-1, string.Empty, "Failed to start PowerShell");
-
-    var exited = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
-    proc.EnableRaisingEvents = true;
-    proc.Exited += (_, _) => exited.TrySetResult(true);
-    if (proc.HasExited) exited.TrySetResult(true);
-
-    using var cancelRegistration = ct.Register(() =>
-    {
-      TryKill(proc);
-      exited.TrySetCanceled(ct);
-    });
-
-    var outputTask = proc.StandardOutput.ReadToEndAsync();
-    var errorTask = proc.StandardError.ReadToEndAsync();
-
     var effectiveTimeoutSeconds = timeoutSeconds > 0 ? timeoutSeconds : 600;
-    var timeoutTask = Task.Delay(effectiveTimeoutSeconds * 1000);
-    var completed = await Task.WhenAny(exited.Task, timeoutTask).ConfigureAwait(false);
 
-    if (completed == timeoutTask)
-    {
-      TryKill(proc);
-      await Task.WhenAny(exited.Task, Task.Delay(2000)).ConfigureAwait(false);
-      var timeoutOutput = await outputTask.ConfigureAwait(false);
-      var timeoutError = await errorTask.ConfigureAwait(false);
-      var timeoutMessage = "Timed out after " + effectiveTimeoutSeconds + " seconds.";
-      if (!string.IsNullOrWhiteSpace(timeoutError))
-        timeoutMessage += " " + timeoutError.Trim();
-      return (-1, timeoutOutput.Trim(), timeoutMessage.Trim());
-    }
-
+    ProcessResult result;
     try
     {
-      await exited.Task.ConfigureAwait(false);
+      result = await _processRunner.RunWithTimeoutAsync(psi, TimeSpan.FromSeconds(effectiveTimeoutSeconds), ct).ConfigureAwait(false);
     }
-    catch (TaskCanceledException)
+    catch (TimeoutException)
     {
-      var canceledOutput = await outputTask.ConfigureAwait(false);
-      var canceledError = await errorTask.ConfigureAwait(false);
-      var canceledMessage = "Operation cancelled.";
-      if (!string.IsNullOrWhiteSpace(canceledError))
-        canceledMessage += " " + canceledError.Trim();
-      return (-1, canceledOutput.Trim(), canceledMessage.Trim());
+      return (-1, string.Empty, "Timed out after " + effectiveTimeoutSeconds + " seconds.");
+    }
+    catch (OperationCanceledException)
+    {
+      return (-1, string.Empty, "Operation cancelled.");
     }
 
-    var output = await outputTask.ConfigureAwait(false);
-    var error = await errorTask.ConfigureAwait(false);
-
-    return (proc.ExitCode, output.Trim(), error.Trim());
-  }
-
-  private static void TryKill(global::System.Diagnostics.Process process)
-  {
-    try
-    {
-      if (!process.HasExited)
-        process.Kill();
-    }
-    catch (Exception)
-    {
-    }
+    return (result.ExitCode, result.StandardOutput.Trim(), result.StandardError.Trim());
   }
 
   private async Task<FleetMachineStatus> TestConnectionAsync(FleetTarget target, CancellationToken ct)
@@ -378,8 +332,7 @@ public sealed class FleetService
 
     try
     {
-      var escapedTarget = connectionTarget.Replace("'", "''");
-      var testCommand = $"Test-WSMan -ComputerName '{escapedTarget}' -ErrorAction Stop | Out-Null; Write-Output 'OK'";
+      var testCommand = "Test-WSMan -ComputerName " + ToPowerShellSingleQuoted(connectionTarget) + " -ErrorAction Stop | Out-Null; Write-Output 'OK'";
       var encodedCommand = Convert.ToBase64String(Encoding.Unicode.GetBytes(testCommand));
       var psi = new global::System.Diagnostics.ProcessStartInfo("powershell.exe",
         $"-NoProfile -NonInteractive -EncodedCommand {encodedCommand}")
@@ -390,19 +343,14 @@ public sealed class FleetService
         CreateNoWindow = true
       };
 
-      using var proc = global::System.Diagnostics.Process.Start(psi);
-      if (proc == null)
-        return new FleetMachineStatus { MachineName = target.HostName, IsReachable = false, Message = "Failed to start PowerShell" };
-
-      var output = await proc.StandardOutput.ReadToEndAsync().ConfigureAwait(false);
-      proc.WaitForExit(15000);
+      var result = await _processRunner.RunWithTimeoutAsync(psi, TimeSpan.FromSeconds(15), ct).ConfigureAwait(false);
 
       return new FleetMachineStatus
       {
         MachineName = target.HostName,
         IpAddress = target.IpAddress,
-        IsReachable = proc.ExitCode == 0 && output.Trim() == "OK",
-        Message = proc.ExitCode == 0 ? "WinRM reachable" : "WinRM unreachable"
+        IsReachable = result.ExitCode == 0 && result.StandardOutput.Trim() == "OK",
+        Message = result.ExitCode == 0 ? "WinRM reachable" : "WinRM unreachable"
       };
     }
     catch (Exception ex)

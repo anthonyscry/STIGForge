@@ -51,7 +51,7 @@ internal static class FleetCommands
       var ct = ctx.GetCancellationToken();
       var credStore = host.Services.GetService<ICredentialStore>();
       var audit = host.Services.GetService<IAuditTrailService>();
-      var svc = new FleetService(credStore, audit);
+      var svc = new FleetService(host.Services.GetRequiredService<IProcessRunner>(), credStore, audit);
       var result = await svc.ExecuteAsync(request, ct);
       WriteFleetResult(result, ctx.ParseResult.GetValueForOption(jsonOpt), logger);
       await host.StopAsync();
@@ -93,7 +93,7 @@ internal static class FleetCommands
       var ct = ctx.GetCancellationToken();
       var credStore = host.Services.GetService<ICredentialStore>();
       var audit = host.Services.GetService<IAuditTrailService>();
-      var svc = new FleetService(credStore, audit);
+      var svc = new FleetService(host.Services.GetRequiredService<IProcessRunner>(), credStore, audit);
       var result = await svc.ExecuteAsync(request, ct);
       WriteFleetResult(result, ctx.ParseResult.GetValueForOption(jsonOpt), logger);
       await host.StopAsync();
@@ -123,7 +123,7 @@ internal static class FleetCommands
       logger.LogInformation("fleet-status: checking {Count} targets", targetList.Count);
       var credStore = host.Services.GetService<ICredentialStore>();
       var audit = host.Services.GetService<IAuditTrailService>();
-      var svc = new FleetService(credStore, audit);
+      var svc = new FleetService(host.Services.GetRequiredService<IProcessRunner>(), credStore, audit);
       var result = await svc.CheckStatusAsync(targetList, ct);
 
       if (json)

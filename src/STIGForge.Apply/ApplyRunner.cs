@@ -13,27 +13,28 @@ using STIGForge.Evidence;
 
 namespace STIGForge.Apply;
 
+/// <summary>
+/// Runs the apply pipeline: iterate <see cref="IApplyStep"/> implementations,
+/// write evidence, handle reboots, and produce an <see cref="ApplyResult"/>.
+///
+///   ┌──────────────────────────────────────────────┐
+///   │ foreach step in _steps where CanExecute      │
+///   │   ├── skip if already completed (resume)     │
+///   │   ├── ExecuteAsync → ApplyStepOutcome        │
+///   │   ├── write evidence                         │
+///   │   └── if CanTriggerReboot → check reboot     │
+///   └──────────────────────────────────────────────┘
+/// </summary>
 public class ApplyRunner
 {
-  private const string PowerStigStepName = "powerstig_compile";
-  private const string ScriptStepName = "apply_script";
-  private const string DscStepName = "apply_dsc";
-  private const string LgpoStepName = "apply_lgpo";
-  private const string AdmxStepName = "apply_admx_templates";
-  private const string GpoImportStepName = "apply_gpo_import";
-
   private readonly ILogger<ApplyRunner> _logger;
   private readonly SnapshotService _snapshotService;
   private readonly RollbackScriptGenerator _rollbackScriptGenerator;
   private readonly LcmService _lcmService;
   private readonly RebootCoordinator _rebootCoordinator;
   private readonly IAuditTrailService? _audit;
-
-  private readonly PowerStigStepHandler _powerStigStepHandler;
-  private readonly ScriptStepHandler _scriptStepHandler;
-  private readonly DscStepHandler _dscStepHandler;
-  private readonly PolicyStepHandler _policyStepHandler;
   private readonly StepEvidenceWriter _stepEvidenceWriter;
+  private readonly IReadOnlyList<IApplyStep> _steps;
 
   public ApplyRunner(
     ILogger<ApplyRunner> logger,
@@ -53,11 +54,18 @@ public class ApplyRunner
     _rebootCoordinator = rebootCoordinator ?? throw new ArgumentNullException(nameof(rebootCoordinator));
     _audit = audit;
 
-    _powerStigStepHandler = new PowerStigStepHandler(processRunner);
-    _scriptStepHandler = new ScriptStepHandler(processRunner);
-    _dscStepHandler = new DscStepHandler(processRunner);
-    _policyStepHandler = new PolicyStepHandler(_logger, lgpoRunner, processRunner);
     _stepEvidenceWriter = new StepEvidenceWriter(_logger, evidenceCollector);
+
+    // Step order matches the original dispatch chain — do not reorder.
+    _steps = new IApplyStep[]
+    {
+      new PowerStigApplyStep(processRunner),
+      new ScriptApplyStep(processRunner),
+      new DscApplyStep(processRunner),
+      new AdmxApplyStep(_logger, lgpoRunner, processRunner),
+      new LgpoApplyStep(_logger, lgpoRunner, processRunner),
+      new GpoImportApplyStep(_logger, lgpoRunner, processRunner),
+    };
   }
 
   public virtual async Task<ApplyResult> RunAsync(ApplyRequest request, CancellationToken ct)
@@ -89,7 +97,10 @@ public class ApplyRunner
     var runId = string.IsNullOrWhiteSpace(request.RunId) ? Guid.NewGuid().ToString() : request.RunId!;
     var priorRunId = request.PriorRunId;
     var priorStepSha256 = StepEvidenceWriter.LoadPriorRunStepSha256(root, priorRunId);
-    var plannedSteps = BuildPlannedStepNames(request);
+
+    // Build the list of steps that will execute for this request
+    var activeSteps = _steps.Where(s => s.CanExecute(request)).ToList();
+    var plannedStepNames = activeSteps.Select(s => s.Name).ToList();
 
     RebootContext? resumeContext;
     try
@@ -106,7 +117,7 @@ public class ApplyRunner
 
     if (resumeContext != null)
     {
-      ValidateResumeContext(resumeContext, plannedSteps, root);
+      ValidateResumeContext(resumeContext, plannedStepNames, root);
       _logger.LogInformation(
         "Resuming apply after reboot from step {CurrentStepIndex} ({CompletedCount} steps completed)",
         resumeContext.CurrentStepIndex,
@@ -126,262 +137,98 @@ public class ApplyRunner
         completedSteps.Add(completedStep);
     }
 
-    var steps = new List<ApplyStepOutcome>();
+    var outcomes = new List<ApplyStepOutcome>();
     SnapshotResult? snapshot = null;
 
+    var context = new ApplyStepContext
+    {
+      BundleRoot = root,
+      ApplyRoot = applyRoot,
+      LogsDir = logsDir,
+      SnapshotsDir = snapshotsDir,
+      Mode = mode,
+      RunId = runId,
+    };
+
+    // Capture and configure LCM if any DSC step is active
     LcmState? originalLcm = null;
-    if (!string.IsNullOrWhiteSpace(request.DscMofPath))
+    if (activeSteps.Any(s => s.Name == "apply_dsc"))
       originalLcm = await CaptureAndConfigureLcmAsync(mode, ct).ConfigureAwait(false);
 
     if (!request.SkipSnapshot)
       snapshot = await CreateSnapshotAsync(snapshotsDir, request.LgpoExePath, ct).ConfigureAwait(false);
 
-    if (!string.IsNullOrWhiteSpace(request.PowerStigModulePath))
+    // --- Step loop: replaces the 240-line if-chain ---
+    foreach (var step in activeSteps)
     {
-      if (completedSteps.Contains(PowerStigStepName))
+      if (completedSteps.Contains(step.Name))
       {
-        _logger.LogInformation("Skipping previously completed step: {StepName}", PowerStigStepName);
+        _logger.LogInformation("Skipping previously completed step: {StepName}", step.Name);
+        continue;
       }
-      else
-      {
-        var pstigOutputPath = string.IsNullOrWhiteSpace(request.PowerStigOutputPath)
-          ? Path.Combine(applyRoot, "Dsc")
-          : request.PowerStigOutputPath!;
 
-        PowerStigTarget? pstigTarget = null;
-        if (request.OsTarget.HasValue && request.OsTarget.Value != Core.Models.OsTarget.Unknown)
+      // Special case: skip DSC if PowerSTIG compile failed (dependent step)
+      if (step.Name == "apply_dsc")
+      {
+        var compileStepFailed = outcomes.Any(s => s.StepName == "powerstig_compile" && s.ExitCode != 0);
+        if (compileStepFailed)
         {
-          pstigTarget = PowerStigTechnologyMap.Resolve(
-            request.OsTarget.Value,
-            request.RoleTemplate ?? Core.Models.RoleTemplate.Workstation);
-          if (pstigTarget != null)
-          {
-            _logger.LogInformation(
-              "Resolved PowerSTIG target: {Resource} OsVersion={OsVersion} OsRole={OsRole}",
-              pstigTarget.CompositeResourceName,
-              pstigTarget.OsVersion,
-              pstigTarget.OsRole ?? "(none)");
-          }
+          _logger.LogWarning("Skipping DSC apply: PowerSTIG compile step failed");
+          continue;
         }
 
-        var outcome = await _powerStigStepHandler.RunCompileAsync(
-          request.PowerStigModulePath!,
-          request.PowerStigDataFile,
-          pstigOutputPath,
-          root,
-          logsDir,
-          snapshotsDir,
-          mode,
-          request.PowerStigVerbose,
-          PowerStigStepName,
-          ct,
-          pstigTarget).ConfigureAwait(false);
-
-        outcome = _stepEvidenceWriter.Write(outcome, root, runId, priorStepSha256);
-        steps.Add(outcome);
-
-        if (outcome.ExitCode != 0)
+        var hasMofs = Directory.Exists(request.DscMofPath)
+          && Directory.EnumerateFiles(request.DscMofPath!, "*.mof", SearchOption.TopDirectoryOnly).Any();
+        if (!hasMofs)
         {
-          _logger.LogError("PowerSTIG compile failed (exit code {ExitCode}). Skipping dependent DSC apply step.", outcome.ExitCode);
-          if (!string.IsNullOrWhiteSpace(outcome.StdErrPath) && File.Exists(outcome.StdErrPath))
-          {
-            try
-            {
-              _logger.LogError("PowerSTIG stderr:\n{StdErr}", File.ReadAllText(outcome.StdErrPath));
-            }
-            catch (Exception ex)
-            {
-              _logger.LogWarning(ex, "Failed to read PowerSTIG stderr file at {Path}", outcome.StdErrPath);
-            }
-          }
+          _logger.LogWarning("Skipping DSC apply: no .mof files found in {DscMofPath}", request.DscMofPath);
+          continue;
         }
       }
 
-      var pstigRebootCount = resumeContext?.RebootCount ?? 0;
-      var rebootResult = await TryScheduleRebootAsync(
-        root,
-        mode,
-        steps,
-        snapshot,
-        snapshotsDir,
-        priorRunId,
-        runId,
-        ct,
-        "Reboot required after PowerSTIG compile",
-        pstigRebootCount,
-        pstigRebootCount + 1).ConfigureAwait(false);
-      if (rebootResult != null)
-        return rebootResult;
-    }
+      // Dry-run collection for specific step types
+      if (dryRunCollector != null)
+        CollectDryRunInfo(step, request, dryRunCollector);
 
-    if (!string.IsNullOrWhiteSpace(request.ScriptPath))
-    {
-      if (completedSteps.Contains(ScriptStepName))
-      {
-        _logger.LogInformation("Skipping previously completed step: {StepName}", ScriptStepName);
-      }
-      else
-      {
-        if (dryRunCollector != null)
-        {
-          dryRunCollector.Add(
-            "Script",
-            "Script execution with STIGFORGE_DRY_RUN=true",
-            null,
-            request.ScriptPath,
-            null,
-            "Script",
-            request.ScriptPath);
-        }
+      var outcome = await step.ExecuteAsync(request, context, ct).ConfigureAwait(false);
+      outcome = _stepEvidenceWriter.Write(outcome, root, runId, priorStepSha256);
+      outcomes.Add(outcome);
 
-        var outcome = await _scriptStepHandler.RunAsync(
-          request.ScriptPath!,
-          request.ScriptArgs,
-          root,
-          logsDir,
-          snapshotsDir,
-          mode,
-          ScriptStepName,
-          ct).ConfigureAwait(false);
-        outcome = _stepEvidenceWriter.Write(outcome, root, runId, priorStepSha256);
-        steps.Add(outcome);
+      // Log PowerSTIG stderr on failure for operator visibility
+      if (step.Name == "powerstig_compile" && outcome.ExitCode != 0)
+        LogStepStdErr(outcome, "PowerSTIG");
+
+      // DSC dry-run: capture WhatIf output
+      if (step.Name == "apply_dsc" && dryRunCollector != null && File.Exists(outcome.StdOutPath))
+      {
+        var whatIfOutput = File.ReadAllText(outcome.StdOutPath);
+        var dscChanges = DryRun.DscWhatIfParser.Parse(whatIfOutput);
+        dryRunCollector.AddRange("DSC", dscChanges);
       }
 
-      var scriptRebootCount = resumeContext?.RebootCount ?? 0;
-      var rebootResult = await TryScheduleRebootAsync(
-        root,
-        mode,
-        steps,
-        snapshot,
-        snapshotsDir,
-        priorRunId,
-        runId,
-        ct,
-        "Reboot required after script execution",
-        scriptRebootCount,
-        scriptRebootCount + 1).ConfigureAwait(false);
-      if (rebootResult != null)
-        return rebootResult;
-    }
-
-    var compileStepFailed = steps.Any(s => s.StepName == PowerStigStepName && s.ExitCode != 0);
-    if (!string.IsNullOrWhiteSpace(request.DscMofPath) && !compileStepFailed)
-    {
-      var hasMofs = Directory.Exists(request.DscMofPath)
-        && Directory.EnumerateFiles(request.DscMofPath, "*.mof", SearchOption.TopDirectoryOnly).Any();
-
-      if (!hasMofs)
-      {
-        _logger.LogWarning("Skipping DSC apply: no .mof files found in {DscMofPath}", request.DscMofPath);
-      }
-      else if (completedSteps.Contains(DscStepName))
-      {
-        _logger.LogInformation("Skipping previously completed step: {StepName}", DscStepName);
-      }
-      else
-      {
-        var outcome = await _dscStepHandler.RunAsync(
-          request.DscMofPath!,
-          root,
-          logsDir,
-          snapshotsDir,
-          mode,
-          request.DscVerbose,
-          DscStepName,
-          ct).ConfigureAwait(false);
-        outcome = _stepEvidenceWriter.Write(outcome, root, runId, priorStepSha256);
-
-        if (dryRunCollector != null && File.Exists(outcome.StdOutPath))
-        {
-          var whatIfOutput = File.ReadAllText(outcome.StdOutPath);
-          var dscChanges = DryRun.DscWhatIfParser.Parse(whatIfOutput);
-          dryRunCollector.AddRange("DSC", dscChanges);
-        }
-
-        steps.Add(outcome);
-      }
-
-      if (originalLcm != null && request.ResetLcmAfterApply)
+      // Reset LCM after DSC apply if requested
+      if (step.Name == "apply_dsc" && originalLcm != null && request.ResetLcmAfterApply)
         await TryResetLcmAsync(originalLcm, ct).ConfigureAwait(false);
-    }
 
-    if (!string.IsNullOrWhiteSpace(request.AdmxTemplateRootPath))
-    {
-      if (completedSteps.Contains(AdmxStepName))
+      // Check for reboot after steps that can trigger one
+      if (step.CanTriggerReboot)
       {
-        _logger.LogInformation("Skipping previously completed step: {StepName}", AdmxStepName);
-      }
-      else
-      {
-        var outcome = _policyStepHandler.RunAdmxImport(request, root, logsDir, AdmxStepName);
-        outcome = _stepEvidenceWriter.Write(outcome, root, runId, priorStepSha256);
-        steps.Add(outcome);
-      }
-    }
-
-    if (!string.IsNullOrWhiteSpace(request.LgpoPolFilePath) && _policyStepHandler.CanRunLgpo)
-    {
-      if (completedSteps.Contains(LgpoStepName))
-      {
-        _logger.LogInformation("Skipping previously completed step: {StepName}", LgpoStepName);
-      }
-      else
-      {
-        if (dryRunCollector != null)
-        {
-          dryRunCollector.Add(
-            "LGPO",
-            "LGPO policy would be applied: " + request.LgpoPolFilePath,
-            null,
-            request.LgpoPolFilePath,
-            null,
-            "GroupPolicy",
-            request.LgpoPolFilePath);
-        }
-
-        var outcome = await _policyStepHandler.RunLgpoAsync(request, logsDir, LgpoStepName, ct).ConfigureAwait(false);
-        outcome = _stepEvidenceWriter.Write(outcome, root, runId, priorStepSha256);
-        steps.Add(outcome);
-      }
-
-      var rebootCount = resumeContext?.RebootCount ?? 0;
-      var rebootResult = await TryScheduleRebootAsync(
-        root,
-        mode,
-        steps,
-        snapshot,
-        snapshotsDir,
-        priorRunId,
-        runId,
-        ct,
-        "Reboot required after LGPO apply",
-        rebootCount,
-        rebootCount + 1,
-        ConvergenceStatus.Diverged).ConfigureAwait(false);
-      if (rebootResult != null)
-        return rebootResult;
-    }
-
-    if (!string.IsNullOrWhiteSpace(request.DomainGpoBackupPath)
-        && request.RoleTemplate == Core.Models.RoleTemplate.DomainController)
-    {
-      if (completedSteps.Contains(GpoImportStepName))
-      {
-        _logger.LogInformation("Skipping previously completed step: {StepName}", GpoImportStepName);
-      }
-      else
-      {
-        var outcome = await _policyStepHandler.RunGpoImportAsync(request, logsDir, GpoImportStepName, ct).ConfigureAwait(false);
-        outcome = _stepEvidenceWriter.Write(outcome, root, runId, priorStepSha256);
-        steps.Add(outcome);
+        var rebootCount = resumeContext?.RebootCount ?? 0;
+        var convergence = step.Name == "apply_lgpo" ? ConvergenceStatus.Diverged : (ConvergenceStatus?)null;
+        var rebootResult = await TryScheduleRebootAsync(
+          root, mode, outcomes, snapshot, snapshotsDir, priorRunId, runId, ct,
+          "Reboot required after " + step.Name,
+          rebootCount, rebootCount + 1, convergence).ConfigureAwait(false);
+        if (rebootResult != null)
+          return rebootResult;
       }
     }
 
     var finalRebootCount = resumeContext?.RebootCount ?? 0;
     var pendingReboot = await _rebootCoordinator.DetectRebootRequired(ct).ConfigureAwait(false);
-    var hasStepFailures = steps.Any(s => s.ExitCode != 0);
+    var hasStepFailures = outcomes.Any(s => s.ExitCode != 0);
     var convergenceStatus = ConvergenceStatus.NotApplicable;
-    if (steps.Count > 0)
+    if (outcomes.Count > 0)
     {
       if (!pendingReboot && !hasStepFailures)
         convergenceStatus = ConvergenceStatus.Converged;
@@ -398,9 +245,9 @@ public class ApplyRunner
       priorRunId,
       bundleRoot = root,
       mode = mode.ToString(),
-      startedAt = steps.Count > 0 ? steps.Min(s => s.StartedAt) : DateTimeOffset.Now,
-      finishedAt = steps.Count > 0 ? steps.Max(s => s.FinishedAt) : DateTimeOffset.Now,
-      steps = steps.Select(s => new
+      startedAt = outcomes.Count > 0 ? outcomes.Min(s => s.StartedAt) : DateTimeOffset.Now,
+      finishedAt = outcomes.Count > 0 ? outcomes.Max(s => s.FinishedAt) : DateTimeOffset.Now,
+      steps = outcomes.Select(s => new
       {
         s.StepName,
         s.ExitCode,
@@ -418,13 +265,13 @@ public class ApplyRunner
     File.WriteAllText(logPath, json);
 
     if (dryRunCollector != null)
-      return BuildDryRunResult(request, root, mode, steps, logPath, dryRunCollector);
+      return BuildDryRunResult(request, root, mode, outcomes, logPath, dryRunCollector);
 
     var blockingFailures = new List<string>();
     var integrityVerified = false;
     var recoveryArtifacts = GetRecoveryArtifactPaths(snapshot, snapshotsDir, logPath);
 
-    var stepFailures = steps
+    var stepFailures = outcomes
       .Where(s => s.ExitCode != 0)
       .Select(s => $"Step '{s.StepName}' exited with code {s.ExitCode}.")
       .ToList();
@@ -433,11 +280,9 @@ public class ApplyRunner
     if (_audit == null)
     {
       blockingFailures.Add("Audit trail service unavailable - integrity evidence cannot be verified.");
-      // _audit is null — guard: do not fall through to audit recording code
     }
     else
     {
-      // _audit is guaranteed non-null in this branch; no null-forgiving operator needed
       try
       {
         await _audit.RecordAsync(new AuditEntry
@@ -445,7 +290,7 @@ public class ApplyRunner
           Action = "apply",
           Target = root,
           Result = stepFailures.Count == 0 ? "success" : "failure",
-          Detail = $"Mode={mode}, Steps={steps.Count}, RunId={runId}",
+          Detail = $"Mode={mode}, Steps={outcomes.Count}, RunId={runId}",
           User = Environment.UserName,
           Machine = Environment.MachineName,
           Timestamp = DateTimeOffset.Now
@@ -470,7 +315,7 @@ public class ApplyRunner
       BundleRoot = root,
       Mode = mode,
       LogPath = logPath,
-      Steps = steps,
+      Steps = outcomes,
       SnapshotId = snapshot?.SnapshotId ?? string.Empty,
       RollbackScriptPath = snapshot?.RollbackScriptPath ?? string.Empty,
       IsMissionComplete = true,
@@ -482,6 +327,37 @@ public class ApplyRunner
       RebootCount = finalRebootCount,
       ConvergenceStatus = convergenceStatus
     };
+  }
+
+  private static void CollectDryRunInfo(IApplyStep step, ApplyRequest request, DryRun.DryRunCollector collector)
+  {
+    switch (step.Name)
+    {
+      case "apply_script" when !string.IsNullOrWhiteSpace(request.ScriptPath):
+        collector.Add("Script", "Script execution with STIGFORGE_DRY_RUN=true",
+          null, request.ScriptPath, null, "Script", request.ScriptPath);
+        break;
+      case "apply_lgpo" when !string.IsNullOrWhiteSpace(request.LgpoPolFilePath):
+        collector.Add("LGPO", "LGPO policy would be applied: " + request.LgpoPolFilePath,
+          null, request.LgpoPolFilePath, null, "GroupPolicy", request.LgpoPolFilePath);
+        break;
+    }
+  }
+
+  private void LogStepStdErr(ApplyStepOutcome outcome, string label)
+  {
+    _logger.LogError("{Label} step failed (exit code {ExitCode}). Skipping dependent steps.", label, outcome.ExitCode);
+    if (!string.IsNullOrWhiteSpace(outcome.StdErrPath) && File.Exists(outcome.StdErrPath))
+    {
+      try
+      {
+        _logger.LogError("{Label} stderr:\n{StdErr}", label, File.ReadAllText(outcome.StdErrPath));
+      }
+      catch (Exception ex)
+      {
+        _logger.LogWarning(ex, "Failed to read {Label} stderr file at {Path}", label, outcome.StdErrPath);
+      }
+    }
   }
 
   private async Task<LcmState?> CaptureAndConfigureLcmAsync(HardeningMode mode, CancellationToken ct)
@@ -646,28 +522,6 @@ public class ApplyRunner
       return (HardeningMode)numeric;
 
     return null;
-  }
-
-  private static IReadOnlyList<string> BuildPlannedStepNames(ApplyRequest request)
-  {
-    var planned = new List<string>();
-    if (!string.IsNullOrWhiteSpace(request.PowerStigModulePath))
-      planned.Add(PowerStigStepName);
-    if (!string.IsNullOrWhiteSpace(request.ScriptPath))
-      planned.Add(ScriptStepName);
-    if (!string.IsNullOrWhiteSpace(request.DscMofPath))
-      planned.Add(DscStepName);
-    if (!string.IsNullOrWhiteSpace(request.AdmxTemplateRootPath))
-      planned.Add(AdmxStepName);
-    if (!string.IsNullOrWhiteSpace(request.LgpoPolFilePath))
-      planned.Add(LgpoStepName);
-    if (!string.IsNullOrWhiteSpace(request.DomainGpoBackupPath)
-        && request.RoleTemplate == Core.Models.RoleTemplate.DomainController)
-    {
-      planned.Add(GpoImportStepName);
-    }
-
-    return planned;
   }
 
   private static void ValidateResumeContext(RebootContext context, IReadOnlyList<string> plannedSteps, string bundleRoot)

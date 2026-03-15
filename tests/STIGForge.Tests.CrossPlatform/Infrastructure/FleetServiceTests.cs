@@ -13,12 +13,17 @@ namespace STIGForge.Tests.CrossPlatform.Infrastructure;
 /// </summary>
 public sealed class FleetServiceTests
 {
+    private static FleetService CreateService(
+        ICredentialStore? credentialStore = null,
+        IAuditTrailService? audit = null)
+        => new FleetService(new ProcessRunner(), credentialStore, audit);
+
     // ── Guard clauses ────────────────────────────────────────────────────────
 
     [Fact]
     public async Task ExecuteAsync_NullTargetsList_ThrowsArgumentException()
     {
-        var svc = new FleetService();
+        var svc = CreateService();
         var request = new FleetRequest { Targets = null! };
 
         var act = () => svc.ExecuteAsync(request, CancellationToken.None);
@@ -28,7 +33,7 @@ public sealed class FleetServiceTests
     [Fact]
     public async Task ExecuteAsync_EmptyTargets_ThrowsArgumentException()
     {
-        var svc = new FleetService();
+        var svc = CreateService();
         var request = new FleetRequest { Targets = [] };
 
         var act = () => svc.ExecuteAsync(request, CancellationToken.None);
@@ -41,7 +46,7 @@ public sealed class FleetServiceTests
     [Fact]
     public async Task ExecuteAsync_SingleTarget_InvalidHostChars_ReturnsFailureResult()
     {
-        var svc = new FleetService();
+        var svc = CreateService();
         var request = new FleetRequest
         {
             Targets = [new FleetTarget { HostName = "invalid host!" }],
@@ -62,7 +67,7 @@ public sealed class FleetServiceTests
     public async Task ExecuteAsync_ValidHostName_ProcessLaunchFails_ReturnsFailureGracefully()
     {
         // On Linux powershell.exe does not exist; the exception is caught and wrapped
-        var svc = new FleetService();
+        var svc = CreateService();
         var request = new FleetRequest
         {
             Targets = [new FleetTarget { HostName = "server01" }],
@@ -80,7 +85,7 @@ public sealed class FleetServiceTests
     [Fact]
     public async Task ExecuteAsync_MultipleTargets_AggregatesAllResults()
     {
-        var svc = new FleetService();
+        var svc = CreateService();
         var request = new FleetRequest
         {
             Targets =
@@ -103,7 +108,7 @@ public sealed class FleetServiceTests
     [Fact]
     public async Task ExecuteAsync_SetsOperationOnResult()
     {
-        var svc = new FleetService();
+        var svc = CreateService();
         var request = new FleetRequest
         {
             Targets = [new FleetTarget { HostName = "srv01" }],
@@ -119,7 +124,7 @@ public sealed class FleetServiceTests
     [Fact]
     public async Task ExecuteAsync_SetsTimestamps()
     {
-        var svc = new FleetService();
+        var svc = CreateService();
         var before = DateTimeOffset.Now;
 
         var result = await svc.ExecuteAsync(
@@ -143,7 +148,7 @@ public sealed class FleetServiceTests
         audit.Setup(a => a.RecordAsync(It.IsAny<AuditEntry>(), It.IsAny<CancellationToken>()))
              .Returns(Task.CompletedTask);
 
-        var svc = new FleetService(audit: audit.Object);
+        var svc = CreateService(audit: audit.Object);
         var request = new FleetRequest
         {
             Targets = [new FleetTarget { HostName = "audit-host" }],
@@ -165,7 +170,7 @@ public sealed class FleetServiceTests
         audit.Setup(a => a.RecordAsync(It.IsAny<AuditEntry>(), It.IsAny<CancellationToken>()))
              .ThrowsAsync(new InvalidOperationException("audit unavailable"));
 
-        var svc = new FleetService(audit: audit.Object);
+        var svc = CreateService(audit: audit.Object);
         var request = new FleetRequest
         {
             Targets = [new FleetTarget { HostName = "host-noaudit" }],
@@ -182,7 +187,7 @@ public sealed class FleetServiceTests
     [Fact]
     public async Task CheckStatusAsync_SingleTarget_ReturnsStatusResult()
     {
-        var svc = new FleetService();
+        var svc = CreateService();
         var targets = new List<FleetTarget> { new() { HostName = "status-host" } };
 
         var result = await svc.CheckStatusAsync(targets, CancellationToken.None);
@@ -196,7 +201,7 @@ public sealed class FleetServiceTests
     [Fact]
     public async Task CheckStatusAsync_MultipleTargets_ReturnsAllStatuses()
     {
-        var svc = new FleetService();
+        var svc = CreateService();
         var targets = new List<FleetTarget>
         {
             new() { HostName = "host1" },
@@ -218,7 +223,7 @@ public sealed class FleetServiceTests
         creds.Setup(c => c.Load("cred-host"))
              .Returns(("admin", "secret"));
 
-        var svc = new FleetService(credentialStore: creds.Object);
+        var svc = CreateService(credentialStore: creds.Object);
         var request = new FleetRequest
         {
             Targets = [new FleetTarget { HostName = "cred-host" }],
@@ -235,7 +240,7 @@ public sealed class FleetServiceTests
     {
         var creds = new Mock<ICredentialStore>();
 
-        var svc = new FleetService(credentialStore: creds.Object);
+        var svc = CreateService(credentialStore: creds.Object);
         var request = new FleetRequest
         {
             Targets =
