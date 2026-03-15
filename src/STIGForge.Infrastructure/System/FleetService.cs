@@ -319,10 +319,13 @@ public sealed class FleetService
 
     var effectiveTimeoutSeconds = timeoutSeconds > 0 ? timeoutSeconds : 600;
 
+    if (_processRunner == null)
+      return (-1, string.Empty, "No process runner configured — fleet execution is unavailable.");
+
     ProcessResult result;
     try
     {
-      result = await _processRunner!.RunWithTimeoutAsync(psi, TimeSpan.FromSeconds(effectiveTimeoutSeconds), ct).ConfigureAwait(false);
+      result = await _processRunner.RunWithTimeoutAsync(psi, TimeSpan.FromSeconds(effectiveTimeoutSeconds), ct).ConfigureAwait(false);
     }
     catch (TimeoutException)
     {
@@ -345,6 +348,9 @@ public sealed class FleetService
 
     try
     {
+      if (_processRunner == null)
+        return new FleetMachineStatus { MachineName = target.HostName, IpAddress = target.IpAddress, IsReachable = false, Message = "No process runner configured." };
+
       var testCommand = "Test-WSMan -ComputerName " + ToPowerShellSingleQuoted(connectionTarget) + " -ErrorAction Stop | Out-Null; Write-Output 'OK'";
       var encodedCommand = Convert.ToBase64String(Encoding.Unicode.GetBytes(testCommand));
       var psi = new global::System.Diagnostics.ProcessStartInfo("powershell.exe",
@@ -356,7 +362,7 @@ public sealed class FleetService
         CreateNoWindow = true
       };
 
-      var result = await _processRunner!.RunWithTimeoutAsync(psi, TimeSpan.FromSeconds(15), ct).ConfigureAwait(false);
+      var result = await _processRunner.RunWithTimeoutAsync(psi, TimeSpan.FromSeconds(15), ct).ConfigureAwait(false);
 
       return new FleetMachineStatus
       {
