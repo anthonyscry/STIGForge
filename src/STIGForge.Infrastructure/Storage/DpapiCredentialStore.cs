@@ -17,6 +17,10 @@ namespace STIGForge.Infrastructure.Storage;
 #endif
 public sealed class DpapiCredentialStore : ICredentialStore
 {
+  // Application-specific entropy prevents other same-user processes from decrypting
+  // STIGForge credential files, adding defense-in-depth over null entropy.
+  private static readonly byte[] AppEntropy = "STIGForge-CredentialStore-v1"u8.ToArray();
+
   private readonly string _credDir;
 
   public DpapiCredentialStore(IPathBuilder pathBuilder)
@@ -36,7 +40,7 @@ public sealed class DpapiCredentialStore : ICredentialStore
     byte[] encryptedBytes;
     try
     {
-      encryptedBytes = ProtectedData.Protect(plainBytes, null, DataProtectionScope.CurrentUser);
+      encryptedBytes = ProtectedData.Protect(plainBytes, AppEntropy, DataProtectionScope.CurrentUser);
     }
     finally
     {
@@ -53,7 +57,7 @@ public sealed class DpapiCredentialStore : ICredentialStore
     if (!File.Exists(filePath)) return null;
 
     var encryptedBytes = File.ReadAllBytes(filePath);
-    var plainBytes = ProtectedData.Unprotect(encryptedBytes, null, DataProtectionScope.CurrentUser);
+    var plainBytes = ProtectedData.Unprotect(encryptedBytes, AppEntropy, DataProtectionScope.CurrentUser);
     try
     {
       var json = Encoding.UTF8.GetString(plainBytes);

@@ -428,6 +428,11 @@ public sealed class PhaseCCommandFlowTests : IDisposable
       return true;
     }
 
+    public Task<ProcessResult> RunWithTimeoutAsync(ProcessStartInfo startInfo, TimeSpan timeout, CancellationToken ct)
+    {
+      return RunAsync(startInfo, ct);
+    }
+
     private static string ExtractQuotedPath(string arguments)
     {
       var firstQuote = arguments.IndexOf('"');

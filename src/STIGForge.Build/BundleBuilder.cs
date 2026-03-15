@@ -6,7 +6,7 @@ using STIGForge.Core.Models;
 
 namespace STIGForge.Build;
 
-public sealed class BundleBuilder
+public sealed class BundleBuilder : IBundleBuilder
 {
   private readonly IPathBuilder _paths;
   private readonly IHashingService _hash;

@@ -13,7 +13,7 @@ Generated from CEO-mode codebase health audit (2026-03-15).
   - **Effort:** L (~4 hours)
   - **Depends on:** Nothing
 
-- [ ] **Extract IApplyRunner + IBundleBuilder interfaces** — BundleOrchestrator depends on concrete types. Extract interfaces, register in DI. Enables orchestrator-level mocking.
+- [x] **Extract IApplyRunner + IBundleBuilder interfaces** — BundleOrchestrator depends on concrete types. Extract interfaces, register in DI. Enables orchestrator-level mocking.
   - **Why:** Can't unit test orchestrator without real ApplyRunner + BundleBuilder. Testability gate.
   - **Effort:** M (~2 hours)
   - **Depends on:** IApplyStep extraction
@@ -28,7 +28,7 @@ Generated from CEO-mode codebase health audit (2026-03-15).
   - **Effort:** M (~2 hours)
   - **Depends on:** Nothing
 
-- [ ] **Fix ScapBundleParser ZIP extraction** — Refactor to delegate to ImportZipHandler instead of duplicating extraction with weaker validation (trusts header size, not actual bytes).
+- [x] **Fix ScapBundleParser ZIP extraction** — Refactor to delegate to ImportZipHandler instead of duplicating extraction with weaker validation (trusts header size, not actual bytes).
   - **Why:** MEDIUM security — ZIP bomb bypass. DRY — correct implementation already exists.
   - **Effort:** S (~1 hour)
   - **Depends on:** Nothing
@@ -43,12 +43,12 @@ Generated from CEO-mode codebase health audit (2026-03-15).
   - **Effort:** S (~30 min)
   - **Depends on:** Nothing
 
-- [ ] **Audit ViewModel CanExecute guards** — During WorkflowViewModel refactoring, verify every RelayCommand has CanExecute tied to IsBusy/step state. Add guards where missing.
+- [x] **Audit ViewModel CanExecute guards** — During WorkflowViewModel refactoring, verify every RelayCommand has CanExecute tied to IsBusy/step state. Add guards where missing.
   - **Why:** Double-click or concurrent apply = catastrophic for hardening tool. Edge case handling.
   - **Effort:** S (~1 hour)
   - **Depends on:** ViewModel refactoring
 
-- [ ] **Add FleetService total timeout + progress callback** — `TimeSpan totalTimeout` parameter and `IProgress<FleetProgress>` callback. Cancel remaining hosts when deadline hit.
+- [x] **Add FleetService total timeout + progress callback** — `TimeSpan totalTimeout` parameter and `IProgress<FleetProgress>` callback. Cancel remaining hosts when deadline hit.
   - **Why:** 100 hosts at 600s/host = 3+ hours unbounded. Operator has no visibility or control.
   - **Effort:** M (~2 hours)
   - **Depends on:** Nothing
@@ -59,29 +59,29 @@ Generated from CEO-mode codebase health audit (2026-03-15).
 
 ### P1 — High Priority
 
-- [ ] **CI/CD Pipeline (GitHub Actions)** — Build → test → coverage gate → publish artifacts. Replace manual `dotnet publish` on Hyper-V host.
+- [x] **CI/CD Pipeline (GitHub Actions)** — Build → test → coverage gate → publish artifacts. Replace manual `dotnet publish` on Hyper-V host.
   - **Why:** No automated quality gates. Manual builds don't scale. Prerequisite for confident feature iteration.
   - **Effort:** M (~4 hours)
 
-- [ ] **Fleet inventory database** — SQLite table for host, role, OS, STIG mapping, last compliance state. Repository interface + DI registration.
+- [x] **Fleet inventory database** — SQLite table for host, role, OS, STIG mapping, last compliance state. Repository interface + DI registration.
   - **Why:** Prerequisite for multi-STIG fleet execution, role-based targeting, compliance dashboards.
   - **Effort:** L
 
-- [ ] **NuGet lock files + SBOM** — Enable `RestorePackagesWithLockFile` in Directory.Build.props. Commit lock files. Generate SBOM.
+- [x] **NuGet lock files + SBOM** — Enable `RestorePackagesWithLockFile` in Directory.Build.props. Commit lock files. Generate SBOM.
   - **Why:** Prevents silent transitive dependency drift between builds. Supply chain hygiene.
   - **Effort:** S (~30 min)
 
 ### P2 — Medium Priority
 
-- [ ] **Syslog TLS support** — Add `SslStream` wrapping for TCP mode in SyslogForwarder. Encrypted audit data in transit.
+- [x] **Syslog TLS support** — Add `SslStream` wrapping for TCP mode in SyslogForwarder. Encrypted audit data in transit.
   - **Why:** MEDIUM security finding. Required for classified/regulated environments.
   - **Effort:** M (~3 hours)
 
-- [ ] **Audit trail external trust anchor** — Periodically write latest chain hash to Windows Event Log on mission completion. Prevents full-chain recomputation attack.
+- [x] **Audit trail external trust anchor** — Periodically write latest chain hash to Windows Event Log on mission completion. Prevents full-chain recomputation attack.
   - **Why:** MEDIUM security. Current chain is self-verifying — attacker with DB access can recompute.
   - **Effort:** L (~2 hours)
 
-- [ ] **DPAPI entropy bytes** — Add application-specific entropy to `ProtectedData.Protect()` calls. Prevents other same-user applications from decrypting fleet credentials.
+- [x] **DPAPI entropy bytes** — Add application-specific entropy to `ProtectedData.Protect()` calls. Prevents other same-user applications from decrypting fleet credentials.
   - **Why:** LOW security. Defense in depth for credential storage.
   - **Effort:** S (~30 min)
 
@@ -106,11 +106,11 @@ Generated from CEO-mode codebase health audit (2026-03-15).
 
 ## Cleanup
 
-- [ ] **Remove dead project directories** — `STIGForge.Shared/` and `STIGForge.Reporting/` were emptied 2026-03-06 but directories remain.
+- [x] **Remove dead project directories** — `STIGForge.Shared/` and `STIGForge.Reporting/` were emptied 2026-03-06 but directories remain.
 - [ ] **Clean stale git stashes** — 10 stashes from Feb 2026, all pre-merge preserves. Review and drop.
 - [ ] **Refactor WorkflowViewModel.Scan.cs** — 1068 lines with 10+ duplicated card factory methods. Extract parameterized `BuildFailureCard()`.
 - [ ] **Refactor BuildCommands.cs** — 1007 lines with copy-pasted command registration. Extract shared `CommandBuilder` helper.
-- [ ] **Extract SafeAuditAsync helper** — Same `try { _audit?.RecordAsync() } catch { Trace.TraceWarning }` pattern repeated in 6+ files.
+- [x] **Extract SafeAuditAsync helper** — Same `try { _audit?.RecordAsync() } catch { Trace.TraceWarning }` pattern repeated in 6+ files.
 - [x] **Validate LcmService ConfigurationMode** — Allow-list (`ApplyAndMonitor`, `ApplyAndAutoCorrect`, `ApplyOnly`) instead of raw interpolation.
-- [ ] **Add path traversal check to PolicyStepHandler.CopyTemplateFile** — `Path.GetFullPath` + `StartsWith` validation consistent with ImportZipHandler.
-- [ ] **Add path traversal check to BundleIntegrityVerifier manifest** — Validate resolved path starts with bundle root.
+- [x] **Add path traversal check to PolicyStepHandler.CopyTemplateFile** — `Path.GetFullPath` + `StartsWith` validation consistent with ImportZipHandler.
+- [x] **Add path traversal check to BundleIntegrityVerifier manifest** — Validate resolved path starts with bundle root.

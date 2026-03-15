@@ -1,5 +1,7 @@
 using System.Net;
+using System.Net.Security;
 using System.Net.Sockets;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 
 namespace STIGForge.Core.Services;
@@ -9,12 +11,14 @@ public sealed class SyslogForwarder
   private readonly string _server;
   private readonly int _port;
   private readonly string _protocol;
+  private readonly bool _useTls;
 
-  public SyslogForwarder(string server, int port = 514, string protocol = "udp")
+  public SyslogForwarder(string server, int port = 514, string protocol = "udp", bool useTls = false)
   {
     _server = server ?? throw new ArgumentNullException(nameof(server));
     _port = port;
     _protocol = protocol?.ToLowerInvariant() ?? "udp";
+    _useTls = useTls && string.Equals(protocol?.ToLowerInvariant(), "tcp", StringComparison.Ordinal);
   }
 
   public async Task SendAsync(SyslogMessage message, CancellationToken ct)
@@ -26,7 +30,20 @@ public sealed class SyslogForwarder
     {
       using var client = new TcpClient();
       await client.ConnectAsync(_server, _port, ct).ConfigureAwait(false);
-      await client.GetStream().WriteAsync(bytes, ct).ConfigureAwait(false);
+      if (_useTls)
+      {
+        var sslStream = new SslStream(client.GetStream(), leaveInnerStreamOpen: false,
+          (sender, cert, chain, errors) => errors == SslPolicyErrors.None);
+        await using var _ = sslStream.ConfigureAwait(false);
+        await sslStream.AuthenticateAsClientAsync(
+          new SslClientAuthenticationOptions { TargetHost = _server },
+          ct).ConfigureAwait(false);
+        await sslStream.WriteAsync(bytes, ct).ConfigureAwait(false);
+      }
+      else
+      {
+        await client.GetStream().WriteAsync(bytes, ct).ConfigureAwait(false);
+      }
     }
     else
     {

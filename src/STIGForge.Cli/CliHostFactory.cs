@@ -78,10 +78,12 @@ public static class CliHostFactory
     services.AddSingleton<IControlRepository>(sp => new SqliteJsonControlRepository(sp.GetRequiredService<DbConnectionString>()));
     services.AddSingleton<IProfileRepository>(sp => new SqliteJsonProfileRepository(sp.GetRequiredService<DbConnectionString>()));
     services.AddSingleton<IOverlayRepository>(sp => new SqliteJsonOverlayRepository(sp.GetRequiredService<DbConnectionString>()));
+    services.AddSingleton<IFleetInventoryRepository>(sp => new FleetInventoryRepository(sp.GetRequiredService<DbConnectionString>()));
     services.AddSingleton<ContentPackImporter>();
     services.AddSingleton<OverlayConflictDetector>();
     services.AddSingleton<OverlayMergeService>();
     services.AddSingleton<BundleBuilder>();
+    services.AddSingleton<IBundleBuilder>(sp => sp.GetRequiredService<BundleBuilder>());
     services.AddSingleton<SnapshotService>();
     services.AddSingleton<RollbackScriptGenerator>();
     services.AddSingleton<STIGForge.Apply.Dsc.LcmService>(sp =>
@@ -91,6 +93,7 @@ public static class CliHostFactory
     services.AddSingleton<STIGForge.Apply.Reboot.RebootCoordinator>();
     services.AddSingleton<STIGForge.Apply.Lgpo.LgpoRunner>();
     services.AddSingleton<STIGForge.Apply.ApplyRunner>();
+    services.AddSingleton<STIGForge.Apply.IApplyRunner>(sp => sp.GetRequiredService<STIGForge.Apply.ApplyRunner>());
     services.AddSingleton<EvaluateStigRunner>();
     services.AddSingleton<ScapRunner>();
     services.AddSingleton<IVerificationWorkflowService, VerificationWorkflowService>();

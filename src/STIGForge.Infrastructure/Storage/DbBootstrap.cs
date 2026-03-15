@@ -186,6 +186,20 @@ CREATE TABLE IF NOT EXISTS release_checks (
   release_notes_path TEXT NULL
 );
 CREATE INDEX IF NOT EXISTS ix_release_checks_baseline ON release_checks(baseline_pack_id, checked_at DESC);
+
+CREATE TABLE IF NOT EXISTS fleet_inventory (
+  id INTEGER PRIMARY KEY AUTOINCREMENT,
+  host_name TEXT NOT NULL UNIQUE,
+  ip_address TEXT,
+  role TEXT NOT NULL DEFAULT '',
+  os_target TEXT NOT NULL DEFAULT '',
+  stig_pack_id TEXT NOT NULL DEFAULT '',
+  stig_pack_name TEXT NOT NULL DEFAULT '',
+  last_compliance_percent REAL NOT NULL DEFAULT 0,
+  last_compliance_measured_at TEXT,
+  added_at TEXT NOT NULL,
+  updated_at TEXT NOT NULL
+);
 ";
     cmd.ExecuteNonQuery();
 

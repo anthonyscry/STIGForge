@@ -306,7 +306,20 @@ internal sealed class PolicyStepHandler
   private static void CopyTemplateFile(string sourceRoot, string targetRoot, string sourceFile)
   {
     var relative = Path.GetRelativePath(sourceRoot, sourceFile);
-    var destination = Path.Combine(targetRoot, relative);
+
+    // Guard against path traversal: relative path must not escape the target root
+    var targetRootFull = Path.GetFullPath(targetRoot);
+    var destination = Path.GetFullPath(Path.Combine(targetRootFull, relative));
+    if (!destination.StartsWith(
+      targetRootFull.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal)
+        ? targetRootFull
+        : targetRootFull + Path.DirectorySeparatorChar,
+      StringComparison.OrdinalIgnoreCase))
+    {
+      throw new InvalidOperationException(
+        $"[POLICY-COPY-001] Template file '{sourceFile}' resolves outside target root and was rejected.");
+    }
+
     var destinationDir = Path.GetDirectoryName(destination);
     if (!string.IsNullOrWhiteSpace(destinationDir))
       Directory.CreateDirectory(destinationDir);

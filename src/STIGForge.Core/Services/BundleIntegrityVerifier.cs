@@ -46,6 +46,18 @@ public static class BundleIntegrityVerifier
 
             var filePath = Path.Combine(bundleRoot, relativePath);
 
+            var bundleRootFull = Path.GetFullPath(bundleRoot);
+            var bundleRootPrefix = bundleRootFull.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal)
+              ? bundleRootFull
+              : bundleRootFull + Path.DirectorySeparatorChar;
+            var filePathFull = Path.GetFullPath(filePath);
+            if (!filePathFull.StartsWith(bundleRootPrefix, StringComparison.OrdinalIgnoreCase)
+              && !string.Equals(filePathFull, bundleRootFull, StringComparison.OrdinalIgnoreCase))
+            {
+              mismatches.Add($"TRAVERSAL: {relativePath}");
+              continue;
+            }
+
             if (!File.Exists(filePath))
             {
                 mismatches.Add($"MISSING: {relativePath}");

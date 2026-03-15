@@ -206,6 +206,11 @@ The following GPOs were not applied because they were filtered out
       return true;
     }
 
+    public Task<ProcessResult> RunWithTimeoutAsync(ProcessStartInfo startInfo, TimeSpan timeout, CancellationToken ct)
+    {
+      return RunAsync(startInfo, ct);
+    }
+
     private static string DecodeEncodedCommand(string arguments)
     {
       var marker = "-EncodedCommand ";
