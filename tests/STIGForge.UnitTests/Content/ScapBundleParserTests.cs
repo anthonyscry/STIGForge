@@ -70,7 +70,7 @@ public class ScapBundleParserTests
             }
 
             var ex = await Assert.ThrowsAsync<STIGForge.Content.Models.ParsingException>(() => ScapBundleParser.ParseAsync(tempZip, "test-pack"));
-            Assert.Contains("SCAP-ARCHIVE-002", ex.Message, StringComparison.Ordinal);
+            Assert.Contains("IMPORT-ARCHIVE-002", ex.Message, StringComparison.Ordinal);
         }
         finally
         {

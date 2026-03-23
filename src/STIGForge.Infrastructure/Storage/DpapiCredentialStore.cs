@@ -35,7 +35,7 @@ public sealed class DpapiCredentialStore : ICredentialStore
 
     Directory.CreateDirectory(_credDir);
 
-    var json = JsonSerializer.Serialize(new CredentialPayload { U = username, P = password });
+    var json = JsonSerializer.Serialize(new CredentialPayload { H = targetHost, U = username, P = password });
     var plainBytes = Encoding.UTF8.GetBytes(json);
     byte[] encryptedBytes;
     try
@@ -103,10 +103,30 @@ public sealed class DpapiCredentialStore : ICredentialStore
     if (!Directory.Exists(_credDir))
       return [];
 
-    var files = Directory.EnumerateFiles(_credDir, "*.cred");
     var hosts = new List<string>();
-    foreach (var file in files)
-      hosts.Add(Path.GetFileNameWithoutExtension(file));
+    foreach (var file in Directory.EnumerateFiles(_credDir, "*.cred"))
+    {
+      try
+      {
+        var encryptedBytes = File.ReadAllBytes(file);
+        var plainBytes = ProtectedData.Unprotect(encryptedBytes, AppEntropy, DataProtectionScope.CurrentUser);
+        try
+        {
+          var json = Encoding.UTF8.GetString(plainBytes);
+          var payload = JsonSerializer.Deserialize<CredentialPayload>(json);
+          if (!string.IsNullOrEmpty(payload?.H))
+            hosts.Add(payload.H);
+        }
+        finally
+        {
+          CryptographicOperations.ZeroMemory(plainBytes);
+        }
+      }
+      catch
+      {
+        // Skip files that cannot be decrypted (different user, corruption, etc.)
+      }
+    }
     return hosts;
   }
 
@@ -130,6 +150,7 @@ public sealed class DpapiCredentialStore : ICredentialStore
 
   private sealed class CredentialPayload
   {
+    public string H { get; set; } = string.Empty;  // hostname
     public string U { get; set; } = string.Empty;
     public string P { get; set; } = string.Empty;
   }

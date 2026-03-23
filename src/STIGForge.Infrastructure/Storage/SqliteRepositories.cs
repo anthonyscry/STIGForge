@@ -62,8 +62,8 @@ release=excluded.release;";
     {
       PackId = row.PackId,
       Name = row.Name,
-      ImportedAt = row.ImportedAt,
-      ReleaseDate = row.ReleaseDate != null ? (DateTimeOffset?)row.ReleaseDate : null,
+      ImportedAt = row.ImportedAt is DateTimeOffset dto ? dto : DateTimeOffset.Parse(row.ImportedAt.ToString()!),
+      ReleaseDate = row.ReleaseDate is DateTimeOffset rd ? rd : row.ReleaseDate != null ? DateTimeOffset.Parse(row.ReleaseDate.ToString()!) : null,
       SourceLabel = row.SourceLabel,
       HashAlgorithm = row.HashAlgorithm,
       ManifestSha256 = row.ManifestSha256,
@@ -87,8 +87,8 @@ release=excluded.release;";
     {
       PackId = row.PackId,
       Name = row.Name,
-      ImportedAt = row.ImportedAt,
-      ReleaseDate = row.ReleaseDate != null ? (DateTimeOffset?)row.ReleaseDate : null,
+      ImportedAt = row.ImportedAt is DateTimeOffset dto2 ? dto2 : DateTimeOffset.Parse(row.ImportedAt.ToString()!),
+      ReleaseDate = row.ReleaseDate is DateTimeOffset rd2 ? rd2 : row.ReleaseDate != null ? DateTimeOffset.Parse(row.ReleaseDate.ToString()!) : null,
       SourceLabel = row.SourceLabel,
       HashAlgorithm = row.HashAlgorithm,
       ManifestSha256 = row.ManifestSha256,
@@ -110,8 +110,8 @@ release=excluded.release;";
     {
       PackId = row.PackId,
       Name = row.Name,
-      ImportedAt = row.ImportedAt,
-      ReleaseDate = row.ReleaseDate != null ? (DateTimeOffset?)row.ReleaseDate : null,
+      ImportedAt = row.ImportedAt is DateTimeOffset dto3 ? dto3 : DateTimeOffset.Parse(row.ImportedAt.ToString()!),
+      ReleaseDate = row.ReleaseDate is DateTimeOffset rd3 ? rd3 : row.ReleaseDate != null ? DateTimeOffset.Parse(row.ReleaseDate.ToString()!) : null,
       SourceLabel = row.SourceLabel,
       HashAlgorithm = row.HashAlgorithm,
       ManifestSha256 = row.ManifestSha256,

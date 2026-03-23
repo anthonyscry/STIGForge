@@ -36,9 +36,9 @@ public class ExceptionStatusTests
     }
 
     [Fact]
-    public void StatusValue_UnknownString_FallsBackToActive()
+    public void StatusValue_UnknownString_FallsBackToRevoked()
     {
-        new ControlException { Status = "unknown_status_xyz" }.StatusValue.Should().Be(ExceptionStatus.Active);
+        new ControlException { Status = "unknown_status_xyz" }.StatusValue.Should().Be(ExceptionStatus.Revoked);
     }
 
     [Fact]
