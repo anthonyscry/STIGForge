@@ -52,6 +52,15 @@ internal static class FleetCommands
       var credStore = host.Services.GetService<ICredentialStore>();
       var audit = host.Services.GetService<IAuditTrailService>();
       var svc = new FleetService(host.Services.GetRequiredService<IProcessRunner>(), credStore, audit);
+      var result = await svc.ExecuteAsync(request, ct);
+      WriteFleetResult(result, ctx.ParseResult.GetValueForOption(jsonOpt), logger);
+      await host.StopAsync();
+    });
+
+    rootCmd.AddCommand(cmd);
+  }
+
+  private static void RegisterFleetVerify(RootCommand rootCmd, Func<IHost> buildHost)
   {
     var cmd = new Command("fleet-verify", "Run verification across multiple machines via WinRM/PSRemoting");
     AddCommonFleetOptions(cmd, out var targetsOpt, out var cliPathOpt, out var bundlePathOpt, out var concurrencyOpt, out var timeoutOpt, out var jsonOpt);

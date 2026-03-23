@@ -436,5 +436,6 @@ public partial class WorkflowViewModel : ObservableObject, IDisposable
     public void Dispose()
     {
         _cts.Dispose();
+        GC.SuppressFinalize(this);
     }
 }

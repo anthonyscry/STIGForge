@@ -55,7 +55,7 @@ public sealed class AuditTrailService : IAuditTrailService
         transaction: tx,
         cancellationToken: ct)
     ).ConfigureAwait(false);
-    await tx.CommitAsync(ct).ConfigureAwait(false);
+    await tx.CommitAsync(CancellationToken.None).ConfigureAwait(false);
   }
 
   public async Task<IReadOnlyList<AuditEntry>> QueryAsync(AuditQuery query, CancellationToken ct)

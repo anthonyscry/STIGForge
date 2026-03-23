@@ -19,7 +19,7 @@ public sealed class ControlException
 
   /// <summary>Typed accessor for <see cref="Status"/>; use this for comparisons instead of raw string equality.</summary>
   public ExceptionStatus StatusValue =>
-    Enum.TryParse<ExceptionStatus>(Status, ignoreCase: true, out var parsed) ? parsed : ExceptionStatus.Active;
+    Enum.TryParse<ExceptionStatus>(Status, ignoreCase: true, out var parsed) ? parsed : ExceptionStatus.Revoked;
   public string ApprovedBy { get; set; } = string.Empty;
   public string? Justification { get; set; }
   public string? JustificationDoc { get; set; }
