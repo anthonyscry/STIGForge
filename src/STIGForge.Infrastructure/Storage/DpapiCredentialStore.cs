@@ -54,6 +54,15 @@ public sealed class DpapiCredentialStore : ICredentialStore
   public (string Username, string Password)? Load(string targetHost)
   {
     var filePath = GetCredentialPath(targetHost);
+
+    // One-time migration: rename legacy sanitized-name files to new SHA-256-hash names
+    if (!File.Exists(filePath))
+    {
+      var legacyPath = GetLegacyCredentialPath(targetHost);
+      if (File.Exists(legacyPath))
+        File.Move(legacyPath, filePath);
+    }
+
     if (!File.Exists(filePath)) return null;
 
     var encryptedBytes = File.ReadAllBytes(filePath);
@@ -77,6 +86,12 @@ public sealed class DpapiCredentialStore : ICredentialStore
   public bool Remove(string targetHost)
   {
     var filePath = GetCredentialPath(targetHost);
+
+    // Also clean up legacy file if present (covers case where Load hasn't migrated it yet)
+    var legacyPath = GetLegacyCredentialPath(targetHost);
+    if (File.Exists(legacyPath))
+      File.Delete(legacyPath);
+
     if (!File.Exists(filePath)) return false;
 
     File.Delete(filePath);
@@ -97,6 +112,14 @@ public sealed class DpapiCredentialStore : ICredentialStore
 
   private string GetCredentialPath(string targetHost)
     => Path.Combine(_credDir, GetCredentialFileName(targetHost));
+
+  private string GetLegacyCredentialPath(string targetHost)
+  {
+    var safe = new StringBuilder(targetHost.Length);
+    foreach (var c in targetHost)
+      safe.Append(char.IsLetterOrDigit(c) || c == '-' || c == '.' || c == '_' ? c : '_');
+    return Path.Combine(_credDir, safe + ".cred");
+  }
 
   private static string GetCredentialFileName(string hostName)
   {

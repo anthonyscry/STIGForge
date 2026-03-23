@@ -86,9 +86,9 @@ public partial class App : Application
         })
         .UseDefaultServiceProvider((_, options) =>
         {
+          options.ValidateOnBuild = true;   // catches scope violations at startup in all configurations
 #if DEBUG
-          options.ValidateScopes = true;
-          options.ValidateOnBuild = true;
+          options.ValidateScopes = true;    // per-resolve check: debug-only due to perf cost
 #endif
         })
         .ConfigureServices(services =>
