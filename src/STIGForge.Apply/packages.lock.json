@@ -392,8 +392,8 @@
       "stigforge.evidence": {
         "type": "Project",
         "dependencies": {
-          "STIGForge.Core": "[1.0.0, )",
-          "STIGForge.Infrastructure": "[1.0.0, )",
+          "STIGForge.Core": "[1.0.2, )",
+          "STIGForge.Infrastructure": "[1.0.2, )",
           "System.Text.Json": "[10.0.3, )"
         }
       },
@@ -405,7 +405,7 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.3, )",
           "Microsoft.Extensions.Hosting": "[10.0.3, )",
           "Microsoft.Extensions.Logging.Abstractions": "[10.0.3, )",
-          "STIGForge.Core": "[1.0.0, )",
+          "STIGForge.Core": "[1.0.2, )",
           "Serilog": "[4.3.1, )",
           "System.Security.Cryptography.ProtectedData": "[10.0.3, )",
           "System.Text.Json": "[10.0.3, )"

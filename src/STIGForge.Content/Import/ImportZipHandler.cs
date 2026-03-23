@@ -255,7 +255,7 @@ internal sealed class ImportZipHandler
         return Guid.TryParse(candidate, out _);
     }
 
-    private sealed class CountingStream : Stream
+    internal sealed class CountingStream : Stream
     {
         private readonly Stream _inner;
         public long BytesWritten { get; private set; }
