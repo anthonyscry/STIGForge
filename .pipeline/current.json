@@ -1,0 +1,30 @@
+{
+  "project_name": "accuracy-safety-hardening",
+  "project_slug": "accuracy-safety-hardening",
+  "feature_name": "",
+  "feature_slug": "",
+  "stage": "done",
+  "mode": "interactive",
+  "primary_plugin": "—",
+  "next_stage": "",
+  "next_command": "none",
+  "next_plugin": "—",
+  "secondary_reviewers": [],
+  "completed_stages": [
+    {
+      "stage": "bootstrap_project",
+      "completed_at": "2026-03-23T04:39:56Z"
+    }
+  ],
+  "artifacts": {
+    "project_root": "projects/accuracy-safety-hardening",
+    "feature_root": "",
+    "spec": "projects/accuracy-safety-hardening/specs/PROJECT.md",
+    "tasks": "projects/accuracy-safety-hardening/specs/TASKS.md",
+    "lab_results": "",
+    "qa_review": ""
+  },
+  "notes": [],
+  "stage_started_at": "2026-03-23T04:39:56Z",
+  "history_enabled": true
+}

@@ -8,7 +8,7 @@ using STIGForge.Core.Abstractions;
 
 namespace STIGForge.App;
 
-public partial class WorkflowViewModel : ObservableObject
+public partial class WorkflowViewModel : ObservableObject, IDisposable
 {
     private const int DefaultSccTimeoutSeconds = 300;
     private const int MinSccTimeoutSeconds = 30;
@@ -341,6 +341,7 @@ public partial class WorkflowViewModel : ObservableObject
 
     public async Task RunCurrentStepAsync()
     {
+        EnsureFreshCts();
         IsBusy = true;
         StatusText = "Starting...";
         try
@@ -370,6 +371,7 @@ public partial class WorkflowViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanRunAutoWorkflow))]
     private async Task RunAutoWorkflowAsync()
     {
+        EnsureFreshCts();
         await RunImportStepAsync();
         if (ImportState == StepState.Error)
             return;
@@ -383,6 +385,15 @@ public partial class WorkflowViewModel : ObservableObject
             return;
 
         await RunVerifyStepAsync();
+    }
+
+    private void EnsureFreshCts()
+    {
+        if (_cts.IsCancellationRequested)
+        {
+            _cts.Dispose();
+            _cts = new CancellationTokenSource();
+        }
     }
 
     [RelayCommand]
@@ -420,5 +431,11 @@ public partial class WorkflowViewModel : ObservableObject
         StatusText = string.Empty;
         ProgressValue = 0;
         ResetComplianceMetrics();
+    }
+
+    public void Dispose()
+    {
+        _cts.Dispose();
+        GC.SuppressFinalize(this);
     }
 }

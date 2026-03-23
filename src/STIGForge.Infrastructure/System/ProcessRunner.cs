@@ -30,13 +30,13 @@ public sealed class ProcessRunner : IProcessRunner
             throw new InvalidOperationException($"Failed to start process: {startInfo.FileName}");
         }
 
+        process.BeginOutputReadLine();
+        process.BeginErrorReadLine();
+
         if (process.HasExited)
         {
             tcs.TrySetResult(true);
         }
-
-        process.BeginOutputReadLine();
-        process.BeginErrorReadLine();
 
         if (ct.CanBeCanceled)
         {

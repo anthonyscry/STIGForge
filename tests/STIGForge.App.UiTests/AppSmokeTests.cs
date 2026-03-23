@@ -54,7 +54,7 @@ public sealed class AppSmokeTests
 
     await using var app = await UiAppDriver.LaunchAsync(executablePath, TimeSpan.FromSeconds(45));
 
-    var importTab = app.MainWindow.FindFirstDescendant(cf => cf.ByControlType(ControlType.TabItem).And(cf.ByName("Import Library")));
+    var importTab = app.MainWindow.FindFirstDescendant(cf => cf.ByControlType(ControlType.TabItem).And(cf.ByName("Import Library tab")));
     importTab.Should().NotBeNull("Import Library tab should exist");
     importTab!.AsTabItem().Select();
 
@@ -95,7 +95,7 @@ public sealed class AppSmokeTests
 
     await using var app = await UiAppDriver.LaunchAsync(executablePath, TimeSpan.FromSeconds(45));
 
-    var resultsTab = app.MainWindow.FindFirstDescendant(cf => cf.ByControlType(ControlType.TabItem).And(cf.ByName("Results")));
+    var resultsTab = app.MainWindow.FindFirstDescendant(cf => cf.ByControlType(ControlType.TabItem).And(cf.ByName("Results tab")));
     resultsTab.Should().NotBeNull("Results tab should exist");
     resultsTab!.AsTabItem().Select();
 
@@ -113,7 +113,7 @@ public sealed class AppSmokeTests
 
     await using var app = await UiAppDriver.LaunchAsync(executablePath, TimeSpan.FromSeconds(45));
 
-    var complianceTab = app.MainWindow.FindFirstDescendant(cf => cf.ByControlType(ControlType.TabItem).And(cf.ByName("Compliance Summary")));
+    var complianceTab = app.MainWindow.FindFirstDescendant(cf => cf.ByControlType(ControlType.TabItem).And(cf.ByName("Compliance Summary tab")));
     complianceTab.Should().NotBeNull("Compliance Summary tab should exist");
     complianceTab!.AsTabItem().Select();
 

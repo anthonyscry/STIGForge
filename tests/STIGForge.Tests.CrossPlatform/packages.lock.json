@@ -402,8 +402,8 @@
       },
       "Scriban": {
         "type": "Transitive",
-        "resolved": "5.12.0",
-        "contentHash": "/YTTCxjBIpfwX3MKMT4JMFVl1jX4IHW7zih+Bg3cTIkzGnbFt+B3l/k90ILDw6DRiFE7T+VxEyls7zk4p029ng=="
+        "resolved": "6.6.0",
+        "contentHash": "rDzWFaCLsnFMRifEs9F95mCQ1f9thva2ckXlHZ6xzCJ5SFqsB1u1Y/ZtQlc0iySg+H7HOR75J7ya2X4RmJvOFw=="
       },
       "Serilog": {
         "type": "Transitive",
@@ -537,26 +537,26 @@
         "dependencies": {
           "Microsoft.Extensions.Logging": "[10.0.3, )",
           "Microsoft.Extensions.Logging.Abstractions": "[10.0.3, )",
-          "STIGForge.Core": "[1.0.0, )",
-          "STIGForge.Evidence": "[1.0.0, )",
-          "STIGForge.Infrastructure": "[1.0.0, )",
+          "STIGForge.Core": "[1.0.2, )",
+          "STIGForge.Evidence": "[1.0.2, )",
+          "STIGForge.Infrastructure": "[1.0.2, )",
           "System.Text.Json": "[10.0.3, )"
         }
       },
       "stigforge.build": {
         "type": "Project",
         "dependencies": {
-          "STIGForge.Apply": "[1.0.0, )",
-          "STIGForge.Core": "[1.0.0, )",
-          "STIGForge.Infrastructure": "[1.0.0, )",
-          "STIGForge.Verify": "[1.0.0, )"
+          "STIGForge.Apply": "[1.0.2, )",
+          "STIGForge.Core": "[1.0.2, )",
+          "STIGForge.Infrastructure": "[1.0.2, )",
+          "STIGForge.Verify": "[1.0.2, )"
         }
       },
       "stigforge.content": {
         "type": "Project",
         "dependencies": {
-          "STIGForge.Core": "[1.0.0, )",
-          "STIGForge.Infrastructure": "[1.0.0, )",
+          "STIGForge.Core": "[1.0.2, )",
+          "STIGForge.Infrastructure": "[1.0.2, )",
           "System.Text.Json": "[10.0.3, )"
         }
       },
@@ -566,18 +566,18 @@
       "stigforge.evidence": {
         "type": "Project",
         "dependencies": {
-          "STIGForge.Core": "[1.0.0, )",
-          "STIGForge.Infrastructure": "[1.0.0, )",
+          "STIGForge.Core": "[1.0.2, )",
+          "STIGForge.Infrastructure": "[1.0.2, )",
           "System.Text.Json": "[10.0.3, )"
         }
       },
       "stigforge.export": {
         "type": "Project",
         "dependencies": {
-          "STIGForge.Core": "[1.0.0, )",
-          "STIGForge.Infrastructure": "[1.0.0, )",
-          "STIGForge.Verify": "[1.0.0, )",
-          "Scriban": "[5.12.0, )"
+          "STIGForge.Core": "[1.0.2, )",
+          "STIGForge.Infrastructure": "[1.0.2, )",
+          "STIGForge.Verify": "[1.0.2, )",
+          "Scriban": "[6.6.0, )"
         }
       },
       "stigforge.infrastructure": {
@@ -588,7 +588,7 @@
           "Microsoft.Extensions.DependencyInjection.Abstractions": "[10.0.3, )",
           "Microsoft.Extensions.Hosting": "[10.0.3, )",
           "Microsoft.Extensions.Logging.Abstractions": "[10.0.3, )",
-          "STIGForge.Core": "[1.0.0, )",
+          "STIGForge.Core": "[1.0.2, )",
           "Serilog": "[4.3.1, )",
           "System.Security.Cryptography.ProtectedData": "[10.0.3, )",
           "System.Text.Json": "[10.0.3, )"
@@ -597,9 +597,9 @@
       "stigforge.verify": {
         "type": "Project",
         "dependencies": {
-          "STIGForge.Content": "[1.0.0, )",
-          "STIGForge.Core": "[1.0.0, )",
-          "STIGForge.Infrastructure": "[1.0.0, )",
+          "STIGForge.Content": "[1.0.2, )",
+          "STIGForge.Core": "[1.0.2, )",
+          "STIGForge.Infrastructure": "[1.0.2, )",
           "System.Text.Json": "[10.0.3, )"
         }
       }

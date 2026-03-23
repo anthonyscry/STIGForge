@@ -35,7 +35,7 @@ public sealed class DpapiCredentialStore : ICredentialStore
 
     Directory.CreateDirectory(_credDir);
 
-    var json = JsonSerializer.Serialize(new CredentialPayload { U = username, P = password });
+    var json = JsonSerializer.Serialize(new CredentialPayload { H = targetHost, U = username, P = password });
     var plainBytes = Encoding.UTF8.GetBytes(json);
     byte[] encryptedBytes;
     try
@@ -54,6 +54,15 @@ public sealed class DpapiCredentialStore : ICredentialStore
   public (string Username, string Password)? Load(string targetHost)
   {
     var filePath = GetCredentialPath(targetHost);
+
+    // One-time migration: rename legacy sanitized-name files to new SHA-256-hash names
+    if (!File.Exists(filePath))
+    {
+      var legacyPath = GetLegacyCredentialPath(targetHost);
+      if (File.Exists(legacyPath))
+        File.Move(legacyPath, filePath);
+    }
+
     if (!File.Exists(filePath)) return null;
 
     var encryptedBytes = File.ReadAllBytes(filePath);
@@ -77,6 +86,12 @@ public sealed class DpapiCredentialStore : ICredentialStore
   public bool Remove(string targetHost)
   {
     var filePath = GetCredentialPath(targetHost);
+
+    // Also clean up legacy file if present (covers case where Load hasn't migrated it yet)
+    var legacyPath = GetLegacyCredentialPath(targetHost);
+    if (File.Exists(legacyPath))
+      File.Delete(legacyPath);
+
     if (!File.Exists(filePath)) return false;
 
     File.Delete(filePath);
@@ -88,29 +103,54 @@ public sealed class DpapiCredentialStore : ICredentialStore
     if (!Directory.Exists(_credDir))
       return [];
 
-    var files = Directory.EnumerateFiles(_credDir, "*.cred");
     var hosts = new List<string>();
-    foreach (var file in files)
-      hosts.Add(Path.GetFileNameWithoutExtension(file));
+    foreach (var file in Directory.EnumerateFiles(_credDir, "*.cred"))
+    {
+      try
+      {
+        var encryptedBytes = File.ReadAllBytes(file);
+        var plainBytes = ProtectedData.Unprotect(encryptedBytes, AppEntropy, DataProtectionScope.CurrentUser);
+        try
+        {
+          var json = Encoding.UTF8.GetString(plainBytes);
+          var payload = JsonSerializer.Deserialize<CredentialPayload>(json);
+          if (!string.IsNullOrEmpty(payload?.H))
+            hosts.Add(payload.H);
+        }
+        finally
+        {
+          CryptographicOperations.ZeroMemory(plainBytes);
+        }
+      }
+      catch
+      {
+        // Skip files that cannot be decrypted (different user, corruption, etc.)
+      }
+    }
     return hosts;
   }
 
   private string GetCredentialPath(string targetHost)
+    => Path.Combine(_credDir, GetCredentialFileName(targetHost));
+
+  private string GetLegacyCredentialPath(string targetHost)
   {
-    // Sanitize hostname for safe file naming
     var safe = new StringBuilder(targetHost.Length);
     foreach (var c in targetHost)
-    {
-      if (char.IsLetterOrDigit(c) || c == '-' || c == '.' || c == '_')
-        safe.Append(c);
-      else
-        safe.Append('_');
-    }
-    return Path.Combine(_credDir, safe.ToString() + ".cred");
+      safe.Append(char.IsLetterOrDigit(c) || c == '-' || c == '.' || c == '_' ? c : '_');
+    return Path.Combine(_credDir, safe + ".cred");
+  }
+
+  private static string GetCredentialFileName(string hostName)
+  {
+    var hashBytes = SHA256.HashData(
+        Encoding.UTF8.GetBytes(hostName.ToLowerInvariant()));
+    return Convert.ToHexString(hashBytes).ToLowerInvariant() + ".cred";
   }
 
   private sealed class CredentialPayload
   {
+    public string H { get; set; } = string.Empty;  // hostname
     public string U { get; set; } = string.Empty;
     public string P { get; set; } = string.Empty;
   }

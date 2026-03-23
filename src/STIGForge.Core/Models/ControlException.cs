@@ -16,6 +16,10 @@ public sealed class ControlException
   public string ExceptionType { get; set; } = string.Empty;  // Waiver, RiskAcceptance, TechnicalException
   public string Status { get; set; } = "Active";              // Active, Expired, Revoked — stored as string for SQLite compat
   public string RiskLevel { get; set; } = string.Empty;       // High, Medium, Low
+
+  /// <summary>Typed accessor for <see cref="Status"/>; use this for comparisons instead of raw string equality.</summary>
+  public ExceptionStatus StatusValue =>
+    Enum.TryParse<ExceptionStatus>(Status, ignoreCase: true, out var parsed) ? parsed : ExceptionStatus.Revoked;
   public string ApprovedBy { get; set; } = string.Empty;
   public string? Justification { get; set; }
   public string? JustificationDoc { get; set; }
@@ -23,10 +27,6 @@ public sealed class ControlException
   public DateTimeOffset? ExpiresAt { get; set; }
   public DateTimeOffset? RevokedAt { get; set; }
   public string? RevokedBy { get; set; }
-
-  /// <summary>Strongly-typed status. Parses the <see cref="Status"/> string; unknown values map to <see cref="ExceptionStatus.Active"/>.</summary>
-  public ExceptionStatus StatusValue =>
-    Enum.TryParse<ExceptionStatus>(Status, ignoreCase: true, out var parsed) ? parsed : ExceptionStatus.Active;
 }
 
 /// <summary>Request to create a new control exception.</summary>

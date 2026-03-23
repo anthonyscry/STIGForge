@@ -64,12 +64,13 @@ public class ComplianceTrendServiceTests
     }
 
     [Fact]
-    public async Task DetectRegression_WithMinimumFloor_AboveFloor_ReturnsFalse()
+    public async Task DetectRegression_WithMinimumFloor_AboveFloor_DeltaExceedsThreshold_ReturnsTrue()
     {
-        // current=85, previous=91, delta=-6; floor=80 → 85 >= 80 → false regardless
+        // current=85, previous=91, delta=-6; floor=80 → 85 >= 80 so floor check passes;
+        // delta=-6 < -threshold=-5 → true (floor suppresses immediate-regression check but NOT the delta check)
         SetupSnapshots("bundle", Snap(85), Snap(91));
         var result = await _sut.DetectRegressionAsync("bundle", 5, CancellationToken.None, minimumFloor: 80.0);
-        result.Should().BeFalse();
+        result.Should().BeTrue();
     }
 
     [Fact]

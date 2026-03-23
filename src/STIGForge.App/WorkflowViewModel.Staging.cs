@@ -377,6 +377,9 @@ public partial class WorkflowViewModel
     {
         using var archive = ZipFile.OpenRead(zipPath);
         var destinationFullRoot = Path.GetFullPath(destinationRoot);
+        var destinationFullRootWithSep = destinationFullRoot.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal)
+            ? destinationFullRoot
+            : destinationFullRoot + Path.DirectorySeparatorChar;
         const int maxEntries = 4096;
         const long maxExtractedBytes = 512L * 1024 * 1024;
         long extractedBytes = 0;
@@ -389,7 +392,8 @@ public partial class WorkflowViewModel
                 throw new InvalidDataException($"Archive entry limit exceeded: {zipPath}");
 
             var destinationPath = Path.GetFullPath(Path.Combine(destinationFullRoot, entry.FullName));
-            if (!destinationPath.StartsWith(destinationFullRoot, StringComparison.OrdinalIgnoreCase))
+            if (!destinationPath.StartsWith(destinationFullRootWithSep, StringComparison.OrdinalIgnoreCase)
+                && !string.Equals(destinationPath, destinationFullRoot, StringComparison.OrdinalIgnoreCase))
                 throw new InvalidDataException($"Archive entry escapes destination root: {entry.FullName}");
 
             if (string.IsNullOrEmpty(entry.Name))

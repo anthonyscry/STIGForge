@@ -86,8 +86,10 @@ public partial class App : Application
         })
         .UseDefaultServiceProvider((_, options) =>
         {
-          options.ValidateScopes = true;
-          options.ValidateOnBuild = true;
+          options.ValidateOnBuild = true;   // catches scope violations at startup in all configurations
+#if DEBUG
+          options.ValidateScopes = true;    // per-resolve check: debug-only due to perf cost
+#endif
         })
         .ConfigureServices(services =>
         {
@@ -409,7 +411,15 @@ public partial class App : Application
 
       if (_host != null)
       {
-        _host.StopAsync(TimeSpan.FromSeconds(5)).GetAwaiter().GetResult();
+        // Run StopAsync on a background thread to avoid UI deadlock, then wait before Dispose
+        try
+        {
+          Task.Run(() => _host.StopAsync(TimeSpan.FromSeconds(5))).Wait(TimeSpan.FromSeconds(6));
+        }
+        catch (Exception ex)
+        {
+          System.Diagnostics.Trace.TraceWarning("Host stop failed: " + ex.Message);
+        }
         _host.Dispose();
         TraceStartup("Host stopped and disposed");
       }

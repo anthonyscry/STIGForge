@@ -222,16 +222,26 @@ public sealed class EmassExporter
     if (File.Exists(hashPath))
       packageHash = await _hash.Sha256FileAsync(hashPath, ct).ConfigureAwait(false);
 
-    await _audit.SafeRecordAsync(new AuditEntry
+    if (_audit != null)
     {
-      Action = "export-emass",
-      Target = bundleRoot,
-      Result = validationResult.IsValid ? "success" : "failure",
-      Detail = $"ExportRoot={exportRoot}, Controls={consolidated.Count}, Valid={validationResult.IsValid}, Errors={validationResult.Errors.Count}, Warnings={validationResult.Warnings.Count}, PackageHash={packageHash}, Ready={submissionReadiness.IsReady}",
-      User = Environment.UserName,
-      Machine = Environment.MachineName,
-      Timestamp = exportStartTime
-    }, ct);
+      try
+      {
+        await _audit.RecordAsync(new AuditEntry
+        {
+          Action = "export-emass",
+          Target = bundleRoot,
+          Result = validationResult.IsValid ? "success" : "failure",
+          Detail = $"ExportRoot={exportRoot}, Controls={consolidated.Count}, Valid={validationResult.IsValid}, Errors={validationResult.Errors.Count}, Warnings={validationResult.Warnings.Count}, PackageHash={packageHash}, Ready={submissionReadiness.IsReady}",
+          User = Environment.UserName,
+          Machine = Environment.MachineName,
+          Timestamp = exportStartTime
+        }, ct).ConfigureAwait(false);
+      }
+      catch (Exception ex)
+      {
+        warnings.Add($"audit write failed (non-blocking): {ex.Message}");
+      }
+    }
 
     return new AuditValidationResult
     {

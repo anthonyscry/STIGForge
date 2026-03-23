@@ -87,8 +87,8 @@ public sealed class ComplianceTrendService
   public async Task<bool> DetectRegressionAsync(string bundleRoot, double thresholdPercent, CancellationToken ct, double minimumFloor = 0.0)
   {
     var trend = await GetTrendAsync(bundleRoot, 2, ct).ConfigureAwait(false);
-    if (minimumFloor > 0.0 && trend.CurrentPercent >= minimumFloor)
-      return false;
+    if (minimumFloor > 0.0 && trend.CurrentPercent < minimumFloor)
+      return true;
     return trend.Delta < -thresholdPercent;
   }
 }
