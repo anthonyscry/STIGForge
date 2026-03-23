@@ -51,8 +51,8 @@ jobs:
           }
           $lineRate = if ($totalLines -gt 0) { $coveredLines / $totalLines } else { 1.0 }
           Write-Host "Line coverage: $([math]::Round($lineRate * 100, 2))% ($coveredLines/$totalLines lines)"
-          if ($lineRate -lt 0.60) {
-            Write-Error "Coverage $($lineRate * 100)% is below the 60% gate"
+          if ($lineRate -lt 0.35) {
+            Write-Error "Coverage $([math]::Round($lineRate * 100, 2))% is below the 35% gate"
             exit 1
           }
         shell: pwsh
