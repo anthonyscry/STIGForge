@@ -1,0 +1,25 @@
+{
+  "project_name": "",
+  "project_slug": "",
+  "feature_name": "",
+  "feature_slug": "",
+  "stage": "idle",
+  "mode": "interactive",
+  "primary_plugin": "—",
+  "next_stage": "",
+  "next_command": "",
+  "next_plugin": "",
+  "secondary_reviewers": [],
+  "completed_stages": [],
+  "artifacts": {
+    "project_root": "",
+    "feature_root": "",
+    "spec": "",
+    "tasks": "",
+    "lab_results": "",
+    "qa_review": ""
+  },
+  "notes": [],
+  "stage_started_at": "",
+  "history_enabled": true
+}

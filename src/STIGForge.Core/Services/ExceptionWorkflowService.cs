@@ -29,8 +29,7 @@ public sealed class ExceptionWorkflowService
       RuleId = req.RuleId,
       VulnId = req.VulnId,
       ExceptionType = req.ExceptionType,
-      Status = "Active",
-      RiskLevel = req.RiskLevel,
+      Status = "Active",      RiskLevel = req.RiskLevel,
       ApprovedBy = req.ApprovedBy,
       Justification = req.Justification,
       JustificationDoc = req.JustificationDoc,
@@ -53,14 +52,14 @@ public sealed class ExceptionWorkflowService
   {
     var all = await _repo.ListByBundleAsync(bundleRoot, ct).ConfigureAwait(false);
     var now = _clock.Now;
-    return all.Where(e => e.Status == "Active" && e.ExpiresAt != null && e.ExpiresAt <= now).ToList();
+    return all.Where(e => e.StatusValue == ExceptionStatus.Active && e.ExpiresAt != null && e.ExpiresAt <= now).ToList();
   }
 
   public async Task<IReadOnlyList<ControlException>> GetActiveExceptionsAsync(string bundleRoot, CancellationToken ct)
   {
     var all = await _repo.ListByBundleAsync(bundleRoot, ct).ConfigureAwait(false);
     var now = _clock.Now;
-    return all.Where(e => e.Status == "Active" && (e.ExpiresAt == null || e.ExpiresAt > now)).ToList();
+    return all.Where(e => e.StatusValue == ExceptionStatus.Active && (e.ExpiresAt == null || e.ExpiresAt > now)).ToList();
   }
 
   public async Task<bool> IsRuleCoveredByActiveExceptionAsync(string bundleRoot, string ruleId, CancellationToken ct)
@@ -75,9 +74,9 @@ public sealed class ExceptionWorkflowService
     var now = _clock.Now;
     var thirtyDaysOut = now.AddDays(30);
 
-    var active = all.Where(e => e.Status == "Active" && (e.ExpiresAt == null || e.ExpiresAt > now)).ToList();
-    var expired = all.Where(e => e.Status == "Active" && e.ExpiresAt != null && e.ExpiresAt <= now).ToList();
-    var revoked = all.Where(e => e.Status == "Revoked").ToList();
+    var active = all.Where(e => e.StatusValue == ExceptionStatus.Active && (e.ExpiresAt == null || e.ExpiresAt > now)).ToList();
+    var expired = all.Where(e => e.StatusValue == ExceptionStatus.Active && e.ExpiresAt != null && e.ExpiresAt <= now).ToList();
+    var revoked = all.Where(e => e.StatusValue == ExceptionStatus.Revoked).ToList();
     var expiringSoon = active.Where(e => e.ExpiresAt != null && e.ExpiresAt <= thirtyDaysOut).ToList();
     var highRisk = active.Where(e => e.RiskLevel.Equals("High", StringComparison.OrdinalIgnoreCase)).ToList();
 

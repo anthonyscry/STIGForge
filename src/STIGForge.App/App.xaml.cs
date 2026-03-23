@@ -86,8 +86,10 @@ public partial class App : Application
         })
         .UseDefaultServiceProvider((_, options) =>
         {
+#if DEBUG
           options.ValidateScopes = true;
           options.ValidateOnBuild = true;
+#endif
         })
         .ConfigureServices(services =>
         {
@@ -409,7 +411,12 @@ public partial class App : Application
 
       if (_host != null)
       {
-        _host.StopAsync(TimeSpan.FromSeconds(5)).GetAwaiter().GetResult();
+        // Fire-and-forget host stop from background thread to avoid UI deadlock
+        _ = Task.Run(async () =>
+        {
+          try { await _host.StopAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false); }
+          catch (Exception ex) { System.Diagnostics.Trace.TraceWarning("Host stop failed: " + ex.Message); }
+        });
         _host.Dispose();
         TraceStartup("Host stopped and disposed");
       }

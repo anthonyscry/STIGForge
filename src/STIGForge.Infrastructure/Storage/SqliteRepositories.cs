@@ -62,8 +62,8 @@ release=excluded.release;";
     {
       PackId = row.PackId,
       Name = row.Name,
-      ImportedAt = row.ImportedAt is DateTimeOffset dto ? dto : DateTimeOffset.Parse(row.ImportedAt.ToString()!),
-      ReleaseDate = row.ReleaseDate is DateTimeOffset rd ? rd : row.ReleaseDate != null ? DateTimeOffset.Parse(row.ReleaseDate.ToString()!) : null,
+      ImportedAt = row.ImportedAt,
+      ReleaseDate = row.ReleaseDate != null ? (DateTimeOffset?)row.ReleaseDate : null,
       SourceLabel = row.SourceLabel,
       HashAlgorithm = row.HashAlgorithm,
       ManifestSha256 = row.ManifestSha256,
@@ -87,8 +87,8 @@ release=excluded.release;";
     {
       PackId = row.PackId,
       Name = row.Name,
-      ImportedAt = row.ImportedAt is DateTimeOffset dto ? dto : DateTimeOffset.Parse(row.ImportedAt.ToString()!),
-      ReleaseDate = row.ReleaseDate is DateTimeOffset rd ? rd : row.ReleaseDate != null ? DateTimeOffset.Parse(row.ReleaseDate.ToString()!) : null,
+      ImportedAt = row.ImportedAt,
+      ReleaseDate = row.ReleaseDate != null ? (DateTimeOffset?)row.ReleaseDate : null,
       SourceLabel = row.SourceLabel,
       HashAlgorithm = row.HashAlgorithm,
       ManifestSha256 = row.ManifestSha256,
@@ -110,8 +110,8 @@ release=excluded.release;";
     {
       PackId = row.PackId,
       Name = row.Name,
-      ImportedAt = row.ImportedAt is DateTimeOffset dto ? dto : DateTimeOffset.Parse(row.ImportedAt.ToString()!),
-      ReleaseDate = row.ReleaseDate is DateTimeOffset rd ? rd : row.ReleaseDate != null ? DateTimeOffset.Parse(row.ReleaseDate.ToString()!) : null,
+      ImportedAt = row.ImportedAt,
+      ReleaseDate = row.ReleaseDate != null ? (DateTimeOffset?)row.ReleaseDate : null,
       SourceLabel = row.SourceLabel,
       HashAlgorithm = row.HashAlgorithm,
       ManifestSha256 = row.ManifestSha256,
@@ -166,7 +166,8 @@ ON CONFLICT(profile_id) DO UPDATE SET json=excluded.json;";
     using var conn = new SqliteConnection(_cs);
     var jsons = await conn.QueryAsync<string>(new CommandDefinition(
       "SELECT json FROM profiles", cancellationToken: ct)).ConfigureAwait(false);
-    return jsons.Select(j => JsonSerializer.Deserialize<Profile>(j, J)!).ToList();
+    return jsons.Select(j => JsonSerializer.Deserialize<Profile>(j, J)
+        ?? throw new InvalidOperationException($"Failed to deserialize {typeof(Profile).Name} from stored JSON.")).ToList();
   }
 
   public async Task DeleteAsync(string profileId, CancellationToken ct)
@@ -209,7 +210,8 @@ ON CONFLICT(overlay_id) DO UPDATE SET json=excluded.json;";
     using var conn = new SqliteConnection(_cs);
     var jsons = await conn.QueryAsync<string>(new CommandDefinition(
       "SELECT json FROM overlays", cancellationToken: ct)).ConfigureAwait(false);
-    return jsons.Select(j => JsonSerializer.Deserialize<Overlay>(j, J)!).ToList();
+    return jsons.Select(j => JsonSerializer.Deserialize<Overlay>(j, J)
+        ?? throw new InvalidOperationException($"Failed to deserialize {typeof(Overlay).Name} from stored JSON.")).ToList();
   }
 }
 

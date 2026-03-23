@@ -96,17 +96,13 @@ public sealed class DpapiCredentialStore : ICredentialStore
   }
 
   private string GetCredentialPath(string targetHost)
+    => Path.Combine(_credDir, GetCredentialFileName(targetHost));
+
+  private static string GetCredentialFileName(string hostName)
   {
-    // Sanitize hostname for safe file naming
-    var safe = new StringBuilder(targetHost.Length);
-    foreach (var c in targetHost)
-    {
-      if (char.IsLetterOrDigit(c) || c == '-' || c == '.' || c == '_')
-        safe.Append(c);
-      else
-        safe.Append('_');
-    }
-    return Path.Combine(_credDir, safe.ToString() + ".cred");
+    var hashBytes = SHA256.HashData(
+        Encoding.UTF8.GetBytes(hostName.ToLowerInvariant()));
+    return Convert.ToHexString(hashBytes).ToLowerInvariant() + ".cred";
   }
 
   private sealed class CredentialPayload

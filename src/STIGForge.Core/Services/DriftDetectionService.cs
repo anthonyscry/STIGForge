@@ -224,8 +224,9 @@ public sealed class DriftDetectionService
       throw new FileNotFoundException("No consolidated verify report found under bundle Verify directory.", verifyRoot);
 
     using var doc = JsonDocument.Parse(File.ReadAllText(reportPath));
+    var rootIndex = BuildCaseInsensitiveIndex(doc.RootElement);
     JsonElement resultsElement;
-    if (!TryGetPropertyCaseInsensitive(doc.RootElement, "results", out resultsElement)
+    if (!rootIndex.TryGetValue("results", out resultsElement)
       || resultsElement.ValueKind != JsonValueKind.Array)
     {
       throw new InvalidOperationException("Verify report is missing a results array: " + reportPath);
@@ -237,8 +238,9 @@ public sealed class DriftDetectionService
       if (item.ValueKind != JsonValueKind.Object)
         continue;
 
-      var ruleId = ReadStringProperty(item, "ruleId");
-      var vulnId = ReadStringProperty(item, "vulnId");
+      var itemIndex = BuildCaseInsensitiveIndex(item);
+      var ruleId = ReadStringFromIndex(itemIndex, "ruleId");
+      var vulnId = ReadStringFromIndex(itemIndex, "vulnId");
       var key = string.IsNullOrWhiteSpace(ruleId)
         ? vulnId
         : ruleId;
@@ -246,7 +248,7 @@ public sealed class DriftDetectionService
       if (string.IsNullOrWhiteSpace(key))
         continue;
 
-      var status = NormalizeStatus(ReadStringProperty(item, "status"));
+      var status = NormalizeStatus(ReadStringFromIndex(itemIndex, "status"));
       state[key.Trim()] = status;
     }
 
@@ -288,6 +290,21 @@ public sealed class DriftDetectionService
     }
 
     return sb.ToString();
+  }
+
+  private static Dictionary<string, JsonElement> BuildCaseInsensitiveIndex(JsonElement obj)
+  {
+    var index = new Dictionary<string, JsonElement>(StringComparer.OrdinalIgnoreCase);
+    foreach (var prop in obj.EnumerateObject())
+      index.TryAdd(prop.Name, prop.Value);
+    return index;
+  }
+
+  private static string? ReadStringFromIndex(IReadOnlyDictionary<string, JsonElement> index, string propertyName)
+  {
+    if (!index.TryGetValue(propertyName, out var value))
+      return null;
+    return value.ValueKind == JsonValueKind.String ? value.GetString() : null;
   }
 
   private static string? ReadStringProperty(JsonElement element, string propertyName)

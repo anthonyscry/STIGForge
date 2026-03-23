@@ -35,17 +35,13 @@ public sealed class AuditTrailService : IAuditTrailService
 
     using var conn = new SqliteConnection(_connectionString);
     await conn.OpenAsync(ct).ConfigureAwait(false);
+    using var tx = await conn.BeginTransactionAsync(IsolationLevel.Serializable, ct).ConfigureAwait(false);
 
-    // BEGIN IMMEDIATE acquires a write lock upfront, serialising concurrent
-    // RecordAsync calls so the read-then-insert for chain hashing is atomic.
-    using var tx = conn.BeginTransaction(IsolationLevel.Serializable);
-
-    // Get previous hash for chaining
+    // Get previous hash for chaining — inside the transaction to prevent races
     var previousHash = await conn.QueryFirstOrDefaultAsync<string>(
       new CommandDefinition(
         "SELECT entry_hash FROM audit_trail ORDER BY id DESC LIMIT 1",
-        transaction: tx,
-        cancellationToken: ct)
+        transaction: tx, cancellationToken: ct)
     ).ConfigureAwait(false) ?? "genesis";
 
     entry.PreviousHash = previousHash;
@@ -59,8 +55,7 @@ public sealed class AuditTrailService : IAuditTrailService
         transaction: tx,
         cancellationToken: ct)
     ).ConfigureAwait(false);
-
-    tx.Commit();
+    await tx.CommitAsync(ct).ConfigureAwait(false);
   }
 
   public async Task<IReadOnlyList<AuditEntry>> QueryAsync(AuditQuery query, CancellationToken ct)
@@ -78,8 +73,9 @@ public sealed class AuditTrailService : IAuditTrailService
     }
     if (!string.IsNullOrWhiteSpace(query.Target))
     {
-      sb.Append(" AND target LIKE @Target");
-      parameters.Add("Target", "%" + query.Target + "%");
+      static string EscapeLike(string value) => value.Replace("\\", "\\\\").Replace("%", "\\%").Replace("_", "\\_");
+      sb.Append(" AND target LIKE @Target ESCAPE '\\'");
+      parameters.Add("Target", "%" + EscapeLike(query.Target) + "%");
     }
     if (query.From.HasValue)
     {

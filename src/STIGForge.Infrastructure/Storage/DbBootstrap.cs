@@ -29,14 +29,19 @@ internal sealed class NullableDateTimeOffsetHandler : SqlMapper.TypeHandler<Date
 
 public static class DbBootstrap
 {
-  private static int _handlersRegistered;
+  private static readonly object _handlerLock = new();
+  private static bool _handlersRegistered;
 
   public static void EnsureCreated(string connectionString)
   {
-    if (Interlocked.CompareExchange(ref _handlersRegistered, 1, 0) == 0)
+    lock (_handlerLock)
     {
-      SqlMapper.AddTypeHandler(new DateTimeOffsetHandler());
-      SqlMapper.AddTypeHandler(new NullableDateTimeOffsetHandler());
+      if (!_handlersRegistered)
+      {
+        SqlMapper.AddTypeHandler(new DateTimeOffsetHandler());
+        SqlMapper.AddTypeHandler(new NullableDateTimeOffsetHandler());
+        _handlersRegistered = true;
+      }
     }
 
     using var conn = new SqliteConnection(connectionString);
@@ -133,6 +138,8 @@ CREATE TABLE IF NOT EXISTS compliance_snapshots (
 );
 CREATE INDEX IF NOT EXISTS ix_compliance_snapshots_bundle ON compliance_snapshots(bundle_root, captured_at DESC);
 
+CREATE INDEX IF NOT EXISTS ix_audit_trail_timestamp ON audit_trail(timestamp DESC);
+
 CREATE TABLE IF NOT EXISTS drift_snapshots (
   snapshot_id TEXT PRIMARY KEY,
   bundle_root TEXT NOT NULL,
@@ -207,23 +214,33 @@ CREATE TABLE IF NOT EXISTS fleet_inventory (
     var userVersion = conn.ExecuteScalar<int>("PRAGMA user_version;");
     if (userVersion < targetUserVersion)
     {
-      var existingColumns = new HashSet<string>(
-        conn.Query<string>("SELECT name FROM pragma_table_info('content_packs')"),
-        StringComparer.OrdinalIgnoreCase);
+      using var migTx = conn.BeginTransaction();
+      try
+      {
+        var existingColumns = new HashSet<string>(
+          conn.Query<string>("SELECT name FROM pragma_table_info('content_packs')", transaction: migTx),
+          StringComparer.OrdinalIgnoreCase);
 
-      if (!existingColumns.Contains("benchmark_ids_json"))
-        conn.Execute("ALTER TABLE content_packs ADD COLUMN benchmark_ids_json TEXT NOT NULL DEFAULT '[]'");
+        if (!existingColumns.Contains("benchmark_ids_json"))
+          conn.Execute("ALTER TABLE content_packs ADD COLUMN benchmark_ids_json TEXT NOT NULL DEFAULT '[]'", transaction: migTx);
 
-      if (!existingColumns.Contains("applicability_tags_json"))
-        conn.Execute("ALTER TABLE content_packs ADD COLUMN applicability_tags_json TEXT NOT NULL DEFAULT '[]'");
+        if (!existingColumns.Contains("applicability_tags_json"))
+          conn.Execute("ALTER TABLE content_packs ADD COLUMN applicability_tags_json TEXT NOT NULL DEFAULT '[]'", transaction: migTx);
 
-      if (!existingColumns.Contains("version"))
-        conn.Execute("ALTER TABLE content_packs ADD COLUMN version TEXT NOT NULL DEFAULT ''");
+        if (!existingColumns.Contains("version"))
+          conn.Execute("ALTER TABLE content_packs ADD COLUMN version TEXT NOT NULL DEFAULT ''", transaction: migTx);
 
-      if (!existingColumns.Contains("release"))
-        conn.Execute("ALTER TABLE content_packs ADD COLUMN release TEXT NOT NULL DEFAULT ''");
+        if (!existingColumns.Contains("release"))
+          conn.Execute("ALTER TABLE content_packs ADD COLUMN release TEXT NOT NULL DEFAULT ''", transaction: migTx);
 
-      conn.Execute($"PRAGMA user_version={targetUserVersion};");
+        conn.Execute($"PRAGMA user_version={targetUserVersion};", transaction: migTx);
+        migTx.Commit();
+      }
+      catch
+      {
+        migTx.Rollback();
+        throw;
+      }
     }
   }
 }
