@@ -184,7 +184,7 @@ See `docs/release/ShipReadinessChecklist.md` for go/no-go criteria.
 See `docs/release/SecurityGatePolicies.md` for policy file and exception management.
 
 ## Release workflows
-- `ci.yml` runs release gate and uploads gate artifacts for every push/PR.
+- `ci.yml` runs build, test suite (2,516 tests), and coverage gate (35% floor) on every push/PR; publishes CLI artifact on `main`.
 - `release-package.yml` (manual dispatch) runs optional release gate + package build and uploads release bundles.
 - `vm-smoke-matrix.yml` (manual dispatch) runs release gate + E2E tests on self-hosted VM runners labeled:
   - `win11`
@@ -224,7 +224,7 @@ Hardening pipeline: PowerSTIG DSC (3-phase) + LGPO GPO application + DoD PKI cer
 
 ### Test Infrastructure
 
-- Unit tests: 927/927 pass
+- Unit tests: 2,516/2,516 pass (UnitTests: 1,296 · CrossPlatform: 1,114 · Integration: 102 · UiTests: 6)
 - Integration tests: 102/102 pass
 - PowerSTIG: 4.29.0, Evaluate-STIG: DISA latest
 - Lab: Hyper-V (triton-ajt), VMs: SRV01/SRV02 (Server 2019), DC01 (Domain Controller)
