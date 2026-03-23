@@ -411,12 +411,15 @@ public partial class App : Application
 
       if (_host != null)
       {
-        // Fire-and-forget host stop from background thread to avoid UI deadlock
-        _ = Task.Run(async () =>
+        // Run StopAsync on a background thread to avoid UI deadlock, then wait before Dispose
+        try
         {
-          try { await _host.StopAsync(TimeSpan.FromSeconds(5)).ConfigureAwait(false); }
-          catch (Exception ex) { System.Diagnostics.Trace.TraceWarning("Host stop failed: " + ex.Message); }
-        });
+          Task.Run(() => _host.StopAsync(TimeSpan.FromSeconds(5))).Wait(TimeSpan.FromSeconds(6));
+        }
+        catch (Exception ex)
+        {
+          System.Diagnostics.Trace.TraceWarning("Host stop failed: " + ex.Message);
+        }
         _host.Dispose();
         TraceStartup("Host stopped and disposed");
       }

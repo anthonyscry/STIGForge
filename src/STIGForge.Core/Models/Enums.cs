@@ -19,4 +19,4 @@ public enum ExceptionType { Waiver, RiskAcceptance, TechnicalException }
 public enum RiskLevel { High, Medium, Low }
 
 [JsonConverter(typeof(JsonStringEnumConverter))]
-public enum ExceptionStatus { Active, Expired, Revoked }
+public enum ExceptionStatus { Active, Expired, Revoked, Pending }
