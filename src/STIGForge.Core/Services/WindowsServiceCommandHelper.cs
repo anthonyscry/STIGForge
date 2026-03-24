@@ -15,11 +15,12 @@ public static partial class WindowsServiceCommandHelper
 
   public static void InstallService(string serviceName, string displayName, string executablePath)
   {
+    if (!OperatingSystem.IsWindows())
+      return;
+
     ValidateServiceName(serviceName);
     ValidateDisplayName(displayName);
     ValidateExecutablePath(executablePath);
-    if (!OperatingSystem.IsWindows())
-      return;
 
     using var process = Process.Start(CreateScProcessStartInfo(
       $"create {serviceName} binPath= \"{executablePath}\" displayName= \"{displayName}\" start= auto"));
