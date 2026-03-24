@@ -64,13 +64,17 @@ public static class CommentTemplateEngine
     }
 
     /// <summary>
-    /// Check if text already contains the STIGForge evidence sentinel.
+    /// Check if text already contains STIGForge evidence markers.
+    /// Matches both the separator sentinel and the evidence report header.
     /// Used for idempotency  -  prevent double-appending on re-export.
     /// </summary>
     public static bool ContainsSentinel(string? text)
     {
-        return !string.IsNullOrWhiteSpace(text)
-            && text.Contains(StiGForgeSentinel, StringComparison.Ordinal);
+        if (string.IsNullOrWhiteSpace(text))
+            return false;
+
+        return text.Contains(StiGForgeSentinel, StringComparison.Ordinal)
+            || text.Contains("STIGForge Evidence Report", StringComparison.Ordinal);
     }
 
     /// <summary>The separator used when appending evidence to existing content.</summary>

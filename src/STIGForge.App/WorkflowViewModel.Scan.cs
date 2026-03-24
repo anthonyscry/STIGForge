@@ -919,7 +919,7 @@ public partial class WorkflowViewModel
         ScanComplianceText = string.Empty;
         VerifyComplianceText = string.Empty;
         InvalidateScanComplianceBaseline();
-        StatusText = "Baseline scan skipped by operator  -  proceeding to harden";
+        StatusText = "Baseline scan skipped by operator — proceeding to harden";
 
         if (HardenState == StepState.Locked)
             HardenState = StepState.Ready;

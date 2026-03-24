@@ -71,7 +71,7 @@ public static class BundleIntegrityVerifier
 
         if (mismatches.Count > 0)
             throw new InvalidOperationException(
-                $"Bundle integrity check failed  -  {mismatches.Count} file(s) have been modified or removed:\n" +
+                $"Bundle integrity check failed — {mismatches.Count} file(s) have been modified or removed:\n" +
                 string.Join("\n", mismatches));
     }
 

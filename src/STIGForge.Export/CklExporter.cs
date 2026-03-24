@@ -121,10 +121,12 @@ public static class CklExporter
             control.Comments = control.Comments + CommentTemplateEngine.Separator + compiled.Comments;
         }
       }
-      catch (Exception)
+      catch (Exception ex)
       {
         // Per-control failure must not abort the export.
         // Control keeps its original FindingDetails/Comments.
+        System.Diagnostics.Trace.TraceWarning(
+          "Evidence enrichment failed for control {0}: {1}", control.VulnId, ex.Message);
       }
     }
   }

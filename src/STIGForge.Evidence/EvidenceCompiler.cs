@@ -8,7 +8,8 @@ namespace STIGForge.Evidence;
 /// <summary>
 /// Compiles raw evidence artifacts from disk into FINDING_DETAILS (machine-grade) and
 /// COMMENTS (human-grade) text for CKL export. Builds and caches the evidence index
-/// per bundleRoot on first call.
+/// per bundleRoot on first call. Cache is process-scoped (singleton lifetime in DI).
+/// If evidence artifacts change mid-process, create a new instance to pick up changes.
 /// </summary>
 public sealed class EvidenceCompiler : IEvidenceCompiler
 {
@@ -77,12 +78,12 @@ public sealed class EvidenceCompiler : IEvidenceCompiler
 
     private EvidenceIndex? GetOrBuildIndex(string bundleRoot)
     {
-        return _indexCache.GetOrAdd(bundleRoot, root =>
+        var index = _indexCache.GetOrAdd(bundleRoot, root =>
         {
             try
             {
                 var svc = new EvidenceIndexService(root);
-                return svc.BuildIndexAsync().GetAwaiter().GetResult();
+                return Task.Run(() => svc.BuildIndexAsync()).GetAwaiter().GetResult();
             }
             catch (Exception ex)
             {
@@ -90,6 +91,12 @@ public sealed class EvidenceCompiler : IEvidenceCompiler
                 return null;
             }
         });
+
+        // Do not permanently cache null (transient failures should be retryable).
+        if (index == null)
+            _indexCache.TryRemove(bundleRoot, out _);
+
+        return index;
     }
 
     private static List<EvidenceIndexEntry> CollectEntries(EvidenceIndex index, string? vulnId, string? ruleId)
@@ -196,18 +203,22 @@ public sealed class EvidenceCompiler : IEvidenceCompiler
         try
         {
             var fullPath = Path.GetFullPath(Path.Combine(bundleRoot, "Evidence", entry.RelativePath));
-            var allowedPath = Path.GetFullPath(Path.Combine(bundleRoot, "Evidence"));
+            var allowedPath = Path.GetFullPath(Path.Combine(bundleRoot, "Evidence")) + Path.DirectorySeparatorChar;
             if (!fullPath.StartsWith(allowedPath, StringComparison.OrdinalIgnoreCase))
                 return null;
 
             if (!File.Exists(fullPath))
                 return null;
 
-            var content = File.ReadAllText(fullPath);
-            if (content.Length > MaxArtifactChars)
-                return content[..MaxArtifactChars] + TruncationMarker;
+            // Read only what we need to avoid loading arbitrarily large artifacts into memory.
+            using var reader = new StreamReader(fullPath);
+            var buffer = new char[MaxArtifactChars];
+            int charsRead = reader.Read(buffer, 0, buffer.Length);
 
-            return content;
+            if (charsRead < MaxArtifactChars)
+                return new string(buffer, 0, charsRead);
+
+            return new string(buffer, 0, charsRead) + TruncationMarker;
         }
         catch (Exception ex)
         {

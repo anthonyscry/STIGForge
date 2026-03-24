@@ -320,7 +320,7 @@ public sealed class FleetService
     var effectiveTimeoutSeconds = timeoutSeconds > 0 ? timeoutSeconds : 600;
 
     if (_processRunner == null)
-      return (-1, string.Empty, "No process runner configured  -  fleet execution is unavailable.");
+      return (-1, string.Empty, "No process runner configured — fleet execution is unavailable.");
 
     ProcessResult result;
     try
