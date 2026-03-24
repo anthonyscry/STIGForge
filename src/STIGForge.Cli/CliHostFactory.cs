@@ -105,6 +105,8 @@ public static class CliHostFactory
     services.AddSingleton<ManualAnswerService>();
     services.AddSingleton<IBundleMissionSummaryService, BundleMissionSummaryService>();
     services.AddSingleton<EvidenceCollector>();
+    services.AddSingleton<IEvidenceCompiler>(sp =>
+        new EvidenceCompiler(sp.GetRequiredService<ILoggerFactory>().CreateLogger<EvidenceCompiler>()));
     services.AddSingleton<STIGForge.Apply.PowerStig.PowerStigDataGenerator>(sp =>
       new STIGForge.Apply.PowerStig.PowerStigDataGenerator(
         sp.GetRequiredService<ReleaseAgeGate>(),
