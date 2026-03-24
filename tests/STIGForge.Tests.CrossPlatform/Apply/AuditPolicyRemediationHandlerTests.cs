@@ -112,7 +112,7 @@ public sealed class AuditPolicyRemediationHandlerTests
     [Fact]
     public async Task TestAsync_SubcategoryNotFoundInOutput_ReturnsCurrentSettingAsRawOutput()
     {
-        // Output doesn't mention "Logon Events" — ParseAuditSetting returns null,
+        // Output doesn't mention "Logon Events"  -  ParseAuditSetting returns null,
         // so currentSetting falls back to output.Trim()
         const string rawOutput = "Some other category    Success";
         var handler = CreateHandler("Logon Events", "No Auditing", MockRunner(rawOutput).Object);
@@ -133,7 +133,7 @@ public sealed class AuditPolicyRemediationHandlerTests
 
         var result = await handler.ApplyAsync(CreateContext(dryRun: true), CancellationToken.None);
 
-        // DryRun delegates to TestAsync — returns non-compliant test result, not a change
+        // DryRun delegates to TestAsync  -  returns non-compliant test result, not a change
         result.Success.Should().BeTrue();
         result.Changed.Should().BeFalse();
         result.NewValue.Should().Be("Success");
@@ -235,7 +235,7 @@ public sealed class AuditPolicyRemediationHandlerTests
     [Fact]
     public async Task ParseAuditSetting_LineMissingSubcategory_ReturnsNull_FallsBackToRawOutput()
     {
-        // Output has no line matching the subcategory — fallback is raw output.Trim()
+        // Output has no line matching the subcategory  -  fallback is raw output.Trim()
         const string rawOutput = "Object Access    Success";
         var handler = CreateHandler("Logon Events", "Success", MockRunner(rawOutput).Object);
 

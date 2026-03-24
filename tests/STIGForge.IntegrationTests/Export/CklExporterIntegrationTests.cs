@@ -362,7 +362,7 @@ public class CklExporterIntegrationTests : IDisposable
 
     CreateEvidenceArtifact(bundleRoot, "V-99901", "test_evidence", "HKLM\\EnableLUA = 1", metadataJson);
 
-    // Call without compiler — backward compatible path
+    // Call without compiler  -  backward compatible path
     var result = CklExporter.ExportCkl(new CklExportRequest
     {
       BundleRoot = bundleRoot,

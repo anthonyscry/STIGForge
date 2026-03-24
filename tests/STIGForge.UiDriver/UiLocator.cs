@@ -9,11 +9,13 @@ public sealed class UiLocator
 {
   private readonly Window _window;
   private readonly string _testId;
+  private readonly bool _strictAutomationId;
 
-  internal UiLocator(Window window, string testId)
+  internal UiLocator(Window window, string testId, bool strictAutomationId = false)
   {
     _window = window;
     _testId = testId;
+    _strictAutomationId = strictAutomationId;
   }
 
   public Task<AutomationElement> ExpectVisibleAsync(TimeSpan? timeout = null)
@@ -56,7 +58,17 @@ public sealed class UiLocator
     var sw = Stopwatch.StartNew();
     while (sw.Elapsed < timeout)
     {
-      var match = _window.FindFirstDescendant(cf => cf.ByName(_testId));
+      AutomationElement? match;
+      if (_strictAutomationId)
+      {
+        match = _window.FindFirstDescendant(cf => cf.ByAutomationId(_testId));
+      }
+      else
+      {
+        match = _window.FindFirstDescendant(cf => cf.ByAutomationId(_testId))
+                ?? _window.FindFirstDescendant(cf => cf.ByName(_testId));
+      }
+
       if (match is not null)
         return match;
 

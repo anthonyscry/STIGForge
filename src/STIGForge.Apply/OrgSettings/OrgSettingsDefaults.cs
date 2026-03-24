@@ -15,7 +15,7 @@ public static class OrgSettingsDefaults
 
   private static readonly Dictionary<string, OrgSettingDefault> Defaults = new(StringComparer.OrdinalIgnoreCase)
   {
-    // ===== RootCertificateRule — DoD Root CA thumbprints =====
+    // ===== RootCertificateRule  -  DoD Root CA thumbprints =====
     // These are the actual DoD Root CA certificate thumbprints from DISA PKI.
     // V-205648.a-d: DoD Root CA certificates must be installed
     ["V-205648.a"] = new("D73CA91102A2204A36459ED32213B467D7CE97FB",

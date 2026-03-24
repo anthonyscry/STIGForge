@@ -52,7 +52,7 @@ public sealed class StandalonePoamExporterTests : IDisposable
       OutputDirectory = outputDir
     });
 
-    // Bundle has 1 pass and 2 fail/open — POAM should only include the fail/open
+    // Bundle has 1 pass and 2 fail/open  -  POAM should only include the fail/open
     result.ItemCount.Should().Be(2);
   }
 

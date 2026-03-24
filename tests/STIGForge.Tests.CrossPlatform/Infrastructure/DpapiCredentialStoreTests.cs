@@ -4,7 +4,7 @@ using Moq;
 using STIGForge.Core.Abstractions;
 using STIGForge.Infrastructure.Storage;
 
-#pragma warning disable CA1416 // Platform compatibility — non-DPAPI methods work on all OSes; DPAPI tests are Skip'd
+#pragma warning disable CA1416 // Platform compatibility  -  non-DPAPI methods work on all OSes; DPAPI tests are Skip'd
 
 namespace STIGForge.Tests.CrossPlatform.Infrastructure;
 

@@ -1,7 +1,7 @@
 namespace STIGForge.Core.Abstractions;
 
 /// <summary>
-/// Input for evidence compilation — lightweight record that carries only
+/// Input for evidence compilation  -  lightweight record that carries only
 /// the fields needed from Verify.ControlResult without coupling to the Verify project.
 /// </summary>
 public sealed record EvidenceCompilationInput(
@@ -14,7 +14,7 @@ public sealed record EvidenceCompilationInput(
     string? Comments);
 
 /// <summary>
-/// Compiled evidence output — FINDING_DETAILS (machine-grade) and COMMENTS (human-grade).
+/// Compiled evidence output  -  FINDING_DETAILS (machine-grade) and COMMENTS (human-grade).
 /// Null fields mean "no enrichment available for this field."
 /// </summary>
 public sealed record CompiledEvidence(
@@ -34,7 +34,7 @@ public interface IEvidenceCompiler
     /// Index is built and cached per bundleRoot automatically.
     /// </summary>
     /// <param name="input">Control data from the verify pipeline.</param>
-    /// <param name="bundleRoot">Bundle root path — evidence is at {bundleRoot}/Evidence/by_control/.</param>
+    /// <param name="bundleRoot">Bundle root path  -  evidence is at {bundleRoot}/Evidence/by_control/.</param>
     CompiledEvidence? CompileEvidence(
         EvidenceCompilationInput input,
         string bundleRoot);

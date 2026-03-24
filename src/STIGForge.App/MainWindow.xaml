@@ -42,10 +42,12 @@
             <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center">
                 <ToggleButton Content="&#xE8CB;" Width="38" Height="38" Padding="0" Margin="0,0,8,0" TabIndex="899"
                               ToolTip="Toggle guided wizard mode" FontFamily="Segoe MDL2 Assets" FontSize="16"
-                              IsChecked="{Binding IsWizardMode}" AutomationProperties.Name="Guided wizard mode toggle"/>
-                <Button Content="&#xE897;" Width="38" Height="38" Padding="0" Margin="0,0,8,0" TabIndex="900" ToolTip="Help (F1)" FontFamily="Segoe MDL2 Assets" FontSize="16" Command="{Binding ShowHelpCommand}" AutomationProperties.Name="Help"/>
-                <Button Content="&#xE946;" Width="38" Height="38" Padding="0" Margin="0,0,8,0" TabIndex="901" ToolTip="About" FontFamily="Segoe MDL2 Assets" FontSize="16" Command="{Binding ShowAboutCommand}" AutomationProperties.Name="About"/>
-                <Button Content="&#xE713;" Width="38" Height="38" Padding="0" TabIndex="902" ToolTip="Settings" FontFamily="Segoe MDL2 Assets" FontSize="16" Command="{Binding ShowSettingsCommand}" AutomationProperties.Name="Settings"/>
+                              IsChecked="{Binding IsWizardMode}"
+                              AutomationProperties.Name="Guided wizard mode toggle"
+                              AutomationProperties.AutomationId="wizard-mode-toggle"/>
+                <Button Content="&#xE897;" Width="38" Height="38" Padding="0" Margin="0,0,8,0" TabIndex="900" ToolTip="Help (F1)" FontFamily="Segoe MDL2 Assets" FontSize="16" Command="{Binding ShowHelpCommand}" AutomationProperties.Name="Help" AutomationProperties.AutomationId="help-button"/>
+                <Button Content="&#xE946;" Width="38" Height="38" Padding="0" Margin="0,0,8,0" TabIndex="901" ToolTip="About" FontFamily="Segoe MDL2 Assets" FontSize="16" Command="{Binding ShowAboutCommand}" AutomationProperties.Name="About" AutomationProperties.AutomationId="about-button"/>
+                <Button Content="&#xE713;" Width="38" Height="38" Padding="0" TabIndex="902" ToolTip="Settings" FontFamily="Segoe MDL2 Assets" FontSize="16" Command="{Binding ShowSettingsCommand}" AutomationProperties.Name="Settings" AutomationProperties.AutomationId="settings-button"/>
             </StackPanel>
             </DockPanel>
         </Border>

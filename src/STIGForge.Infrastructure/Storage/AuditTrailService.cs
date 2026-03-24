@@ -37,7 +37,7 @@ public sealed class AuditTrailService : IAuditTrailService
     await conn.OpenAsync(ct).ConfigureAwait(false);
     using var tx = await conn.BeginTransactionAsync(IsolationLevel.Serializable, ct).ConfigureAwait(false);
 
-    // Get previous hash for chaining — inside the transaction to prevent races
+    // Get previous hash for chaining  -  inside the transaction to prevent races
     var previousHash = await conn.QueryFirstOrDefaultAsync<string>(
       new CommandDefinition(
         "SELECT entry_hash FROM audit_trail ORDER BY id DESC LIMIT 1",

@@ -56,7 +56,7 @@ public class ApplyRunner : IApplyRunner
 
     _stepEvidenceWriter = new StepEvidenceWriter(_logger, evidenceCollector);
 
-    // Step order matches the original dispatch chain — do not reorder.
+    // Step order matches the original dispatch chain  -  do not reorder.
     _steps = new IApplyStep[]
     {
       new PowerStigApplyStep(processRunner),

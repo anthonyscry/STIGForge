@@ -84,7 +84,7 @@ public class EvidenceCompilerTests : IDisposable
     [Fact]
     public void CompileEvidence_WithNoEvidenceDir_ReturnsNull()
     {
-        // No Evidence/by_control/ directory exists — index will be empty
+        // No Evidence/by_control/ directory exists  -  index will be empty
         var compiler = new EvidenceCompiler();
         var input = MakeInput();
 
@@ -162,9 +162,9 @@ public class EvidenceCompilerTests : IDisposable
         var compiler = new EvidenceCompiler();
         var input = MakeInput(vulnId: "SV-003r1", ruleId: null);
 
-        // First call — builds and caches index
+        // First call  -  builds and caches index
         var result1 = compiler.CompileEvidence(input, _bundleRoot);
-        // Second call to same bundleRoot — should use cached index
+        // Second call to same bundleRoot  -  should use cached index
         var result2 = compiler.CompileEvidence(input, _bundleRoot);
 
         result1.Should().NotBeNull();
@@ -215,7 +215,7 @@ public class EvidenceCompilerTests : IDisposable
             artifactContent: "dedup evidence content");
 
         var compiler = new EvidenceCompiler();
-        // Both VulnId and RuleId are the same value — should deduplicate
+        // Both VulnId and RuleId are the same value  -  should deduplicate
         var input = MakeInput(vulnId: "SV-005r1", ruleId: "SV-005r1");
 
         var result = compiler.CompileEvidence(input, _bundleRoot);

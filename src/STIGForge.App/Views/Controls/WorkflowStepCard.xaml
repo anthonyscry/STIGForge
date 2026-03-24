@@ -62,6 +62,7 @@
                         Command="{Binding RunCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                         ToolTip="{Binding RunButtonToolTip, RelativeSource={RelativeSource AncestorType=UserControl}}"
                         AutomationProperties.Name="{Binding RunButtonAutomationName, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        AutomationProperties.AutomationId="{Binding RunButtonAutomationName, RelativeSource={RelativeSource AncestorType=UserControl}}"
                         AutomationProperties.HelpText="{Binding RunButtonToolTip, RelativeSource={RelativeSource AncestorType=UserControl}}" />
 
                 <Button Content="{Binding SecondaryButtonLabel, RelativeSource={RelativeSource AncestorType=UserControl}}"
@@ -74,6 +75,7 @@
                         Command="{Binding SecondaryCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                         ToolTip="{Binding SecondaryButtonToolTip, RelativeSource={RelativeSource AncestorType=UserControl}}"
                         AutomationProperties.Name="{Binding SecondaryButtonAutomationName, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        AutomationProperties.AutomationId="{Binding SecondaryButtonAutomationName, RelativeSource={RelativeSource AncestorType=UserControl}}"
                         AutomationProperties.HelpText="{Binding SecondaryButtonToolTip, RelativeSource={RelativeSource AncestorType=UserControl}}" />
             </StackPanel>
 

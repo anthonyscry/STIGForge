@@ -5,7 +5,7 @@ namespace STIGForge.Evidence;
 /// <summary>
 /// Generates human-readable COMMENTS text for CKL export based on
 /// control status, evidence, and verification context.
-/// Pure function — no I/O, no side effects.
+/// Pure function  -  no I/O, no side effects.
 /// </summary>
 public static class CommentTemplateEngine
 {
@@ -65,7 +65,7 @@ public static class CommentTemplateEngine
 
     /// <summary>
     /// Check if text already contains the STIGForge evidence sentinel.
-    /// Used for idempotency — prevent double-appending on re-export.
+    /// Used for idempotency  -  prevent double-appending on re-export.
     /// </summary>
     public static bool ContainsSentinel(string? text)
     {

@@ -14,7 +14,7 @@ public sealed class ControlException
   public string RuleId { get; set; } = string.Empty;
   public string? VulnId { get; set; }
   public string ExceptionType { get; set; } = string.Empty;  // Waiver, RiskAcceptance, TechnicalException
-  public string Status { get; set; } = "Active";              // Active, Expired, Revoked — stored as string for SQLite compat
+  public string Status { get; set; } = "Active";              // Active, Expired, Revoked  -  stored as string for SQLite compat
   public string RiskLevel { get; set; } = string.Empty;       // High, Medium, Low
 
   /// <summary>Typed accessor for <see cref="Status"/>; use this for comparisons instead of raw string equality.</summary>

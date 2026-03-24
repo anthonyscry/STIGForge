@@ -175,7 +175,7 @@ public sealed class GpoConflictDetector
     }
     catch (Exception)
     {
-      // RSoP XML may be malformed or empty — treat as no results.
+      // RSoP XML may be malformed or empty  -  treat as no results.
       return results;
     }
 

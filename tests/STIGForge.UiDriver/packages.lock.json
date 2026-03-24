@@ -2,6 +2,17 @@
   "version": 1,
   "dependencies": {
     "net8.0-windows7.0": {
+      "Appium.WebDriver": {
+        "type": "Direct",
+        "requested": "[5.0.0, )",
+        "resolved": "5.0.0",
+        "contentHash": "QurlE0xcnFFqNTAN1Yq0eWOAYRXM4VhpGoSsyfwjuoJaajaIp1vbjdNEy0G7yPpScjny2R4m94ZUMoGqPq/rPA==",
+        "dependencies": {
+          "Selenium.Support": "4.21.0",
+          "Selenium.WebDriver": "4.21.0",
+          "System.Drawing.Common": "8.0.6"
+        }
+      },
       "FlaUI.Core": {
         "type": "Direct",
         "requested": "[5.0.0, )",
@@ -23,6 +34,16 @@
         "dependencies": {
           "FlaUI.Core": "5.0.0",
           "Interop.UIAutomationClient": "10.19041.0"
+        }
+      },
+      "xunit.core": {
+        "type": "Direct",
+        "requested": "[2.9.3, )",
+        "resolved": "2.9.3",
+        "contentHash": "BiAEvqGvyme19wE0wTKdADH+NloYqikiU0mcnmiNyXaF9HyHmE6sr/3DC5vnBkgsWaE6yPyWszKSPSApWdRVeQ==",
+        "dependencies": {
+          "xunit.extensibility.core": "[2.9.3]",
+          "xunit.extensibility.execution": "[2.9.3]"
         }
       },
       "Interop.UIAutomationClient": {
@@ -48,6 +69,27 @@
         "type": "Transitive",
         "resolved": "8.0.0",
         "contentHash": "9opKRyOKMCi2xJ7Bj7kxtZ1r9vbzosMvRrdEhVhDz8j8MoBGgB+WmC94yH839NPH+BclAjtQ/pyagvi/8gDLkw=="
+      },
+      "Newtonsoft.Json": {
+        "type": "Transitive",
+        "resolved": "13.0.1",
+        "contentHash": "ppPFpBcvxdsfUonNcvITKqLl3bqxWbDCZIzDWHzjpdAHRFfZe0Dw9HmA0+za13IdyrgJwpkDTDA9fHaxOrt20A=="
+      },
+      "Selenium.Support": {
+        "type": "Transitive",
+        "resolved": "4.21.0",
+        "contentHash": "MiDIsB/5Ki1AWua/b9v/eGARtI6bxseAt4EOl2fgl7WsoXlV7Zzq5/gGJ7Zs9PLvJUQMbS6WSNWuMdeSr1SXdA==",
+        "dependencies": {
+          "Selenium.WebDriver": "4.21.0"
+        }
+      },
+      "Selenium.WebDriver": {
+        "type": "Transitive",
+        "resolved": "4.21.0",
+        "contentHash": "3xIx4CJunIoLEOROfDKILIzf76WfphTpQJYE98stG1GBVBKhFO5E6wXNfCqdiWt34iNlckcDr3z+qCD+RPfuUQ==",
+        "dependencies": {
+          "Newtonsoft.Json": "13.0.1"
+        }
       },
       "System.CodeDom": {
         "type": "Transitive",
@@ -123,6 +165,27 @@
         "type": "Transitive",
         "resolved": "8.0.0",
         "contentHash": "Obg3a90MkOw9mYKxrardLpY2u0axDMrSmy4JCdq2cYbelM2cUwmUir5Bomvd1yxmPL9h5LVHU1tuKBZpUjfASg=="
+      },
+      "xunit.abstractions": {
+        "type": "Transitive",
+        "resolved": "2.0.3",
+        "contentHash": "pot1I4YOxlWjIb5jmwvvQNbTrZ3lJQ+jUGkGjWE3hEFM0l5gOnBWS+H3qsex68s5cO52g+44vpGzhAt+42vwKg=="
+      },
+      "xunit.extensibility.core": {
+        "type": "Transitive",
+        "resolved": "2.9.3",
+        "contentHash": "kf3si0YTn2a8J8eZNb+zFpwfoyvIrQ7ivNk5ZYA5yuYk1bEtMe4DxJ2CF/qsRgmEnDr7MnW1mxylBaHTZ4qErA==",
+        "dependencies": {
+          "xunit.abstractions": "2.0.3"
+        }
+      },
+      "xunit.extensibility.execution": {
+        "type": "Transitive",
+        "resolved": "2.9.3",
+        "contentHash": "yMb6vMESlSrE3Wfj7V6cjQ3S4TXdXpRqYeNEI3zsX31uTsGMJjEw6oD5F5u1cHnMptjhEECnmZSsPxB6ChZHDQ==",
+        "dependencies": {
+          "xunit.extensibility.core": "[2.9.3]"
+        }
       }
     }
   }

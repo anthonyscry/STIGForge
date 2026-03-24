@@ -7,7 +7,7 @@ using STIGForge.Tests.CrossPlatform.Helpers;
 namespace STIGForge.Tests.CrossPlatform.Core;
 
 /// <summary>
-/// Tests for GpoConflictDetector — focuses on path matching strategies not covered by existing tests:
+/// Tests for GpoConflictDetector  -  focuses on path matching strategies not covered by existing tests:
 /// hive-stripped paths, compact normalization, multiple targets, and case-insensitive matching.
 /// All tests exercise ParseRsopXml indirectly through DetectConflictsAsync.
 /// </summary>

@@ -38,7 +38,7 @@ public class ScheduledTaskServiceIntegrationTests
     {
         var svc = new ScheduledTaskService();
 
-        // Unregistering a non-existent task should not throw — it returns a result
+        // Unregistering a non-existent task should not throw  -  it returns a result
         var result = svc.Unregister("NonExistentTask_" + Guid.NewGuid().ToString("N")[..8]);
 
         result.Should().NotBeNull();

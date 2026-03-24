@@ -9,8 +9,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Appium.WebDriver" Version="5.0.0" />
     <PackageReference Include="FlaUI.Core" Version="5.0.0" />
     <PackageReference Include="FlaUI.UIA3" Version="5.0.0" />
+    <PackageReference Include="xunit.core" Version="2.9.3" />
   </ItemGroup>
 
 </Project>

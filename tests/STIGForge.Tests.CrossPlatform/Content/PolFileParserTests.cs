@@ -151,7 +151,7 @@ public sealed class PolFileParserTests : IDisposable
     [Fact]
     public void Parse_ScanLimit_VeryLongData_ReturnsBeforeScanLimit()
     {
-        // Create a buffer with no valid entry brackets after the header — only junk bytes.
+        // Create a buffer with no valid entry brackets after the header  -  only junk bytes.
         // FindNextEntryBracket has a 1MB scan cap; this should not throw.
         var junk = new byte[2 * 1024 * 1024]; // 2 MB of zeros
         var bytes = Concat(Header(), junk);

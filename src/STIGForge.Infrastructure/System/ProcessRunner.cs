@@ -58,7 +58,7 @@ public sealed class ProcessRunner : IProcessRunner
             await tcs.Task.ConfigureAwait(false);
         }
 
-        process.WaitForExit(5_000); // safety flush — Exited already fired; 5 s covers post-Kill OS cleanup
+        process.WaitForExit(5_000); // safety flush  -  Exited already fired; 5 s covers post-Kill OS cleanup
         process.WaitForExit();     // no-arg call ensures all async OutputDataReceived events have fired
 
         string stdoutResult, stderrResult;

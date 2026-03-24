@@ -127,17 +127,17 @@ public class AuditTrailServiceTests : IDisposable
         // Entry is recorded at _fixedNow (from mock clock)
         await _sut.RecordAsync(MakeEntry(action: "DR_Test"), CancellationToken.None);
 
-        // No date filter — entry should be present
+        // No date filter  -  entry should be present
         var all = await _sut.QueryAsync(new AuditQuery { Action = "DR_Test", Limit = 10 }, CancellationToken.None);
         all.Should().ContainSingle("the entry must have been recorded successfully");
 
-        // From far in the future — entry at _fixedNow is before From, so excluded
+        // From far in the future  -  entry at _fixedNow is before From, so excluded
         var futureFrom = await _sut.QueryAsync(
             new AuditQuery { Action = "DR_Test", From = _fixedNow.AddYears(1), Limit = 10 },
             CancellationToken.None);
         futureFrom.Should().BeEmpty("entry timestamp is before the From threshold");
 
-        // To far in the past — entry at _fixedNow is after To, so excluded
+        // To far in the past  -  entry at _fixedNow is after To, so excluded
         var pastTo = await _sut.QueryAsync(
             new AuditQuery { Action = "DR_Test", To = _fixedNow.AddYears(-1), Limit = 10 },
             CancellationToken.None);

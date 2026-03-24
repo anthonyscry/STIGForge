@@ -39,7 +39,7 @@ public class AnswerImpactTests
   [Fact]
   public void CheckTextUnchanged_AnswerValid()
   {
-    // Only FixText changed — answer should remain Valid
+    // Only FixText changed  -  answer should remain Valid
     var baseline = MakeControl("C1", checkText: "Same check", fixText: "Old fix");
     var newCtrl = MakeControl("C1", checkText: "Same check", fixText: "New fix");
 

@@ -5,7 +5,7 @@ namespace STIGForge.Apply.PowerStig;
 
 /// <summary>
 /// Generates PowerSTIG .psd1 data from STIG controls and overlays.
-/// Constructor-injected — no static mutable state. Thread-safe.
+/// Constructor-injected  -  no static mutable state. Thread-safe.
 /// </summary>
 public sealed class PowerStigDataGenerator
 {

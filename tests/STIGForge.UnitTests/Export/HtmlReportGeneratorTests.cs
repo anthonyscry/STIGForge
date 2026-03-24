@@ -122,7 +122,7 @@ public sealed class HtmlReportGeneratorTests : IDisposable
 
     // Should not contain any http:// or https:// URLs
     var urlPattern = new Regex(@"(src|href|url)\s*=\s*[""']https?://", RegexOptions.IgnoreCase);
-    urlPattern.IsMatch(html).Should().BeFalse("report must be fully offline — no external URLs");
+    urlPattern.IsMatch(html).Should().BeFalse("report must be fully offline  -  no external URLs");
   }
 
   [Fact]

@@ -14,6 +14,8 @@ public sealed class EvidenceCompiler : IEvidenceCompiler
 {
     private const int MaxArtifactChars = 4000;
     private const string TruncationMarker = "[truncated]";
+    private const int MaxEvidenceEntries = 50;
+    private const int MaxTotalOutputChars = 100_000;
 
     private readonly ConcurrentDictionary<string, EvidenceIndex?> _indexCache = new(StringComparer.OrdinalIgnoreCase);
     private readonly ILogger<EvidenceCompiler>? _logger;
@@ -134,8 +136,15 @@ public sealed class EvidenceCompiler : IEvidenceCompiler
         // Raw Evidence
         sb.AppendLine();
         sb.AppendLine("--- Raw Evidence ---");
+        var processedEntries = 0;
         foreach (var entry in entries)
         {
+            if (processedEntries >= MaxEvidenceEntries || sb.Length >= MaxTotalOutputChars)
+            {
+                sb.AppendLine($"[Output truncated: {entries.Count - processedEntries} additional entries omitted]");
+                break;
+            }
+
             sb.AppendFormat("[{0}] Collected: {1} (Source: {2})", entry.Type, entry.TimestampUtc, entry.Source);
             sb.AppendLine();
 
@@ -146,6 +155,7 @@ public sealed class EvidenceCompiler : IEvidenceCompiler
             }
 
             sb.AppendLine();
+            processedEntries++;
         }
 
         // Apply History
@@ -185,7 +195,11 @@ public sealed class EvidenceCompiler : IEvidenceCompiler
 
         try
         {
-            var fullPath = Path.Combine(bundleRoot, "Evidence", entry.RelativePath);
+            var fullPath = Path.GetFullPath(Path.Combine(bundleRoot, "Evidence", entry.RelativePath));
+            var allowedPath = Path.GetFullPath(Path.Combine(bundleRoot, "Evidence"));
+            if (!fullPath.StartsWith(allowedPath, StringComparison.OrdinalIgnoreCase))
+                return null;
+
             if (!File.Exists(fullPath))
                 return null;
 
