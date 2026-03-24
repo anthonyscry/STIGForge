@@ -3,6 +3,34 @@
 All notable changes to STIGForge are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.0.4] - 2026-03-24
+
+### Added
+
+- Evidence compiler pipeline for CKL export — `IEvidenceCompiler` interface, `EvidenceCompiler` implementation, and `CommentTemplateEngine` generate auditor-ready FINDING_DETAILS and COMMENTS from raw evidence artifacts on disk.
+- CKL export now enriches controls with evidence when artifacts exist in the bundle's `Evidence/by_control/` directory. Enrichment is optional (backward compatible) and idempotent (sentinel-based duplicate detection).
+- CLI `export-ckl` command auto-resolves `IEvidenceCompiler` from DI and reports "Evidence enrichment: enabled" when active.
+- WinAppDriver (Appium) E2E test backend — 5 smoke tests for WPF UI via Windows Application Driver.
+- FlaUI UI test improvements — `[UIFact]` attribute for conditional skip in non-interactive sessions, `AutomationId`-based element lookup.
+- `WindowsFactAttribute` for conditionally skipping DPAPI tests on non-Windows platforms.
+
+### Fixed
+
+- `EvidenceCompiler` path traversal defense — appends directory separator to prevent `../EvidenceExfil/` prefix-matching bypass.
+- `EvidenceCompiler` artifact reading — uses `StreamReader` with 4KB cap instead of `File.ReadAllText` to prevent OOM on large artifacts.
+- `EvidenceCompiler` index caching — null results from transient failures are no longer permanently cached.
+- `EvidenceCompiler` sync-over-async — `BuildIndexAsync` wrapped in `Task.Run` to prevent WPF SynchronizationContext deadlock.
+- `CklExporter.EnrichResultsWithEvidence` — added `Trace.TraceWarning` for per-control enrichment failures (was bare catch with no logging).
+- `WindowsServiceCommandHelper.InstallService` — restored input validation before OS guard (was bypassed on non-Windows platforms).
+- Reverted em-dash to hyphen replacement in 4 user-visible strings (status text, report title, exception message, generated script comment).
+- `WinAppDriverClient.DisposeAsync` — bare `catch` replaced with typed `catch (Exception)` per project convention, added diagnostic logging.
+
+### Infrastructure
+
+- Appium.WebDriver downgraded from 5.0.0 to 4.4.5 for WinAppDriver 1.2.1 compatibility.
+- `STIGForge.UiDriver` marked as `IsTestProject=false` to prevent test runner from loading it as a test assembly.
+- `xunit.runner.json` added to UI test projects for sequential execution (prevents desktop contention).
+
 ## [1.0.3] - 2026-03-23
 
 ### Security
