@@ -43,9 +43,9 @@ public sealed class AppWinAppDriverTests
 
         await using var client = await WinAppDriverClient.LaunchAsync(executablePath, serviceUrl, TimeSpan.FromSeconds(60));
 
-        await client.GetById("workflow-tab").ClickAsync();
+        await client.GetByName("Workflow tab").ClickAsync();
 
-        await client.GetById("run-auto-workflow").ExpectVisibleAsync();
+        await client.GetByName("Run auto workflow").ExpectVisibleAsync();
         await client.GetByName("Run Scan step").ExpectVisibleAsync();
         await client.GetByName("Run Harden step").ExpectVisibleAsync();
         await client.GetByName("Run Verify step").ExpectVisibleAsync();
@@ -85,7 +85,7 @@ public sealed class AppWinAppDriverTests
 
         await using var client = await WinAppDriverClient.LaunchAsync(executablePath, serviceUrl, TimeSpan.FromSeconds(60));
 
-        await client.GetById("results-tab").ClickAsync();
+        await client.GetByName("Results tab").ClickAsync();
 
         var screenshotPath = client.CaptureScreenshot(screenshotRoot, "wad-smoke-results-tab.png");
         File.Exists(screenshotPath).Should().BeTrue();

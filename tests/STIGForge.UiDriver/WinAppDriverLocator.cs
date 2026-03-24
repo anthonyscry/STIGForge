@@ -17,20 +17,20 @@ public enum WinAppDriverLocatorStrategy
 /// </summary>
 public sealed class WinAppDriverLocator
 {
-    private readonly WindowsDriver _driver;
+    private readonly WindowsDriver<WindowsElement> _driver;
     private readonly WinAppDriverLocatorStrategy _strategy;
     private readonly string _selector;
 
-    internal WinAppDriverLocator(WindowsDriver driver, WinAppDriverLocatorStrategy strategy, string selector)
+    internal WinAppDriverLocator(WindowsDriver<WindowsElement> driver, WinAppDriverLocatorStrategy strategy, string selector)
     {
         _driver = driver;
         _strategy = strategy;
         _selector = selector;
     }
 
-    public Task<AppiumElement> ExpectVisibleAsync(TimeSpan? timeout = null)
+    public Task<WindowsElement> ExpectVisibleAsync(TimeSpan? timeout = null)
     {
-        var element = WaitForElement(timeout ?? TimeSpan.FromSeconds(10));
+        var element = WaitForElement(timeout ?? TimeSpan.FromSeconds(30));
         if (!element.Displayed)
             throw new InvalidOperationException($"Element '{_selector}' was found but is not displayed.");
 
@@ -56,7 +56,7 @@ public sealed class WinAppDriverLocator
         element.SendKeys(text);
     }
 
-    private AppiumElement WaitForElement(TimeSpan timeout)
+    private WindowsElement WaitForElement(TimeSpan timeout)
     {
         var by = _strategy switch
         {
@@ -73,7 +73,7 @@ public sealed class WinAppDriverLocator
             {
                 var elements = _driver.FindElements(by);
                 if (elements.Count > 0)
-                    return (AppiumElement)elements[0];
+                    return elements[0];
             }
             catch (WebDriverException)
             {

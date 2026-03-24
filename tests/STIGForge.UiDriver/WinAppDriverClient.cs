@@ -9,14 +9,14 @@ namespace STIGForge.UiDriver;
 /// </summary>
 public sealed class WinAppDriverClient : IAsyncDisposable
 {
-    private readonly WindowsDriver _driver;
+    private readonly WindowsDriver<WindowsElement> _driver;
 
-    private WinAppDriverClient(WindowsDriver driver)
+    private WinAppDriverClient(WindowsDriver<WindowsElement> driver)
     {
         _driver = driver;
     }
 
-    public WindowsDriver Driver => _driver;
+    public WindowsDriver<WindowsElement> Driver => _driver;
 
     /// <summary>
     /// Launches the application via WinAppDriver and returns a connected client.
@@ -38,12 +38,12 @@ public sealed class WinAppDriverClient : IAsyncDisposable
         var serviceUrl = winAppDriverUrl ?? new Uri("http://127.0.0.1:4723/");
 
         var options = new AppiumOptions();
-        options.AddAdditionalAppiumOption("app", executablePath);
-        options.PlatformName = "Windows";
-        options.AutomationName = "Windows";
+        options.AddAdditionalCapability("app", executablePath);
+        options.AddAdditionalCapability("deviceName", "WindowsPC");
+        options.AddAdditionalCapability("platformName", "Windows");
 
         var commandTimeout = timeout ?? TimeSpan.FromSeconds(60);
-        var driver = new WindowsDriver(serviceUrl, options, commandTimeout);
+        var driver = new WindowsDriver<WindowsElement>(serviceUrl, options, commandTimeout);
 
         return Task.FromResult(new WinAppDriverClient(driver));
     }
@@ -77,17 +77,20 @@ public sealed class WinAppDriverClient : IAsyncDisposable
         return path;
     }
 
-    public ValueTask DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         try
         {
             _driver.Quit();
         }
-        catch
+        catch (Exception ex)
         {
+            System.Diagnostics.Trace.TraceWarning("WinAppDriver session teardown failed: {0}", ex.Message);
         }
 
         _driver.Dispose();
-        return ValueTask.CompletedTask;
+
+        // Allow WinAppDriver time to clean up the session before the next test launches.
+        await Task.Delay(2000).ConfigureAwait(false);
     }
 }
