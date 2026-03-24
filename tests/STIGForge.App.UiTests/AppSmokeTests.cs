@@ -8,7 +8,7 @@ namespace STIGForge.App.UiTests;
 
 public sealed class AppSmokeTests
 {
-  [Fact]
+  [UIFact]
   [Trait("Category", "UI")]
   public async Task MainWindow_ShowsWorkflowControls_UsingUiDriver()
   {
@@ -26,7 +26,7 @@ public sealed class AppSmokeTests
     File.Exists(screenshotPath).Should().BeTrue();
   }
 
-  [Fact]
+  [UIFact]
   [Trait("Category", "UI")]
   public async Task MainWindow_ShowsHeaderButtons()
   {
@@ -44,7 +44,7 @@ public sealed class AppSmokeTests
     File.Exists(screenshotPath).Should().BeTrue();
   }
 
-  [Fact]
+  [UIFact]
   [Trait("Category", "UI")]
   public async Task ImportTab_ShowsImportControls()
   {
@@ -64,7 +64,7 @@ public sealed class AppSmokeTests
     File.Exists(screenshotPath).Should().BeTrue();
   }
 
-  [Fact]
+  [UIFact]
   [Trait("Category", "UI")]
   public async Task WorkflowTab_ShowsAllStepCards()
   {
@@ -85,7 +85,7 @@ public sealed class AppSmokeTests
     File.Exists(screenshotPath).Should().BeTrue();
   }
 
-  [Fact]
+  [UIFact]
   [Trait("Category", "UI")]
   public async Task ResultsTab_IsAccessible()
   {
@@ -103,7 +103,7 @@ public sealed class AppSmokeTests
     File.Exists(screenshotPath).Should().BeTrue();
   }
 
-  [Fact]
+  [UIFact]
   [Trait("Category", "UI")]
   public async Task ComplianceSummaryTab_IsAccessible()
   {
