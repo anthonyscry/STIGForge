@@ -13,9 +13,9 @@ public sealed class AppWinAppDriverTests
 {
     private static (string executablePath, Uri serviceUrl, string screenshotRoot) GetTestContext()
     {
-        var repoRoot = LocateRepositoryRoot();
+        var repoRoot = UiTestHelpers.LocateRepositoryRoot();
         return (
-            LocateAppExecutable(repoRoot),
+            UiTestHelpers.LocateAppExecutable(repoRoot),
             ResolveServiceUrl(),
             Path.Combine(repoRoot, ".artifacts", "ui-smoke", "winappdriver"));
     }
@@ -109,46 +109,5 @@ public sealed class AppWinAppDriverTests
         return string.IsNullOrWhiteSpace(envUrl)
             ? new Uri("http://127.0.0.1:4723/")
             : new Uri(envUrl);
-    }
-
-    private static string LocateRepositoryRoot()
-    {
-        var current = new DirectoryInfo(AppContext.BaseDirectory);
-        while (current is not null)
-        {
-            if (File.Exists(Path.Combine(current.FullName, "STIGForge.sln")))
-                return current.FullName;
-            current = current.Parent;
-        }
-
-        throw new InvalidOperationException("Unable to locate repository root from test base directory.");
-    }
-
-    private static string LocateAppExecutable(string repoRoot)
-    {
-        var candidates = new[]
-        {
-            Path.Combine(repoRoot, "src", "STIGForge.App", "bin", "Debug", "net8.0-windows", "STIGForge.App.exe"),
-            Path.Combine(repoRoot, "src", "STIGForge.App", "bin", "Release", "net8.0-windows", "STIGForge.App.exe"),
-        };
-
-        foreach (var candidate in candidates)
-        {
-            if (File.Exists(candidate))
-                return candidate;
-        }
-
-        var binRoot = Path.Combine(repoRoot, "src", "STIGForge.App", "bin");
-        if (Directory.Exists(binRoot))
-        {
-            var discovered = Directory.EnumerateFiles(binRoot, "STIGForge.App.exe", SearchOption.AllDirectories)
-                .OrderByDescending(File.GetLastWriteTimeUtc)
-                .FirstOrDefault();
-
-            if (!string.IsNullOrWhiteSpace(discovered))
-                return discovered!;
-        }
-
-        throw new FileNotFoundException("Could not locate STIGForge.App.exe. Build STIGForge.App before running UI tests.");
     }
 }

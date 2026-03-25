@@ -12,8 +12,8 @@ public sealed class AppSmokeTests
   [Trait("Category", "UI")]
   public async Task MainWindow_ShowsWorkflowControls_UsingUiDriver()
   {
-    var repoRoot = LocateRepositoryRoot();
-    var executablePath = LocateAppExecutable(repoRoot);
+    var repoRoot = UiTestHelpers.LocateRepositoryRoot();
+    var executablePath = UiTestHelpers.LocateAppExecutable(repoRoot);
     var screenshotRoot = Path.Combine(repoRoot, ".artifacts", "ui-smoke", "local");
 
     await using var app = await UiAppDriver.LaunchAsync(executablePath, TimeSpan.FromSeconds(45));
@@ -30,8 +30,8 @@ public sealed class AppSmokeTests
   [Trait("Category", "UI")]
   public async Task MainWindow_ShowsHeaderButtons()
   {
-    var repoRoot = LocateRepositoryRoot();
-    var executablePath = LocateAppExecutable(repoRoot);
+    var repoRoot = UiTestHelpers.LocateRepositoryRoot();
+    var executablePath = UiTestHelpers.LocateAppExecutable(repoRoot);
     var screenshotRoot = Path.Combine(repoRoot, ".artifacts", "ui-smoke", "local");
 
     await using var app = await UiAppDriver.LaunchAsync(executablePath, TimeSpan.FromSeconds(45));
@@ -48,8 +48,8 @@ public sealed class AppSmokeTests
   [Trait("Category", "UI")]
   public async Task ImportTab_ShowsImportControls()
   {
-    var repoRoot = LocateRepositoryRoot();
-    var executablePath = LocateAppExecutable(repoRoot);
+    var repoRoot = UiTestHelpers.LocateRepositoryRoot();
+    var executablePath = UiTestHelpers.LocateAppExecutable(repoRoot);
     var screenshotRoot = Path.Combine(repoRoot, ".artifacts", "ui-smoke", "local");
 
     await using var app = await UiAppDriver.LaunchAsync(executablePath, TimeSpan.FromSeconds(45));
@@ -68,8 +68,8 @@ public sealed class AppSmokeTests
   [Trait("Category", "UI")]
   public async Task WorkflowTab_ShowsAllStepCards()
   {
-    var repoRoot = LocateRepositoryRoot();
-    var executablePath = LocateAppExecutable(repoRoot);
+    var repoRoot = UiTestHelpers.LocateRepositoryRoot();
+    var executablePath = UiTestHelpers.LocateAppExecutable(repoRoot);
     var screenshotRoot = Path.Combine(repoRoot, ".artifacts", "ui-smoke", "local");
 
     await using var app = await UiAppDriver.LaunchAsync(executablePath, TimeSpan.FromSeconds(45));
@@ -89,8 +89,8 @@ public sealed class AppSmokeTests
   [Trait("Category", "UI")]
   public async Task ResultsTab_IsAccessible()
   {
-    var repoRoot = LocateRepositoryRoot();
-    var executablePath = LocateAppExecutable(repoRoot);
+    var repoRoot = UiTestHelpers.LocateRepositoryRoot();
+    var executablePath = UiTestHelpers.LocateAppExecutable(repoRoot);
     var screenshotRoot = Path.Combine(repoRoot, ".artifacts", "ui-smoke", "local");
 
     await using var app = await UiAppDriver.LaunchAsync(executablePath, TimeSpan.FromSeconds(45));
@@ -107,8 +107,8 @@ public sealed class AppSmokeTests
   [Trait("Category", "UI")]
   public async Task ComplianceSummaryTab_IsAccessible()
   {
-    var repoRoot = LocateRepositoryRoot();
-    var executablePath = LocateAppExecutable(repoRoot);
+    var repoRoot = UiTestHelpers.LocateRepositoryRoot();
+    var executablePath = UiTestHelpers.LocateAppExecutable(repoRoot);
     var screenshotRoot = Path.Combine(repoRoot, ".artifacts", "ui-smoke", "local");
 
     await using var app = await UiAppDriver.LaunchAsync(executablePath, TimeSpan.FromSeconds(45));
@@ -119,46 +119,5 @@ public sealed class AppSmokeTests
 
     var screenshotPath = app.CaptureScreenshot(screenshotRoot, "app-smoke-compliance-tab.png");
     File.Exists(screenshotPath).Should().BeTrue();
-  }
-
-  private static string LocateRepositoryRoot()
-  {
-    var current = new DirectoryInfo(AppContext.BaseDirectory);
-    while (current is not null)
-    {
-      if (File.Exists(Path.Combine(current.FullName, "STIGForge.sln")))
-        return current.FullName;
-      current = current.Parent;
-    }
-
-    throw new InvalidOperationException("Unable to locate repository root from test base directory.");
-  }
-
-  private static string LocateAppExecutable(string repoRoot)
-  {
-    var candidates = new[]
-    {
-      Path.Combine(repoRoot, "src", "STIGForge.App", "bin", "Debug", "net8.0-windows", "STIGForge.App.exe"),
-      Path.Combine(repoRoot, "src", "STIGForge.App", "bin", "Release", "net8.0-windows", "STIGForge.App.exe")
-    };
-
-    foreach (var candidate in candidates)
-    {
-      if (File.Exists(candidate))
-        return candidate;
-    }
-
-    var binRoot = Path.Combine(repoRoot, "src", "STIGForge.App", "bin");
-    if (Directory.Exists(binRoot))
-    {
-      var discovered = Directory.EnumerateFiles(binRoot, "STIGForge.App.exe", SearchOption.AllDirectories)
-        .OrderByDescending(File.GetLastWriteTimeUtc)
-        .FirstOrDefault();
-
-      if (!string.IsNullOrWhiteSpace(discovered))
-        return discovered!;
-    }
-
-    throw new FileNotFoundException("Could not locate STIGForge.App.exe. Build STIGForge.App before running UI tests.");
   }
 }
