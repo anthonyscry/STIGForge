@@ -258,8 +258,8 @@
                                     Command="{Binding RunAutoWorkflowCommand}"
                                     AutomationProperties.Name="Run auto workflow"
                                     AutomationProperties.AutomationId="run-auto-workflow"
-                                    ToolTip="Run all workflow steps in order (Ctrl+R). Press F1 for keyboard shortcuts." />
-                            <TextBlock Text="Workflow" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center" />
+                                    ToolTip="Run all workflow steps in order (Ctrl+R)" />
+                            <TextBlock Text="Workflow" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,12,0" />
                         </DockPanel>
 
                         <UniformGrid Rows="1" Margin="0,0,0,8">
