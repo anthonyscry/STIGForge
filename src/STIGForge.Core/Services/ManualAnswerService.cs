@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
