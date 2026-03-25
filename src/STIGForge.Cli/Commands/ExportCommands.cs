@@ -3,6 +3,7 @@ using System.CommandLine.Invocation;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using STIGForge.Core.Abstractions;
 using STIGForge.Export;
 
 namespace STIGForge.Cli.Commands;
@@ -93,6 +94,8 @@ internal static class ExportCommands
 
       var checklistFormat = ParseChecklistFormat(format);
 
+      var compiler = host.Services.GetService<IEvidenceCompiler>();
+
       var result = CklExporter.ExportCkl(new CklExportRequest
       {
         BundleRoot = bundle,
@@ -104,11 +107,13 @@ internal static class ExportCommands
         StigId = string.IsNullOrWhiteSpace(stigId) ? null : stigId,
         FileFormat = checklistFormat,
         IncludeCsv = includeCsv
-      });
+      }, compiler);
 
       Console.WriteLine("CKL export:");
       Console.WriteLine("  File(s): " + string.Join(" | ", result.OutputPaths));
       Console.WriteLine("  Controls: " + result.ControlCount);
+      if (compiler != null)
+        Console.WriteLine("  Evidence enrichment: enabled");
 
       logger.LogInformation("export-ckl completed: {ControlCount} controls exported to {Output}", result.ControlCount, result.OutputPath);
       await host.StopAsync();

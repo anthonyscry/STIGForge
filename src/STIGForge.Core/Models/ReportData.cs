@@ -2,7 +2,7 @@ namespace STIGForge.Core.Models;
 
 /// <summary>
 /// Pre-computed data container for the HTML executive compliance report.
-/// All values are calculated before template rendering — the template only formats.
+/// All values are calculated before template rendering  -  the template only formats.
 /// </summary>
 public sealed class ExecutiveReportData
 {

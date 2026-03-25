@@ -28,7 +28,8 @@
 
         <TabControl Grid.Row="1" Margin="0,0,0,8" Padding="6">
             <!-- ════════ Import Library Tab ════════ -->
-            <TabItem AutomationProperties.Name="Import Library tab">
+            <TabItem AutomationProperties.Name="Import Library tab"
+                     AutomationProperties.AutomationId="import-tab">
                 <TabItem.Header>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="Import Library" VerticalAlignment="Center" />
@@ -190,7 +191,8 @@
             </TabItem>
 
             <!-- ════════ Workflow Tab ════════ -->
-            <TabItem AutomationProperties.Name="Workflow tab">
+            <TabItem AutomationProperties.Name="Workflow tab"
+                     AutomationProperties.AutomationId="workflow-tab">
                 <TabItem.Header>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="Workflow" VerticalAlignment="Center" />
@@ -254,6 +256,7 @@
                                     Style="{DynamicResource WorkflowDashboardButtonStyle}"
                                     Command="{Binding RunAutoWorkflowCommand}"
                                     AutomationProperties.Name="Run auto workflow"
+                                    AutomationProperties.AutomationId="run-auto-workflow"
                                     ToolTip="Run all workflow steps in order (Ctrl+R)" />
                         </DockPanel>
 
@@ -429,7 +432,8 @@
             </TabItem>
 
             <!-- ════════ Results Tab ════════ -->
-            <TabItem AutomationProperties.Name="Results tab">
+            <TabItem AutomationProperties.Name="Results tab"
+                     AutomationProperties.AutomationId="results-tab">
                 <TabItem.Header>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="Results" VerticalAlignment="Center" />
@@ -490,7 +494,8 @@
             </TabItem>
 
             <!-- ════════ Compliance Summary Tab ════════ -->
-            <TabItem AutomationProperties.Name="Compliance Summary tab">
+            <TabItem AutomationProperties.Name="Compliance Summary tab"
+                     AutomationProperties.AutomationId="compliance-summary-tab">
                 <TabItem.Header>
                     <StackPanel Orientation="Horizontal">
                         <TextBlock Text="Compliance Summary" VerticalAlignment="Center" />

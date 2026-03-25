@@ -189,7 +189,7 @@ public sealed class EvidenceAutopilot
   /// </summary>
   private static readonly HashSet<string> AllowedCommands = new(StringComparer.OrdinalIgnoreCase)
   {
-    "auditpol.exe", "reg.exe", "secedit.exe", "gpresult.exe", "whoami.exe",
+    "auditpol.exe", "reg.exe", "sc.exe", "secedit.exe", "gpresult.exe", "whoami.exe",
     "net.exe", "netsh.exe", "sfc.exe", "systeminfo.exe", "powershell.exe",
     "bcdedit.exe", "wmic.exe", "icacls.exe", "Get-ComputerInfo"
   };
@@ -360,7 +360,7 @@ public sealed class EvidenceAutopilot
     CancellationToken cancellationToken)
   {
     // Collect system information
-    return await CollectCommandEvidenceAsync("systeminfo", "", outputDir, cancellationToken).ConfigureAwait(false);
+    return await CollectCommandEvidenceAsync("systeminfo.exe", "", outputDir, cancellationToken).ConfigureAwait(false);
   }
 
   private async Task<List<string>> CollectServiceStatusAsync(
@@ -375,7 +375,7 @@ public sealed class EvidenceAutopilot
     string outputDir,
     CancellationToken cancellationToken)
   {
-    return await CollectCommandEvidenceAsync("secedit", "/export /cfg usrrights_temp.inf", outputDir, cancellationToken).ConfigureAwait(false);
+    return await CollectCommandEvidenceAsync("secedit.exe", "/export /cfg usrrights_temp.inf", outputDir, cancellationToken).ConfigureAwait(false);
   }
 
   private string GetControlEvidenceDirectory(ControlRecord control)

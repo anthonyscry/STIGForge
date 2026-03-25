@@ -99,7 +99,7 @@ public sealed class DbBootstrapTests : IDisposable
     public void EnsureCreated_ExistingSchema_UserVersionEqualTarget()
     {
         DbBootstrap.EnsureCreated(_connStr);
-        DbBootstrap.EnsureCreated(_connStr); // second call — migration already applied
+        DbBootstrap.EnsureCreated(_connStr); // second call  -  migration already applied
 
         using var conn = Open();
         var version = conn.ExecuteScalar<int>("PRAGMA user_version;");

@@ -344,7 +344,7 @@ public sealed class FleetSummaryServiceTests
     {
         using var tmp = new TempDirectory();
         using var outDir = new TempDirectory();
-        // host1 has V-001; host2 has V-002 — each host is missing the other's control
+        // host1 has V-001; host2 has V-002  -  each host is missing the other's control
         CreateHostVerifyReport(tmp.Path, "host1", ("V-001", "SV-001", "T1", "NotAFinding"));
         CreateHostVerifyReport(tmp.Path, "host2", ("V-002", "SV-002", "T2", "NotAFinding"));
         var summary = _sut.GenerateSummary(tmp.Path);
@@ -355,7 +355,7 @@ public sealed class FleetSummaryServiceTests
         csv.Should().Contain("NR");
     }
 
-    // ── GeneratePerHostCkl (smoke test — best effort, no CKL files) ───────────
+    // ── GeneratePerHostCkl (smoke test  -  best effort, no CKL files) ───────────
 
     [Fact]
     public void GeneratePerHostCkl_NonExistentRoot_DoesNotThrow()

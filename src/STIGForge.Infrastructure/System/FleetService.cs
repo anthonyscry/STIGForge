@@ -111,7 +111,7 @@ public sealed class FleetService
   }
 
   /// <summary>
-  /// Query fleet status — check which machines are reachable via WinRM.
+  /// Query fleet status  -  check which machines are reachable via WinRM.
   /// </summary>
   public async Task<FleetStatusResult> CheckStatusAsync(IReadOnlyList<FleetTarget> targets, CancellationToken ct)
   {

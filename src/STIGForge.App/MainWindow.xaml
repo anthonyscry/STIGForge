@@ -27,6 +27,7 @@
         <Border Grid.Row="0"
                 Margin="0,0,0,16"
                 Padding="{DynamicResource CardPadding}"
+                CornerRadius="12"
                 Background="{DynamicResource SurfaceMutedBrush}"
                 BorderBrush="{DynamicResource BorderBrush}">
             <DockPanel LastChildFill="False">
@@ -40,12 +41,32 @@
                                Margin="0,2,0,0" />
                 </StackPanel>
             <StackPanel Orientation="Horizontal" DockPanel.Dock="Right" VerticalAlignment="Center">
-                <ToggleButton Content="&#xE8CB;" Width="38" Height="38" Padding="0" Margin="0,0,8,0" TabIndex="899"
-                              ToolTip="Toggle guided wizard mode" FontFamily="Segoe MDL2 Assets" FontSize="16"
-                              IsChecked="{Binding IsWizardMode}" AutomationProperties.Name="Guided wizard mode toggle"/>
-                <Button Content="&#xE897;" Width="38" Height="38" Padding="0" Margin="0,0,8,0" TabIndex="900" ToolTip="Help (F1)" FontFamily="Segoe MDL2 Assets" FontSize="16" Command="{Binding ShowHelpCommand}" AutomationProperties.Name="Help"/>
-                <Button Content="&#xE946;" Width="38" Height="38" Padding="0" Margin="0,0,8,0" TabIndex="901" ToolTip="About" FontFamily="Segoe MDL2 Assets" FontSize="16" Command="{Binding ShowAboutCommand}" AutomationProperties.Name="About"/>
-                <Button Content="&#xE713;" Width="38" Height="38" Padding="0" TabIndex="902" ToolTip="Settings" FontFamily="Segoe MDL2 Assets" FontSize="16" Command="{Binding ShowSettingsCommand}" AutomationProperties.Name="Settings"/>
+                <ToggleButton Width="38" Height="38" Padding="0" Margin="0,0,8,0" TabIndex="899"
+                              ToolTip="Toggle guided wizard mode"
+                              IsChecked="{Binding IsWizardMode}"
+                              Foreground="{DynamicResource TextBrush}"
+                              AutomationProperties.Name="Guided wizard mode toggle"
+                              AutomationProperties.AutomationId="wizard-mode-toggle">
+                    <TextBlock Text="&#xE8CB;" FontFamily="Segoe MDL2 Assets" FontSize="16"/>
+                </ToggleButton>
+                <Button Width="38" Height="38" Padding="0" Margin="0,0,8,0" TabIndex="900"
+                        ToolTip="Help (F1)" Command="{Binding ShowHelpCommand}"
+                        Foreground="{DynamicResource TextBrush}"
+                        AutomationProperties.Name="Help" AutomationProperties.AutomationId="help-button">
+                    <TextBlock Text="&#xE897;" FontFamily="Segoe MDL2 Assets" FontSize="16"/>
+                </Button>
+                <Button Width="38" Height="38" Padding="0" Margin="0,0,8,0" TabIndex="901"
+                        ToolTip="About" Command="{Binding ShowAboutCommand}"
+                        Foreground="{DynamicResource TextBrush}"
+                        AutomationProperties.Name="About" AutomationProperties.AutomationId="about-button">
+                    <TextBlock Text="&#xE946;" FontFamily="Segoe MDL2 Assets" FontSize="16"/>
+                </Button>
+                <Button Width="38" Height="38" Padding="0" TabIndex="902"
+                        ToolTip="Settings" Command="{Binding ShowSettingsCommand}"
+                        Foreground="{DynamicResource TextBrush}"
+                        AutomationProperties.Name="Settings" AutomationProperties.AutomationId="settings-button">
+                    <TextBlock Text="&#xE713;" FontFamily="Segoe MDL2 Assets" FontSize="16"/>
+                </Button>
             </StackPanel>
             </DockPanel>
         </Border>

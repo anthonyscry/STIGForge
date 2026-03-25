@@ -187,7 +187,7 @@ public sealed class PhaseCCommandServiceTests
     [Fact]
     public async Task AgentStatusAsync_ReturnsUnsupported_OnNonWindowsHost()
     {
-        if (OperatingSystem.IsWindows()) return; // skip — Windows path tested separately
+        if (OperatingSystem.IsWindows()) return; // skip  -  Windows path tested separately
 
         var svc = BuildMinimalService();
 

@@ -11,7 +11,7 @@ namespace STIGForge.Export;
 
 /// <summary>
 /// Generates self-contained HTML compliance reports from verification results.
-/// No JavaScript, no external URLs — fully offline.
+/// No JavaScript, no external URLs  -  fully offline.
 /// </summary>
 public static class HtmlReportGenerator
 {

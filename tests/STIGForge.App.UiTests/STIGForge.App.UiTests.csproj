@@ -23,6 +23,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="xunit.runner.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\STIGForge.UiDriver\STIGForge.UiDriver.csproj" />
     <ProjectReference Include="..\..\src\STIGForge.App\STIGForge.App.csproj" />
   </ItemGroup>

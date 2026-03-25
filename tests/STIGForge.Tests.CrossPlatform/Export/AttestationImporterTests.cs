@@ -80,7 +80,7 @@ public sealed class AttestationImporterTests
             .WithMessage("*attestations.json*");
     }
 
-    // ── happy path — CSV updates records ─────────────────────────────────────
+    // ── happy path  -  CSV updates records ─────────────────────────────────────
 
     [Fact]
     public void ImportAttestations_UpdatesMatchingRecord_AndReturnsUpdatedCount()
@@ -154,7 +154,7 @@ public sealed class AttestationImporterTests
     public void ImportAttestations_SilentlyIgnoresRow_WhenControlIdIsBlank()
     {
         // ParseAttestationCsv filters out blank-ControlId rows before import,
-        // so they are not counted as skipped — they produce zero side-effects.
+        // so they are not counted as skipped  -  they produce zero side-effects.
         using var tmp = new TempDirectory();
         WriteAttestationJson(tmp, [MakeRecord("AC-1")]);
 

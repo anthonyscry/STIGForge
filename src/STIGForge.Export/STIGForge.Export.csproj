@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\STIGForge.Core\STIGForge.Core.csproj" />
+    <ProjectReference Include="..\STIGForge.Evidence\STIGForge.Evidence.csproj" />
     <ProjectReference Include="..\STIGForge.Infrastructure\STIGForge.Infrastructure.csproj" />
     <ProjectReference Include="..\STIGForge.Verify\STIGForge.Verify.csproj" />
   </ItemGroup>

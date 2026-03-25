@@ -307,9 +307,9 @@ public enum FieldChangeImpact
 /// </summary>
 public enum AnswerValidity
 {
-  Valid,       // CheckText unchanged — answer still applies
-  Uncertain,   // CheckText changed but FixText same — review recommended
-  Invalid,     // Both CheckText and FixText changed — answer likely invalid
+  Valid,       // CheckText unchanged  -  answer still applies
+  Uncertain,   // CheckText changed but FixText same  -  review recommended
+  Invalid,     // Both CheckText and FixText changed  -  answer likely invalid
   NoAnswer     // No answer exists for this control
 }
 
@@ -372,7 +372,7 @@ public static class BaselineDiffAnswerImpactExtensions
         {
           ControlKey = controlDiff.ControlKey,
           Validity = AnswerValidity.Valid,
-          Reason = "Answer still applies — check criteria unchanged",
+          Reason = "Answer still applies  -  check criteria unchanged",
           ExistingAnswer = answer
         };
       }
@@ -382,7 +382,7 @@ public static class BaselineDiffAnswerImpactExtensions
         {
           ControlKey = controlDiff.ControlKey,
           Validity = AnswerValidity.Uncertain,
-          Reason = "Check criteria changed but remediation unchanged — review recommended",
+          Reason = "Check criteria changed but remediation unchanged  -  review recommended",
           ExistingAnswer = answer
         };
       }
@@ -392,7 +392,7 @@ public static class BaselineDiffAnswerImpactExtensions
         {
           ControlKey = controlDiff.ControlKey,
           Validity = AnswerValidity.Invalid,
-          Reason = "Both check and fix criteria changed — answer likely invalid",
+          Reason = "Both check and fix criteria changed  -  answer likely invalid",
           ExistingAnswer = answer
         };
       }

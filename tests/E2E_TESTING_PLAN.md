@@ -10,7 +10,7 @@
 
 ## Phase 0: VM Provisioning & Baseline
 
-### 0.1 — Provision Test Matrix VMs
+### 0.1  -  Provision Test Matrix VMs
 
 | VM Name | OS | Role | STIG Profile | RAM | vCPU | Network |
 |---------|-----|------|--------------|-----|------|---------|
@@ -56,7 +56,7 @@ Invoke-Command -VMName "SRV01" -Credential $cred -ScriptBlock {
 | LGPO.exe | Microsoft Security Compliance Toolkit | `C:\Windows\System32` | GPO application |
 | PowerSTIG | PSGallery | PowerShell module path | DSC-based hardening |
 
-### 0.2 — Create Test Checkpoints
+### 0.2  -  Create Test Checkpoints
 
 After provisioning each VM, create a "test-ready" checkpoint:
 
@@ -74,7 +74,7 @@ foreach ($vm in @("DC01", "SRV01", "SRV02")) {
 **Duration**: ~30 seconds
 **Prereq**: None (runs on host)
 
-### 1.1 — Full Unit Test Suite
+### 1.1  -  Full Unit Test Suite
 
 ```powershell
 dotnet test tests/STIGForge.UnitTests/STIGForge.UnitTests.csproj `
@@ -85,7 +85,7 @@ dotnet test tests/STIGForge.UnitTests/STIGForge.UnitTests.csproj `
 
 **Expected**: 927 tests pass, 0 failures
 
-### 1.2 — Integration Tests (Host)
+### 1.2  -  Integration Tests (Host)
 
 ```powershell
 dotnet test tests/STIGForge.IntegrationTests/STIGForge.IntegrationTests.csproj `
@@ -96,7 +96,7 @@ dotnet test tests/STIGForge.IntegrationTests/STIGForge.IntegrationTests.csproj `
 
 **Expected**: 102 tests pass
 
-### 1.3 — XAML Contract Validation
+### 1.3  -  XAML Contract Validation
 
 ```powershell
 dotnet test tests/STIGForge.UnitTests/STIGForge.UnitTests.csproj `
@@ -106,7 +106,7 @@ dotnet test tests/STIGForge.UnitTests/STIGForge.UnitTests.csproj `
 
 **Validates**: Tab structure, step cards, compliance chart, converter registrations
 
-### 1.4 — Release Gate (Dry Run)
+### 1.4  -  Release Gate (Dry Run)
 
 ```powershell
 ./tools/release/Invoke-ReleaseGate.ps1 -Configuration Release -OutputRoot .\.artifacts\release-gate\host
@@ -116,13 +116,13 @@ dotnet test tests/STIGForge.UnitTests/STIGForge.UnitTests.csproj `
 
 ---
 
-## Phase 2: UI Smoke Tests (SRV01 — Interactive Session)
+## Phase 2: UI Smoke Tests (SRV01  -  Interactive Session)
 
 **Location**: SRV01 VM (requires GUI/RDP session)
 **Duration**: ~5 minutes
 **Prereq**: .NET 8 SDK, STIGForge published binaries
 
-### 2.1 — Deploy to VM
+### 2.1  -  Deploy to VM
 
 ```powershell
 # From host
@@ -139,7 +139,7 @@ Copy-Item -ToSession $session -Path ".\.artifacts\publish\app" -Destination "C:\
 Copy-Item -ToSession $session -Path "tests" -Destination "C:\STIGForge-Test\tests" -Recurse -Force
 ```
 
-### 2.2 — FlaUI Smoke Tests
+### 2.2  -  FlaUI Smoke Tests
 
 Run from RDP session on SRV01 (requires interactive desktop):
 
@@ -151,7 +151,7 @@ dotnet test C:\STIGForge-Test\tests\STIGForge.App.UiTests\STIGForge.App.UiTests.
     --results-directory C:\STIGForge-Test\.artifacts\ui-smoke
 ```
 
-### 2.3 — Manual UI Verification Checklist
+### 2.3  -  Manual UI Verification Checklist
 
 | # | Test | Steps | Expected |
 |---|------|-------|----------|
@@ -177,7 +177,7 @@ dotnet test C:\STIGForge-Test\tests\STIGForge.App.UiTests\STIGForge.App.UiTests.
 **Duration**: ~15 minutes per VM
 **Prereq**: STIGForge CLI published, STIG content packs available
 
-### 3.1 — Deploy CLI to All VMs
+### 3.1  -  Deploy CLI to All VMs
 
 ```powershell
 dotnet publish src/STIGForge.Cli/STIGForge.Cli.csproj `
@@ -193,7 +193,7 @@ foreach ($vm in @("SRV01", "SRV02")) {
 }
 ```
 
-### 3.2 — Import Pipeline Tests
+### 3.2  -  Import Pipeline Tests
 
 ```powershell
 # Test: Import STIG content from ZIP archive
@@ -213,7 +213,7 @@ Invoke-Command -VMName "SRV01" -Credential $cred -ScriptBlock {
 }
 ```
 
-### 3.3 — Scan Baseline Tests
+### 3.3  -  Scan Baseline Tests
 
 ```powershell
 Invoke-Command -VMName "SRV01" -Credential $cred -ScriptBlock {
@@ -235,7 +235,7 @@ Invoke-Command -VMName "SRV01" -Credential $cred -ScriptBlock {
 }
 ```
 
-### 3.4 — Harden (Apply) Tests
+### 3.4  -  Harden (Apply) Tests
 
 ```powershell
 # IMPORTANT: Always checkpoint before hardening
@@ -257,7 +257,7 @@ Invoke-Command -VMName "SRV01" -Credential $cred -ScriptBlock {
 }
 ```
 
-### 3.5 — Verify (Post-Harden) Tests
+### 3.5  -  Verify (Post-Harden) Tests
 
 ```powershell
 Invoke-Command -VMName "SRV01" -Credential $cred -ScriptBlock {
@@ -281,7 +281,7 @@ Invoke-Command -VMName "SRV01" -Credential $cred -ScriptBlock {
 }
 ```
 
-### 3.6 — Export & Prove Tests
+### 3.6  -  Export & Prove Tests
 
 ```powershell
 Invoke-Command -VMName "SRV01" -Credential $cred -ScriptBlock {
@@ -312,7 +312,7 @@ Invoke-Command -VMName "SRV01" -Credential $cred -ScriptBlock {
 **Duration**: ~30 minutes per VM
 **Prereq**: All tools installed, clean checkpoint
 
-### 4.1 — Full Pipeline Test Script
+### 4.1  -  Full Pipeline Test Script
 
 ```powershell
 param(
@@ -392,7 +392,7 @@ if ($result.Errors.Count -gt 0) {
 }
 ```
 
-### 4.2 — Cross-VM Matrix Execution
+### 4.2  -  Cross-VM Matrix Execution
 
 ```powershell
 $testMatrix = @(
@@ -415,7 +415,7 @@ $results | Format-Table VM, Passed, @{N="Duration(s)";E={
 
 ## Phase 5: Regression & Rollback Tests
 
-### 5.1 — Snapshot Rollback Verification
+### 5.1  -  Snapshot Rollback Verification
 
 After hardening, verify rollback works:
 
@@ -442,9 +442,9 @@ if ($postHarden -eq $preHarden) {
 }
 ```
 
-### 5.2 — Idempotency Test
+### 5.2  -  Idempotency Test
 
-Run harden twice on same VM — second run should produce 0 new changes:
+Run harden twice on same VM  -  second run should produce 0 new changes:
 
 ```powershell
 Invoke-Command -VMName "SRV01" -Credential $cred -ScriptBlock {
@@ -468,7 +468,7 @@ Invoke-Command -VMName "SRV01" -Credential $cred -ScriptBlock {
 }
 ```
 
-### 5.3 — Compliance Delta Test
+### 5.3  -  Compliance Delta Test
 
 Verify compliance improves after hardening:
 
@@ -494,7 +494,7 @@ Invoke-Command -VMName "SRV01" -Credential $cred -ScriptBlock {
 
 **Prereq**: DC01 started, domain services healthy (~15 min boot)
 
-### 6.1 — DC-Specific STIG Validation
+### 6.1  -  DC-Specific STIG Validation
 
 ```powershell
 # Start DC01 and wait for AD DS
@@ -519,7 +519,7 @@ Invoke-Command -VMName "DC01" -Credential $dcCred -ScriptBlock {
 }
 ```
 
-### 6.2 — GPO Import/Export Validation
+### 6.2  -  GPO Import/Export Validation
 
 ```powershell
 Invoke-Command -VMName "DC01" -Credential $dcCred -ScriptBlock {
@@ -537,7 +537,7 @@ Invoke-Command -VMName "DC01" -Credential $dcCred -ScriptBlock {
 
 ## Phase 7: Edge Case & Negative Tests
 
-### 7.1 — Missing Tool Paths
+### 7.1  -  Missing Tool Paths
 
 ```powershell
 # Should fail gracefully with clear error, not crash
@@ -545,7 +545,7 @@ Invoke-Command -VMName "DC01" -Credential $dcCred -ScriptBlock {
 # Expected: Non-zero exit code, descriptive error message
 ```
 
-### 7.2 — Invalid STIG Content
+### 7.2  -  Invalid STIG Content
 
 ```powershell
 # Feed malformed XML
@@ -553,7 +553,7 @@ Invoke-Command -VMName "DC01" -Credential $dcCred -ScriptBlock {
 # Expected: Warning/skip, no crash, non-zero if all invalid
 ```
 
-### 7.3 — Non-Admin Execution
+### 7.3  -  Non-Admin Execution
 
 ```powershell
 # Run scan without elevation
@@ -564,10 +564,10 @@ Invoke-Command -VMName "SRV01" -Credential $nonAdminCred -ScriptBlock {
 # Expected: Elevation required error with clear message
 ```
 
-### 7.4 — Concurrent Execution
+### 7.4  -  Concurrent Execution
 
 ```powershell
-# Run two instances simultaneously — verify no DB corruption
+# Run two instances simultaneously  -  verify no DB corruption
 $job1 = Start-Job -ScriptBlock {
     Invoke-Command -VMName "SRV01" -Credential $using:cred -ScriptBlock {
         & "C:\STIGForge-Test\Cli\STIGForge.Cli.exe" import --input "C:\STIGForge-Test\fixtures" --output "C:\STIGForge-Test\output\concurrent1" 2>&1
@@ -582,7 +582,7 @@ Wait-Job $job1, $job2
 # Expected: Both complete without SQLite lock errors
 ```
 
-### 7.5 — Large Content Pack Stress
+### 7.5  -  Large Content Pack Stress
 
 ```powershell
 # Import the full DISA STIG library (all benchmarks)
@@ -592,9 +592,9 @@ Wait-Job $job1, $job2
 
 ---
 
-## Phase 8: WPF App E2E (SRV01 — RDP Session)
+## Phase 8: WPF App E2E (SRV01  -  RDP Session)
 
-### 8.1 — Full Workflow via GUI
+### 8.1  -  Full Workflow via GUI
 
 | Step | Action | Verification |
 |------|--------|-------------|
@@ -611,7 +611,7 @@ Wait-Job $job1, $job2
 | 11 | Run Auto (Ctrl+R) | All 4 steps run sequentially to completion |
 | 12 | Restart Workflow (Ctrl+N) | Confirmation dialog → Yes → all states reset |
 
-### 8.2 — Wizard Mode E2E
+### 8.2  -  Wizard Mode E2E
 
 | Step | Action | Verification |
 |------|--------|-------------|
@@ -628,7 +628,7 @@ Wait-Job $job1, $job2
 
 ## Phase 9: Accessibility Validation (SRV01)
 
-### 9.1 — Windows Narrator Test
+### 9.1  -  Windows Narrator Test
 
 | Area | Test | Expected |
 |------|------|----------|
@@ -639,7 +639,7 @@ Wait-Job $job1, $job2
 | Status banner | Step completes | LiveSetting="Polite" announces update |
 | Failure card | Error occurs | LiveSetting="Assertive" announces recovery guidance |
 
-### 9.2 — High Contrast Mode
+### 9.2  -  High Contrast Mode
 
 1. Enable Windows High Contrast (Settings → Accessibility → High Contrast → On)
 2. Verify all semantic colors are distinguishable:
@@ -647,13 +647,13 @@ Wait-Job $job1, $job2
    - Warning (HotTrackColor/yellow) vs accent
    - Danger (MenuHighlightColor/red) vs warning
 3. Verify shadow effects are transparent (no dark blobs)
-4. Tab through all views — verify all text is readable
+4. Tab through all views  -  verify all text is readable
 
 ---
 
 ## Phase 10: Performance Benchmarks
 
-### 10.1 — Import Performance
+### 10.1  -  Import Performance
 
 ```powershell
 # Measure import of varying content sizes
@@ -666,7 +666,7 @@ Wait-Job $job1, $job2
 } | Format-Table -AutoSize
 ```
 
-### 10.2 — Memory Profiling
+### 10.2  -  Memory Profiling
 
 ```powershell
 Invoke-Command -VMName "SRV01" -Credential $cred -ScriptBlock {

@@ -281,7 +281,8 @@ public partial class WorkflowViewModel
             showRetryVerifyAction: true);
     }
 
-    private string BuildEvaluateStigArguments(string outputRoot)
+    // Output location is controlled via WorkingDirectory on the process, not a CLI argument.
+    private string BuildEvaluateStigArguments()
     {
         var parts = new List<string>();
 
@@ -295,7 +296,6 @@ public partial class WorkflowViewModel
             parts.Add(EvaluateAdditionalArgs.Trim());
 
         parts.Add("-Output CKL");
-        parts.Add("-OutputPath " + QuoteCommandLineArgument(outputRoot));
 
         var target = MachineTarget?.Trim() ?? string.Empty;
         if (!string.IsNullOrWhiteSpace(target) && !string.Equals(target, "localhost", StringComparison.OrdinalIgnoreCase))
@@ -561,7 +561,8 @@ public partial class WorkflowViewModel
                 {
                     Enabled = true,
                     ToolRoot = resolvedEvaluateToolPath,
-                    Arguments = BuildEvaluateStigArguments(OutputFolderPath)
+                    Arguments = BuildEvaluateStigArguments(),
+                    WorkingDirectory = OutputFolderPath
                 },
                 Scap = new ScapWorkflowOptions
                 {
@@ -695,7 +696,8 @@ public partial class WorkflowViewModel
                 {
                     Enabled = true,
                     ToolRoot = resolvedEvaluateToolPath,
-                    Arguments = BuildEvaluateStigArguments(OutputFolderPath)
+                    Arguments = BuildEvaluateStigArguments(),
+                    WorkingDirectory = OutputFolderPath
                 },
                 Scap = new ScapWorkflowOptions
                 {

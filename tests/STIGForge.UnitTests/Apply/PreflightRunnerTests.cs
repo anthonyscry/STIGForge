@@ -33,7 +33,7 @@ public sealed class PreflightRunnerTests : IDisposable
     [Fact]
     public async Task MissingScript_ReturnsNotOkWithDescriptiveIssue()
     {
-        // Arrange: empty bundle root — no Preflight.ps1
+        // Arrange: empty bundle root  -  no Preflight.ps1
         var request = new PreflightRequest { BundleRoot = _tempRoot };
 
         // Act

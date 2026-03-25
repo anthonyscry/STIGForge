@@ -7,7 +7,7 @@ namespace STIGForge.Content.Import;
 /// <summary>
 /// Parses domain-level GPO backup folders found in the root GPOs/ directory of a
 /// DISA STIG GPO package. These backups are intended for GPMC import on domain
-/// controllers only — admins apply them manually via Import-GPO.
+/// controllers only  -  admins apply them manually via Import-GPO.
 ///
 /// GPO backup folder structure:
 ///   GPOs/{GUID}/Backup.xml         ← GPO metadata (display name, GUID, creation time)
@@ -112,7 +112,7 @@ public static class DomainGpoBackupParser
         if (File.Exists(bkupInfoXml))
             return ParseBkupInfoXml(bkupInfoXml, backupDir, dirGuid);
 
-        // No metadata found but has DomainSysvol — treat as unnamed backup
+        // No metadata found but has DomainSysvol  -  treat as unnamed backup
         var domainSysvol = Path.Combine(backupDir, "DomainSysvol");
         if (Directory.Exists(domainSysvol))
         {

@@ -4,6 +4,8 @@ using System.Text;
 using System.Text.Json;
 using System.Xml.Linq;
 using STIGForge.Core;
+using STIGForge.Core.Abstractions;
+using STIGForge.Evidence;
 using STIGForge.Verify;
 
 namespace STIGForge.Export;
@@ -17,7 +19,7 @@ public static class CklExporter
   /// <summary>
   /// Export verification results to CKL/CKLB format.
   /// </summary>
-  public static CklExportResult ExportCkl(CklExportRequest request)
+  public static CklExportResult ExportCkl(CklExportRequest request, IEvidenceCompiler? evidenceCompiler = null)
   {
     if (request == null)
       throw new ArgumentNullException(nameof(request));
@@ -33,6 +35,15 @@ public static class CklExporter
     }
 
     var resultSets = LoadResults(bundleRoots);
+
+    if (evidenceCompiler != null)
+    {
+      foreach (var resultSet in resultSets)
+      {
+        EnrichResultsWithEvidence(resultSet, evidenceCompiler);
+      }
+    }
+
     if (resultSets.Count == 0 || resultSets.Sum(s => s.Results.Count) == 0)
     {
       return new CklExportResult
@@ -76,6 +87,48 @@ public static class CklExporter
       ControlCount = controlCount,
       Message = "Checklist export complete."
     };
+  }
+
+  private static void EnrichResultsWithEvidence(BundleChecklistResultSet resultSet, IEvidenceCompiler compiler)
+  {
+    foreach (var control in resultSet.Results)
+    {
+      try
+      {
+        var input = new EvidenceCompilationInput(
+          control.VulnId, control.RuleId, control.Status,
+          control.Tool, control.VerifiedAt,
+          control.FindingDetails, control.Comments);
+
+        var compiled = compiler.CompileEvidence(input, resultSet.BundleRoot);
+        if (compiled == null) continue;
+
+        // Append or fill FINDING_DETAILS
+        if (!string.IsNullOrWhiteSpace(compiled.FindingDetails))
+        {
+          if (string.IsNullOrWhiteSpace(control.FindingDetails))
+            control.FindingDetails = compiled.FindingDetails;
+          else if (!CommentTemplateEngine.ContainsSentinel(control.FindingDetails))
+            control.FindingDetails = control.FindingDetails + CommentTemplateEngine.Separator + compiled.FindingDetails;
+        }
+
+        // Append or fill COMMENTS
+        if (!string.IsNullOrWhiteSpace(compiled.Comments))
+        {
+          if (string.IsNullOrWhiteSpace(control.Comments))
+            control.Comments = compiled.Comments;
+          else if (!CommentTemplateEngine.ContainsSentinel(control.Comments))
+            control.Comments = control.Comments + CommentTemplateEngine.Separator + compiled.Comments;
+        }
+      }
+      catch (Exception ex)
+      {
+        // Per-control failure must not abort the export.
+        // Control keeps its original FindingDetails/Comments.
+        System.Diagnostics.Trace.TraceWarning(
+          "Evidence enrichment failed for control {0}: {1}", control.VulnId, ex.Message);
+      }
+    }
   }
 
   private static List<string> ResolveBundleRoots(CklExportRequest request)

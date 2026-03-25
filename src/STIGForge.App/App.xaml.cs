@@ -17,6 +17,7 @@ using STIGForge.Infrastructure.Paths;
 using STIGForge.Infrastructure.Telemetry;
 using STIGForge.Infrastructure.Storage;
 using STIGForge.Infrastructure.System;
+using Microsoft.Extensions.Logging;
 using STIGForge.Verify;
 
 namespace STIGForge.App;
@@ -171,6 +172,10 @@ public partial class App : Application
           services.AddSingleton<BundleOrchestrator>();
           services.AddSingleton<STIGForge.Export.EmassExporter>();
           services.AddSingleton<STIGForge.Evidence.EvidenceCollector>();
+          services.AddSingleton<IEvidenceCompiler>(sp =>
+            new STIGForge.Evidence.EvidenceCompiler(
+              sp.GetRequiredService<Microsoft.Extensions.Logging.ILoggerFactory>()
+                .CreateLogger<STIGForge.Evidence.EvidenceCompiler>()));
           services.AddSingleton<IAuditTrailService>(sp =>
             new AuditTrailService(sp.GetRequiredService<DbConnectionString>(), sp.GetRequiredService<IClock>()));
           services.AddSingleton<ICredentialStore>(sp =>

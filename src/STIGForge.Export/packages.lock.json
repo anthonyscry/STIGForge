@@ -400,6 +400,14 @@
       "stigforge.core": {
         "type": "Project"
       },
+      "stigforge.evidence": {
+        "type": "Project",
+        "dependencies": {
+          "STIGForge.Core": "[1.0.2, )",
+          "STIGForge.Infrastructure": "[1.0.2, )",
+          "System.Text.Json": "[10.0.3, )"
+        }
+      },
       "stigforge.infrastructure": {
         "type": "Project",
         "dependencies": {

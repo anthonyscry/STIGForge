@@ -47,6 +47,11 @@ public sealed class UiAppDriver : IAsyncDisposable
     return new UiLocator(MainWindow, testId);
   }
 
+  public UiLocator GetById(string automationId)
+  {
+    return new UiLocator(MainWindow, automationId, strictAutomationId: true);
+  }
+
   public string CaptureScreenshot(string outputRoot, string fileName)
   {
     Directory.CreateDirectory(outputRoot);

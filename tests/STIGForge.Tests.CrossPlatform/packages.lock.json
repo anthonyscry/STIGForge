@@ -575,6 +575,7 @@
         "type": "Project",
         "dependencies": {
           "STIGForge.Core": "[1.0.2, )",
+          "STIGForge.Evidence": "[1.0.2, )",
           "STIGForge.Infrastructure": "[1.0.2, )",
           "STIGForge.Verify": "[1.0.2, )",
           "Scriban": "[6.6.0, )"

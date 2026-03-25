@@ -4,7 +4,7 @@ using Microsoft.Data.Sqlite;
 namespace STIGForge.Infrastructure.Storage;
 
 /// <summary>
-/// Dapper type handler for DateTimeOffset — SQLite stores as TEXT, Dapper
+/// Dapper type handler for DateTimeOffset  -  SQLite stores as TEXT, Dapper
 /// cannot natively cast TEXT → DateTimeOffset without this handler.
 /// </summary>
 internal sealed class DateTimeOffsetHandler : SqlMapper.TypeHandler<DateTimeOffset>

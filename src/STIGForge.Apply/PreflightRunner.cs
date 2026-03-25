@@ -131,7 +131,7 @@ public sealed class PreflightRunner
     }
     catch (Exception)
     {
-      // JSON parse failed — fall through to raw output handling
+      // JSON parse failed  -  fall through to raw output handling
     }
 
     return new PreflightResult

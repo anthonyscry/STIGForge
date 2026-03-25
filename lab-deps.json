@@ -1,0 +1,7 @@
+{
+  "winget": [
+    "Microsoft.DotNet.SDK.8",
+    "Git.Git"
+  ],
+  "choco": []
+}

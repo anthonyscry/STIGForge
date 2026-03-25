@@ -4,7 +4,7 @@ using Moq;
 using STIGForge.Core.Abstractions;
 using STIGForge.Infrastructure.Storage;
 
-#pragma warning disable CA1416 // Platform compatibility — non-DPAPI methods work on all OSes; DPAPI tests are Skip'd
+#pragma warning disable CA1416 // Platform compatibility  -  non-DPAPI methods work on all OSes; DPAPI tests are Skip'd
 
 namespace STIGForge.Tests.CrossPlatform.Infrastructure;
 
@@ -55,7 +55,7 @@ public class DpapiCredentialStoreTests : IDisposable
         path1.Should().NotBe(path2);
     }
 
-    [Fact(Skip = "Windows only")]
+    [WindowsFact]
     public void Save_And_Load_RoundTrips()
     {
         _sut.Save("myhost.local", "alice", "s3cr3t");
@@ -66,11 +66,11 @@ public class DpapiCredentialStoreTests : IDisposable
         loaded!.Value.Password.Should().Be("s3cr3t");
     }
 
-    [Fact(Skip = "Windows only")]
+    [WindowsFact]
     public void Remove_ExistingCredential_ReturnsTrueAndDeletes()
     {
         _sut.Save("remove-target.local", "bob", "pass");
-        _sut.ListHosts().Should().Contain("remove-target_local"); // sanitised filename
+        _sut.ListHosts().Should().Contain("remove-target.local");
 
         var removed = _sut.Remove("remove-target.local");
         removed.Should().BeTrue();

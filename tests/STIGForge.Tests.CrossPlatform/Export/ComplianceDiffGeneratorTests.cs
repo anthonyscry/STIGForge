@@ -11,7 +11,7 @@ public sealed class ComplianceDiffGeneratorTests
     private static readonly DateTimeOffset _t0 = new(2024, 1, 1, 0, 0, 0, TimeSpan.Zero);
     private static readonly DateTimeOffset _t1 = new(2024, 2, 1, 0, 0, 0, TimeSpan.Zero);
 
-    // ── ComputeDiff — empty inputs ────────────────────────────────────────────
+    // ── ComputeDiff  -  empty inputs ────────────────────────────────────────────
 
     [Fact]
     public void ComputeDiff_BothEmpty_ReturnsZeroCounts()
@@ -36,7 +36,7 @@ public sealed class ComplianceDiffGeneratorTests
         diff.TargetLabel.Should().Be("TargetLabel");
     }
 
-    // ── ComputeDiff — added controls ──────────────────────────────────────────
+    // ── ComputeDiff  -  added controls ──────────────────────────────────────────
 
     [Fact]
     public void ComputeDiff_ControlInTargetOnly_IsReportedAsAdded()
@@ -49,7 +49,7 @@ public sealed class ComplianceDiffGeneratorTests
         diff.Removed.Should().BeEmpty();
     }
 
-    // ── ComputeDiff — removed controls ────────────────────────────────────────
+    // ── ComputeDiff  -  removed controls ────────────────────────────────────────
 
     [Fact]
     public void ComputeDiff_ControlInBaselineOnly_IsReportedAsRemoved()
@@ -62,7 +62,7 @@ public sealed class ComplianceDiffGeneratorTests
         diff.Added.Should().BeEmpty();
     }
 
-    // ── ComputeDiff — regressions ─────────────────────────────────────────────
+    // ── ComputeDiff  -  regressions ─────────────────────────────────────────────
 
     [Fact]
     public void ComputeDiff_PassToFail_IsRegressionNotRemediation()
@@ -98,7 +98,7 @@ public sealed class ComplianceDiffGeneratorTests
         diff.Regressions.Should().ContainSingle().Which.VulnId.Should().Be("V-003");
     }
 
-    // ── ComputeDiff — remediations ────────────────────────────────────────────
+    // ── ComputeDiff  -  remediations ────────────────────────────────────────────
 
     [Fact]
     public void ComputeDiff_FailToPass_IsRemediationNotRegression()
@@ -134,7 +134,7 @@ public sealed class ComplianceDiffGeneratorTests
         diff.Remediations.Should().ContainSingle();
     }
 
-    // ── ComputeDiff — no change ───────────────────────────────────────────────
+    // ── ComputeDiff  -  no change ───────────────────────────────────────────────
 
     [Fact]
     public void ComputeDiff_PassToPass_NoRegressionOrRemediation()
@@ -148,7 +148,7 @@ public sealed class ComplianceDiffGeneratorTests
         diff.Remediations.Should().BeEmpty();
     }
 
-    // ── ComputeDiff — compliance percent ─────────────────────────────────────
+    // ── ComputeDiff  -  compliance percent ─────────────────────────────────────
 
     [Fact]
     public void ComputeDiff_AllPass_BaselinePercent100()
@@ -191,7 +191,7 @@ public sealed class ComplianceDiffGeneratorTests
         diff.DeltaPercent.Should().BeGreaterThan(0);
     }
 
-    // ── ComputeDiff — timestamps ──────────────────────────────────────────────
+    // ── ComputeDiff  -  timestamps ──────────────────────────────────────────────
 
     [Fact]
     public void ComputeDiff_VerifiedAtTimestamps_MaxIsUsedPerSide()
@@ -212,7 +212,7 @@ public sealed class ComplianceDiffGeneratorTests
         diff.TargetTimestamp.Should().Be(_t1);
     }
 
-    // ── ComputeDiff — severity summary ────────────────────────────────────────
+    // ── ComputeDiff  -  severity summary ────────────────────────────────────────
 
     [Fact]
     public void ComputeDiff_HighSeverityRegression_CatIRegressionIncremented()

@@ -506,7 +506,7 @@ public class WorkflowViewModelTests
             Assert.Contains("-SelectSTIG \"Win11,Chrome\"", args, StringComparison.OrdinalIgnoreCase);
             Assert.Contains("-AllowDeprecated", args, StringComparison.OrdinalIgnoreCase);
             Assert.Contains("-Output CKL", args, StringComparison.OrdinalIgnoreCase);
-            Assert.Contains($"-OutputPath \"{outputFolder}\"", args, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("-OutputPath", args, StringComparison.OrdinalIgnoreCase);
         }
         finally
         {
@@ -551,7 +551,7 @@ public class WorkflowViewModelTests
             Assert.Contains("-SelectSTIG \"Win11,Chrome\"", args, StringComparison.OrdinalIgnoreCase);
             Assert.Contains("-AllowDeprecated", args, StringComparison.OrdinalIgnoreCase);
             Assert.Contains("-Output CKL", args, StringComparison.OrdinalIgnoreCase);
-            Assert.Contains($"-OutputPath \"{outputFolder}\"", args, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("-OutputPath", args, StringComparison.OrdinalIgnoreCase);
             Assert.Contains("-ComputerName \"server01\"", args, StringComparison.OrdinalIgnoreCase);
         }
         finally

@@ -7,7 +7,7 @@ namespace STIGForge.Tests.CrossPlatform.Infrastructure;
 
 /// <summary>
 /// Cross-platform tests for FleetService.
-/// WinRM/PowerShell paths fail gracefully on Linux — the service wraps all
+/// WinRM/PowerShell paths fail gracefully on Linux  -  the service wraps all
 /// process-launch exceptions and returns failure results, so we can verify
 /// request validation, result aggregation, and audit integration.
 /// </summary>

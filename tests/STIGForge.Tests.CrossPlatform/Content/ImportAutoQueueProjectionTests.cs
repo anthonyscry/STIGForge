@@ -79,7 +79,7 @@ public sealed class ImportAutoQueueProjectionTests
     {
         var planned = new[] { MakeItem(@"C:\imports\archive.zip", "archive.zip") };
 
-        // Failure string references path — fallback to file-name extraction
+        // Failure string references path  -  fallback to file-name extraction
         var result = ImportAutoQueueProjection.Project(planned, [@"C:\imports\archive.zip"]);
 
         result.Exceptions.Should().HaveCount(1);

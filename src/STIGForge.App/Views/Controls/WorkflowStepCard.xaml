@@ -18,7 +18,7 @@
     </UserControl.Resources>
 
      <Border Style="{DynamicResource WorkflowStepCardBorderStyle}"
-              Padding="10"
+              Padding="14,12"
               MinHeight="85"
               Background="{DynamicResource SurfaceBrush}"
               CornerRadius="12"
@@ -53,7 +53,8 @@
 
             <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
                 <Button Content="{Binding RunButtonLabel, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                        Width="92"
+                        MinWidth="92"
+                        Padding="12,0"
                         Height="30"
                         Margin="0,0,6,0"
                         HorizontalAlignment="Left"
@@ -62,6 +63,7 @@
                         Command="{Binding RunCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                         ToolTip="{Binding RunButtonToolTip, RelativeSource={RelativeSource AncestorType=UserControl}}"
                         AutomationProperties.Name="{Binding RunButtonAutomationName, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        AutomationProperties.AutomationId="{Binding RunButtonAutomationName, RelativeSource={RelativeSource AncestorType=UserControl}}"
                         AutomationProperties.HelpText="{Binding RunButtonToolTip, RelativeSource={RelativeSource AncestorType=UserControl}}" />
 
                 <Button Content="{Binding SecondaryButtonLabel, RelativeSource={RelativeSource AncestorType=UserControl}}"
@@ -74,6 +76,7 @@
                         Command="{Binding SecondaryCommand, RelativeSource={RelativeSource AncestorType=UserControl}}"
                         ToolTip="{Binding SecondaryButtonToolTip, RelativeSource={RelativeSource AncestorType=UserControl}}"
                         AutomationProperties.Name="{Binding SecondaryButtonAutomationName, RelativeSource={RelativeSource AncestorType=UserControl}}"
+                        AutomationProperties.AutomationId="{Binding SecondaryButtonAutomationName, RelativeSource={RelativeSource AncestorType=UserControl}}"
                         AutomationProperties.HelpText="{Binding SecondaryButtonToolTip, RelativeSource={RelativeSource AncestorType=UserControl}}" />
             </StackPanel>
 

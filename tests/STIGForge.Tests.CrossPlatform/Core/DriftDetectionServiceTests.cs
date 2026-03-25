@@ -44,12 +44,12 @@ public sealed class DriftDetectionServiceTests
     [Fact]
     public async Task CheckAsync_StateKeyIsCaseInsensitive_MatchesRegardlessOfCase()
     {
-        // Baseline has "sv-100" (lower), current state has "SV-100" (upper) — same rule
+        // Baseline has "sv-100" (lower), current state has "SV-100" (upper)  -  same rule
         var repo = BuildRepoWithSnapshot("sv-100", "Pass");
         var clock = new TestClock(FixedTime);
         var svc = new DriftDetectionService(repo.Object, clock: clock);
 
-        // Current state uses upper-case key — NormalizeStateMap should treat as same key
+        // Current state uses upper-case key  -  NormalizeStateMap should treat as same key
         var currentState = new Dictionary<string, string>(StringComparer.Ordinal)
         {
             ["SV-100"] = "Pass"
@@ -58,7 +58,7 @@ public sealed class DriftDetectionServiceTests
         var result = await svc.CheckAsync("/bundle", currentState, false, CancellationToken.None);
 
         result.DriftEvents.Should().BeEmpty(
-            because: "'SV-100' and 'sv-100' are the same rule — no drift should be detected");
+            because: "'SV-100' and 'sv-100' are the same rule  -  no drift should be detected");
     }
 
     // ── Baseline established ───────────────────────────────────────────────────

@@ -18,6 +18,7 @@ public static partial class WindowsServiceCommandHelper
     ValidateServiceName(serviceName);
     ValidateDisplayName(displayName);
     ValidateExecutablePath(executablePath);
+
     if (!OperatingSystem.IsWindows())
       return;
 

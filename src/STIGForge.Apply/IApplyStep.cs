@@ -4,7 +4,7 @@ namespace STIGForge.Apply;
 
 /// <summary>
 /// A single step in the apply pipeline (PowerSTIG, Script, DSC, ADMX, LGPO, GPO Import).
-/// Steps are iterated by ApplyRunner — each decides whether it can execute based on the
+/// Steps are iterated by ApplyRunner  -  each decides whether it can execute based on the
 /// request, runs its handler, and reports whether a reboot check is warranted afterward.
 /// </summary>
 public interface IApplyStep

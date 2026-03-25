@@ -433,7 +433,7 @@ public sealed class ManualAnswerService
 
       if (match == null)
       {
-        // No existing answer — add the imported one
+        // No existing answer  -  add the imported one
         existing.Answers.Add(new ManualAnswer
         {
           RuleId = importedRuleId,
@@ -450,7 +450,7 @@ public sealed class ManualAnswerService
         var existingStatus = NormalizeStatus(match.Status);
         if (string.Equals(existingStatus, "Open", StringComparison.Ordinal))
         {
-          // Existing is Open — overwrite with imported
+          // Existing is Open  -  overwrite with imported
           match.RuleId = importedRuleId ?? match.RuleId;
           match.VulnId = importedVulnId ?? match.VulnId;
           match.Status = NormalizeStatus(imported.Status);
@@ -461,7 +461,7 @@ public sealed class ManualAnswerService
         }
         else
         {
-          // Existing is resolved (Pass/Fail/NotApplicable) — do NOT clobber
+          // Existing is resolved (Pass/Fail/NotApplicable)  -  do NOT clobber
           result.Skipped++;
           result.SkippedControls.Add(controlLabel);
         }

@@ -269,7 +269,7 @@ public sealed class ApplyRunnerTests : IDisposable
         var logPath = Path.Combine(_bundleRoot, "Apply", "apply_run.json");
         var firstRunContent = await File.ReadAllTextAsync(logPath);
 
-        // Second run references first as prior — apply_run.json is overwritten with the new run's data
+        // Second run references first as prior  -  apply_run.json is overwritten with the new run's data
         // The first run's data is preserved in the mission_timeline (ledger) not in the file itself.
         // The file for the second run should have a different runId.
         var secondRunId = Guid.NewGuid().ToString();
