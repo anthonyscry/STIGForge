@@ -105,6 +105,8 @@ public sealed class VerificationWorkflowService : IVerificationWorkflowService
       if (runResult.ExitCode != 0)
         diagnostics.Add($"Evaluate-STIG exited with code {runResult.ExitCode}.");
 
+      ConsolidateEvaluateStigOutput(request.OutputRoot);
+
       return new VerificationToolRunResult
       {
         Tool = "Evaluate-STIG",
@@ -129,6 +131,48 @@ public sealed class VerificationWorkflowService : IVerificationWorkflowService
         Output = string.Empty,
         Error = ex.Message
       };
+    }
+  }
+
+  private static void ConsolidateEvaluateStigOutput(string outputRoot)
+  {
+    try
+    {
+      var tempPath = Path.GetTempPath();
+      var evaluateStigDirs = Directory.GetDirectories(tempPath, "Evaluate-STIG*")
+        .OrderByDescending(Directory.GetLastWriteTimeUtc)
+        .ToList();
+
+      if (evaluateStigDirs.Count == 0)
+        return;
+
+      var mostRecent = evaluateStigDirs[0];
+      var options = new EnumerationOptions
+      {
+        IgnoreInaccessible = true,
+        RecurseSubdirectories = true
+      };
+
+      var copied = 0;
+      foreach (var file in Directory.EnumerateFiles(mostRecent, "*", options))
+      {
+        var ext = Path.GetExtension(file);
+        if (!string.Equals(ext, ".ckl", StringComparison.OrdinalIgnoreCase)
+          && !string.Equals(ext, ".cklb", StringComparison.OrdinalIgnoreCase))
+          continue;
+
+        var destPath = Path.Combine(outputRoot, Path.GetFileName(file));
+        File.Copy(file, destPath, overwrite: true);
+        copied++;
+        System.Diagnostics.Trace.TraceInformation($"ConsolidateEvaluateStigOutput: copied {file} -> {destPath}");
+      }
+
+      if (copied > 0)
+        System.Diagnostics.Trace.TraceInformation($"ConsolidateEvaluateStigOutput: copied {copied} CKL file(s) from {mostRecent} to {outputRoot}");
+    }
+    catch (Exception ex)
+    {
+      System.Diagnostics.Trace.TraceWarning($"ConsolidateEvaluateStigOutput: failed to consolidate output: {ex.Message}");
     }
   }
 

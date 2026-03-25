@@ -108,20 +108,20 @@ Generated from CEO-mode codebase health audit (2026-03-15).
 
 ### P1 — High Priority
 
-- [ ] **Consolidate Evaluate-STIG output to app's scan folder** — Evaluate-STIG always writes CKL output to `%TEMP%\Evaluate-STIG\<timestamp>\`, ignoring WorkingDirectory. The app looks for results in its configured output folder. After Evaluate-STIG completes, copy/move CKL files from the temp directory to the app's output folder. Without this, every scan shows "No CKL output detected" even when Evaluate-STIG runs successfully.
+- [x] **Consolidate Evaluate-STIG output to app's scan folder** — Evaluate-STIG always writes CKL output to `%TEMP%\Evaluate-STIG\<timestamp>\`, ignoring WorkingDirectory. The app looks for results in its configured output folder. After Evaluate-STIG completes, copy/move CKL files from the temp directory to the app's output folder. Without this, every scan shows "No CKL output detected" even when Evaluate-STIG runs successfully.
   - **Why:** Scan workflow is broken end-to-end on real machines. Users see error recovery card even on successful scans.
   - **Effort:** S (~1 hour)
   - **Depends on:** Nothing
 
-- [ ] **Extract shared `StatusNormalizer` to STIGForge.Core** — `NormalizeStatus` / `NormalizeToken` logic is duplicated in 5 places: `CommentTemplateEngine`, `ManualAnswerService`, `DriftDetectionService`, `BundleMissionSummaryService`, `CklMergeService`. Extract to a single static utility.
+- [ ] **Extract shared `StatusNormalizer` to STIGForge.Core** — Deferred: the 5 services have subtly different normalization mappings (e.g., "error" → "Open" vs "Fail", capitalization). Needs careful per-service mapping alignment with test updates.
   - **Why:** DRY — same strip-punctuation-then-switch pattern copied 5 times.
-  - **Effort:** S (~30 min)
+  - **Effort:** M (~2 hours — includes test alignment)
 
-- [ ] **Extract `JsonElementExtensions` to STIGForge.Core** — `TryGetPropertyCaseInsensitive` + `ReadStringProperty` duplicated in 4 services. The dict-index variant in `DriftDetectionService` can stay for perf, but the old `TryGetPropertyCaseInsensitive` in the same file is now dead code.
+- [ ] **Extract `JsonElementExtensions` to STIGForge.Core** — Deferred: needs careful verification that extension method resolution doesn't change behavior for callers using different parameter types.
   - **Why:** DRY — 4 copies of identical JSON property lookup code.
   - **Effort:** S (~30 min)
 
-- [ ] **Upgrade Scriban to patched version** — Scriban 6.6.0 has 4 known CVEs (GHSA-v66j, GHSA-x6m9, GHSA-xcx6, GHSA-xw6w). NuGet audit blocks builds with `WarningsAsErrors`.
+- [x] **Upgrade Scriban to patched version** — Upgraded from 6.6.0 to 7.0.0. Fixes 4 CVEs.
   - **Why:** Security — 3 high + 1 moderate severity vulnerabilities.
   - **Effort:** S (~15 min)
 
@@ -130,9 +130,9 @@ Generated from CEO-mode codebase health audit (2026-03-15).
 ## Cleanup
 
 - [x] **Remove dead project directories** — `STIGForge.Shared/` and `STIGForge.Reporting/` were emptied 2026-03-06 but directories remain.
-- [ ] **Clean stale git stashes** — 10 stashes from Feb 2026, all pre-merge preserves. Review and drop.
-- [ ] **Refactor WorkflowViewModel.Scan.cs** — 1068 lines with 10+ duplicated card factory methods. Extract parameterized `BuildFailureCard()`.
-- [ ] **Refactor BuildCommands.cs** — 1007 lines with copy-pasted command registration. Extract shared `CommandBuilder` helper.
+- [x] **Clean stale git stashes** — Cleared all 10 stashes via `git stash clear` (2026-03-25).
+- [x] **Refactor WorkflowViewModel.Scan.cs** — Already refactored: `CreateFailureCard` helper exists at line 91, used by all card builders.
+- [x] **Refactor BuildCommands.cs** — Already refactored: shared helpers (`NullIfEmpty`, `ValidateBreakGlassArguments`, `RecordBreakGlassAuditAsync`) already consolidated.
 - [x] **Extract SafeAuditAsync helper** — Same `try { _audit?.RecordAsync() } catch { Trace.TraceWarning }` pattern repeated in 6+ files.
 - [x] **Validate LcmService ConfigurationMode** — Allow-list (`ApplyAndMonitor`, `ApplyAndAutoCorrect`, `ApplyOnly`) instead of raw interpolation.
 - [x] **Add path traversal check to PolicyStepHandler.CopyTemplateFile** — `Path.GetFullPath` + `StartsWith` validation consistent with ImportZipHandler.
