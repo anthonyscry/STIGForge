@@ -104,6 +104,29 @@ Generated from CEO-mode codebase health audit (2026-03-15).
 
 ---
 
+## Integration Fixes
+
+### P1 — High Priority
+
+- [ ] **Consolidate Evaluate-STIG output to app's scan folder** — Evaluate-STIG always writes CKL output to `%TEMP%\Evaluate-STIG\<timestamp>\`, ignoring WorkingDirectory. The app looks for results in its configured output folder. After Evaluate-STIG completes, copy/move CKL files from the temp directory to the app's output folder. Without this, every scan shows "No CKL output detected" even when Evaluate-STIG runs successfully.
+  - **Why:** Scan workflow is broken end-to-end on real machines. Users see error recovery card even on successful scans.
+  - **Effort:** S (~1 hour)
+  - **Depends on:** Nothing
+
+- [ ] **Extract shared `StatusNormalizer` to STIGForge.Core** — `NormalizeStatus` / `NormalizeToken` logic is duplicated in 5 places: `CommentTemplateEngine`, `ManualAnswerService`, `DriftDetectionService`, `BundleMissionSummaryService`, `CklMergeService`. Extract to a single static utility.
+  - **Why:** DRY — same strip-punctuation-then-switch pattern copied 5 times.
+  - **Effort:** S (~30 min)
+
+- [ ] **Extract `JsonElementExtensions` to STIGForge.Core** — `TryGetPropertyCaseInsensitive` + `ReadStringProperty` duplicated in 4 services. The dict-index variant in `DriftDetectionService` can stay for perf, but the old `TryGetPropertyCaseInsensitive` in the same file is now dead code.
+  - **Why:** DRY — 4 copies of identical JSON property lookup code.
+  - **Effort:** S (~30 min)
+
+- [ ] **Upgrade Scriban to patched version** — Scriban 6.6.0 has 4 known CVEs (GHSA-v66j, GHSA-x6m9, GHSA-xcx6, GHSA-xw6w). NuGet audit blocks builds with `WarningsAsErrors`.
+  - **Why:** Security — 3 high + 1 moderate severity vulnerabilities.
+  - **Effort:** S (~15 min)
+
+---
+
 ## Cleanup
 
 - [x] **Remove dead project directories** — `STIGForge.Shared/` and `STIGForge.Reporting/` were emptied 2026-03-06 but directories remain.
