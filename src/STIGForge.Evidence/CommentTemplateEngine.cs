@@ -1,5 +1,4 @@
 using System.Text;
-using STIGForge.Core;
 
 namespace STIGForge.Evidence;
 
@@ -86,6 +85,19 @@ public static class CommentTemplateEngine
 
     private static string NormalizeStatus(string? status)
     {
-        return StatusNormalizer.Normalize(status);
+        if (string.IsNullOrWhiteSpace(status))
+            return "unknown";
+
+        var s = status.Trim().ToLowerInvariant()
+            .Replace("_", "").Replace("-", "").Replace(" ", "");
+
+        return s switch
+        {
+            "pass" or "notafinding" or "compliant" => "pass",
+            "fail" or "open" or "noncompliant" or "error" => "fail",
+            "notapplicable" or "na" => "notapplicable",
+            "notreviewed" or "notchecked" or "informational" => "notreviewed",
+            _ => s
+        };
     }
 }
