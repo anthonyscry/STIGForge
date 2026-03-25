@@ -1,5 +1,5 @@
-using System.Text;
 using System.Text.Json;
+using STIGForge.Core;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
 
@@ -257,39 +257,14 @@ public sealed class DriftDetectionService
 
   private static string NormalizeStatus(string? status)
   {
-    var token = NormalizeToken(status);
-    if (token.Length == 0)
-      return "Open";
-
-    if (token == "pass" || token == "notafinding" || token == "compliant" || token == "closed")
-      return "Pass";
-
-    if (token == "notapplicable" || token == "na")
-      return "NotApplicable";
-
-    if (token == "fail" || token == "noncompliant")
-      return "Fail";
-
-    if (token == "open" || token == "notreviewed" || token == "notchecked" || token == "unknown" || token == "error" || token == "informational")
-      return "Open";
-
-    return "Open";
-  }
-
-  private static string NormalizeToken(string? status)
-  {
-    if (string.IsNullOrWhiteSpace(status))
-      return string.Empty;
-
-    var source = status.Trim().ToLowerInvariant();
-    var sb = new StringBuilder(source.Length);
-    foreach (var ch in source)
+    var normalized = StatusNormalizer.Normalize(status);
+    return normalized switch
     {
-      if (char.IsLetterOrDigit(ch))
-        sb.Append(ch);
-    }
-
-    return sb.ToString();
+      "pass" => "Pass",
+      "fail" => "Fail",
+      "notapplicable" => "NotApplicable",
+      _ => "Open"
+    };
   }
 
   private static Dictionary<string, JsonElement> BuildCaseInsensitiveIndex(JsonElement obj)
@@ -305,41 +280,6 @@ public sealed class DriftDetectionService
     if (!index.TryGetValue(propertyName, out var value))
       return null;
     return value.ValueKind == JsonValueKind.String ? value.GetString() : null;
-  }
-
-  private static string? ReadStringProperty(JsonElement element, string propertyName)
-  {
-    JsonElement value;
-    if (!TryGetPropertyCaseInsensitive(element, propertyName, out value))
-      return null;
-
-    return value.ValueKind == JsonValueKind.String
-      ? value.GetString()
-      : null;
-  }
-
-  private static bool TryGetPropertyCaseInsensitive(JsonElement element, string propertyName, out JsonElement value)
-  {
-    if (element.ValueKind != JsonValueKind.Object)
-    {
-      value = default;
-      return false;
-    }
-
-    if (element.TryGetProperty(propertyName, out value))
-      return true;
-
-    foreach (var property in element.EnumerateObject())
-    {
-      if (string.Equals(property.Name, propertyName, StringComparison.OrdinalIgnoreCase))
-      {
-        value = property.Value;
-        return true;
-      }
-    }
-
-    value = default;
-    return false;
   }
 
   private sealed class PeriodicDriftScheduler : IDisposable

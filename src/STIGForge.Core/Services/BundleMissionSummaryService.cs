@@ -1,5 +1,5 @@
-using System.Text;
 using System.Text.Json;
+using STIGForge.Core;
 using STIGForge.Core.Abstractions;
 using STIGForge.Core.Models;
 
@@ -141,23 +141,14 @@ public sealed class BundleMissionSummaryService : IBundleMissionSummaryService
 
   public string NormalizeStatus(string? status)
   {
-    var normalized = NormalizeToken(status);
-    if (normalized.Length == 0)
-      return "Open";
-
-    if (normalized == "pass" || normalized == "notafinding" || normalized == "compliant" || normalized == "closed")
-      return "Pass";
-
-    if (normalized == "notapplicable" || normalized == "na")
-      return "NotApplicable";
-
-    if (normalized == "fail" || normalized == "noncompliant")
-      return "Fail";
-
-    if (normalized == "open" || normalized == "notreviewed" || normalized == "notchecked" || normalized == "unknown" || normalized == "error" || normalized == "informational")
-      return "Open";
-
-    return "Open";
+    var normalized = StatusNormalizer.Normalize(status);
+    return normalized switch
+    {
+      "pass" => "Pass",
+      "fail" => "Fail",
+      "notapplicable" => "NotApplicable",
+      _ => "Open"
+    };
   }
 
   private BundleVerifySummary LoadVerifySummary(string bundleRoot, List<string> diagnostics)
@@ -181,7 +172,7 @@ public sealed class BundleMissionSummaryService : IBundleMissionSummaryService
       try
       {
         using var doc = JsonDocument.Parse(File.ReadAllText(reportPath));
-        if (!TryGetPropertyCaseInsensitive(doc.RootElement, "results", out var results)
+        if (!doc.RootElement.TryGetPropertyCaseInsensitive("results", out var results)
             || results.ValueKind != JsonValueKind.Array)
         {
           diagnostics.Add("Verify report missing results array: " + reportPath);
@@ -195,7 +186,7 @@ public sealed class BundleMissionSummaryService : IBundleMissionSummaryService
 
           total++;
 
-          var status = ReadStringProperty(item, "status");
+          var status = item.ReadStringProperty("status");
           var normalized = NormalizeStatus(status);
           if (string.Equals(normalized, "Pass", StringComparison.Ordinal))
           {
@@ -211,7 +202,7 @@ public sealed class BundleMissionSummaryService : IBundleMissionSummaryService
             blockingFailures++;
           }
 
-          if (IsWarningStatus(status))
+          if (IsWarningToken(status))
             warnings++;
         }
       }
@@ -262,15 +253,15 @@ public sealed class BundleMissionSummaryService : IBundleMissionSummaryService
     try
     {
       using var doc = JsonDocument.Parse(File.ReadAllText(manifestPath));
-      if (TryGetPropertyCaseInsensitive(doc.RootElement, "run", out var run) && run.ValueKind == JsonValueKind.Object)
+      if (doc.RootElement.TryGetPropertyCaseInsensitive("run", out var run) && run.ValueKind == JsonValueKind.Object)
       {
-        summary.PackName = ReadStringProperty(run, "packName") ?? summary.PackName;
-        summary.ProfileName = ReadStringProperty(run, "profileName") ?? summary.ProfileName;
+        summary.PackName = run.ReadStringProperty("packName") ?? summary.PackName;
+        summary.ProfileName = run.ReadStringProperty("profileName") ?? summary.ProfileName;
       }
       else
       {
-        summary.PackName = ReadStringProperty(doc.RootElement, "packName") ?? summary.PackName;
-        summary.ProfileName = ReadStringProperty(doc.RootElement, "profileName") ?? summary.ProfileName;
+        summary.PackName = doc.RootElement.ReadStringProperty("packName") ?? summary.PackName;
+        summary.ProfileName = doc.RootElement.ReadStringProperty("profileName") ?? summary.ProfileName;
       }
     }
     catch (Exception ex)
@@ -286,58 +277,13 @@ public sealed class BundleMissionSummaryService : IBundleMissionSummaryService
       || string.Equals(normalized, "NotApplicable", StringComparison.Ordinal);
   }
 
-  private static bool IsWarningStatus(string? status)
-  {
-    var normalized = NormalizeToken(status);
-    return normalized == "informational" || normalized == "info" || normalized == "warning";
-  }
-
-  private static string? ReadStringProperty(JsonElement element, string propertyName)
-  {
-    if (!TryGetPropertyCaseInsensitive(element, propertyName, out var value))
-      return null;
-
-    return value.ValueKind == JsonValueKind.String ? value.GetString() : null;
-  }
-
-  private static bool TryGetPropertyCaseInsensitive(JsonElement element, string propertyName, out JsonElement value)
-  {
-    if (element.ValueKind != JsonValueKind.Object)
-    {
-      value = default;
-      return false;
-    }
-
-    if (element.TryGetProperty(propertyName, out value))
-      return true;
-
-    foreach (var property in element.EnumerateObject())
-    {
-      if (string.Equals(property.Name, propertyName, StringComparison.OrdinalIgnoreCase))
-      {
-        value = property.Value;
-        return true;
-      }
-    }
-
-    value = default;
-    return false;
-  }
-
-  private static string NormalizeToken(string? status)
+  private static bool IsWarningToken(string? status)
   {
     if (string.IsNullOrWhiteSpace(status))
-      return string.Empty;
+      return false;
 
-    var source = (status ?? string.Empty).Trim().ToLowerInvariant();
-    var sb = new StringBuilder(source.Length);
-
-    foreach (var ch in source)
-    {
-      if (char.IsLetterOrDigit(ch))
-        sb.Append(ch);
-    }
-
-    return sb.ToString();
+    var s = status.Trim().ToLowerInvariant()
+      .Replace("_", "").Replace("-", "").Replace(" ", "");
+    return s == "informational" || s == "info" || s == "warning";
   }
 }

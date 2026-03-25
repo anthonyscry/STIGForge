@@ -1,4 +1,4 @@
-using System.Text;
+using STIGForge.Core;
 using STIGForge.Core.Models;
 
 namespace STIGForge.Core.Services;
@@ -236,18 +236,7 @@ public sealed class CklMergeService
 
   private static string NormalizeToken(string? value)
   {
-    if (string.IsNullOrWhiteSpace(value))
-      return string.Empty;
-
-    var source = value.Trim().ToLowerInvariant();
-    var sb = new StringBuilder(source.Length);
-    foreach (var ch in source)
-    {
-      if (char.IsLetterOrDigit(ch))
-        sb.Append(ch);
-    }
-
-    return sb.ToString();
+    return StatusNormalizer.Normalize(value);
   }
 }
 
