@@ -30,17 +30,20 @@ internal sealed class NullableDateTimeOffsetHandler : SqlMapper.TypeHandler<Date
 public static class DbBootstrap
 {
   private static readonly object _handlerLock = new();
-  private static bool _handlersRegistered;
+  private static volatile bool _handlersRegistered;
 
   public static void EnsureCreated(string connectionString)
   {
-    lock (_handlerLock)
+    if (!_handlersRegistered)
     {
-      if (!_handlersRegistered)
+      lock (_handlerLock)
       {
-        SqlMapper.AddTypeHandler(new DateTimeOffsetHandler());
-        SqlMapper.AddTypeHandler(new NullableDateTimeOffsetHandler());
-        _handlersRegistered = true;
+        if (!_handlersRegistered)
+        {
+          SqlMapper.AddTypeHandler(new DateTimeOffsetHandler());
+          SqlMapper.AddTypeHandler(new NullableDateTimeOffsetHandler());
+          _handlersRegistered = true;
+        }
       }
     }
 

@@ -19,6 +19,7 @@ public sealed class EvidenceCompiler : IEvidenceCompiler
     private const int MaxTotalOutputChars = 100_000;
 
     private readonly ConcurrentDictionary<string, Lazy<EvidenceIndex?>> _indexCache = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, string> _allowedPathCache = new(StringComparer.OrdinalIgnoreCase);
     private readonly ILogger<EvidenceCompiler>? _logger;
 
     public EvidenceCompiler(ILogger<EvidenceCompiler>? logger = null)
@@ -97,9 +98,10 @@ public sealed class EvidenceCompiler : IEvidenceCompiler
 
         var index = lazy.Value;
 
-        // Evict failed entries so transient failures are retryable.
+        // Evict only the specific failed Lazy instance (not a successful one from a race winner).
         if (index == null)
-            _indexCache.TryRemove(bundleRoot, out _);
+            ((ICollection<KeyValuePair<string, Lazy<EvidenceIndex?>>>)_indexCache)
+                .Remove(new KeyValuePair<string, Lazy<EvidenceIndex?>>(bundleRoot, lazy));
 
         return index;
     }
@@ -208,7 +210,8 @@ public sealed class EvidenceCompiler : IEvidenceCompiler
         try
         {
             var fullPath = Path.GetFullPath(Path.Combine(bundleRoot, "Evidence", entry.RelativePath));
-            var allowedPath = Path.GetFullPath(Path.Combine(bundleRoot, "Evidence")) + Path.DirectorySeparatorChar;
+            var allowedPath = _allowedPathCache.GetOrAdd(bundleRoot,
+                r => Path.GetFullPath(Path.Combine(r, "Evidence")) + Path.DirectorySeparatorChar);
             if (!fullPath.StartsWith(allowedPath, StringComparison.OrdinalIgnoreCase))
                 return null;
 

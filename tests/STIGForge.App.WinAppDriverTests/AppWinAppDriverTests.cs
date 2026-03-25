@@ -11,15 +11,21 @@ namespace STIGForge.App.WinAppDriverTests;
 /// </summary>
 public sealed class AppWinAppDriverTests
 {
+    private static (string executablePath, Uri serviceUrl, string screenshotRoot) GetTestContext()
+    {
+        var repoRoot = LocateRepositoryRoot();
+        return (
+            LocateAppExecutable(repoRoot),
+            ResolveServiceUrl(),
+            Path.Combine(repoRoot, ".artifacts", "ui-smoke", "winappdriver"));
+    }
+
     [UIFact]
     [Trait("Category", "UI")]
     [Trait("Backend", "WinAppDriver")]
     public async Task MainWindow_ShowsHeaderButtons_ViaWinAppDriver()
     {
-        var repoRoot = LocateRepositoryRoot();
-        var executablePath = LocateAppExecutable(repoRoot);
-        var serviceUrl = ResolveServiceUrl();
-        var screenshotRoot = Path.Combine(repoRoot, ".artifacts", "ui-smoke", "winappdriver");
+        var (executablePath, serviceUrl, screenshotRoot) = GetTestContext();
 
         await using var client = await WinAppDriverClient.LaunchAsync(executablePath, serviceUrl, TimeSpan.FromSeconds(60));
 
@@ -36,10 +42,7 @@ public sealed class AppWinAppDriverTests
     [Trait("Backend", "WinAppDriver")]
     public async Task WorkflowTab_ShowsRunButtons_ViaWinAppDriver()
     {
-        var repoRoot = LocateRepositoryRoot();
-        var executablePath = LocateAppExecutable(repoRoot);
-        var serviceUrl = ResolveServiceUrl();
-        var screenshotRoot = Path.Combine(repoRoot, ".artifacts", "ui-smoke", "winappdriver");
+        var (executablePath, serviceUrl, screenshotRoot) = GetTestContext();
 
         await using var client = await WinAppDriverClient.LaunchAsync(executablePath, serviceUrl, TimeSpan.FromSeconds(60));
 
@@ -59,10 +62,7 @@ public sealed class AppWinAppDriverTests
     [Trait("Backend", "WinAppDriver")]
     public async Task ImportTab_IsAccessible_ViaWinAppDriver()
     {
-        var repoRoot = LocateRepositoryRoot();
-        var executablePath = LocateAppExecutable(repoRoot);
-        var serviceUrl = ResolveServiceUrl();
-        var screenshotRoot = Path.Combine(repoRoot, ".artifacts", "ui-smoke", "winappdriver");
+        var (executablePath, serviceUrl, screenshotRoot) = GetTestContext();
 
         await using var client = await WinAppDriverClient.LaunchAsync(executablePath, serviceUrl, TimeSpan.FromSeconds(60));
 
@@ -78,10 +78,7 @@ public sealed class AppWinAppDriverTests
     [Trait("Backend", "WinAppDriver")]
     public async Task ResultsTab_IsAccessible_ViaWinAppDriver()
     {
-        var repoRoot = LocateRepositoryRoot();
-        var executablePath = LocateAppExecutable(repoRoot);
-        var serviceUrl = ResolveServiceUrl();
-        var screenshotRoot = Path.Combine(repoRoot, ".artifacts", "ui-smoke", "winappdriver");
+        var (executablePath, serviceUrl, screenshotRoot) = GetTestContext();
 
         await using var client = await WinAppDriverClient.LaunchAsync(executablePath, serviceUrl, TimeSpan.FromSeconds(60));
 
@@ -96,10 +93,7 @@ public sealed class AppWinAppDriverTests
     [Trait("Backend", "WinAppDriver")]
     public async Task ComplianceSummaryTab_IsAccessible_ViaWinAppDriver()
     {
-        var repoRoot = LocateRepositoryRoot();
-        var executablePath = LocateAppExecutable(repoRoot);
-        var serviceUrl = ResolveServiceUrl();
-        var screenshotRoot = Path.Combine(repoRoot, ".artifacts", "ui-smoke", "winappdriver");
+        var (executablePath, serviceUrl, screenshotRoot) = GetTestContext();
 
         await using var client = await WinAppDriverClient.LaunchAsync(executablePath, serviceUrl, TimeSpan.FromSeconds(60));
 

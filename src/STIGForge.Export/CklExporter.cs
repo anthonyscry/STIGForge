@@ -103,23 +103,8 @@ public static class CklExporter
         var compiled = compiler.CompileEvidence(input, resultSet.BundleRoot);
         if (compiled == null) continue;
 
-        // Append or fill FINDING_DETAILS
-        if (!string.IsNullOrWhiteSpace(compiled.FindingDetails))
-        {
-          if (string.IsNullOrWhiteSpace(control.FindingDetails))
-            control.FindingDetails = compiled.FindingDetails;
-          else if (!CommentTemplateEngine.ContainsSentinel(control.FindingDetails))
-            control.FindingDetails = control.FindingDetails + CommentTemplateEngine.Separator + compiled.FindingDetails;
-        }
-
-        // Append or fill COMMENTS
-        if (!string.IsNullOrWhiteSpace(compiled.Comments))
-        {
-          if (string.IsNullOrWhiteSpace(control.Comments))
-            control.Comments = compiled.Comments;
-          else if (!CommentTemplateEngine.ContainsSentinel(control.Comments))
-            control.Comments = control.Comments + CommentTemplateEngine.Separator + compiled.Comments;
-        }
+        control.FindingDetails = EnrichField(control.FindingDetails, compiled.FindingDetails);
+        control.Comments = EnrichField(control.Comments, compiled.Comments);
       }
       catch (Exception ex)
       {
@@ -129,6 +114,18 @@ public static class CklExporter
           "Evidence enrichment failed for control {0}: {1}", control.VulnId, ex.Message);
       }
     }
+  }
+
+  private static string? EnrichField(string? current, string? newValue)
+  {
+    if (string.IsNullOrWhiteSpace(newValue)) return current;
+
+    if (string.IsNullOrWhiteSpace(current))
+      return newValue;
+
+    return CommentTemplateEngine.ContainsSentinel(current)
+      ? current
+      : current + CommentTemplateEngine.Separator + newValue;
   }
 
   private static List<string> ResolveBundleRoots(CklExportRequest request)
