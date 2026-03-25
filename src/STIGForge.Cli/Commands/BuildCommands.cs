@@ -1,8 +1,5 @@
 using System.CommandLine;
 using System.CommandLine.Invocation;
-using System.IO.Compression;
-using System.Net.Http;
-using System.Text.RegularExpressions;
 using System.Text.Json;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -18,9 +15,6 @@ namespace STIGForge.Cli.Commands;
 
 internal static class BuildCommands
 {
-  private const string BreakGlassAckOptionName = "--break-glass-ack";
-  private const string BreakGlassReasonOptionName = "--break-glass-reason";
-
   public static void Register(RootCommand rootCmd, Func<IHost> buildHost)
   {
     RegisterBuildBundle(rootCmd, buildHost);
@@ -39,8 +33,8 @@ internal static class BuildCommands
     var outputOpt = new Option<string>("--output", "Output path override (optional)");
     var saveProfileOpt = new Option<bool>("--save-profile", "Save profile to repo when using --profile-json");
     var forceAutoApplyOpt = new Option<bool>("--force-auto-apply", "Override release-age gate (use with caution)");
-    var breakGlassAckOpt = new Option<bool>(BreakGlassAckOptionName, "Acknowledge high-risk break-glass use for --force-auto-apply");
-    var breakGlassReasonOpt = new Option<string>(BreakGlassReasonOptionName, "Reason for break-glass use (required with --force-auto-apply)");
+    var breakGlassAckOpt = new Option<bool>(BreakGlassService.AckOptionName, "Acknowledge high-risk break-glass use for --force-auto-apply");
+    var breakGlassReasonOpt = new Option<string>(BreakGlassService.ReasonOptionName, "Reason for break-glass use (required with --force-auto-apply)");
 
     cmd.AddOption(packIdOpt); cmd.AddOption(profileIdOpt); cmd.AddOption(profileJsonOpt);
     cmd.AddOption(bundleIdOpt); cmd.AddOption(outputOpt); cmd.AddOption(saveProfileOpt); cmd.AddOption(forceAutoApplyOpt);
@@ -59,7 +53,7 @@ internal static class BuildCommands
       var breakGlassAck = ctx.ParseResult.GetValueForOption(breakGlassAckOpt);
       var breakGlassReason = ctx.ParseResult.GetValueForOption(breakGlassReasonOpt);
 
-      var breakGlassValidationError = ValidateBreakGlassArguments(
+      var breakGlassValidationError = BreakGlassService.ValidateArguments(
         forceAutoApply,
         breakGlassAck,
         breakGlassReason,
@@ -117,7 +111,7 @@ internal static class BuildCommands
         ToolVersion = "0.1.0-dev", ForceAutoApply = forceAutoApply
       }, ct);
 
-      await RecordBreakGlassAuditAsync(
+      await BreakGlassService.RecordAuditAsync(
         audit,
         forceAutoApply,
         "build-bundle",
@@ -153,8 +147,8 @@ internal static class BuildCommands
     var scapArgsOpt = new Option<string>("--scap-args", () => string.Empty, "SCAP args");
     var scapLabelOpt = new Option<string>("--scap-label", () => string.Empty, "Label for SCAP tool");
     var skipSnapOpt = new Option<bool>("--skip-snapshot", "Skip pre-apply snapshot during orchestration (high risk)");
-    var breakGlassAckOpt = new Option<bool>(BreakGlassAckOptionName, "Acknowledge high-risk break-glass use for --skip-snapshot");
-    var breakGlassReasonOpt = new Option<string>(BreakGlassReasonOptionName, "Reason for break-glass use (required with --skip-snapshot)");
+    var breakGlassAckOpt = new Option<bool>(BreakGlassService.AckOptionName, "Acknowledge high-risk break-glass use for --skip-snapshot");
+    var breakGlassReasonOpt = new Option<string>(BreakGlassService.ReasonOptionName, "Reason for break-glass use (required with --skip-snapshot)");
     var dryRunOpt = new Option<bool>("--dry-run", "Simulate apply phase without changes (dry-run report)");
     var ruleIdOpt = new Option<string[]>("--rule-id", "Filter: only apply matching Rule IDs (repeatable)") { AllowMultipleArgumentsPerToken = true };
     var severityOpt = new Option<string[]>("--severity", "Filter: only apply matching severities (high/medium/low/CAT I/II/III)") { AllowMultipleArgumentsPerToken = true };
@@ -174,7 +168,7 @@ internal static class BuildCommands
       var filterRuleIds = ctx.ParseResult.GetValueForOption(ruleIdOpt);
       var filterSeverities = ctx.ParseResult.GetValueForOption(severityOpt);
       var filterCategories = ctx.ParseResult.GetValueForOption(categoryOpt);
-      var breakGlassValidationError = ValidateBreakGlassArguments(
+      var breakGlassValidationError = BreakGlassService.ValidateArguments(
         skipSnapshot,
         breakGlassAck,
         breakGlassReason,
@@ -198,12 +192,12 @@ internal static class BuildCommands
         FilterRuleIds = filterRuleIds,
         FilterSeverities = filterSeverities,
         FilterCategories = filterCategories,
-        DscMofPath = NullIfEmpty(ctx, dscOpt), DscVerbose = ctx.ParseResult.GetValueForOption(dscVOpt),
-        PowerStigModulePath = NullIfEmpty(ctx, psModOpt), PowerStigDataFile = NullIfEmpty(ctx, psDataOpt),
-        PowerStigOutputPath = NullIfEmpty(ctx, psOutOpt), PowerStigVerbose = ctx.ParseResult.GetValueForOption(psVOpt),
-        EvaluateStigRoot = NullIfEmpty(ctx, evalOpt), EvaluateStigArgs = NullIfEmpty(ctx, evalArgsOpt),
-        ScapCommandPath = NullIfEmpty(ctx, scapOpt), ScapArgs = NullIfEmpty(ctx, scapArgsOpt),
-        ScapToolLabel = NullIfEmpty(ctx, scapLabelOpt)
+        DscMofPath = BuildCommandHelpers.NullIfEmpty(ctx, dscOpt), DscVerbose = ctx.ParseResult.GetValueForOption(dscVOpt),
+        PowerStigModulePath = BuildCommandHelpers.NullIfEmpty(ctx, psModOpt), PowerStigDataFile = BuildCommandHelpers.NullIfEmpty(ctx, psDataOpt),
+        PowerStigOutputPath = BuildCommandHelpers.NullIfEmpty(ctx, psOutOpt), PowerStigVerbose = ctx.ParseResult.GetValueForOption(psVOpt),
+        EvaluateStigRoot = BuildCommandHelpers.NullIfEmpty(ctx, evalOpt), EvaluateStigArgs = BuildCommandHelpers.NullIfEmpty(ctx, evalArgsOpt),
+        ScapCommandPath = BuildCommandHelpers.NullIfEmpty(ctx, scapOpt), ScapArgs = BuildCommandHelpers.NullIfEmpty(ctx, scapArgsOpt),
+        ScapToolLabel = BuildCommandHelpers.NullIfEmpty(ctx, scapLabelOpt)
       }, ct);
       logger.LogInformation("orchestrate completed: bundle={Bundle}", bundle);
       await host.StopAsync();
@@ -222,8 +216,8 @@ internal static class BuildCommands
     var dscOpt = new Option<string>("--dsc-path", () => string.Empty, "DSC MOF directory");
     var dscVOpt = new Option<bool>("--dsc-verbose", "Verbose DSC output");
     var skipSnap = new Option<bool>("--skip-snapshot", "Skip snapshot generation");
-    var breakGlassAckOpt = new Option<bool>(BreakGlassAckOptionName, "Acknowledge high-risk break-glass use for --skip-snapshot");
-    var breakGlassReasonOpt = new Option<string>(BreakGlassReasonOptionName, "Reason for break-glass use (required with --skip-snapshot)");
+    var breakGlassAckOpt = new Option<bool>(BreakGlassService.AckOptionName, "Acknowledge high-risk break-glass use for --skip-snapshot");
+    var breakGlassReasonOpt = new Option<string>(BreakGlassService.ReasonOptionName, "Reason for break-glass use (required with --skip-snapshot)");
     var psModOpt = new Option<string>("--powerstig-module", () => string.Empty, "PowerSTIG module folder");
     var psDataOpt = new Option<string>("--powerstig-data", () => string.Empty, "PowerSTIG data file");
     var psOutOpt = new Option<string>("--powerstig-out", () => string.Empty, "PowerSTIG MOF output folder");
@@ -251,7 +245,7 @@ internal static class BuildCommands
       var filterRuleIds = ctx.ParseResult.GetValueForOption(ruleIdOpt);
       var filterSeverities = ctx.ParseResult.GetValueForOption(severityOpt);
       var filterCategories = ctx.ParseResult.GetValueForOption(categoryOpt);
-      var breakGlassValidationError = ValidateBreakGlassArguments(
+      var breakGlassValidationError = BreakGlassService.ValidateArguments(
         skipSnapshot,
         breakGlassAck,
         breakGlassReason,
@@ -265,7 +259,7 @@ internal static class BuildCommands
       logger.LogInformation("apply-run started: bundle={Bundle}, mode={Mode}", bundle, mode);
 
       var audit = host.Services.GetService<IAuditTrailService>();
-      await RecordBreakGlassAuditAsync(
+      await BreakGlassService.RecordAuditAsync(
         audit,
         skipSnapshot,
         "apply-run",
@@ -278,15 +272,15 @@ internal static class BuildCommands
       var result = await runner.RunAsync(new STIGForge.Apply.ApplyRequest
       {
         BundleRoot = bundle, ModeOverride = parsedMode,
-        ScriptPath = NullIfEmpty(ctx, scriptOpt), ScriptArgs = NullIfEmpty(ctx, scriptArgsOpt),
-        DscMofPath = NullIfEmpty(ctx, dscOpt), DscVerbose = ctx.ParseResult.GetValueForOption(dscVOpt),
+        ScriptPath = BuildCommandHelpers.NullIfEmpty(ctx, scriptOpt), ScriptArgs = BuildCommandHelpers.NullIfEmpty(ctx, scriptArgsOpt),
+        DscMofPath = BuildCommandHelpers.NullIfEmpty(ctx, dscOpt), DscVerbose = ctx.ParseResult.GetValueForOption(dscVOpt),
         SkipSnapshot = skipSnapshot,
         DryRun = dryRun,
         FilterRuleIds = filterRuleIds,
         FilterSeverities = filterSeverities,
         FilterCategories = filterCategories,
-        PowerStigModulePath = NullIfEmpty(ctx, psModOpt), PowerStigDataFile = NullIfEmpty(ctx, psDataOpt),
-        PowerStigOutputPath = NullIfEmpty(ctx, psOutOpt), PowerStigVerbose = ctx.ParseResult.GetValueForOption(psVOpt)
+        PowerStigModulePath = BuildCommandHelpers.NullIfEmpty(ctx, psModOpt), PowerStigDataFile = BuildCommandHelpers.NullIfEmpty(ctx, psDataOpt),
+        PowerStigOutputPath = BuildCommandHelpers.NullIfEmpty(ctx, psOutOpt), PowerStigVerbose = ctx.ParseResult.GetValueForOption(psVOpt)
       }, ct);
       logger.LogInformation("apply-run completed: log={LogPath}", result.LogPath);
       Console.WriteLine("Apply completed. Log: " + result.LogPath);
@@ -341,8 +335,8 @@ internal static class BuildCommands
     var scapLabelOpt = new Option<string>("--scap-label", () => "DISA SCAP", "SCAP tool label");
 
     var skipSnapOpt = new Option<bool>("--skip-snapshot", "Skip snapshot generation for image pipeline scenarios (high risk)");
-    var breakGlassAckOpt = new Option<bool>(BreakGlassAckOptionName, "Acknowledge high-risk break-glass use for --skip-snapshot");
-    var breakGlassReasonOpt = new Option<string>(BreakGlassReasonOptionName, "Reason for break-glass use (required with --skip-snapshot)");
+    var breakGlassAckOpt = new Option<bool>(BreakGlassService.AckOptionName, "Acknowledge high-risk break-glass use for --skip-snapshot");
+    var breakGlassReasonOpt = new Option<string>(BreakGlassService.ReasonOptionName, "Reason for break-glass use (required with --skip-snapshot)");
 
     foreach (var option in new Option[]
     {
@@ -387,7 +381,7 @@ internal static class BuildCommands
       if (!string.IsNullOrWhiteSpace(profileId) && !string.IsNullOrWhiteSpace(profileJson))
         throw new ArgumentException("Provide only one of --profile-id or --profile-json.");
 
-      var breakGlassValidationError = ValidateBreakGlassArguments(
+      var breakGlassValidationError = BreakGlassService.ValidateArguments(
         skipSnapshot,
         breakGlassAck,
         breakGlassReason,
@@ -410,7 +404,7 @@ internal static class BuildCommands
       var builder = host.Services.GetRequiredService<BundleBuilder>();
       var orchestrator = host.Services.GetRequiredService<BundleOrchestrator>();
       var audit = host.Services.GetService<IAuditTrailService>();
-      var airGapTransferRoot = GetAirGapTransferRoot(paths);
+      var airGapTransferRoot = AirGapDownloadService.GetAirGapTransferRoot(paths);
       var downloadedArtifacts = new List<string>();
 
       logger.LogInformation("mission-autopilot started: niwcZip={NiwcZip}, packId={PackId}, disaUrl={DisaUrl}", niwcZip, packIdInput, disaStigUrl);
@@ -433,7 +427,7 @@ internal static class BuildCommands
 
       if (string.IsNullOrWhiteSpace(effectivePackId) && !string.IsNullOrWhiteSpace(disaStigUrl))
       {
-        var downloadedDisaZip = await DownloadSourceZipAsync(disaStigUrl, "disa-stig", airGapTransferRoot, ct);
+        var downloadedDisaZip = await AirGapDownloadService.DownloadSourceZipAsync(disaStigUrl, "disa-stig", airGapTransferRoot, ct);
         downloadedArtifacts.Add(downloadedDisaZip);
         var disaPackName = string.IsNullOrWhiteSpace(packName)
           ? "DISA_STIG_" + Path.GetFileNameWithoutExtension(downloadedDisaZip)
@@ -446,7 +440,7 @@ internal static class BuildCommands
 
       if (string.IsNullOrWhiteSpace(effectivePackId) && allowRemoteDownloads)
       {
-        var downloadedNiwcZip = await DownloadSourceZipAsync(niwcSourceUrl, "niwc-enhanced", airGapTransferRoot, ct);
+        var downloadedNiwcZip = await AirGapDownloadService.DownloadSourceZipAsync(niwcSourceUrl, "niwc-enhanced", airGapTransferRoot, ct);
         downloadedArtifacts.Add(downloadedNiwcZip);
         var effectivePackName = string.IsNullOrWhiteSpace(packName)
           ? "NIWC_Enhanced_" + DateTimeOffset.UtcNow.ToString("yyyyMMdd_HHmm")
@@ -463,7 +457,7 @@ internal static class BuildCommands
       var pack = await packs.GetAsync(effectivePackId, ct)
         ?? throw new ArgumentException("Pack not found: " + effectivePackId);
 
-      var generatedProfile = BuildGeneratedProfile(
+      var generatedProfile = BuildCommandHelpers.BuildGeneratedProfile(
         generatedProfileName,
         generatedMode,
         generatedClassification,
@@ -472,15 +466,15 @@ internal static class BuildCommands
         generatedAutoNa,
         generatedNaConfidence,
         generatedNaComment);
-      var profile = await ResolveProfileAsync(profiles, profileId, profileJson, generatedProfile, saveProfile, ct);
+      var profile = await BuildCommandHelpers.ResolveProfileAsync(profiles, profileId, profileJson, generatedProfile, saveProfile, ct);
 
       var controlList = await controlsRepo.ListControlsAsync(pack.PackId, ct);
-      var overlays = await LoadSelectedOverlaysAsync(overlaysRepo, profile, ct);
+      var overlays = await BuildCommandHelpers.LoadSelectedOverlaysAsync(overlaysRepo, profile, ct);
 
       var buildResult = await builder.BuildAsync(new BundleBuildRequest
       {
         BundleId = ctx.ParseResult.GetValueForOption(bundleIdOpt) ?? string.Empty,
-        OutputRoot = NullIfEmpty(ctx, outputOpt),
+        OutputRoot = BuildCommandHelpers.NullIfEmpty(ctx, outputOpt),
         Pack = pack,
         Profile = profile,
         Controls = controlList,
@@ -488,23 +482,23 @@ internal static class BuildCommands
         ToolVersion = "0.1.0-dev"
       }, ct);
 
-      var autoNaSeeded = SeedAutoNaAnswers(scope, manualAnswers, buildResult.BundleRoot, pack, profile, controlList);
+      var autoNaSeeded = BuildCommandHelpers.SeedAutoNaAnswers(scope, manualAnswers, buildResult.BundleRoot, pack, profile, controlList);
 
       var autoDetectTools = ctx.ParseResult.GetValueForOption(autoDetectToolsOpt);
-      var evaluateStigRoot = NullIfEmpty(ctx, evalOpt);
-      var scapCommandPath = NullIfEmpty(ctx, scapOpt);
-      var powerStigModulePath = NullIfEmpty(ctx, psModOpt);
+      var evaluateStigRoot = BuildCommandHelpers.NullIfEmpty(ctx, evalOpt);
+      var scapCommandPath = BuildCommandHelpers.NullIfEmpty(ctx, scapOpt);
+      var powerStigModulePath = BuildCommandHelpers.NullIfEmpty(ctx, psModOpt);
 
       if (autoDetectTools)
       {
-        evaluateStigRoot ??= TryAutoDetectEvaluateStigRoot();
-        scapCommandPath ??= TryAutoDetectScapCommand();
-        powerStigModulePath ??= TryAutoDetectPowerStigModulePath();
+        evaluateStigRoot ??= ToolPathAutoDetector.TryAutoDetectEvaluateStigRoot();
+        scapCommandPath ??= ToolPathAutoDetector.TryAutoDetectScapCommand();
+        powerStigModulePath ??= ToolPathAutoDetector.TryAutoDetectPowerStigModulePath();
       }
 
       if (string.IsNullOrWhiteSpace(powerStigModulePath) && allowRemoteDownloads)
       {
-        var powerStigRemote = await DownloadAndExtractPowerStigModuleAsync(powerStigSourceUrl, airGapTransferRoot, ct);
+        var powerStigRemote = await AirGapDownloadService.DownloadAndExtractPowerStigModuleAsync(powerStigSourceUrl, airGapTransferRoot, ct);
         powerStigModulePath = powerStigRemote.ModulePath;
         if (!string.IsNullOrWhiteSpace(powerStigRemote.ArchivePath)) downloadedArtifacts.Add(powerStigRemote.ArchivePath);
         if (!string.IsNullOrWhiteSpace(powerStigModulePath))
@@ -516,7 +510,7 @@ internal static class BuildCommands
       if (string.IsNullOrWhiteSpace(evaluateStigRoot) && string.IsNullOrWhiteSpace(scapCommandPath))
         throw new ArgumentException("No scanner configured. Provide --evaluate-stig and/or --scap-cmd, or enable --auto-detect-tools with installed tools.");
 
-      await RecordBreakGlassAuditAsync(
+      await BreakGlassService.RecordAuditAsync(
         audit,
         skipSnapshot,
         "mission-autopilot",
@@ -532,14 +526,14 @@ internal static class BuildCommands
         BreakGlassAcknowledged = breakGlassAck,
         BreakGlassReason = breakGlassReason,
         PowerStigModulePath = powerStigModulePath,
-        PowerStigDataFile = NullIfEmpty(ctx, psDataOpt),
-        PowerStigOutputPath = NullIfEmpty(ctx, psOutOpt),
+        PowerStigDataFile = BuildCommandHelpers.NullIfEmpty(ctx, psDataOpt),
+        PowerStigOutputPath = BuildCommandHelpers.NullIfEmpty(ctx, psOutOpt),
         PowerStigVerbose = ctx.ParseResult.GetValueForOption(psVOpt),
         EvaluateStigRoot = evaluateStigRoot,
-        EvaluateStigArgs = NullIfEmpty(ctx, evalArgsOpt),
+        EvaluateStigArgs = BuildCommandHelpers.NullIfEmpty(ctx, evalArgsOpt),
         ScapCommandPath = scapCommandPath,
-        ScapArgs = NullIfEmpty(ctx, scapArgsOpt) ?? string.Empty,
-        ScapToolLabel = NullIfEmpty(ctx, scapLabelOpt)
+        ScapArgs = BuildCommandHelpers.NullIfEmpty(ctx, scapArgsOpt) ?? string.Empty,
+        ScapToolLabel = BuildCommandHelpers.NullIfEmpty(ctx, scapLabelOpt)
       }, ct);
 
       var manualTemplatePath = Path.Combine(buildResult.BundleRoot, "Manual", "answerfile.template.json");
@@ -569,439 +563,4 @@ internal static class BuildCommands
     rootCmd.AddCommand(cmd);
   }
 
-  private static string? NullIfEmpty(InvocationContext ctx, Option<string> opt)
-  {
-    var val = ctx.ParseResult.GetValueForOption(opt);
-    return string.IsNullOrWhiteSpace(val) ? null : val;
-  }
-
-  private static Profile BuildGeneratedProfile(
-    string profileName,
-    string modeValue,
-    string classificationValue,
-    string osTargetValue,
-    string roleTemplateValue,
-    bool autoNa,
-    string naConfidenceValue,
-    string naCommentValue)
-  {
-    var name = (profileName ?? "Autopilot Classified Win11").Trim();
-    if (string.IsNullOrWhiteSpace(name))
-      name = "Autopilot Classified Win11";
-
-    var mode = ParseEnumOrThrow<HardeningMode>(modeValue ?? HardeningMode.Safe.ToString(), "--mode");
-    var classification = ParseEnumOrThrow<ClassificationMode>(classificationValue ?? ClassificationMode.Classified.ToString(), "--classification");
-    var osTarget = ParseEnumOrThrow<OsTarget>(osTargetValue ?? OsTarget.Win11.ToString(), "--os-target");
-    var role = ParseEnumOrThrow<RoleTemplate>(roleTemplateValue ?? RoleTemplate.Workstation.ToString(), "--role-template");
-    var naConfidence = ParseEnumOrThrow<Confidence>(naConfidenceValue ?? Confidence.High.ToString(), "--na-confidence");
-    var naComment = (naCommentValue ?? "Auto-NA (classification scope)").Trim();
-
-    return new Profile
-    {
-      ProfileId = Guid.NewGuid().ToString("n"),
-      Name = name,
-      OsTarget = osTarget,
-      RoleTemplate = role,
-      HardeningMode = mode,
-      ClassificationMode = classification,
-      NaPolicy = new NaPolicy
-      {
-        AutoNaOutOfScope = autoNa,
-        ConfidenceThreshold = naConfidence,
-        DefaultNaCommentTemplate = string.IsNullOrWhiteSpace(naComment) ? "Auto-NA (classification scope)" : naComment
-      },
-      AutomationPolicy = new AutomationPolicy
-      {
-        Mode = AutomationMode.Standard,
-        NewRuleGraceDays = 30,
-        AutoApplyRequiresMapping = true,
-        ReleaseDateSource = ReleaseDateSource.ContentPack
-      },
-      OverlayIds = []
-    };
-  }
-
-  private static async Task<Profile> ResolveProfileAsync(
-    IProfileRepository profiles,
-    string profileId,
-    string profileJson,
-    Profile generatedProfile,
-    bool saveProfile,
-    CancellationToken ct)
-  {
-    if (!string.IsNullOrWhiteSpace(profileId))
-      return await profiles.GetAsync(profileId, ct) ?? throw new ArgumentException("Profile not found: " + profileId);
-
-    if (!string.IsNullOrWhiteSpace(profileJson))
-    {
-      if (!File.Exists(profileJson))
-        throw new FileNotFoundException("Profile JSON not found", profileJson);
-
-      var json = await File.ReadAllTextAsync(profileJson, ct).ConfigureAwait(false);
-      var profile = JsonSerializer.Deserialize<Profile>(json, JsonOptions.CaseInsensitive)
-        ?? throw new ArgumentException("Invalid profile JSON.");
-
-      if (string.IsNullOrWhiteSpace(profile.ProfileId))
-        profile.ProfileId = Guid.NewGuid().ToString("n");
-
-      if (saveProfile)
-        await profiles.SaveAsync(profile, ct);
-
-      return profile;
-    }
-
-    if (saveProfile)
-      await profiles.SaveAsync(generatedProfile, ct);
-
-    return generatedProfile;
-  }
-
-  private static async Task<IReadOnlyList<Overlay>> LoadSelectedOverlaysAsync(IOverlayRepository overlaysRepo, Profile profile, CancellationToken ct)
-  {
-    var overlays = new List<Overlay>();
-    foreach (var overlayId in profile.OverlayIds ?? [])
-    {
-      if (string.IsNullOrWhiteSpace(overlayId))
-        continue;
-
-      var overlay = await overlaysRepo.GetAsync(overlayId, ct);
-      if (overlay != null)
-        overlays.Add(overlay);
-    }
-
-    return overlays;
-  }
-
-  private static int SeedAutoNaAnswers(
-    IClassificationScopeService scope,
-    ManualAnswerService manualAnswers,
-    string bundleRoot,
-    ContentPack pack,
-    Profile profile,
-    IReadOnlyList<ControlRecord> controls)
-  {
-    var compiled = scope.Compile(profile, controls);
-    var count = 0;
-
-    foreach (var compiledControl in compiled.Controls)
-    {
-      if (compiledControl.Status != ControlStatus.NotApplicable)
-        continue;
-
-      var reason = string.IsNullOrWhiteSpace(compiledControl.Comment)
-        ? (string.IsNullOrWhiteSpace(profile.NaPolicy.DefaultNaCommentTemplate)
-          ? "Auto-NA (classification scope)"
-          : profile.NaPolicy.DefaultNaCommentTemplate)
-        : compiledControl.Comment;
-
-      manualAnswers.SaveAnswer(
-        bundleRoot,
-        new ManualAnswer
-        {
-          RuleId = compiledControl.Control.ExternalIds.RuleId,
-          VulnId = compiledControl.Control.ExternalIds.VulnId,
-          Status = "NotApplicable",
-          Reason = reason,
-          Comment = "Auto-generated by mission-autopilot"
-        },
-        requireReasonForDecision: false,
-        profileId: profile.ProfileId,
-        packId: pack.PackId);
-
-      count++;
-    }
-
-    return count;
-  }
-
-  private static T ParseEnumOrThrow<T>(string value, string optionName) where T : struct, Enum
-  {
-    if (Enum.TryParse<T>(value, true, out var parsed))
-      return parsed;
-
-    throw new ArgumentException($"Invalid value '{value}' for {optionName}.");
-  }
-
-  private static string? TryAutoDetectEvaluateStigRoot()
-  {
-    var candidates = new[]
-    {
-      Path.GetFullPath(@".\.stigforge\tools\Evaluate-STIG\Evaluate-STIG"),
-      Path.GetFullPath(@".\.stigforge\tools\Evaluate-STIG"),
-      @"C:\Evaluate-STIG",
-      @"C:\Program Files\Evaluate-STIG"
-    };
-
-    foreach (var candidate in candidates)
-    {
-      var scriptPath = Path.Combine(candidate, "Evaluate-STIG.ps1");
-      if (File.Exists(scriptPath))
-        return candidate;
-    }
-
-    return null;
-  }
-
-  private static string? TryAutoDetectScapCommand()
-  {
-    var candidates = new[]
-    {
-      Path.GetFullPath(@".\.stigforge\tools\SCC\scc.exe"),
-      @"C:\SCC\scc.exe",
-      @"C:\Program Files\SCC\scc.exe",
-      @"C:\Program Files (x86)\SCC\scc.exe"
-    };
-
-    foreach (var candidate in candidates)
-    {
-      if (File.Exists(candidate))
-        return candidate;
-    }
-
-    return null;
-  }
-
-  private static string? TryAutoDetectPowerStigModulePath()
-  {
-    var modulePath = Environment.GetEnvironmentVariable("PSModulePath") ?? string.Empty;
-    var separators = modulePath.Contains(';') ? new[] { ';' } : new[] { Path.PathSeparator };
-    foreach (var segment in modulePath.Split(separators, StringSplitOptions.RemoveEmptyEntries))
-    {
-      var root = segment.Trim();
-      if (root.Length == 0 || !Directory.Exists(root))
-        continue;
-
-      var directoryCandidate = Path.Combine(root, "PowerSTIG");
-      if (Directory.Exists(directoryCandidate))
-      {
-        var psd1 = Path.Combine(directoryCandidate, "PowerSTIG.psd1");
-        if (File.Exists(psd1))
-          return psd1;
-
-        return directoryCandidate;
-      }
-    }
-
-    return null;
-  }
-
-  private static string GetAirGapTransferRoot(IPathBuilder paths)
-  {
-    var root = Path.Combine(paths.GetAppDataRoot(), "airgap-transfer");
-    Directory.CreateDirectory(root);
-    return root;
-  }
-
-  private const int MaxArchiveEntryCount = 4096;
-  private const long MaxArchiveExtractedBytes = 512 * 1024 * 1024; // 512 MB
-
-  private static void ExtractZipSafely(string zipPath, string destinationRoot)
-  {
-    var destFull = Path.GetFullPath(destinationRoot);
-    var destPrefix = destFull.EndsWith(Path.DirectorySeparatorChar.ToString(), StringComparison.Ordinal)
-      ? destFull
-      : destFull + Path.DirectorySeparatorChar;
-
-    using var archive = ZipFile.OpenRead(zipPath);
-
-    if (archive.Entries.Count > MaxArchiveEntryCount)
-      throw new InvalidOperationException($"Archive contains {archive.Entries.Count} entries, exceeding maximum {MaxArchiveEntryCount}.");
-
-    long totalBytes = 0;
-    foreach (var entry in archive.Entries)
-    {
-      var entryPath = Path.GetFullPath(Path.Combine(destFull, entry.FullName));
-      if (!entryPath.StartsWith(destPrefix, StringComparison.OrdinalIgnoreCase)
-          && !string.Equals(entryPath, destFull, StringComparison.OrdinalIgnoreCase))
-        throw new InvalidOperationException($"Archive entry '{entry.FullName}' resolves outside extraction root.");
-
-      if (entry.FullName.EndsWith("/", StringComparison.Ordinal) || entry.FullName.EndsWith("\\", StringComparison.Ordinal))
-      {
-        Directory.CreateDirectory(entryPath);
-        continue;
-      }
-
-      var dir = Path.GetDirectoryName(entryPath);
-      if (!string.IsNullOrWhiteSpace(dir))
-        Directory.CreateDirectory(dir);
-
-      using var src = entry.Open();
-      using var dst = new FileStream(entryPath, FileMode.Create, FileAccess.Write, FileShare.None);
-      src.CopyTo(dst);
-      totalBytes += dst.Length;
-      if (totalBytes > MaxArchiveExtractedBytes)
-        throw new InvalidOperationException($"Archive expanded size exceeds {MaxArchiveExtractedBytes} bytes.");
-    }
-  }
-
-  private static string CreateDownloadSessionFolder(string airGapTransferRoot, string sourceName)
-  {
-    var safeSourceName = SanitizeFileSegment(sourceName);
-    var session = DateTimeOffset.UtcNow.ToString("yyyyMMdd-HHmmss");
-    var folder = Path.Combine(airGapTransferRoot, safeSourceName, session);
-    Directory.CreateDirectory(folder);
-    return folder;
-  }
-
-  private static string SanitizeFileSegment(string value)
-  {
-    var input = string.IsNullOrWhiteSpace(value) ? "source" : value.Trim();
-    var chars = input.Select(ch => Path.GetInvalidFileNameChars().Contains(ch) ? '_' : ch).ToArray();
-    var sanitized = new string(chars);
-    return string.IsNullOrWhiteSpace(sanitized) ? "source" : sanitized;
-  }
-
-  private static async Task<string> DownloadSourceZipAsync(string sourceUrl, string sourceName, string airGapTransferRoot, CancellationToken ct)
-  {
-    var resolvedUrl = await ResolveDownloadUrlAsync(sourceUrl, ct).ConfigureAwait(false);
-
-    if (!resolvedUrl.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) && !resolvedUrl.Contains(".zip?", StringComparison.OrdinalIgnoreCase))
-      throw new ArgumentException("Source URL must resolve to a .zip file: " + resolvedUrl);
-
-    if (!Uri.TryCreate(resolvedUrl, UriKind.Absolute, out var uri))
-      throw new ArgumentException("Invalid source URL: " + sourceUrl);
-
-    var downloadRoot = CreateDownloadSessionFolder(airGapTransferRoot, sourceName);
-
-    var fileName = Path.GetFileName(uri.LocalPath);
-    if (string.IsNullOrWhiteSpace(fileName))
-      fileName = sourceName + ".zip";
-    if (!fileName.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
-      fileName += ".zip";
-
-    var destination = Path.Combine(downloadRoot, fileName);
-    using var http = CreateHttpClient();
-    using var response = await http.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, ct).ConfigureAwait(false);
-    response.EnsureSuccessStatusCode();
-
-    await using var remote = await response.Content.ReadAsStreamAsync(ct).ConfigureAwait(false);
-    await using var local = new FileStream(destination, FileMode.Create, FileAccess.Write, FileShare.None);
-    await remote.CopyToAsync(local, ct).ConfigureAwait(false);
-
-    return destination;
-  }
-
-  private static async Task<string> ResolveDownloadUrlAsync(string sourceUrl, CancellationToken ct)
-  {
-    var raw = (sourceUrl ?? string.Empty).Trim();
-    if (string.IsNullOrWhiteSpace(raw))
-      throw new ArgumentException("Source URL is required.");
-
-    if (raw.Contains("github.com/microsoft/PowerStig", StringComparison.OrdinalIgnoreCase) && !raw.Contains(".zip", StringComparison.OrdinalIgnoreCase))
-      return "https://github.com/microsoft/PowerStig/archive/refs/heads/master.zip";
-
-    if (raw.Contains("github.com/niwc-atlantic/scap-content-library", StringComparison.OrdinalIgnoreCase) && !raw.Contains(".zip", StringComparison.OrdinalIgnoreCase))
-      return "https://github.com/niwc-atlantic/scap-content-library/archive/refs/heads/main.zip";
-
-    if (raw.Contains("cyber.mil/stigs/downloads", StringComparison.OrdinalIgnoreCase) && !raw.Contains(".zip", StringComparison.OrdinalIgnoreCase))
-      return await ResolveFirstZipFromHtmlAsync(raw, ct).ConfigureAwait(false);
-
-    return raw;
-  }
-
-  private static async Task<string> ResolveFirstZipFromHtmlAsync(string pageUrl, CancellationToken ct)
-  {
-    using var http = CreateHttpClient();
-    var html = await http.GetStringAsync(pageUrl, ct).ConfigureAwait(false);
-    var regex = new Regex("href\\s*=\\s*[\"'](?<u>[^\"'#>]+?\\.zip(?:\\?[^\"'#>]*)?)[\"']", RegexOptions.IgnoreCase | RegexOptions.Compiled);
-    var matches = regex.Matches(html);
-    if (matches.Count == 0)
-      throw new ArgumentException("No downloadable .zip links found at source page: " + pageUrl);
-
-    var baseUri = new Uri(pageUrl);
-    var links = new List<string>();
-    foreach (Match match in matches)
-    {
-      var candidate = match.Groups["u"].Value;
-      if (string.IsNullOrWhiteSpace(candidate))
-        continue;
-
-      if (Uri.TryCreate(baseUri, candidate, out var absolute))
-        links.Add(absolute.ToString());
-    }
-
-    if (links.Count == 0)
-      throw new ArgumentException("Unable to resolve absolute .zip links from source page: " + pageUrl);
-
-    var scapPreferred = links.FirstOrDefault(link => link.IndexOf("scap", StringComparison.OrdinalIgnoreCase) >= 0);
-    var firstLink = links.FirstOrDefault();
-    return scapPreferred ?? firstLink ?? throw new ArgumentException("No downloadable .zip links found at source page: " + pageUrl);
-  }
-
-  private static async Task<(string? ModulePath, string? ArchivePath)> DownloadAndExtractPowerStigModuleAsync(string sourceUrl, string airGapTransferRoot, CancellationToken ct)
-  {
-    if (string.IsNullOrWhiteSpace(sourceUrl))
-      return (null, null);
-
-    var zipPath = await DownloadSourceZipAsync(sourceUrl, "powerstig", airGapTransferRoot, ct).ConfigureAwait(false);
-    var extractRoot = CreateDownloadSessionFolder(airGapTransferRoot, "powerstig-extracted");
-    Directory.CreateDirectory(extractRoot);
-    ExtractZipSafely(zipPath, extractRoot);
-
-    var psd1Candidates = Directory
-      .GetFiles(extractRoot, "*.psd1", SearchOption.AllDirectories)
-      .Where(path => Path.GetFileName(path).Equals("PowerSTIG.psd1", StringComparison.OrdinalIgnoreCase))
-      .OrderBy(path => path.Length)
-      .ToList();
-
-    if (psd1Candidates.Count == 0)
-      return (null, zipPath);
-
-    return (psd1Candidates[0], zipPath);
-  }
-
-  private static HttpClient CreateHttpClient()
-  {
-    var client = new HttpClient
-    {
-      Timeout = TimeSpan.FromMinutes(5)
-    };
-
-    client.DefaultRequestHeaders.UserAgent.ParseAdd("STIGForge/1.0 (+mission-autopilot)");
-    return client;
-  }
-
-  private static string? ValidateBreakGlassArguments(bool highRiskOptionEnabled, bool breakGlassAck, string? breakGlassReason, string optionName)
-  {
-    if (!highRiskOptionEnabled)
-      return null;
-
-    if (!breakGlassAck)
-      return $"{optionName} is high risk. Add {BreakGlassAckOptionName} and provide a specific reason with {BreakGlassReasonOptionName}.";
-
-    try
-    {
-      new ManualAnswerService().ValidateBreakGlassReason(breakGlassReason);
-    }
-    catch (ArgumentException)
-    {
-      return $"{BreakGlassReasonOptionName} is required for {optionName} and must be specific (minimum 8 characters).";
-    }
-
-    return null;
-  }
-
-  private static async Task RecordBreakGlassAuditAsync(
-    IAuditTrailService? audit,
-    bool highRiskOptionEnabled,
-    string action,
-    string target,
-    string bypassName,
-    string? reason,
-    CancellationToken ct)
-  {
-    if (!highRiskOptionEnabled || audit == null)
-      return;
-
-    await audit.RecordAsync(new AuditEntry
-    {
-      Action = "break-glass",
-      Target = string.IsNullOrWhiteSpace(target) ? action : target,
-      Result = "acknowledged",
-      Detail = $"Action={action}; Bypass={bypassName}; Reason={reason?.Trim()}",
-      User = Environment.UserName,
-      Machine = Environment.MachineName,
-      Timestamp = DateTimeOffset.Now
-    }, ct).ConfigureAwait(false);
-  }
 }
