@@ -113,13 +113,13 @@ Generated from CEO-mode codebase health audit (2026-03-15).
   - **Effort:** S (~1 hour)
   - **Depends on:** Nothing
 
-- [ ] **Extract shared `StatusNormalizer` to STIGForge.Core** — Deferred: the 5 services have subtly different normalization mappings (e.g., "error" → "Open" vs "Fail", capitalization). Needs careful per-service mapping alignment with test updates.
+- [x] **Extract shared `StatusNormalizer` to STIGForge.Core** — Created with 4 output formats: `ToCanonical`, `ToCklFormat`, `ToAbbreviated`, `ToLowerToken`. Each service delegates via thin wrapper.
   - **Why:** DRY — same strip-punctuation-then-switch pattern copied 5 times.
-  - **Effort:** M (~2 hours — includes test alignment)
+  - **Completed:** v1.0.6 (2026-03-25)
 
-- [ ] **Extract `JsonElementExtensions` to STIGForge.Core** — Deferred: needs careful verification that extension method resolution doesn't change behavior for callers using different parameter types.
+- [x] **Extract `JsonElementExtensions` to STIGForge.Core** — Extension methods `TryGetPropertyCaseInsensitive` + `ReadStringProperty`. Removed private copies from 3 services.
   - **Why:** DRY — 4 copies of identical JSON property lookup code.
-  - **Effort:** S (~30 min)
+  - **Completed:** v1.0.6 (2026-03-25)
 
 - [x] **Upgrade Scriban to patched version** — Upgraded from 6.6.0 to 7.0.0. Fixes 4 CVEs.
   - **Why:** Security — 3 high + 1 moderate severity vulnerabilities.
