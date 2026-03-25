@@ -16,11 +16,26 @@ public sealed class RebootCoordinator
 
     private readonly ILogger<RebootCoordinator> _logger;
     private readonly Func<int, bool> _scheduleReboot;
+    private readonly Func<CancellationToken, Task<bool>>? _dscRebootCheck;
+    private readonly Func<bool>? _pendingFileRenameCheck;
+    private readonly Func<bool>? _windowsUpdateRebootCheck;
 
-    public RebootCoordinator(ILogger<RebootCoordinator> logger, Func<int, bool>? scheduleReboot = null)
+    /// <param name="scheduleReboot">Optional override for the system reboot scheduler (injectable for testing).</param>
+    /// <param name="dscRebootCheck">Optional override for DSC reboot detection (injectable for testing).</param>
+    /// <param name="pendingFileRenameCheck">Optional override for pending file rename check (injectable for testing).</param>
+    /// <param name="windowsUpdateRebootCheck">Optional override for Windows Update reboot check (injectable for testing).</param>
+    public RebootCoordinator(
+        ILogger<RebootCoordinator> logger,
+        Func<int, bool>? scheduleReboot = null,
+        Func<CancellationToken, Task<bool>>? dscRebootCheck = null,
+        Func<bool>? pendingFileRenameCheck = null,
+        Func<bool>? windowsUpdateRebootCheck = null)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _scheduleReboot = scheduleReboot ?? ScheduleSystemReboot;
+        _dscRebootCheck = dscRebootCheck;
+        _pendingFileRenameCheck = pendingFileRenameCheck;
+        _windowsUpdateRebootCheck = windowsUpdateRebootCheck;
     }
 
     /// <summary>
@@ -34,21 +49,24 @@ public sealed class RebootCoordinator
         _logger.LogDebug("Checking if reboot is required...");
 
         // Check 1: DSC reboot status
-        if (await IsDscRebootRequired(cancellationToken).ConfigureAwait(false))
+        var dscCheck = _dscRebootCheck ?? IsDscRebootRequired;
+        if (await dscCheck(cancellationToken).ConfigureAwait(false))
         {
             _logger.LogInformation("Reboot required: DSC configuration requests reboot");
             return true;
         }
 
         // Check 2: Pending file operations
-        if (IsPendingFileRenameOperationRequired())
+        var fileRenameCheck = _pendingFileRenameCheck ?? IsPendingFileRenameOperationRequired;
+        if (fileRenameCheck())
         {
             _logger.LogInformation("Reboot required: Pending file rename operations detected");
             return true;
         }
 
         // Check 3: Windows Update reboot flag
-        if (IsWindowsUpdateRebootRequired())
+        var wuCheck = _windowsUpdateRebootCheck ?? IsWindowsUpdateRebootRequired;
+        if (wuCheck())
         {
             _logger.LogInformation("Reboot required: Windows Update requires reboot");
             return true;
