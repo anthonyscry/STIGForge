@@ -50,7 +50,7 @@ public sealed class DialogTests
             "Settings dialog should contain an 'Import Folder' label or control");
 
         // Close the dialog with Escape.
-        Keyboard.Press(VirtualKeyShort.ESCAPE);
+        Keyboard.Press(FlaUI.Core.WindowsAPI.VirtualKeyShort.ESCAPE);
 
         await Task.Delay(TimeSpan.FromSeconds(1));
 

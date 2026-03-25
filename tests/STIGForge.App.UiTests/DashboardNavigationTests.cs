@@ -129,7 +129,7 @@ public sealed class DashboardNavigationTests
         app.MainWindow.SetForeground();
         app.MainWindow.Focus();
 
-        Keyboard.Press(VirtualKeyShort.F1);
+        Keyboard.Press(FlaUI.Core.WindowsAPI.VirtualKeyShort.F1);
 
         // Wait briefly for any modal/help window to appear.
         await Task.Delay(TimeSpan.FromSeconds(2));
@@ -140,7 +140,7 @@ public sealed class DashboardNavigationTests
         modalWindows.Should().NotBeEmpty("pressing F1 should open a help window or dialog");
 
         // Dismiss the modal.
-        Keyboard.Press(VirtualKeyShort.ESCAPE);
+        Keyboard.Press(FlaUI.Core.WindowsAPI.VirtualKeyShort.ESCAPE);
 
         await Task.Delay(TimeSpan.FromSeconds(1));
 
