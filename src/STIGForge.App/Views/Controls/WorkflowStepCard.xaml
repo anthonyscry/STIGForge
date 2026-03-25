@@ -18,8 +18,8 @@
     </UserControl.Resources>
 
      <Border Style="{DynamicResource WorkflowStepCardBorderStyle}"
-              Padding="14,12"
-              MinHeight="85"
+              Padding="12,10"
+              MinHeight="70"
               Background="{DynamicResource SurfaceBrush}"
               CornerRadius="12"
               CacheMode="BitmapCache">

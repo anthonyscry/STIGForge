@@ -61,17 +61,19 @@
                     </StackPanel>
                 </TabItem.Header>
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel Margin="0,0,0,8">
-                        <DockPanel Margin="0,0,0,16">
-                            <TextBlock Text="Import Library" Style="{StaticResource PageTitleStyle}" VerticalAlignment="Center" />
-                        </DockPanel>
+                    <Grid Margin="0,0,0,4">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto" />
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" MinWidth="220" MaxWidth="380" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
 
-                        <TextBlock Text="Use Import to load STIG, SCAP, and ADMX library content before scanning."
-                                   Margin="0,0,0,12"
-                                   FontSize="11"
-                                   Foreground="{DynamicResource TextMutedBrush}" />
-
-                        <controls:WorkflowStepCard StepName="Import"
+                        <controls:WorkflowStepCard Grid.Row="0" Grid.Column="0" Grid.RowSpan="2"
+                                                   Margin="0,0,12,0"
+                                                   StepName="Import"
                                                    StepState="{Binding ImportState}"
                                                    ErrorMessage="{Binding ImportError}"
                                                    RunCommand="{Binding RunImportStepCommand}"
@@ -81,10 +83,10 @@
                                                    RunButtonToolTip="Run Import step (Alt+I)"
                                                    RecoveryButtonTabIndex="1"
                                                    RecoveryButtonAutomationName="Retry Import step"
-                                                   RecoveryButtonToolTip="Retry Import step (Alt+I)"
-                                                   Margin="0,0,0,12" />
+                                                   RecoveryButtonToolTip="Retry Import step (Alt+I)" />
 
-                        <Border Margin="0,0,0,12"
+                        <Border Grid.Row="0" Grid.Column="1" Grid.RowSpan="2"
+                                Margin="0,0,0,0"
                                 Padding="{DynamicResource CardPadding}"
                                 Background="{DynamicResource SurfaceMutedBrush}">
                             <StackPanel>
@@ -186,7 +188,7 @@
                                 </ListBox>
                             </StackPanel>
                         </Border>
-                    </StackPanel>
+                    </Grid>
                 </ScrollViewer>
             </TabItem>
 
@@ -244,13 +246,12 @@
                     </StackPanel>
                 </TabItem.Header>
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel Margin="0,0,0,8">
-                        <DockPanel Margin="0,0,0,16">
-                            <TextBlock Text="Workflow" Style="{StaticResource PageTitleStyle}" VerticalAlignment="Center" />
+                    <StackPanel Margin="0,0,0,4">
+                        <DockPanel Margin="0,0,0,8">
                             <Button Content="Run Auto"
                                     DockPanel.Dock="Right"
-                                    Width="130"
-                                    Height="34"
+                                    MinWidth="110"
+                                    Height="32"
                                     Padding="14,4"
                                     TabIndex="10"
                                     Style="{DynamicResource WorkflowDashboardButtonStyle}"
@@ -258,14 +259,10 @@
                                     AutomationProperties.Name="Run auto workflow"
                                     AutomationProperties.AutomationId="run-auto-workflow"
                                     ToolTip="Run all workflow steps in order (Ctrl+R)" />
+                            <TextBlock Text="Workflow" FontSize="15" FontWeight="SemiBold" VerticalAlignment="Center" Margin="0,0,12,0" />
                         </DockPanel>
 
-                        <TextBlock Text="Use keyboard shortcuts for quick access. Press F1 for the full shortcut reference."
-                                   Margin="0,0,0,12"
-                                   FontSize="11"
-                                   Foreground="{DynamicResource TextMutedBrush}" />
-
-                        <WrapPanel Margin="0,0,0,14" HorizontalAlignment="Left">
+                        <UniformGrid Rows="1" Margin="0,0,0,8">
                             <controls:WorkflowStepCard StepName="Scan"
                                                        StepState="{Binding ScanState}"
                                                        ErrorMessage="{Binding ScanError}"
@@ -282,8 +279,8 @@
                                                        SecondaryButtonToolTip="Skip scan and go straight to harden (Alt+J)"
                                                        RecoveryButtonTabIndex="21"
                                                        RecoveryButtonAutomationName="Retry Scan step"
-                                                       RecoveryButtonToolTip="Retry Scan step (Alt+S)"
-                                                       Margin="0,0,12,12" />
+                                                       RecoveryButtonToolTip="Retry Scan step (Alt+S). Requires Administrator."
+                                                       Margin="0,0,6,0" />
 
                             <controls:WorkflowStepCard StepName="Harden"
                                                        StepState="{Binding HardenState}"
@@ -301,7 +298,7 @@
                                                        RecoveryButtonTabIndex="31"
                                                        RecoveryButtonAutomationName="Retry Harden step"
                                                        RecoveryButtonToolTip="Retry Harden step (Alt+H)"
-                                                       Margin="0,0,12,12" />
+                                                       Margin="0,0,6,0" />
 
                             <controls:WorkflowStepCard StepName="Verify"
                                                        StepState="{Binding VerifyState}"
@@ -315,8 +312,8 @@
                                                        RecoveryButtonTabIndex="41"
                                                        RecoveryButtonAutomationName="Retry Verify step"
                                                        RecoveryButtonToolTip="Retry Verify step (Alt+V)"
-                                                       Margin="0,0,12,12" />
-                        </WrapPanel>
+                                                       Margin="0,0,6,0" />
+                        </UniformGrid>
 
                         <Border Margin="0,0,0,14"
                                 Padding="{DynamicResource CardPadding}"
@@ -424,9 +421,7 @@
                             </StackPanel>
                         </Border>
 
-                        <TextBlock Margin="0,0,0,14"
-                                   Foreground="{DynamicResource TextMutedBrush}"
-                                   Text="Scan and Verify require Administrator mode." />
+                        <!-- Administrator note moved to step card tooltips -->
                     </StackPanel>
                 </ScrollViewer>
             </TabItem>
@@ -455,18 +450,26 @@
                     </StackPanel>
                 </TabItem.Header>
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel Margin="0,0,0,8">
+                    <StackPanel Margin="0,0,0,4">
                         <Border Padding="{DynamicResource CardPadding}">
                             <StackPanel>
-                                <TextBlock Text="Results" Style="{StaticResource PageTitleStyle}" Margin="0,0,0,10" />
+                                <Grid Margin="0,0,0,8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="12" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0">
+                                        <TextBlock Text="Mission JSON" FontWeight="SemiBold" Margin="0,0,0,4" />
+                                        <TextBox Text="{Binding MissionJsonPath}" IsReadOnly="True" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2">
+                                        <TextBlock Text="Output Folder" FontWeight="SemiBold" Margin="0,0,0,4" />
+                                        <TextBox Text="{Binding OutputFolderPath}" IsReadOnly="True" />
+                                    </StackPanel>
+                                </Grid>
 
-                                <TextBlock Text="Mission JSON" FontWeight="SemiBold" Margin="0,0,0,4" />
-                                <TextBox Text="{Binding MissionJsonPath}" IsReadOnly="True" Margin="0,0,0,10" />
-
-                                <TextBlock Text="Output Folder" FontWeight="SemiBold" Margin="0,0,0,4" />
-                                <TextBox Text="{Binding OutputFolderPath}" IsReadOnly="True" Margin="0,0,0,10" />
-
-                                <WrapPanel Margin="0,0,0,8">
+                                <WrapPanel Margin="0,0,0,4">
                                     <Button Content="Open Output Folder"
                                             Width="170"
                                             Height="34"
@@ -517,8 +520,8 @@
                     </StackPanel>
                 </TabItem.Header>
                 <ScrollViewer VerticalScrollBarVisibility="Auto">
-                    <StackPanel Margin="0,0,0,8">
-                        <Border Margin="0,0,0,14"
+                    <StackPanel Margin="0,0,0,4">
+                        <Border Margin="0,0,0,8"
                                 Padding="{DynamicResource CardPadding}"
                                 Background="{DynamicResource SurfaceBrush}"
                                 CornerRadius="{DynamicResource UiPanelRadius}">

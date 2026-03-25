@@ -3,6 +3,20 @@
 All notable changes to STIGForge are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.0.5] - 2026-03-25
+
+### Changed
+
+- Dashboard layout compacted to eliminate scrolling — removed redundant page titles, descriptions, and footer text across all tabs
+- Workflow tab: step cards in horizontal `UniformGrid` row (equal width, no wrapping), Run Auto button inline with title
+- Import tab: side-by-side 2-column grid (import card left, library tree right)
+- Results tab: Mission JSON and Output Folder paths side-by-side
+- Step card padding and min-height reduced for tighter density
+
+### Added
+
+- TODOS.md: new Integration Fixes section with P1 items (Evaluate-STIG output consolidation, StatusNormalizer extraction, JsonElementExtensions extraction, Scriban CVE upgrade)
+
 ## [1.0.4] - 2026-03-24
 
 ### Added
