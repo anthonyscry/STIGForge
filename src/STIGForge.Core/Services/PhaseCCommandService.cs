@@ -168,7 +168,7 @@ public sealed class PhaseCCommandService
       throw new FileNotFoundException("No consolidated verify report found under bundle Verify directory.", verifyRoot);
 
     using var document = JsonDocument.Parse(File.ReadAllText(reportPath));
-    if (!TryGetPropertyCaseInsensitive(document.RootElement, "results", out var resultsElement)
+    if (!document.RootElement.TryGetPropertyCaseInsensitive("results", out var resultsElement)
       || resultsElement.ValueKind != JsonValueKind.Array)
     {
       throw new InvalidOperationException("Verify report is missing a results array: " + reportPath);
@@ -180,9 +180,9 @@ public sealed class PhaseCCommandService
       if (item.ValueKind != JsonValueKind.Object)
         continue;
 
-      var ruleId = ReadStringProperty(item, "ruleId") ?? string.Empty;
-      var vulnId = ReadStringProperty(item, "vulnId");
-      var status = ReadStringProperty(item, "status") ?? "NotReviewed";
+      var ruleId = item.ReadStringProperty("ruleId") ?? string.Empty;
+      var vulnId = item.ReadStringProperty("vulnId");
+      var status = item.ReadStringProperty("status") ?? "NotReviewed";
 
       if (string.IsNullOrWhiteSpace(ruleId) && string.IsNullOrWhiteSpace(vulnId))
         continue;
@@ -192,49 +192,15 @@ public sealed class PhaseCCommandService
         RuleId = ruleId,
         VulnId = vulnId,
         Status = status,
-        Comments = ReadStringProperty(item, "comments"),
-        FindingDetails = ReadStringProperty(item, "findingDetails"),
-        Severity = ReadStringProperty(item, "severity"),
-        Title = ReadStringProperty(item, "title"),
+        Comments = item.ReadStringProperty("comments"),
+        FindingDetails = item.ReadStringProperty("findingDetails"),
+        Severity = item.ReadStringProperty("severity"),
+        Title = item.ReadStringProperty("title"),
         SourceFile = reportPath
       });
     }
 
     return controlResults;
-  }
-
-  private static string? ReadStringProperty(JsonElement element, string propertyName)
-  {
-    if (!TryGetPropertyCaseInsensitive(element, propertyName, out var value))
-      return null;
-
-    return value.ValueKind == JsonValueKind.String
-      ? value.GetString()
-      : null;
-  }
-
-  private static bool TryGetPropertyCaseInsensitive(JsonElement element, string propertyName, out JsonElement value)
-  {
-    if (element.ValueKind != JsonValueKind.Object)
-    {
-      value = default;
-      return false;
-    }
-
-    if (element.TryGetProperty(propertyName, out value))
-      return true;
-
-    foreach (var property in element.EnumerateObject())
-    {
-      if (string.Equals(property.Name, propertyName, StringComparison.OrdinalIgnoreCase))
-      {
-        value = property.Value;
-        return true;
-      }
-    }
-
-    value = default;
-    return false;
   }
 
   public async Task<EmassPackage> EmassPackageAsync(string bundlePath, string systemName, string systemAcronym, string outputDirectory, string? previousPackagePath, CancellationToken ct)
