@@ -30,23 +30,7 @@ public sealed class ManualAnswerService
 
   public string NormalizeStatus(string? status)
   {
-    var token = NormalizeToken(status);
-    if (token.Length == 0)
-      return "Open";
-
-    if (token == "pass" || token == "notafinding" || token == "compliant" || token == "closed")
-      return "Pass";
-
-    if (token == "fail" || token == "noncompliant")
-      return "Fail";
-
-    if (token == "notapplicable" || token == "na")
-      return "NotApplicable";
-
-    if (token == "open" || token == "notreviewed" || token == "notchecked" || token == "unknown" || token == "informational" || token == "error")
-      return "Open";
-
-    return "Open";
+    return StatusNormalizer.ToCanonical(status);
   }
 
   public bool RequiresReason(string? status)
@@ -323,18 +307,7 @@ public sealed class ManualAnswerService
 
   private static string NormalizeToken(string? status)
   {
-    if (string.IsNullOrWhiteSpace(status))
-      return string.Empty;
-
-    var source = (status ?? string.Empty).Trim().ToLowerInvariant();
-    var sb = new StringBuilder(source.Length);
-    foreach (var ch in source)
-    {
-      if (char.IsLetterOrDigit(ch))
-        sb.Append(ch);
-    }
-
-    return sb.ToString();
+    return StatusNormalizer.NormalizeToken(status);
   }
 
   private static AnswerFile CreateEmptyAnswerFile(string bundleRoot)

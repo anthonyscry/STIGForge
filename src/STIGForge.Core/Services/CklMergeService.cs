@@ -1,4 +1,3 @@
-using System.Text;
 using STIGForge.Core.Models;
 
 namespace STIGForge.Core.Services;
@@ -202,26 +201,12 @@ public sealed class CklMergeService
 
   private static string NormalizeCklStatus(string? status)
   {
-    return NormalizeToken(status) switch
-    {
-      "notafinding" or "notafind" or "pass" => "NotAFinding",
-      "open" or "fail" or "error" => "Open",
-      "notapplicable" or "notapp" or "na" => "Not_Applicable",
-      "notreviewed" or "nr" or "notchecked" or "informational" => "Not_Reviewed",
-      _ => "Not_Reviewed"
-    };
+    return StatusNormalizer.ToCklFormat(status);
   }
 
   private static string NormalizeStigForgeStatus(string? status)
   {
-    return NormalizeToken(status) switch
-    {
-      "pass" or "compliant" or "notafinding" => "NotAFinding",
-      "fail" or "noncompliant" or "open" or "error" => "Open",
-      "notapplicable" or "na" => "Not_Applicable",
-      "notreviewed" or "notchecked" or "informational" => "Not_Reviewed",
-      _ => "Not_Reviewed"
-    };
+    return StatusNormalizer.ToCklFormat(status);
   }
 
   private static string NormalizeToKnownCklStatus(string? status)
@@ -236,18 +221,7 @@ public sealed class CklMergeService
 
   private static string NormalizeToken(string? value)
   {
-    if (string.IsNullOrWhiteSpace(value))
-      return string.Empty;
-
-    var source = value.Trim().ToLowerInvariant();
-    var sb = new StringBuilder(source.Length);
-    foreach (var ch in source)
-    {
-      if (char.IsLetterOrDigit(ch))
-        sb.Append(ch);
-    }
-
-    return sb.ToString();
+    return StatusNormalizer.NormalizeToken(value);
   }
 }
 
