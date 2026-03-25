@@ -203,7 +203,7 @@ public sealed class PhaseCCommandServiceTests
 
         var svc = BuildMinimalService();
 
-        Func<Task> act = () => svc.AgentInstallAsync("my_valid_svc", "Display Name", "/path/to/exe", CancellationToken.None);
+        Func<Task> act = () => svc.AgentInstallAsync("my_valid_svc", "Display Name", "/path/to/agent.exe", CancellationToken.None);
 
         await act.Should().NotThrowAsync();
     }
