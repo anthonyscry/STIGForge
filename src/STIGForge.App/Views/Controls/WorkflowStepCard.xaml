@@ -18,7 +18,7 @@
     </UserControl.Resources>
 
      <Border Style="{DynamicResource WorkflowStepCardBorderStyle}"
-              Padding="10"
+              Padding="14,12"
               MinHeight="85"
               Background="{DynamicResource SurfaceBrush}"
               CornerRadius="12"
@@ -53,7 +53,8 @@
 
             <StackPanel Orientation="Horizontal" Margin="0,0,0,6">
                 <Button Content="{Binding RunButtonLabel, RelativeSource={RelativeSource AncestorType=UserControl}}"
-                        Width="92"
+                        MinWidth="92"
+                        Padding="12,0"
                         Height="30"
                         Margin="0,0,6,0"
                         HorizontalAlignment="Left"

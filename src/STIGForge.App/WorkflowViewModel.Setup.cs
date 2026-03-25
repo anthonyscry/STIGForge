@@ -125,6 +125,11 @@ public partial class WorkflowViewModel
         if (!string.IsNullOrWhiteSpace(workspaceRoot))
             return workspaceRoot;
 
+        // Check parent of BaseDirectory (portable deployments: C:\STIGForge\App → C:\STIGForge)
+        var baseDir = new DirectoryInfo(AppContext.BaseDirectory);
+        if (baseDir.Parent != null && Directory.Exists(Path.Combine(baseDir.Parent.FullName, "import")))
+            return baseDir.Parent.FullName;
+
         if (Directory.Exists(AppContext.BaseDirectory))
             return AppContext.BaseDirectory;
 
@@ -167,6 +172,11 @@ public partial class WorkflowViewModel
         yield return Path.Combine(scanRoot, "tools", "Evaluate-STIG");
         yield return Path.Combine(scanRoot, "Evaluate-STIG", "Evaluate-STIG");
         yield return Path.Combine(scanRoot, "Evaluate-STIG");
+        // Common standalone install paths
+        yield return @"C:\Tools\Evaluate-STIG\Evaluate-STIG";
+        yield return @"C:\Tools\Evaluate-STIG";
+        yield return @"C:\Evaluate-STIG\Evaluate-STIG";
+        yield return @"C:\Evaluate-STIG";
     }
 
     private static IEnumerable<string> GetSccCandidates(string scanRoot)
@@ -177,6 +187,11 @@ public partial class WorkflowViewModel
         yield return Path.Combine(scanRoot, "SCC", "cscc.exe");
         yield return Path.Combine(scanRoot, "SCC", "cscc-remote.exe");
         yield return Path.Combine(scanRoot, "SCC");
+        // Common standalone install paths
+        yield return @"C:\Tools\SCC\cscc.exe";
+        yield return @"C:\Tools\SCC";
+        yield return @"C:\Program Files\SCC\cscc.exe";
+        yield return @"C:\Program Files (x86)\SCC\cscc.exe";
     }
 
     private static string? ResolveEvaluateStigToolRoot(string? candidate)
