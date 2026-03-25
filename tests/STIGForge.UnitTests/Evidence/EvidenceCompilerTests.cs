@@ -1,5 +1,6 @@
 using System.Text.Json;
 using FluentAssertions;
+using STIGForge.Core;
 using STIGForge.Core.Abstractions;
 using STIGForge.Evidence;
 
@@ -57,7 +58,7 @@ public class EvidenceCompilerTests : IDisposable
         };
 
         var metaPath = Path.Combine(controlDir, evidenceId + ".json");
-        File.WriteAllText(metaPath, JsonSerializer.Serialize(metadata, new JsonSerializerOptions { WriteIndented = true }));
+        File.WriteAllText(metaPath, JsonSerializer.Serialize(metadata, JsonOptions.Indented));
     }
 
     private static EvidenceCompilationInput MakeInput(

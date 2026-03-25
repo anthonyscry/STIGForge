@@ -18,7 +18,7 @@ public sealed class EvidenceCompiler : IEvidenceCompiler
     private const int MaxEvidenceEntries = 50;
     private const int MaxTotalOutputChars = 100_000;
 
-    private readonly ConcurrentDictionary<string, EvidenceIndex?> _indexCache = new(StringComparer.OrdinalIgnoreCase);
+    private readonly ConcurrentDictionary<string, Lazy<EvidenceIndex?>> _indexCache = new(StringComparer.OrdinalIgnoreCase);
     private readonly ILogger<EvidenceCompiler>? _logger;
 
     public EvidenceCompiler(ILogger<EvidenceCompiler>? logger = null)
@@ -78,21 +78,26 @@ public sealed class EvidenceCompiler : IEvidenceCompiler
 
     private EvidenceIndex? GetOrBuildIndex(string bundleRoot)
     {
-        var index = _indexCache.GetOrAdd(bundleRoot, root =>
-        {
-            try
+        // Lazy<T> ensures the factory runs exactly once per key even under concurrency.
+        // On failure, the Lazy is evicted so the next call retries (no permanent null caching).
+        var lazy = _indexCache.GetOrAdd(bundleRoot, root =>
+            new Lazy<EvidenceIndex?>(() =>
             {
-                var svc = new EvidenceIndexService(root);
-                return Task.Run(() => svc.BuildIndexAsync()).GetAwaiter().GetResult();
-            }
-            catch (Exception ex)
-            {
-                _logger?.LogWarning(ex, "EvidenceCompiler failed to build evidence index for bundleRoot={BundleRoot}", root);
-                return null;
-            }
-        });
+                try
+                {
+                    var svc = new EvidenceIndexService(root);
+                    return Task.Run(() => svc.BuildIndexAsync()).GetAwaiter().GetResult();
+                }
+                catch (Exception ex)
+                {
+                    _logger?.LogWarning(ex, "EvidenceCompiler failed to build evidence index for bundleRoot={BundleRoot}", root);
+                    return null;
+                }
+            }, LazyThreadSafetyMode.ExecutionAndPublication));
 
-        // Do not permanently cache null (transient failures should be retryable).
+        var index = lazy.Value;
+
+        // Evict failed entries so transient failures are retryable.
         if (index == null)
             _indexCache.TryRemove(bundleRoot, out _);
 
@@ -214,11 +219,13 @@ public sealed class EvidenceCompiler : IEvidenceCompiler
             using var reader = new StreamReader(fullPath);
             var buffer = new char[MaxArtifactChars];
             int charsRead = reader.Read(buffer, 0, buffer.Length);
+            var content = new string(buffer, 0, charsRead);
 
-            if (charsRead < MaxArtifactChars)
-                return new string(buffer, 0, charsRead);
+            // Only append truncation marker if there's actually more data beyond what we read.
+            if (!reader.EndOfStream)
+                return content + TruncationMarker;
 
-            return new string(buffer, 0, charsRead) + TruncationMarker;
+            return content;
         }
         catch (Exception ex)
         {

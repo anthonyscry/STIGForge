@@ -20,6 +20,9 @@ public static class CommentTemplateEngine
     {
         var sb = new StringBuilder();
 
+        // Embed marker so ContainsSentinel detects this on re-export (idempotency).
+        sb.AppendLine("[STIGForge Evidence Report]");
+
         // Status rationale
         var normalizedStatus = NormalizeStatus(status);
         sb.Append(normalizedStatus switch
