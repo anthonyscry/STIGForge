@@ -105,7 +105,8 @@ public sealed class VerificationWorkflowService : IVerificationWorkflowService
       if (runResult.ExitCode != 0)
         diagnostics.Add($"Evaluate-STIG exited with code {runResult.ExitCode}.");
 
-      ConsolidateEvaluateStigOutput(request.OutputRoot);
+      if (runResult.ExitCode == 0)
+        ConsolidateEvaluateStigOutput(request.OutputRoot, runResult.StartedAt);
 
       return new VerificationToolRunResult
       {
@@ -134,12 +135,13 @@ public sealed class VerificationWorkflowService : IVerificationWorkflowService
     }
   }
 
-  private static void ConsolidateEvaluateStigOutput(string outputRoot)
+  private static void ConsolidateEvaluateStigOutput(string outputRoot, DateTimeOffset runStarted)
   {
     try
     {
       var tempPath = Path.GetTempPath();
       var evaluateStigDirs = Directory.GetDirectories(tempPath, "Evaluate-STIG*")
+        .Where(d => Directory.GetLastWriteTimeUtc(d) >= runStarted.UtcDateTime)
         .OrderByDescending(Directory.GetLastWriteTimeUtc)
         .ToList();
 

@@ -6,6 +6,17 @@ public static class JsonElementExtensions
 {
     public static bool TryGetPropertyCaseInsensitive(this JsonElement element, string propertyName, out JsonElement value)
     {
+        if (element.ValueKind != JsonValueKind.Object)
+        {
+            value = default;
+            return false;
+        }
+
+        // Fast path: exact-case match via built-in hash lookup
+        if (element.TryGetProperty(propertyName, out value))
+            return true;
+
+        // Slow path: case-insensitive linear scan
         foreach (var prop in element.EnumerateObject())
         {
             if (string.Equals(prop.Name, propertyName, StringComparison.OrdinalIgnoreCase))

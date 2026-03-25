@@ -61,10 +61,10 @@ public static class StatusNormalizer
 
         return token switch
         {
-            "pass" or "notafinding" or "compliant" or "closed" => "NotAFinding",
+            "pass" or "notafinding" or "notafind" or "compliant" or "closed" => "NotAFinding",
             "fail" or "open" or "noncompliant" or "error" => "Open",
-            "notapplicable" or "na" => "Not_Applicable",
-            "notreviewed" or "notchecked" or "informational" or "" => "Not_Reviewed",
+            "notapplicable" or "notapp" or "na" => "Not_Applicable",
+            "notreviewed" or "nr" or "notchecked" or "informational" or "" => "Not_Reviewed",
             _ => "Not_Reviewed"
         };
     }
@@ -100,7 +100,7 @@ public static class StatusNormalizer
             "pass" or "notafinding" or "compliant" or "closed" => "pass",
             "fail" or "open" or "noncompliant" or "error" => "fail",
             "notapplicable" or "na" => "notapplicable",
-            "notreviewed" or "notchecked" => "notreviewed",
+            "notreviewed" or "notchecked" or "informational" => "notreviewed",
             "" => "unknown",
             _ => token
         };
