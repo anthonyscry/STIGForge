@@ -7,18 +7,15 @@
 # ============================================
 # Detect Server Role
 # ============================================
-$productType = (Get-CimInstance Win32_OperatingSystem).ProductType
-# 1 = Workstation, 2 = Domain Controller, 3 = Member Server
-
-switch ($productType) {
-    2 { $serverRole = 'DC';  $roleName = 'Domain Controller' }
-    3 { $serverRole = 'MS';  $roleName = 'Member Server' }
-    default {
-        Write-Host "ERROR: This script is for Windows Server only (ProductType=$productType)"
-        Write-Host "  For workstations, use 03-ws01-dsc-hardening.ps1"
-        exit 1
-    }
+Import-Module "$PSScriptRoot\lib\StigForge-Common.psm1" -Force
+$role = Get-ServerRole
+if ($role.Type -eq 'WS') {
+    Write-Host "ERROR: This script is for Windows Server only (ProductType=$($role.ProductType))"
+    Write-Host "  For workstations, use 03-ws01-dsc-hardening.ps1"
+    exit 1
 }
+$serverRole = $role.Type
+$roleName = $role.Name
 
 $hostname = $env:COMPUTERNAME
 $domain = (Get-CimInstance Win32_ComputerSystem).Domain

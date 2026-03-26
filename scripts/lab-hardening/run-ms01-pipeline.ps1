@@ -1,88 +1,23 @@
+# STIGForge Lab - MS01 Member Server Hardening Pipeline
+# Run on: MS01 as Administrator (lab\Administrator or lab\Install)
+# Prerequisites: import/ folder contents copied to C:\temp\
+# Uses DC01 scripts with auto-detect (DC vs MS role)
+
 $ErrorActionPreference = 'Continue'
 $scriptDir = 'C:\temp\scripts'
 $resultsDir = 'C:\StigResults\pipeline-ms'
 $logFile = "$resultsDir\pipeline-log.txt"
 
-if (-not (Test-Path $resultsDir)) {
-    New-Item -Path $resultsDir -ItemType Directory -Force | Out-Null
-}
+# Load shared modules
+Import-Module "$PSScriptRoot\lib\StigForge-Common.psm1" -Force
 
-$esPath = $null
-$esZip = 'C:\temp\Evaluate-STIG.zip'
-$esSearchDirs = @('C:\temp\Evaluate-STIG', 'C:\Evaluate-STIG', 'C:\EvaluateSTIG')
+Confirm-Directory $resultsDir
 
-foreach ($dir in $esSearchDirs) {
-    $found = Get-ChildItem $dir -Filter 'Evaluate-STIG.ps1' -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
-    if ($found) { $esPath = $found.FullName; break }
-}
-
-if (-not $esPath -and (Test-Path $esZip)) {
-    Expand-Archive -Path $esZip -DestinationPath 'C:\temp\Evaluate-STIG' -Force
-    $found = Get-ChildItem 'C:\temp\Evaluate-STIG' -Filter 'Evaluate-STIG.ps1' -Recurse | Select-Object -First 1
-    if ($found) { $esPath = $found.FullName }
-}
+# Find Evaluate-STIG
+$esPath = Find-EvaluateStig
 
 if (-not $esPath) {
     Write-Host "NOTE: Evaluate-STIG.ps1 not yet found - will be extracted by module install step"
-    $esDir = $null
-} else {
-    $esDir = Split-Path $esPath -Parent
-}
-
-function Invoke-StigScan {
-    param([string]$StepName)
-
-    $stepDir = "$resultsDir\scan-$StepName"
-    if (Test-Path $stepDir) { Remove-Item $stepDir -Recurse -Force }
-    New-Item -Path $stepDir -ItemType Directory -Force | Out-Null
-
-    $scanCmd = "Set-Location '$esDir'; & '$esPath' -ScanType Unclassified -Output CKL -OutputPath '$stepDir'"
-    $proc = Start-Process -FilePath 'powershell.exe' -ArgumentList "-NoProfile -ExecutionPolicy Bypass -Command `"$scanCmd`"" -Wait -NoNewWindow -PassThru
-    if ($proc.ExitCode -ne 0) {
-        Write-Host "SCAN WARNING: E-STIG exited with code $($proc.ExitCode)"
-    }
-
-    $cklFiles = Get-ChildItem $stepDir -Filter '*.ckl' -Recurse -ErrorAction SilentlyContinue
-    if (-not $cklFiles) {
-        return [PSCustomObject]@{ Step = $StepName; TotalNaf = 0; TotalApp = 0; TotalPct = 0; TotalOpen = 0; TotalNR = 0; TotalNA = 0; TotalChecks = 0; ClosedTotal = 0; ClosedPct = 0; Details = @() }
-    }
-
-    $results = @()
-    $totalOpen = 0; $totalNaf = 0; $totalNr = 0; $totalNa = 0
-
-    foreach ($ckl in $cklFiles) {
-        [xml]$xml = Get-Content $ckl.FullName
-        $stigName = $xml.CHECKLIST.STIGS.iSTIG.STIG_INFO.SI_DATA |
-            Where-Object { $_.SID_NAME -eq 'title' } |
-            Select-Object -ExpandProperty SID_DATA -ErrorAction SilentlyContinue
-        $shortName = ($stigName -replace 'Microsoft |Windows |Security Technical Implementation Guide', '').Trim()
-        if ($shortName.Length -gt 40) { $shortName = $shortName.Substring(0,40) }
-
-        $open = @($xml.CHECKLIST.STIGS.iSTIG.VULN | Where-Object { $_.STATUS -eq 'Open' }).Count
-        $naf  = @($xml.CHECKLIST.STIGS.iSTIG.VULN | Where-Object { $_.STATUS -eq 'NotAFinding' }).Count
-        $nr   = @($xml.CHECKLIST.STIGS.iSTIG.VULN | Where-Object { $_.STATUS -eq 'Not_Reviewed' }).Count
-        $na   = @($xml.CHECKLIST.STIGS.iSTIG.VULN | Where-Object { $_.STATUS -eq 'Not_Applicable' }).Count
-        $applicable = $open + $naf + $nr
-        $pct = if ($applicable -gt 0) { [math]::Round(($naf / $applicable) * 100, 1) } else { 0 }
-
-        $totalOpen += $open; $totalNaf += $naf; $totalNr += $nr; $totalNa += $na
-        $results += [PSCustomObject]@{ STIG = $shortName; Open = $open; NaF = $naf; NR = $nr; NA = $na; Applicable = $applicable; Pct = $pct }
-    }
-
-    $grandApplicable = $totalOpen + $totalNaf + $totalNr
-    $grandPct = if ($grandApplicable -gt 0) { [math]::Round(($totalNaf / $grandApplicable) * 100, 1) } else { 0 }
-    $totalChecks = $grandApplicable + $totalNa
-    $closedTotal = $totalNaf + $totalNa
-    $closedPct = if ($totalChecks -gt 0) { [math]::Round(($closedTotal / $totalChecks) * 100, 1) } else { 0 }
-    "[$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')] $StepName - Overall: $totalNaf/$grandApplicable ($grandPct%) Open=$totalOpen NR=$totalNr NA=$totalNa Closed=$closedTotal/$totalChecks ($closedPct%)" | Add-Content $logFile
-
-    return [PSCustomObject]@{ Step = $StepName; TotalNaf = $totalNaf; TotalApp = $grandApplicable; TotalPct = $grandPct; TotalOpen = $totalOpen; TotalNR = $totalNr; TotalNA = $totalNa; TotalChecks = $totalChecks; ClosedTotal = $closedTotal; ClosedPct = $closedPct; Details = $results }
-}
-
-function Log-Step { param([string]$Msg)
-    $ts = Get-Date -Format 'yyyy-MM-dd HH:mm:ss'
-    "[$ts] $Msg" | Add-Content $logFile
-    Write-Host "[$ts] $Msg"
 }
 
 if (-not (Test-Path $scriptDir)) {
@@ -96,61 +31,59 @@ if (-not (Test-Path $scriptDir)) {
 
 $allSteps = @()
 
-Log-Step "STEP 0: Install modules (E-STIG + PowerSTIG + DSC)"
-try { & "$scriptDir\00-install-modules.ps1" } catch { Log-Step "STEP 0 ERROR: $($_.Exception.Message)" }
-
-# Re-resolve Evaluate-STIG path after install (00-install-modules extracts to C:\Evaluate-STIG)
-$esPath = $null
-foreach ($dir in $esSearchDirs) {
-    $found = Get-ChildItem $dir -Filter 'Evaluate-STIG.ps1' -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
-    if ($found) { $esPath = $found.FullName; break }
+# STEP 0: Install modules
+Invoke-PipelineStep -StepName '0' -Description 'Install modules (E-STIG + PowerSTIG + DSC)' -LogFile $logFile -Action {
+    & "$scriptDir\00-install-modules.ps1"
 }
-if ($esPath) {
-    $esDir = Split-Path $esPath -Parent
-    Log-Step "Evaluate-STIG resolved to: $esPath"
-} else {
-    Log-Step "ERROR: Evaluate-STIG still not found after module install"
+
+# Re-resolve Evaluate-STIG path
+$esPath = Find-EvaluateStig
+if (-not $esPath) {
+    Write-PipelineLog "ERROR: Evaluate-STIG still not found after module install" $logFile
     exit 1
 }
+Write-PipelineLog "Evaluate-STIG resolved to: $esPath" $logFile
 
-Log-Step "STEP 1: Baseline scan"
-$allSteps += Invoke-StigScan -StepName '00-baseline'
+# STEP 1: Baseline scan
+Write-PipelineLog "STEP 1: Baseline scan" $logFile
+$allSteps += Invoke-StigScan -StepName '00-baseline' -EvaluateStigPath $esPath -ResultsDir $resultsDir -LogFile $logFile -Detailed
 
-Log-Step "STEP 2: DSC hardening"
-try { & "$scriptDir\07-dc01-dsc-hardening.ps1" } catch { Log-Step "STEP 2 ERROR: $($_.Exception.Message)" }
-gpupdate /force 2>&1 | Out-Null
-$allSteps += Invoke-StigScan -StepName '02-after-dsc'
-
-Log-Step "STEP 3: DISA ADMX/LGPO import"
-try { & "$scriptDir\07a-dc01-admx-lgpo.ps1" } catch { Log-Step "STEP 3 ERROR: $($_.Exception.Message)" }
-gpupdate /force 2>&1 | Out-Null
-$allSteps += Invoke-StigScan -StepName '03-after-admx-lgpo'
-
-Log-Step "STEP 4: Certificate install"
-try { & "$scriptDir\10-dc01-install-certs.ps1" } catch { Log-Step "STEP 4 ERROR: $($_.Exception.Message)" }
-$allSteps += Invoke-StigScan -StepName '04-after-certs'
-
-Log-Step "STEP 5: Custom GPO remediation"
-Log-Step "STEP 5: Member Server custom domain GPO stage is environment-defined; applying gpupdate for existing custom GPO links"
-gpupdate /force 2>&1 | Out-Null
-$allSteps += Invoke-StigScan -StepName '05-after-custom-gpo'
-
-Log-Step "STEP 6: Script fallback remediation"
-try { & "$scriptDir\09-dc01-local-hardening.ps1" } catch { Log-Step "STEP 6 ERROR: $($_.Exception.Message)" }
-if (Test-Path "$scriptDir\09a-dc01-ie11-hardening.ps1") {
-    try { & "$scriptDir\09a-dc01-ie11-hardening.ps1" } catch { Log-Step "STEP 6 IE11 WARN: $($_.Exception.Message)" }
+# STEP 2: DSC hardening (auto-detects MS role)
+Invoke-PipelineStep -StepName '2' -Description 'DSC hardening' -LogFile $logFile -Action {
+    & "$scriptDir\07-dc01-dsc-hardening.ps1"
 }
 gpupdate /force 2>&1 | Out-Null
-$allSteps += Invoke-StigScan -StepName '06-after-script-fallback'
+$allSteps += Invoke-StigScan -StepName '02-after-dsc' -EvaluateStigPath $esPath -ResultsDir $resultsDir -LogFile $logFile -Detailed
 
-Write-Host ""
-Write-Host "Step                      NaF/Applicable    %Compl   NaF+NA/Total    %Closed  Open   NR   NA   Delta"
-Write-Host "----                      --------------    ------   ------------     -------  ----   --   --   -----"
-$prevPct = 0
-foreach ($step in $allSteps) {
-    $delta = if ($step.Step -eq '00-baseline') { '  ---' } else { $d = $step.TotalPct - $prevPct; '{0:+0.0;-0.0; 0.0}' -f $d }
-    Write-Host ("{0,-25} {1,4}/{2,-4}          {3,5}%   {4,4}/{5,-4}      {6,5}%  {7,4}  {8,4} {9,4}   {10}" -f $step.Step, $step.TotalNaf, $step.TotalApp, $step.TotalPct, $step.ClosedTotal, $step.TotalChecks, $step.ClosedPct, $step.TotalOpen, $step.TotalNR, $step.TotalNA, $delta)
-    $prevPct = $step.TotalPct
+# STEP 3: DISA ADMX/LGPO import
+Invoke-PipelineStep -StepName '3' -Description 'DISA ADMX/LGPO import' -LogFile $logFile -Action {
+    & "$scriptDir\07a-dc01-admx-lgpo.ps1"
 }
+gpupdate /force 2>&1 | Out-Null
+$allSteps += Invoke-StigScan -StepName '03-after-admx-lgpo' -EvaluateStigPath $esPath -ResultsDir $resultsDir -LogFile $logFile -Detailed
+
+# STEP 4: Certificate install
+Invoke-PipelineStep -StepName '4' -Description 'Certificate install' -LogFile $logFile -Action {
+    & "$scriptDir\10-dc01-install-certs.ps1"
+}
+$allSteps += Invoke-StigScan -StepName '04-after-certs' -EvaluateStigPath $esPath -ResultsDir $resultsDir -LogFile $logFile -Detailed
+
+# STEP 5: Custom GPO remediation
+Write-PipelineLog "STEP 5: Member Server custom domain GPO stage; applying gpupdate" $logFile
+gpupdate /force 2>&1 | Out-Null
+$allSteps += Invoke-StigScan -StepName '05-after-custom-gpo' -EvaluateStigPath $esPath -ResultsDir $resultsDir -LogFile $logFile -Detailed
+
+# STEP 6: Script fallback (auto-detects MS role)
+Invoke-PipelineStep -StepName '6' -Description 'Script fallback remediation' -LogFile $logFile -Action {
+    & "$scriptDir\09-dc01-local-hardening.ps1"
+    if (Test-Path "$scriptDir\09a-dc01-ie11-hardening.ps1") {
+        & "$scriptDir\09a-dc01-ie11-hardening.ps1"
+    }
+}
+gpupdate /force 2>&1 | Out-Null
+$allSteps += Invoke-StigScan -StepName '06-after-script-fallback' -EvaluateStigPath $esPath -ResultsDir $resultsDir -LogFile $logFile -Detailed
+
+# FINAL: Delta summary
+Write-DeltaSummary -Steps $allSteps -LogFile $logFile
 
 Set-Content "$resultsDir\PIPELINE-DONE.txt" "Completed: $(Get-Date -Format 'yyyy-MM-dd HH:mm:ss')"

@@ -15,112 +15,15 @@
 
 Import-Module GroupPolicy
 Import-Module ActiveDirectory
-
-function Set-GPReg {
-    param(
-        [string]$GPOName,
-        [string]$Key,
-        [string]$ValueName,
-        $Value,
-        [string]$Type = 'DWord'
-    )
-    try {
-        Set-GPRegistryValue -Name $GPOName -Key $Key -ValueName $ValueName -Value $Value -Type $Type -ErrorAction Stop | Out-Null
-    } catch {
-        Write-Host "  ERR: $GPOName/$ValueName - $($_.Exception.Message)"
-    }
-}
-
-# ============================================
-# Helper: Write GptTmpl.inf security policy into a GPO
-# ============================================
-function Set-GPOSecurityPolicy {
-    param(
-        [string]$GPOName,
-        [string]$InfContent
-    )
-
-    $gpoObj = Get-GPO -Name $GPOName
-    $gpoId = $gpoObj.Id.ToString('B').ToUpper()
-    $dnsDomain = (Get-ADDomain).DNSRoot
-    $sysvolBase = "\\$dnsDomain\SYSVOL\$dnsDomain\Policies\$gpoId\Machine\Microsoft\Windows NT\SecEdit"
-
-    if (-not (Test-Path $sysvolBase)) {
-        New-Item -Path $sysvolBase -ItemType Directory -Force | Out-Null
-    }
-
-    Set-Content "$sysvolBase\GptTmpl.inf" $InfContent -Encoding Unicode -Force
-
-    # Register Security CSE GUID so GP engine processes security settings
-    $secCSE = '[{827D319E-6EAC-11D2-A4EA-00C04F79F83A}{803E14A0-B4FB-11D0-A0D0-00A0C90F574B}]'
-    $domDN = (Get-ADDomain).DistinguishedName
-    $gpoDN = "CN=$gpoId,CN=Policies,CN=System,$domDN"
-    $adObj = [ADSI]"LDAP://$gpoDN"
-    $currentCSE = $adObj.Properties['gPCMachineExtensionNames'].Value
-    if ($currentCSE -and $currentCSE -notmatch '827D319E') {
-        $adObj.Properties['gPCMachineExtensionNames'].Value = $currentCSE + $secCSE
-        $adObj.CommitChanges()
-    } elseif (-not $currentCSE) {
-        $adObj.Properties['gPCMachineExtensionNames'].Value = $secCSE
-        $adObj.CommitChanges()
-    }
-
-    # Bump GPO version
-    $newVer = [int]$adObj.Properties['versionNumber'].Value + 1
-    $adObj.Properties['versionNumber'].Value = $newVer
-    $adObj.CommitChanges()
-
-    Write-Host "  GptTmpl.inf written to $GPOName (v$newVer)"
-}
-
-# ============================================
-# Helper: Write audit.csv into a GPO
-# ============================================
-function Set-GPOAuditPolicy {
-    param(
-        [string]$GPOName,
-        [string]$CsvContent
-    )
-
-    $gpoObj = Get-GPO -Name $GPOName
-    $gpoId = $gpoObj.Id.ToString('B').ToUpper()
-    $dnsDomain = (Get-ADDomain).DNSRoot
-    $auditBase = "\\$dnsDomain\SYSVOL\$dnsDomain\Policies\$gpoId\Machine\Microsoft\Windows NT\Audit"
-
-    if (-not (Test-Path $auditBase)) {
-        New-Item -Path $auditBase -ItemType Directory -Force | Out-Null
-    }
-
-    Set-Content "$auditBase\audit.csv" $CsvContent -Encoding Unicode -Force
-
-    # Register Audit CSE GUID
-    $auditCSE = '[{F3BC9527-C350-480B-A84D-6A23D2597B2F}{D02B1F73-3407-48AE-BA88-E8213C6761F1}]'
-    $domDN = (Get-ADDomain).DistinguishedName
-    $gpoDN = "CN=$gpoId,CN=Policies,CN=System,$domDN"
-    $adObj = [ADSI]"LDAP://$gpoDN"
-    $currentCSE = $adObj.Properties['gPCMachineExtensionNames'].Value
-    if ($currentCSE -and $currentCSE -notmatch 'F3BC9527') {
-        $adObj.Properties['gPCMachineExtensionNames'].Value = $currentCSE + $auditCSE
-        $adObj.CommitChanges()
-    } elseif (-not $currentCSE) {
-        $adObj.Properties['gPCMachineExtensionNames'].Value = $auditCSE
-        $adObj.CommitChanges()
-    }
-
-    # Bump GPO version
-    $newVer = [int]$adObj.Properties['versionNumber'].Value + 1
-    $adObj.Properties['versionNumber'].Value = $newVer
-    $adObj.CommitChanges()
-
-    Write-Host "  audit.csv written to $GPOName (v$newVer)"
-}
+Import-Module "$PSScriptRoot\lib\StigForge-GPO.psm1" -Force
+Import-Module "$PSScriptRoot\lib\StigForge-Common.psm1" -Force
 
 # ============================================
 # Detect Server Role
 # ============================================
-$productType = (Get-CimInstance Win32_OperatingSystem).ProductType
-$isDC = ($productType -eq 2)
-$roleName = if ($isDC) { 'Domain Controller' } else { 'Member Server' }
+$role = Get-ServerRole
+$isDC = $role.IsDC
+$roleName = $role.Name
 
 Write-Host "=== Creating STIG GPOs for $roleName ==="
 Write-Host ""
@@ -502,30 +405,6 @@ Write-Host "  Firewall GPO complete (20 settings)"
 # ============================================
 Write-Host "`n=== Linking GPOs ==="
 
-function Ensure-LinkEnabled {
-    param(
-        [string]$GpoName,
-        [string]$Target
-    )
-
-    $inheritance = Get-GPInheritance -Target $Target -ErrorAction SilentlyContinue
-    $existing = $inheritance.GpoLinks | Where-Object { $_.DisplayName -eq $GpoName } | Select-Object -First 1
-
-    if (-not $existing) {
-        Get-GPO -Name $GpoName -ErrorAction Stop | New-GPLink -Target $Target -LinkEnabled Yes -ErrorAction Stop | Out-Null
-        Write-Host "  Linked $GpoName -> $Target"
-        return
-    }
-
-    if (-not $existing.Enabled) {
-        Set-GPLink -Name $GpoName -Target $Target -LinkEnabled Yes -ErrorAction Stop | Out-Null
-        Write-Host "  Re-enabled $GpoName -> $Target"
-        return
-    }
-
-    Write-Host "  $GpoName already linked and enabled on $Target"
-}
-
 # GPOs that apply to BOTH DC and Member Servers
 $bothOUs = @($dcOU, $msOU)
 foreach ($name in @('STIG-Server2019','STIG-Defender','STIG-Firewall','STIG-IE11')) {
@@ -536,7 +415,7 @@ foreach ($name in @('STIG-Server2019','STIG-Defender','STIG-Firewall','STIG-IE11
     }
     foreach ($ou in $bothOUs) {
         try {
-            Ensure-LinkEnabled -GpoName $name -Target $ou
+            Ensure-GPOLink -GpoName $name -Target $ou
         } catch {
             Write-Host "  WARN: Could not enforce $name link on ${ou}: $($_.Exception.Message)"
         }
@@ -548,7 +427,7 @@ $domRoot = 'DC=lab,DC=local'
 $dotnetGpo = Get-GPO -Name 'STIG-DotNet' -ErrorAction SilentlyContinue
 if ($dotnetGpo) {
     try {
-        Ensure-LinkEnabled -GpoName 'STIG-DotNet' -Target $domRoot
+        Ensure-GPOLink -GpoName 'STIG-DotNet' -Target $domRoot
     } catch {
         Write-Host "  WARN: Could not enforce STIG-DotNet link on Domain Root: $($_.Exception.Message)"
     }
