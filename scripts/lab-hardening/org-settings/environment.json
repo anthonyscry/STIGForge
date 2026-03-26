@@ -1,0 +1,69 @@
+{
+  "_comment": "Environment-conditional STIG findings. Mark N/A based on what infrastructure exists.",
+  "conditions": {
+    "hasADCS": {
+      "description": "Active Directory Certificate Services installed",
+      "ifFalse_NA": ["V-205653", "V-205654"],
+      "reason": "AD CS STIG findings only apply when CA role is installed"
+    },
+    "hasFTP": {
+      "description": "FTP server role installed",
+      "ifFalse_NA": ["V-205726"],
+      "reason": "FTP STIG findings only apply when FTP is installed"
+    },
+    "hasSplitDNS": {
+      "description": "Split-horizon DNS configured",
+      "ifFalse_NA": ["V-259342"],
+      "reason": "DNS forwarder restrictions apply to split-DNS architectures"
+    },
+    "hasSmartCard": {
+      "description": "Smart card / PIV reader infrastructure",
+      "ifFalse_NA": ["V-253470", "V-205711"],
+      "reason": "MFA/smart card findings require hardware + PKI enrollment"
+    },
+    "hasLAPS": {
+      "description": "LAPS deployed (Windows LAPS or legacy LAPS)",
+      "ifFalse_NA": ["V-253476", "V-243471"],
+      "reason": "LAPS findings require org-level LAPS deployment"
+    },
+    "hasMultipleDCs": {
+      "description": "More than one domain controller",
+      "ifFalse_NA": ["V-243481"],
+      "reason": "DC redundancy check only applies to multi-DC environments"
+    },
+    "hasSIEM": {
+      "description": "SIEM / central log collection",
+      "ifFalse_NA": ["V-205716"],
+      "reason": "Log forwarding findings require SIEM infrastructure"
+    },
+    "hasIDS": {
+      "description": "IDS/IPS deployed",
+      "ifFalse_NA": ["V-205717"],
+      "reason": "Network monitoring findings require IDS/IPS"
+    },
+    "hasAppLocker": {
+      "description": "AppLocker or WDAC deployed",
+      "ifFalse_NA": ["V-205709"],
+      "reason": "Application control findings require AppLocker/WDAC policy"
+    },
+    "hasBackup": {
+      "description": "Enterprise backup solution",
+      "ifFalse_NA": ["V-205718"],
+      "reason": "Backup findings require organizational backup infrastructure"
+    },
+    "hasFIM": {
+      "description": "File Integrity Monitoring",
+      "ifFalse_NA": ["V-205719"],
+      "reason": "FIM findings require file integrity monitoring solution"
+    },
+    "isVirtualMachine": {
+      "description": "Running as VM (Hyper-V, VMware, Proxmox)",
+      "ifTrue_NA": [],
+      "notes": [
+        "V-205848 (TPM): Must enable vTPM in hypervisor settings",
+        "V-205857 (Secure Boot): Requires Gen2 VM + Secure Boot enabled",
+        "V-205864 (VBS): Requires Gen2 VM + Secure Boot + vTPM"
+      ]
+    }
+  }
+}
