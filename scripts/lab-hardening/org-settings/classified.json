@@ -1,0 +1,113 @@
+{
+  "_comment": "Org settings for CLASSIFIED (SIPRNet/JWICS) systems. Findings marked N/A on classified networks.",
+  "classification": "classified",
+  "description": "Systems on classified (SIPRNet/JWICS) networks",
+  "notApplicable": [
+    {
+      "vulnId": "V-205649",
+      "stig": "Windows Server 2019",
+      "severity": "medium",
+      "title": "DoD Interoperability Root CA cross-certificates in Untrusted store",
+      "reason": "Cross-certificates only required on unclassified systems. Classified networks do not interoperate with external PKI.",
+      "reference": "Check text: 'on unclassified systems'"
+    },
+    {
+      "vulnId": "V-205650",
+      "stig": "Windows Server 2019",
+      "severity": "medium",
+      "title": "US DoD CCEB Interoperability Root CA cross-certificate in Untrusted store",
+      "reason": "CCEB cross-certificates only required on unclassified systems.",
+      "reference": "Check text: 'on unclassified systems'"
+    },
+    {
+      "vulnId": "V-253429",
+      "stig": "Windows 11",
+      "severity": "medium",
+      "title": "DoD Interoperability cross-certificates in Untrusted store",
+      "reason": "Cross-certificates only required on unclassified systems.",
+      "reference": "Check text: 'unclassified systems only'"
+    },
+    {
+      "vulnId": "V-253430",
+      "stig": "Windows 11",
+      "severity": "medium",
+      "title": "CCEB Interoperability cross-certificates in Untrusted store",
+      "reason": "CCEB cross-certificates only required on unclassified systems.",
+      "reference": "Check text: 'unclassified systems only'"
+    },
+    {
+      "vulnId": "V-213432",
+      "stig": "Microsoft Defender Antivirus",
+      "severity": "medium",
+      "title": "Defender AV must disable local setting override for reporting to MAPS",
+      "reason": "MAPS (Microsoft Active Protection Service) cloud reporting is not applicable on classified systems — no internet connectivity.",
+      "reference": "Check text: 'This is applicable to unclassified systems'"
+    },
+    {
+      "vulnId": "V-213433",
+      "stig": "Microsoft Defender Antivirus",
+      "severity": "medium",
+      "title": "Defender AV must check in real time with MAPS before content runs",
+      "reason": "MAPS real-time cloud check not applicable on classified systems — no internet connectivity.",
+      "reference": "Check text: 'This is applicable to unclassified systems'"
+    },
+    {
+      "vulnId": "V-213434",
+      "stig": "Microsoft Defender Antivirus",
+      "severity": "medium",
+      "title": "Defender AV must join Microsoft MAPS",
+      "reason": "MAPS cloud membership not applicable on classified/air-gapped systems.",
+      "reference": "Check text: 'This is applicable to unclassified systems'"
+    },
+    {
+      "vulnId": "V-213435",
+      "stig": "Microsoft Defender Antivirus",
+      "severity": "medium",
+      "title": "Defender AV must only send safe samples to MAPS",
+      "reason": "MAPS sample submission not applicable on classified systems.",
+      "reference": "Check text: 'This is applicable to unclassified systems'"
+    },
+    {
+      "vulnId": "V-223016",
+      "stig": "Internet Explorer 11",
+      "severity": "medium",
+      "title": "Check for publishers certificate revocation must be enforced",
+      "reason": "Certificate revocation checking requires internet access (CRL/OCSP). N/A on SIPRNet.",
+      "reference": "Check text: 'If the system is on the SIPRNet, this requirement is NA'"
+    },
+    {
+      "vulnId": "V-223039",
+      "stig": "Internet Explorer 11",
+      "severity": "medium",
+      "title": "Prevent bypassing SmartScreen Filter warnings must be enabled",
+      "reason": "SmartScreen Filter requires internet access. N/A on SIPRNet.",
+      "reference": "Check text: 'If the system is on the SIPRNet, this requirement is NA'"
+    },
+    {
+      "vulnId": "V-223040",
+      "stig": "Internet Explorer 11",
+      "severity": "medium",
+      "title": "Prevent bypassing SmartScreen Filter warnings about files not commonly downloaded",
+      "reason": "SmartScreen Filter requires internet access. N/A on SIPRNet.",
+      "reference": "Check text: 'If the system is on the SIPRNet, this requirement is NA'"
+    },
+    {
+      "vulnId": "V-223125",
+      "stig": "Internet Explorer 11",
+      "severity": "medium",
+      "title": "Managing SmartScreen Filter use must be enforced",
+      "reason": "SmartScreen Filter requires internet access. N/A on SIPRNet.",
+      "reference": "Check text: 'If the system is on the SIPRNet, this requirement is NA'"
+    }
+  ],
+  "orgDefined": [
+    {
+      "vulnId": "V-205818",
+      "stig": "Windows Server 2019",
+      "severity": "medium",
+      "setting": "NSA-approved (Type 1) cryptography required",
+      "value": "Type 1 encryption for directory replication data in transit",
+      "reason": "Classified systems transferring replication data through a network at a lower classification must use NSA Type 1 cryptography."
+    }
+  ]
+}

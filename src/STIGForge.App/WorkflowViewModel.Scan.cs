@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.IO;
-using System.Text;
 using System.Text.Json;
 using CommunityToolkit.Mvvm.Input;
 using STIGForge.Core;
@@ -29,268 +28,16 @@ public partial class WorkflowViewModel
         return false;
     }
 
-    private static VerificationToolRunResult? FindEvaluateRun(VerificationWorkflowResult result)
-    {
-        return result.ToolRuns?.FirstOrDefault(run =>
-            string.Equals(run.Tool, "Evaluate-STIG", StringComparison.OrdinalIgnoreCase));
-    }
-
-    private static bool HasNoCklDiagnostic(VerificationWorkflowResult result)
-    {
-        var diagnostics = result.Diagnostics ?? Array.Empty<string>();
-        return diagnostics.Any(diagnostic =>
-            diagnostic.Contains("No CKL results", StringComparison.OrdinalIgnoreCase));
-    }
-
-    private static bool HasScapDidNothingDiagnostic(VerificationWorkflowResult result)
-    {
-        var diagnostics = result.Diagnostics ?? Array.Empty<string>();
-        return diagnostics.Any(diagnostic =>
-            diagnostic.Contains("SCAP arguments were empty", StringComparison.OrdinalIgnoreCase)
-            || diagnostic.Contains("produced no SCAP artifacts", StringComparison.OrdinalIgnoreCase));
-    }
-
-    private static bool IsZeroFindingsFailure(VerificationWorkflowResult result)
-    {
-        if (!HasAnyResults(result))
-            return true;
-
-        var evaluateRun = FindEvaluateRun(result);
-        if (evaluateRun is { Executed: true } && evaluateRun.ExitCode != 0)
-            return true;
-
-        return HasNoCklDiagnostic(result);
-    }
-
-    private static bool HasAnyResults(VerificationWorkflowResult result)
-    {
-        if (result == null)
-            return false;
-
-        if (result.TotalRuleCount > 0)
-            return true;
-
-        return result.ConsolidatedResultCount > 0;
-    }
-
-    private static string BuildZeroFindingsMessage(string operationName, VerificationWorkflowResult result)
-    {
-        var evaluateRun = FindEvaluateRun(result);
-        if (evaluateRun is { Executed: true, ExitCode: 5 })
-            return $"{operationName} did not complete: Evaluate-STIG exit code 5 (administrator mode required).";
-
-        if (evaluateRun is { Executed: true } && evaluateRun.ExitCode != 0)
-            return $"{operationName} did not complete: Evaluate-STIG exit code {evaluateRun.ExitCode}.";
-
-        if (HasNoCklDiagnostic(result))
-            return $"{operationName} produced no CKL output. Confirm Evaluate-STIG output path and selected STIG scope.";
-
-        return $"{operationName} complete: 0 findings";
-    }
-
-    private static WorkflowFailureCard CreateFailureCard(
-        WorkflowRootCauseCode rootCauseCode,
-        string title,
-        string whatHappened,
-        string nextStep,
-        bool showOpenSettingsAction = false,
-        bool showRetryScanAction = false,
-        bool showRetryVerifyAction = false,
-        bool showOpenOutputFolderAction = false)
-    {
-        return new WorkflowFailureCard
-        {
-            RootCauseCode = rootCauseCode,
-            Title = title,
-            WhatHappened = whatHappened,
-            NextStep = nextStep,
-            ShowOpenSettingsAction = showOpenSettingsAction,
-            ShowRetryScanAction = showRetryScanAction,
-            ShowRetryVerifyAction = showRetryVerifyAction,
-            ShowOpenOutputFolderAction = showOpenOutputFolderAction
-        };
-    }
-
-    private static WorkflowFailureCard BuildScanFailureCard(VerificationWorkflowResult result)
-    {
-        var evaluateRun = FindEvaluateRun(result);
-        if (evaluateRun is { Executed: true, ExitCode: 5 })
-        {
-            return CreateFailureCard(
-                WorkflowRootCauseCode.ElevationRequired,
-                "Administrator privileges required",
-                "Evaluate-STIG exited with code 5 during baseline scan.",
-                "Relaunch STIGForge as administrator and rerun Scan.",
-                showRetryScanAction: true);
-        }
-
-        if (HasNoCklDiagnostic(result))
-        {
-            return CreateFailureCard(
-                WorkflowRootCauseCode.NoCklOutput,
-                "No CKL output detected",
-                "Scan completed without producing CKL results in the output folder.",
-                "Verify CKL output path and STIG scope in Settings, then rerun Scan.",
-                showOpenSettingsAction: true,
-                showRetryScanAction: true,
-                showOpenOutputFolderAction: true);
-        }
-
-        if (evaluateRun is { Executed: true } && evaluateRun.ExitCode != 0)
-        {
-            return CreateFailureCard(
-                WorkflowRootCauseCode.ToolExitNonZero,
-                "Evaluate-STIG exited with an error",
-                $"Evaluate-STIG returned exit code {evaluateRun.ExitCode} during baseline scan.",
-                "Review diagnostics in mission output and rerun Scan after correcting the issue.",
-                showRetryScanAction: true,
-                showOpenOutputFolderAction: true);
-        }
-
-        return CreateFailureCard(
-            WorkflowRootCauseCode.UnknownFailure,
-            "Scan could not be completed",
-            "Baseline scan returned zero findings but did not provide a known failure signature.",
-            "Review diagnostics in mission output, adjust settings, and rerun Scan.",
-            showRetryScanAction: true,
-            showOpenOutputFolderAction: true);
-    }
-
-    private static WorkflowFailureCard BuildVerifyFailureCard(VerificationWorkflowResult result)
-    {
-        var evaluateRun = FindEvaluateRun(result);
-        if (evaluateRun is { Executed: true, ExitCode: 5 })
-        {
-            return CreateFailureCard(
-                WorkflowRootCauseCode.ElevationRequired,
-                "Administrator privileges required",
-                "Evaluate-STIG exited with code 5 during verification scan.",
-                "Relaunch STIGForge as administrator and rerun Verify.",
-                showRetryVerifyAction: true);
-        }
-
-        if (HasNoCklDiagnostic(result))
-        {
-            return CreateFailureCard(
-                WorkflowRootCauseCode.NoCklOutput,
-                "No CKL output detected",
-                "Verification completed without producing CKL results in the output folder.",
-                "Verify CKL output path and STIG scope in Settings, then rerun Verify.",
-                showOpenSettingsAction: true,
-                showRetryVerifyAction: true,
-                showOpenOutputFolderAction: true);
-        }
-
-        if (evaluateRun is { Executed: true } && evaluateRun.ExitCode != 0)
-        {
-            return CreateFailureCard(
-                WorkflowRootCauseCode.ToolExitNonZero,
-                "Evaluate-STIG exited with an error",
-                $"Evaluate-STIG returned exit code {evaluateRun.ExitCode} during verification scan.",
-                "Review diagnostics in mission output and rerun Verify after correcting the issue.",
-                showRetryVerifyAction: true,
-                showOpenOutputFolderAction: true);
-        }
-
-        return CreateFailureCard(
-            WorkflowRootCauseCode.UnknownFailure,
-            "Verification could not be completed",
-            "Verification returned zero findings but did not provide a known failure signature.",
-            "Review diagnostics in mission output, adjust settings, and rerun Verify.",
-            showRetryVerifyAction: true,
-            showOpenOutputFolderAction: true);
-    }
-
-    private static WorkflowFailureCard CreateEvaluatePathInvalidCard()
-    {
-        return CreateFailureCard(
-            WorkflowRootCauseCode.EvaluatePathInvalid,
-            "Evaluate-STIG path is invalid",
-            "The configured Evaluate-STIG location does not contain a usable Evaluate-STIG.ps1 script.",
-            "Open Settings, correct the Evaluate-STIG path, save, and rerun Scan.",
-            showOpenSettingsAction: true,
-            showRetryScanAction: true);
-    }
-
-    private static WorkflowFailureCard CreateVerifyEvaluatePathInvalidCard()
-    {
-        return CreateFailureCard(
-            WorkflowRootCauseCode.EvaluatePathInvalid,
-            "Evaluate-STIG path is invalid",
-            "The configured Evaluate-STIG location does not contain a usable Evaluate-STIG.ps1 script.",
-            "Open Settings, correct the Evaluate-STIG path, save, and rerun Verify.",
-            showOpenSettingsAction: true,
-            showRetryVerifyAction: true);
-    }
-
-    private static WorkflowFailureCard CreateElevationRequiredCard(string whatHappened)
-    {
-        return CreateFailureCard(
-            WorkflowRootCauseCode.ElevationRequired,
-            "Administrator privileges required",
-            whatHappened,
-            "Relaunch STIGForge as administrator and rerun Scan.",
-            showRetryScanAction: true);
-    }
-
-    private static WorkflowFailureCard CreateVerifyElevationRequiredCard(string whatHappened)
-    {
-        return CreateFailureCard(
-            WorkflowRootCauseCode.ElevationRequired,
-            "Administrator privileges required",
-            whatHappened,
-            "Relaunch STIGForge as administrator and rerun Verify.",
-            showRetryVerifyAction: true);
-    }
-
-    private static WorkflowFailureCard CreateVerifyUnknownFailureCard(string whatHappened)
-    {
-        return CreateFailureCard(
-            WorkflowRootCauseCode.UnknownFailure,
-            "Verification could not be completed",
-            whatHappened,
-            "Review diagnostics in mission output and rerun Verify.",
-            showRetryVerifyAction: true,
-            showOpenOutputFolderAction: true);
-    }
-
-    private static WorkflowFailureCard CreateVerifyScapNoOutputCard()
-    {
-        return CreateFailureCard(
-            WorkflowRootCauseCode.ScapNoOutput,
-            "SCC produced no usable output",
-            "SCC was configured for Verify, but no SCAP artifacts were produced for result consolidation.",
-            "Open Settings and either clear SCC path for Evaluate-only verify or run SCC manually with explicit arguments/output, then rerun Verify.",
-            showOpenSettingsAction: true,
-            showRetryVerifyAction: true,
-            showOpenOutputFolderAction: true);
-    }
-
-    private static WorkflowFailureCard CreateVerifyScapArgumentsInvalidCard(string details)
-    {
-        var detailText = string.IsNullOrWhiteSpace(details)
-            ? "SCC arguments are missing required scan/content options."
-            : details;
-
-        return CreateFailureCard(
-            WorkflowRootCauseCode.ScapArgumentsInvalid,
-            "SCC arguments are invalid",
-            detailText,
-            "Open Settings and provide SCC arguments that include scan/content options. STIGForge auto-adds the output folder argument when missing.",
-            showOpenSettingsAction: true,
-            showRetryVerifyAction: true);
-    }
-
     // Output location is controlled via WorkingDirectory on the process, not a CLI argument.
     private string BuildEvaluateStigArguments()
     {
         var parts = new List<string>();
 
         if (!string.IsNullOrWhiteSpace(EvaluateAfPath))
-            parts.Add("-AFPath " + QuoteCommandLineArgument(EvaluateAfPath.Trim()));
+            parts.Add("-AFPath " + SccArgumentParser.QuoteCommandLineArgument(EvaluateAfPath.Trim()));
 
         if (!string.IsNullOrWhiteSpace(EvaluateSelectStig))
-            parts.Add("-SelectSTIG " + QuoteCommandLineArgument(EvaluateSelectStig.Trim()));
+            parts.Add("-SelectSTIG " + SccArgumentParser.QuoteCommandLineArgument(EvaluateSelectStig.Trim()));
 
         if (!string.IsNullOrWhiteSpace(EvaluateAdditionalArgs))
             parts.Add(EvaluateAdditionalArgs.Trim());
@@ -299,201 +46,9 @@ public partial class WorkflowViewModel
 
         var target = MachineTarget?.Trim() ?? string.Empty;
         if (!string.IsNullOrWhiteSpace(target) && !string.Equals(target, "localhost", StringComparison.OrdinalIgnoreCase))
-            parts.Add("-ComputerName " + QuoteCommandLineArgument(target));
+            parts.Add("-ComputerName " + SccArgumentParser.QuoteCommandLineArgument(target));
 
         return string.Join(" ", parts);
-    }
-
-    private static string QuoteCommandLineArgument(string value)
-    {
-        return "\"" + value.Replace("\"", "\\\"") + "\"";
-    }
-
-    private static string AppendCommandLineArgumentWithValue(string existingArguments, string switchName, string value)
-    {
-        var prefix = string.IsNullOrWhiteSpace(existingArguments)
-            ? string.Empty
-            : existingArguments.Trim() + " ";
-
-        return prefix + switchName + " " + QuoteCommandLineArgument(value);
-    }
-
-    private static bool LooksLikeSwitchToken(string token)
-    {
-        if (string.IsNullOrWhiteSpace(token))
-            return false;
-
-        if (token[0] == '-')
-            return true;
-
-        if (token[0] != '/')
-            return false;
-
-        return SccOutputSwitches
-            .Where(candidate => candidate.StartsWith("/", StringComparison.Ordinal))
-            .Any(candidate => string.Equals(candidate, token, StringComparison.OrdinalIgnoreCase));
-    }
-
-    private static bool TryGetSwitchAndInlineValue(string token, out string switchToken, out string inlineValue)
-    {
-        switchToken = string.Empty;
-        inlineValue = string.Empty;
-
-        if (!LooksLikeSwitchToken(token))
-            return false;
-
-        var equalsIndex = token.IndexOf('=');
-        if (equalsIndex > 0)
-        {
-            switchToken = token[..equalsIndex];
-            inlineValue = token[(equalsIndex + 1)..];
-            return true;
-        }
-
-        switchToken = token;
-        return true;
-    }
-
-    private static bool IsSccOutputSwitch(string switchToken)
-    {
-        if (string.IsNullOrWhiteSpace(switchToken))
-            return false;
-
-        return SccOutputSwitches.Any(candidate => string.Equals(candidate, switchToken, StringComparison.OrdinalIgnoreCase));
-    }
-
-    private static List<string> TokenizeCommandLineArguments(string arguments)
-    {
-        var tokens = new List<string>();
-        if (string.IsNullOrWhiteSpace(arguments))
-            return tokens;
-
-        var current = new StringBuilder();
-        var inQuotes = false;
-
-        foreach (var ch in arguments)
-        {
-            if (ch == '"')
-            {
-                inQuotes = !inQuotes;
-                continue;
-            }
-
-            if (char.IsWhiteSpace(ch) && !inQuotes)
-            {
-                if (current.Length > 0)
-                {
-                    tokens.Add(current.ToString());
-                    current.Clear();
-                }
-
-                continue;
-            }
-
-            current.Append(ch);
-        }
-
-        if (current.Length > 0)
-            tokens.Add(current.ToString());
-
-        return tokens;
-    }
-
-    private readonly record struct SccArgumentAnalysis(
-        bool HasAnyToken,
-        bool HasOutputSwitch,
-        bool HasOutputValue,
-        bool MissingOutputValue,
-        bool HasNonOutputDirective);
-
-    private static SccArgumentAnalysis AnalyzeSccArguments(string arguments)
-    {
-        var tokens = TokenizeCommandLineArguments(arguments);
-        if (tokens.Count == 0)
-            return new SccArgumentAnalysis(false, false, false, false, false);
-
-        var consumedAsOutputValue = new HashSet<int>();
-        var hasOutputSwitch = false;
-        var hasOutputValue = false;
-        var missingOutputValue = false;
-        var hasNonOutputDirective = false;
-
-        for (var i = 0; i < tokens.Count; i++)
-        {
-            if (consumedAsOutputValue.Contains(i))
-                continue;
-
-            var token = tokens[i];
-            if (TryGetSwitchAndInlineValue(token, out var switchToken, out var inlineValue))
-            {
-                if (IsSccOutputSwitch(switchToken))
-                {
-                    hasOutputSwitch = true;
-
-                    if (!string.IsNullOrWhiteSpace(inlineValue))
-                    {
-                        hasOutputValue = true;
-                        continue;
-                    }
-
-                    if (i + 1 < tokens.Count && !LooksLikeSwitchToken(tokens[i + 1]))
-                    {
-                        hasOutputValue = true;
-                        consumedAsOutputValue.Add(i + 1);
-                    }
-                    else
-                    {
-                        missingOutputValue = true;
-                    }
-
-                    continue;
-                }
-
-                hasNonOutputDirective = true;
-                continue;
-            }
-
-            hasNonOutputDirective = true;
-        }
-
-        return new SccArgumentAnalysis(
-            HasAnyToken: true,
-            HasOutputSwitch: hasOutputSwitch,
-            HasOutputValue: hasOutputValue,
-            MissingOutputValue: missingOutputValue,
-            HasNonOutputDirective: hasNonOutputDirective);
-    }
-
-    private static bool TryBuildSccHeadlessArguments(string rawArguments, string outputRoot, out string effectiveArguments, out string validationError)
-    {
-        effectiveArguments = (rawArguments ?? string.Empty).Trim();
-        validationError = string.Empty;
-
-        if (string.IsNullOrWhiteSpace(outputRoot))
-        {
-            validationError = "Output folder is required for SCC validation.";
-            return false;
-        }
-
-        var initial = AnalyzeSccArguments(effectiveArguments);
-        if (!initial.HasOutputSwitch)
-            effectiveArguments = AppendCommandLineArgumentWithValue(effectiveArguments, "-u", outputRoot);
-
-        var normalized = AnalyzeSccArguments(effectiveArguments);
-
-        if (normalized.MissingOutputValue || (normalized.HasOutputSwitch && !normalized.HasOutputValue))
-        {
-            validationError = "SCC arguments include an output switch without a valid path value.";
-            return false;
-        }
-
-        if (!normalized.HasAnyToken)
-        {
-            validationError = "SCC arguments are empty.";
-            return false;
-        }
-
-        return true;
     }
 
     private async Task<bool> RunScanAsync()
@@ -523,7 +78,7 @@ public partial class WorkflowViewModel
         {
             StatusText = adminMessage;
             BaselineFindingsCount = 0;
-            CurrentFailureCard = CreateElevationRequiredCard("Baseline scan preflight blocked because STIGForge is not running with administrator privileges.");
+            CurrentFailureCard = ScanFailureCardFactory.CreateElevationRequiredCard("Baseline scan preflight blocked because STIGForge is not running with administrator privileges.");
             ScanComplianceText = string.Empty;
             return false;
         }
@@ -533,7 +88,7 @@ public partial class WorkflowViewModel
         {
             StatusText = "Evaluate-STIG tool path is not configured or invalid";
             BaselineFindingsCount = 0;
-            CurrentFailureCard = CreateEvaluatePathInvalidCard();
+            CurrentFailureCard = ScanFailureCardFactory.CreateEvaluatePathInvalidCard();
             ScanComplianceText = string.Empty;
             return false;
         }
@@ -583,9 +138,9 @@ public partial class WorkflowViewModel
 
             if (baselineOpenFindings == 0)
             {
-                StatusText = BuildZeroFindingsMessage("Baseline scan", result);
-                var isFailure = IsZeroFindingsFailure(result);
-                CurrentFailureCard = isFailure ? BuildScanFailureCard(result) : null;
+                StatusText = ScanFailureCardFactory.BuildZeroFindingsMessage("Baseline scan", result);
+                var isFailure = ScanFailureCardFactory.IsZeroFindingsFailure(result);
+                CurrentFailureCard = isFailure ? ScanFailureCardFactory.BuildScanFailureCard(result) : null;
                 if (isFailure)
                 {
                     InvalidateScanComplianceBaseline();
@@ -630,7 +185,7 @@ public partial class WorkflowViewModel
         {
             StatusText = adminMessage;
             VerifyFindingsCount = 0;
-            CurrentFailureCard = CreateVerifyElevationRequiredCard("Verification preflight blocked because STIGForge is not running with administrator privileges.");
+            CurrentFailureCard = ScanFailureCardFactory.CreateVerifyElevationRequiredCard("Verification preflight blocked because STIGForge is not running with administrator privileges.");
             return false;
         }
 
@@ -639,7 +194,7 @@ public partial class WorkflowViewModel
         {
             StatusText = "Evaluate-STIG tool path is not configured or invalid";
             VerifyFindingsCount = 0;
-            CurrentFailureCard = CreateVerifyEvaluatePathInvalidCard();
+            CurrentFailureCard = ScanFailureCardFactory.CreateVerifyEvaluatePathInvalidCard();
             return false;
         }
 
@@ -675,11 +230,11 @@ public partial class WorkflowViewModel
         var effectiveSccArguments = string.Empty;
         if (!string.IsNullOrWhiteSpace(resolvedSccCommandPath))
         {
-            if (!TryBuildSccHeadlessArguments(SccArguments, OutputFolderPath, out effectiveSccArguments, out var sccValidationError))
+            if (!SccArgumentParser.TryBuildSccHeadlessArguments(SccArguments, OutputFolderPath, SccOutputSwitches, out effectiveSccArguments, out var sccValidationError))
             {
                 StatusText = "SCC arguments are invalid: " + sccValidationError;
                 VerifyFindingsCount = 0;
-                CurrentFailureCard = CreateVerifyScapArgumentsInvalidCard(sccValidationError);
+                CurrentFailureCard = ScanFailureCardFactory.CreateVerifyScapArgumentsInvalidCard(sccValidationError);
                 return false;
             }
 
@@ -725,22 +280,22 @@ public partial class WorkflowViewModel
             if (FixedCount < 0)
                 FixedCount = 0;
 
-            if (HasScapDidNothingDiagnostic(result))
+            if (ScanFailureCardFactory.HasScapDidNothingDiagnostic(result))
             {
                 StatusText = "Verification did not complete: SCC ran without usable arguments/output.";
-                CurrentFailureCard = CreateVerifyScapNoOutputCard();
+                CurrentFailureCard = ScanFailureCardFactory.CreateVerifyScapNoOutputCard();
                 await WriteMissionJsonAsync(result, _cts.Token, CurrentFailureCard, "Verify");
                 return false;
             }
 
             if (verifyOpenFindings == 0)
             {
-                StatusText = BuildZeroFindingsMessage("Verification scan", result);
-                var isFailure = IsZeroFindingsFailure(result);
+                StatusText = ScanFailureCardFactory.BuildZeroFindingsMessage("Verification scan", result);
+                var isFailure = ScanFailureCardFactory.IsZeroFindingsFailure(result);
                 WorkflowFailureCard? missionFailureCard = null;
                 if (isFailure)
                 {
-                    missionFailureCard = BuildVerifyFailureCard(result);
+                    missionFailureCard = ScanFailureCardFactory.BuildVerifyFailureCard(result);
                     CurrentFailureCard = missionFailureCard;
                 }
                 else
@@ -761,7 +316,7 @@ public partial class WorkflowViewModel
         {
             StatusText = $"Verification failed: {ex.Message}";
             VerifyFindingsCount = 0;
-            CurrentFailureCard = CreateVerifyUnknownFailureCard($"Verification failed unexpectedly: {ex.Message}");
+            CurrentFailureCard = ScanFailureCardFactory.CreateVerifyUnknownFailureCard($"Verification failed unexpectedly: {ex.Message}");
             return false;
         }
     }
@@ -972,7 +527,7 @@ public partial class WorkflowViewModel
             if (!EnsureAdminPreflight(out var adminMessage))
             {
                 StatusText = adminMessage;
-                CurrentFailureCard = CreateVerifyElevationRequiredCard("SCC headless validation requires administrator privileges.");
+                CurrentFailureCard = ScanFailureCardFactory.CreateVerifyElevationRequiredCard("SCC headless validation requires administrator privileges.");
                 return;
             }
 
@@ -996,10 +551,10 @@ public partial class WorkflowViewModel
 
             Directory.CreateDirectory(OutputFolderPath);
 
-            if (!TryBuildSccHeadlessArguments(SccArguments, OutputFolderPath, out var effectiveSccArguments, out var sccValidationError))
+            if (!SccArgumentParser.TryBuildSccHeadlessArguments(SccArguments, OutputFolderPath, SccOutputSwitches, out var effectiveSccArguments, out var sccValidationError))
             {
                 StatusText = "SCC headless validation failed: " + sccValidationError;
-                CurrentFailureCard = CreateVerifyScapArgumentsInvalidCard(sccValidationError);
+                CurrentFailureCard = ScanFailureCardFactory.CreateVerifyScapArgumentsInvalidCard(sccValidationError);
                 return;
             }
 
@@ -1047,10 +602,10 @@ public partial class WorkflowViewModel
                 return;
             }
 
-            if (HasScapDidNothingDiagnostic(result))
+            if (ScanFailureCardFactory.HasScapDidNothingDiagnostic(result))
             {
                 StatusText = "SCC headless validation failed: SCC ran but produced no SCAP artifacts.";
-                CurrentFailureCard = CreateVerifyScapNoOutputCard();
+                CurrentFailureCard = ScanFailureCardFactory.CreateVerifyScapNoOutputCard();
                 return;
             }
 
@@ -1060,7 +615,7 @@ public partial class WorkflowViewModel
         catch (Exception ex)
         {
             StatusText = $"SCC headless validation failed: {ex.Message}";
-            CurrentFailureCard = CreateVerifyUnknownFailureCard($"SCC headless validation failed unexpectedly: {ex.Message}");
+            CurrentFailureCard = ScanFailureCardFactory.CreateVerifyUnknownFailureCard($"SCC headless validation failed unexpectedly: {ex.Message}");
         }
         finally
         {

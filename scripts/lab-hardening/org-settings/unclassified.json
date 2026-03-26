@@ -1,0 +1,29 @@
+{
+  "_comment": "Org settings for UNCLASSIFIED systems. Findings that are N/A on unclassified networks.",
+  "classification": "unclassified",
+  "description": "Systems on unclassified (NIPRNet/internet-facing) networks",
+  "notApplicable": [
+    {
+      "vulnId": "V-205818",
+      "stig": "Windows Server 2019",
+      "reason": "NSA Type 1 cryptography is only required on classified systems. Unclassified systems use FIPS 140-2 validated modules.",
+      "reference": "STIG check specifies 'classified systems only'"
+    }
+  ],
+  "orgDefined": [
+    {
+      "vulnId": "V-205649",
+      "stig": "Windows Server 2019",
+      "setting": "DoD Interoperability cross-certs in Untrusted store",
+      "value": "Required — import via FBCA cross-cert remover + manual .cer files",
+      "reason": "Unclassified systems must distrust Federal Bridge cross-certificates."
+    },
+    {
+      "vulnId": "V-205650",
+      "stig": "Windows Server 2019",
+      "setting": "CCEB Interoperability cross-certs in Untrusted store",
+      "value": "Required — import CCEB2 cross-certs to Disallowed store",
+      "reason": "Unclassified systems must distrust CCEB interoperability cross-certificates."
+    }
+  ]
+}

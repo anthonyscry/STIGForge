@@ -46,9 +46,14 @@ public sealed class AppWinAppDriverTests
 
         await using var client = await WinAppDriverClient.LaunchAsync(executablePath, serviceUrl, TimeSpan.FromSeconds(60));
 
-        await client.GetByName("Workflow tab").ClickAsync();
+        // Import Library tab (index 0) is selected by default. Press Right arrow to move to
+        // the Workflow tab (index 1). Direct Click() on a non-selected WPF TabItem via
+        // WinAppDriver does not reliably select it because its content is not yet in the
+        // accessibility tree — keyboard navigation is the robust alternative.
+        client.Driver.FindElementByAccessibilityId("import-tab").SendKeys("\uE014"); // Right arrow
+        await Task.Delay(300); // allow tab content to enter accessibility tree
 
-        await client.GetByName("Run auto workflow").ExpectVisibleAsync();
+        await client.GetById("run-auto-workflow").ExpectVisibleAsync();
         await client.GetByName("Run Scan step").ExpectVisibleAsync();
         await client.GetByName("Run Harden step").ExpectVisibleAsync();
         await client.GetByName("Run Verify step").ExpectVisibleAsync();

@@ -14,9 +14,10 @@
 # Suppress all confirmation prompts (for non-interactive scheduled task execution)
 $ConfirmPreference = 'None'
 
-$productType = (Get-CimInstance Win32_OperatingSystem).ProductType
-$isDC = ($productType -eq 2)
-$roleName = if ($isDC) { 'Domain Controller' } else { 'Member Server' }
+Import-Module "$PSScriptRoot\lib\StigForge-Common.psm1" -Force
+$role = Get-ServerRole
+$isDC = $role.IsDC
+$roleName = $role.Name
 
 Write-Host "=== Local-Only Fixes: $roleName ($env:COMPUTERNAME) ==="
 Write-Host ""

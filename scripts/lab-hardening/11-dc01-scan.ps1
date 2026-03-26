@@ -1,23 +1,20 @@
 # STIGForge Lab - Step 11: Run Evaluate-STIG on DC01
 # Run on: DC01 (lab.local\Administrator)
-# Prerequisites: Evaluate-STIG installed at C:\Evaluate-STIG\Evaluate-STIG\
+# Prerequisites: Evaluate-STIG installed
 
-$esPath = 'C:\Evaluate-STIG\Evaluate-STIG\Evaluate-STIG.ps1'
-$outputDir = 'C:\StigResults\DC01'
+Import-Module "$PSScriptRoot\lib\StigForge-Common.psm1" -Force
 
-if (-not (Test-Path $outputDir)) {
-    New-Item -Path $outputDir -ItemType Directory -Force | Out-Null
+$esPath = Find-EvaluateStig
+if (-not $esPath) {
+    Write-Host "ERROR: Evaluate-STIG not found"
+    return
 }
 
-Write-Host "Running Evaluate-STIG on DC01..."
-Write-Host "Output: $outputDir"
-Write-Host ""
+$resultsDir = 'C:\StigResults\dc01-standalone'
+Confirm-Directory $resultsDir
 
-& $esPath -ScanType Unclassified -Output CKL,Summary -OutputPath $outputDir
+$result = Invoke-StigScan -StepName 'dc01-scan' -EvaluateStigPath $esPath -ResultsDir $resultsDir -Detailed
 
 Write-Host ""
 Write-Host "=== Scan Complete ==="
-Write-Host "Results in: $outputDir"
-Write-Host ""
-Write-Host "To view summary:"
-Write-Host "  Get-ChildItem '$outputDir\*Summary*' | Sort-Object LastWriteTime -Descending | Select-Object -First 1 | Get-Content"
+Write-Host "  Results in: $resultsDir"

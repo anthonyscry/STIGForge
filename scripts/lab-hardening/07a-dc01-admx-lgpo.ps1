@@ -16,9 +16,10 @@ $fixed = 0
 # ============================================
 # Detect Server Role
 # ============================================
-$productType = (Get-CimInstance Win32_OperatingSystem).ProductType
-$isDC = ($productType -eq 2)
-$roleName = if ($isDC) { 'Domain Controller' } else { 'Member Server' }
+Import-Module "$PSScriptRoot\lib\StigForge-Common.psm1" -Force
+$role = Get-ServerRole
+$isDC = $role.IsDC
+$roleName = $role.Name
 
 Write-Host "=== Role: $roleName ($env:COMPUTERNAME) ==="
 Write-Host ""
@@ -124,49 +125,7 @@ if ($isDC) {
     Write-Host "=== Importing DISA STIG GPOs into AD ==="
 
     Import-Module GroupPolicy
-
-    function Ensure-GpoLinkEnabled {
-        param(
-            [string]$GpoName,
-            [string]$Target
-        )
-
-        $inheritance = Get-GPInheritance -Target $Target -ErrorAction SilentlyContinue
-        $existingLink = $inheritance.GpoLinks | Where-Object { $_.DisplayName -eq $GpoName } | Select-Object -First 1
-
-        if (-not $existingLink) {
-            Get-GPO -Name $GpoName -ErrorAction Stop | New-GPLink -Target $Target -LinkEnabled Yes -ErrorAction Stop | Out-Null
-            Write-Host "  Linked: $GpoName -> $Target"
-            return
-        }
-
-        if (-not $existingLink.Enabled) {
-            Set-GPLink -Name $GpoName -Target $Target -LinkEnabled Yes -ErrorAction Stop | Out-Null
-            Write-Host "  Re-enabled link: $GpoName -> $Target"
-            return
-        }
-
-        Write-Host "  Link already enabled: $GpoName -> $Target"
-    }
-
-    function Ensure-GpoApplyPermission {
-        param(
-            [string]$GpoName,
-            [string]$Principal
-        )
-
-        $perm = $null
-        try {
-            $perm = Get-GPPermission -Name $GpoName -TargetName $Principal -TargetType Group -ErrorAction Stop
-        } catch {
-            $perm = $null
-        }
-
-        if (-not $perm -or "$($perm.Permission)" -ne 'GpoApply') {
-            Set-GPPermission -Name $GpoName -TargetName $Principal -TargetType Group -PermissionLevel GpoApply -Replace -ErrorAction Stop
-            Write-Host "  Set security filtering: $Principal = GpoApply on $GpoName"
-        }
-    }
+    Import-Module "$PSScriptRoot\lib\StigForge-GPO.psm1" -Force
 
     $dcOU = 'OU=Domain Controllers,DC=lab,DC=local'
     $msOU = 'OU=Member Servers,DC=lab,DC=local'
@@ -264,14 +223,14 @@ if ($isDC) {
         }
 
         try {
-            Ensure-GpoApplyPermission -GpoName $import.Name -Principal 'Authenticated Users'
-            Ensure-GpoApplyPermission -GpoName $import.Name -Principal 'Domain Computers'
+            Ensure-GPOApplyPermission -GpoName $import.Name -Principal 'Authenticated Users'
+            Ensure-GPOApplyPermission -GpoName $import.Name -Principal 'Domain Computers'
         } catch {
             Write-Host "  WARN: Could not update security filtering for $($import.Name): $($_.Exception.Message)"
         }
 
         try {
-            Ensure-GpoLinkEnabled -GpoName $import.Name -Target $import.Target
+            Ensure-GPOLink -GpoName $import.Name -Target $import.Target
         } catch {
             Write-Host "  WARN: Could not enforce link for $($import.Name): $($_.Exception.Message)"
         }
@@ -294,7 +253,7 @@ if ($isDC) {
             continue
         }
         try {
-            Ensure-GpoLinkEnabled -GpoName $name -Target $msOU
+            Ensure-GPOLink -GpoName $name -Target $msOU
         } catch {
             Write-Host "  WARN: Could not link $name to Member Servers: $($_.Exception.Message)"
         }

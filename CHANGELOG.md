@@ -3,6 +3,37 @@
 All notable changes to STIGForge are documented here.
 Format follows [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
+## [1.0.6] - 2026-03-26
+
+### Added
+
+- Shared PowerShell modules (`lib/`) extracting duplicated code across 17 lab-hardening scripts
+  - `StigForge-Common`: E-STIG/SCC discovery, scan, CKL parsing, delta summaries, role detection, step timing
+  - `StigForge-GPO`: GPO registry values, security policy, audit policy, linking
+  - `StigForge-Certificates`: DoD/ECA root CAs, FBCA cross-cert remover, InstallRoot MSI, cross-cert import
+  - `StigForge-WinRM`: WinRM state capture/disable/restore for DC pipeline isolation
+  - `StigForge-OrgSettings`: Classified/unclassified N/A marking for CKL files
+- Master pipeline (`run-all-pipeline.ps1`) with auto role detection, SCC v5.14 headless scans, per-step compliance delta, metrics.json output, and human-time-saved estimates
+- Classified/unclassified org settings (`org-settings/`) with 12 classification-conditional N/A findings and 12 environment-conditional rules
+- Fix-remaining-findings script for Kerberos policies, logging, cert strong mapping, Defender service
+- SCC v5.14 portable support (nested bundle extraction, no installer required)
+
+### Changed
+
+- Refactored 13 lab-hardening scripts to import shared modules (net -1,416 lines removed)
+- Certificate install scripts reduced from 231+151 lines to 14+10 lines each
+- Pipeline runners simplified from 480/141/157 lines to 163/83/89 lines each
+- GPO helper functions deduplicated (75 lines removed from scripts 02 and 08)
+- Updated README with architecture diagram, import folder table, and metrics documentation
+
+### Fixed
+
+- Uninitialized `$finalScan` variable crash when final scan throws (CRIT-1 from code review)
+- WinRM left permanently disabled if hardening step threw terminating error (CRIT-2)
+- Post-DSC scan silently discarded due to child scope variable capture (MED-1)
+- GptTmpl.inf encoding corruption on PS 5.1 (HIGH-4, UTF-16 LE read without -Encoding Unicode)
+- FBCA exe wildcard match changed to specific binary name for security (HIGH-5)
+
 ## [1.0.5] - 2026-03-25
 
 ### Changed

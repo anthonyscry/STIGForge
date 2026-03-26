@@ -38,33 +38,74 @@ public sealed class RebootCoordinatorTests : IDisposable
     }
 
     [Fact]
-    public void DetectRebootRequired_WhenDscRebootRequested_ReturnsTrue()
+    public async Task DetectRebootRequired_WhenDscRebootRequested_ReturnsTrue()
     {
-        // Arrange
-        // This test verifies that the method attempts to check DSC reboot status
-        // In a real scenario, this would require mocking PowerShell execution
-        // For now, we test that the method exists and handles the logic
-        
-        // Act
-        // Since we can't easily mock PowerShell execution in unit tests,
-        // we'll verify the method signature and basic behavior
-        
-        // Assert
-        // The method should be callable and return a boolean
-        // Actual implementation will check DSC status via PowerShell
-        true.Should().BeTrue(); // Placeholder for structure verification
+        var coordinator = new RebootCoordinator(
+            _loggerMock.Object,
+            dscRebootCheck: _ => Task.FromResult(true),
+            pendingFileRenameCheck: () => false,
+            windowsUpdateRebootCheck: () => false);
+
+        var result = await coordinator.DetectRebootRequired(CancellationToken.None);
+
+        result.Should().BeTrue("DSC reports reboot required");
     }
 
     [Fact]
-    public void DetectRebootRequired_WhenPendingFileOpsExist_ReturnsTrue()
+    public async Task DetectRebootRequired_WhenPendingFileOpsExist_ReturnsTrue()
     {
-        // Arrange
-        // In real implementation, this would check registry key
-        // HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\PendingFileRenameOperations
-        
-        // Act & Assert
-        // Placeholder - implementation will check registry for pending file operations
-        true.Should().BeTrue();
+        var coordinator = new RebootCoordinator(
+            _loggerMock.Object,
+            dscRebootCheck: _ => Task.FromResult(false),
+            pendingFileRenameCheck: () => true,
+            windowsUpdateRebootCheck: () => false);
+
+        var result = await coordinator.DetectRebootRequired(CancellationToken.None);
+
+        result.Should().BeTrue("pending file rename operations require a reboot");
+    }
+
+    [Fact]
+    public async Task DetectRebootRequired_WhenWindowsUpdateRequiresReboot_ReturnsTrue()
+    {
+        var coordinator = new RebootCoordinator(
+            _loggerMock.Object,
+            dscRebootCheck: _ => Task.FromResult(false),
+            pendingFileRenameCheck: () => false,
+            windowsUpdateRebootCheck: () => true);
+
+        var result = await coordinator.DetectRebootRequired(CancellationToken.None);
+
+        result.Should().BeTrue("Windows Update reboot flag is set");
+    }
+
+    [Fact]
+    public async Task DetectRebootRequired_WhenNoChecksTriggered_ReturnsFalse()
+    {
+        var coordinator = new RebootCoordinator(
+            _loggerMock.Object,
+            dscRebootCheck: _ => Task.FromResult(false),
+            pendingFileRenameCheck: () => false,
+            windowsUpdateRebootCheck: () => false);
+
+        var result = await coordinator.DetectRebootRequired(CancellationToken.None);
+
+        result.Should().BeFalse("no reboot triggers are active");
+    }
+
+    [Fact]
+    public async Task DetectRebootRequired_DscCheckFirst_ShortCircuitsOnTrue()
+    {
+        var pendingFileCalled = false;
+        var coordinator = new RebootCoordinator(
+            _loggerMock.Object,
+            dscRebootCheck: _ => Task.FromResult(true),
+            pendingFileRenameCheck: () => { pendingFileCalled = true; return false; },
+            windowsUpdateRebootCheck: () => false);
+
+        await coordinator.DetectRebootRequired(CancellationToken.None);
+
+        pendingFileCalled.Should().BeFalse("short-circuit: DSC returned true so later checks must not run");
     }
 
     [Fact]
